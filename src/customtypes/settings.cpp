@@ -407,6 +407,9 @@ void Qounters::OptionsViewController::UpdateSimpleUI() {
 void Qounters::OptionsViewController::UpdateUI() {
     UpdateSimpleUI();
 
+    for (auto modal : GetComponentsInChildren<HMUI::ModalView*>())
+        modal->Hide(false, nullptr);
+
     if (!uiInitialized || !component)
         return;
 
