@@ -21,7 +21,7 @@ using namespace GlobalNamespace;
 int GetNoteCount(BeatmapCallbacksUpdater* updater) {
     using LinkedList = System::Collections::Generic::LinkedList_1<NoteData*>;
     int noteCount = 0;
-    auto bcc = UnityEngine::Object::FindObjectOfType<BeatmapCallbacksUpdater*>()->beatmapCallbacksController;
+    auto bcc = updater->beatmapCallbacksController;
     auto songTime = bcc->startFilterTime;
     auto noteDataItemsList = (LinkedList*) ((BeatmapData*) bcc->beatmapData)->beatmapDataItemsPerTypeAndId->GetList(csTypeOf(NoteData*), 0)->get_items();
     auto enumerator = (LinkedList::Enumerator*) noteDataItemsList->System_Collections_IEnumerable_GetEnumerator();
@@ -145,6 +145,7 @@ namespace Qounters {
     int fails;
     int restarts;
     ColorScheme* colors;
+    BeatmapData* beatmapData;
 }
 
 #include "UnityEngine/Resources.hpp"
@@ -207,15 +208,16 @@ void Qounters::Initialize() {
     lastBeatmap = beatmap;
 
     colors = gameplayCoreInstaller->sceneSetupData->colorScheme;
+    beatmapData = (BeatmapData*) beatmapCallbacksUpdater->beatmapCallbacksController->beatmapData;
 }
 
-bool Qounters::ShouldProcessNote(GlobalNamespace::NoteData* data) {
+bool Qounters::ShouldProcessNote(NoteData* data) {
     bool shouldProcess = false;
     switch (data->gameplayType) {
-        case GlobalNamespace::NoteData::GameplayType::Normal:
+        case NoteData::GameplayType::Normal:
             shouldProcess = true;
             break;
-        case GlobalNamespace::NoteData::GameplayType::BurstSliderHead:
+        case NoteData::GameplayType::BurstSliderHead:
             shouldProcess = true;
             break;
         default:

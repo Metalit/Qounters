@@ -2,6 +2,7 @@
 
 #include "GlobalNamespace/ColorScheme.hpp"
 #include "GlobalNamespace/NoteData.hpp"
+#include "GlobalNamespace/BeatmapData.hpp"
 
 namespace Qounters {
     extern int leftScore;
@@ -40,6 +41,7 @@ namespace Qounters {
     extern int fails;
     extern int restarts;
     extern GlobalNamespace::ColorScheme* colors;
+    extern GlobalNamespace::BeatmapData* beatmapData;
 
     void Initialize();
 
