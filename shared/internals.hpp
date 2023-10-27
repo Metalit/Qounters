@@ -1,7 +1,5 @@
 #pragma once
 
-#include "main.hpp"
-
 #include "GlobalNamespace/ColorScheme.hpp"
 #include "GlobalNamespace/NoteData.hpp"
 

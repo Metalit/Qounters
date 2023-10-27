@@ -4,7 +4,7 @@
 
 #include "UnityEngine/GameObject.hpp"
 
-#include "rapidjson-macros/shared/macros.hpp"
+#include "types.hpp"
 
 namespace Qounters {
     namespace TextSource {

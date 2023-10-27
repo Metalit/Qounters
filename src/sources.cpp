@@ -10,41 +10,66 @@
 using namespace Qounters;
 
 std::vector<std::pair<std::string, std::pair<SourceFn<std::string>, SourceUIFn>>> Qounters::textSources = {
-    {"Static", {TextSource::GetStatic, TextSource::StaticUI}},
-    {"Score", {TextSource::GetScore, TextSource::ScoreUI}},
-    {"Rank", {TextSource::GetRank, TextSource::RankUI}},
-    {"Personal Best", {TextSource::GetPersonalBest, TextSource::PersonalBestUI}},
-    {"Combo", {TextSource::GetCombo, TextSource::ComboUI}},
-    {"Multiplier", {TextSource::GetMultiplier, TextSource::MultiplierUI}},
-    {"Health", {TextSource::GetHealth, TextSource::HealthUI}},
-    {"Time", {TextSource::GetTime, TextSource::TimeUI}},
-    {"Average Cut", {TextSource::GetAverageCut, TextSource::AverageCutUI}},
-    {"Fails", {TextSource::GetFails, TextSource::FailsUI}},
-    {"Mistakes", {TextSource::GetMistakes, TextSource::MistakesUI}},
-    {"Notes", {TextSource::GetNotes, TextSource::NotesUI}},
-    {"PP", {TextSource::GetPP, TextSource::PPUI}},
-    {"Saber Speed", {TextSource::GetSaberSpeed, TextSource::SaberSpeedUI}},
-    {"Spinometer", {TextSource::GetSpinometer, TextSource::SpinometerUI}},
+    {TextSource::StaticName, {TextSource::GetStatic, TextSource::StaticUI}},
+    {TextSource::ScoreName, {TextSource::GetScore, TextSource::ScoreUI}},
+    {TextSource::RankName, {TextSource::GetRank, TextSource::RankUI}},
+    {TextSource::PersonalBestName, {TextSource::GetPersonalBest, TextSource::PersonalBestUI}},
+    {TextSource::ComboName, {TextSource::GetCombo, TextSource::ComboUI}},
+    {TextSource::MultiplierName, {TextSource::GetMultiplier, TextSource::MultiplierUI}},
+    {TextSource::HealthName, {TextSource::GetHealth, TextSource::HealthUI}},
+    {TextSource::TimeName, {TextSource::GetTime, TextSource::TimeUI}},
+    {TextSource::AverageCutName, {TextSource::GetAverageCut, TextSource::AverageCutUI}},
+    {TextSource::FailsName, {TextSource::GetFails, TextSource::FailsUI}},
+    {TextSource::MistakesName, {TextSource::GetMistakes, TextSource::MistakesUI}},
+    {TextSource::NotesName, {TextSource::GetNotes, TextSource::NotesUI}},
+    {TextSource::PPName, {TextSource::GetPP, TextSource::PPUI}},
+    {TextSource::SaberSpeedName, {TextSource::GetSaberSpeed, TextSource::SaberSpeedUI}},
+    {TextSource::SpinometerName, {TextSource::GetSpinometer, TextSource::SpinometerUI}},
 };
 
 std::vector<std::pair<std::string, std::pair<SourceFn<float>, SourceUIFn>>> Qounters::shapeSources = {
-    {"Static", {ShapeSource::GetStatic, ShapeSource::StaticUI}},
-    {"Score", {ShapeSource::GetScore, ShapeSource::ScoreUI}},
-    {"Multiplier", {ShapeSource::GetMultiplier, ShapeSource::MultiplierUI}},
-    {"Health", {ShapeSource::GetHealth, ShapeSource::HealthUI}},
-    {"Average Cut", {ShapeSource::GetAverageCut, ShapeSource::AverageCutUI}},
-    {"Time", {ShapeSource::GetTime, ShapeSource::TimeUI}},
-    {"Notes", {ShapeSource::GetNotes, ShapeSource::NotesUI}},
+    {ShapeSource::StaticName, {ShapeSource::GetStatic, ShapeSource::StaticUI}},
+    {ShapeSource::ScoreName, {ShapeSource::GetScore, ShapeSource::ScoreUI}},
+    {ShapeSource::MultiplierName, {ShapeSource::GetMultiplier, ShapeSource::MultiplierUI}},
+    {ShapeSource::HealthName, {ShapeSource::GetHealth, ShapeSource::HealthUI}},
+    {ShapeSource::AverageCutName, {ShapeSource::GetAverageCut, ShapeSource::AverageCutUI}},
+    {ShapeSource::TimeName, {ShapeSource::GetTime, ShapeSource::TimeUI}},
+    {ShapeSource::NotesName, {ShapeSource::GetNotes, ShapeSource::NotesUI}},
 };
 
 std::vector<std::pair<std::string, std::pair<SourceFn<UnityEngine::Color>, SourceUIFn>>> Qounters::colorSources = {
-    {"Static", {ColorSource::GetStatic, ColorSource::StaticUI}},
-    {"Player", {ColorSource::GetPlayer, ColorSource::PlayerUI}},
-    {"Rank", {ColorSource::GetRank, ColorSource::RankUI}},
-    {"Personal Best", {ColorSource::GetPersonalBest, ColorSource::PersonalBestUI}},
-    {"Combo", {ColorSource::GetCombo, ColorSource::ComboUI}},
-    {"Multiplier", {ColorSource::GetMultiplier, ColorSource::MultiplierUI}},
-    {"Health", {ColorSource::GetHealth, ColorSource::HealthUI}},
+    {ColorSource::StaticName, {ColorSource::GetStatic, ColorSource::StaticUI}},
+    {ColorSource::PlayerName, {ColorSource::GetPlayer, ColorSource::PlayerUI}},
+    {ColorSource::RankName, {ColorSource::GetRank, ColorSource::RankUI}},
+    {ColorSource::PersonalBestName, {ColorSource::GetPersonalBest, ColorSource::PersonalBestUI}},
+    {ColorSource::ComboName, {ColorSource::GetCombo, ColorSource::ComboUI}},
+    {ColorSource::MultiplierName, {ColorSource::GetMultiplier, ColorSource::MultiplierUI}},
+    {ColorSource::HealthName, {ColorSource::GetHealth, ColorSource::HealthUI}},
+};
+
+const std::vector<std::string> Qounters::AverageCutPartStrings = {
+    "Preswing",
+    "Postswing",
+    "Accuracy",
+    "All",
+};
+const std::vector<std::string> Qounters::NotesDisplayStrings = {
+    "Cut",
+    "Remaining",
+    "Cut Ratio",
+    "Cut Percent",
+};
+const std::vector<std::string> Qounters::PPSourceStrings = {
+    "ScoreSaber",
+    "BeatLeader",
+};
+const std::vector<std::string> Qounters::SaberSpeedModeStrings = {
+    "Average",
+    "Last 5 Seconds",
+};
+const std::vector<std::string> Qounters::SpinometerModeStrings = {
+    "Average",
+    "Highest",
 };
 
 namespace Qounters::TextSource {

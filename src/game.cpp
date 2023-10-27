@@ -1,3 +1,4 @@
+#include "sources.hpp"
 #include "game.hpp"
 #include "internals.hpp"
 
@@ -172,20 +173,20 @@ namespace Qounters::Game {
         return restarts;
     }
     UnityEngine::Color GetColor(int color) {
-        switch ((ColorSettings) color) {
-            case ColorSettings::LeftSaber:
+        switch ((ColorSource::Player::ColorSettings) color) {
+            case ColorSource::Player::ColorSettings::LeftSaber:
                 return colors->get_saberAColor();
-            case ColorSettings::RightSaber:
+            case ColorSource::Player::ColorSettings::RightSaber:
                 return colors->get_saberBColor();
-            case ColorSettings::Lights1:
+            case ColorSource::Player::ColorSettings::Lights1:
                 return colors->get_environmentColor0();
-            case ColorSettings::Lights2:
+            case ColorSource::Player::ColorSettings::Lights2:
                 return colors->get_environmentColor1();
-            case ColorSettings::Walls:
+            case ColorSource::Player::ColorSettings::Walls:
                 return colors->get_obstaclesColor();
-            case ColorSettings::Boost1:
+            case ColorSource::Player::ColorSettings::Boost1:
                 return colors->get_environmentColor0Boost();
-            case ColorSettings::Boost2:
+            case ColorSource::Player::ColorSettings::Boost2:
                 return colors->get_environmentColor1Boost();
         }
     }

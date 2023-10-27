@@ -78,19 +78,19 @@ namespace Qounters::Templates {
         auto group = MakeGroup(anchor, pos);
         float yPos = 0;
         if (rank) {
-            AddText(group, "Rank", TextSource::Rank(), 33);
+            AddText(group, TextSource::RankName, TextSource::Rank(), 33);
             yPos += 18;
         }
         if (percent) {
             TextSource::Score opts;
             opts.Decimals = decimals;
-            AddText(group, "Score", opts, 12).Position = UnityEngine::Vector2(0, yPos);
+            AddText(group, TextSource::ScoreName, opts, 12).Position = UnityEngine::Vector2(0, yPos);
             yPos += 15;
         }
         if (score) {
             TextSource::Score scoreOpts;
             scoreOpts.Percentage = false;
-            AddText(group, "Score", scoreOpts, 15).Position = UnityEngine::Vector2(0, yPos);
+            AddText(group, TextSource::ScoreName, scoreOpts, 15).Position = UnityEngine::Vector2(0, yPos);
         }
         Editor::AddGroup(group);
     }
@@ -100,22 +100,22 @@ namespace Qounters::Templates {
         opts.Percentage = !absolute;
         opts.HideFirstScore = hideFirst;
         opts.Decimals = decimals;
-        AddText(group, "Personal Best", opts, 10);
+        AddText(group, TextSource::PersonalBestName, opts, 10);
         Editor::AddGroup(group);
     }
     void AddAverageCut(int anchor, UnityEngine::Vector2 pos, bool splitSaber, bool splitCut, int decimals) {
         auto group = MakeGroup(anchor, pos);
         TextSource::Static label;
         label.Input = "Average Cut";
-        AddText(group, "Static", label, 11);
+        AddText(group, TextSource::StaticName, label, 11);
         auto addLine = [&splitSaber, &group](TextSource::AverageCut opts, float yPos) {
             if (splitSaber) {
                 opts.Saber = (int) Sabers::Left;
-                AddText(group, "Average Cut", opts).Position = UnityEngine::Vector2(-10, yPos);
+                AddText(group, TextSource::AverageCutName, opts).Position = UnityEngine::Vector2(-10, yPos);
                 opts.Saber = (int) Sabers::Right;
-                AddText(group, "Average Cut", opts).Position = UnityEngine::Vector2(10, yPos);
+                AddText(group, TextSource::AverageCutName, opts).Position = UnityEngine::Vector2(10, yPos);
             } else
-                AddText(group, "Average Cut", opts).Position = UnityEngine::Vector2(0, yPos);
+                AddText(group, TextSource::AverageCutName, opts).Position = UnityEngine::Vector2(0, yPos);
         };
         TextSource::AverageCut opts;
         opts.Decimals = decimals;
@@ -146,33 +146,33 @@ namespace Qounters::Templates {
                 label.Input = "Notes Remaining";
                 break;
         }
-        AddText(group, "Static", label, 11).Position = UnityEngine::Vector2(0, 12.5);
+        AddText(group, TextSource::StaticName, label, 11).Position = UnityEngine::Vector2(0, 12.5);
         TextSource::Notes opts;
         opts.Display = display;
         opts.Decimals = decimals;
-        AddText(group, "Notes", opts);
+        AddText(group, TextSource::NotesName, opts);
         Editor::AddGroup(group);
     }
     void AddMistakes(int anchor, UnityEngine::Vector2 pos, bool badCuts, bool bombs, bool walls) {
         auto group = MakeGroup(anchor, pos);
         TextSource::Static label;
         label.Input = "Mistakes";
-        AddText(group, "Static", label, 11).Position = UnityEngine::Vector2(0, 12.5);
+        AddText(group, TextSource::StaticName, label, 11).Position = UnityEngine::Vector2(0, 12.5);
         TextSource::Mistakes opts;
         opts.BadCuts = badCuts;
         opts.Bombs = bombs;
         opts.Walls = walls;
-        AddText(group, "Mistakes", opts);
+        AddText(group, TextSource::MistakesName, opts);
         Editor::AddGroup(group);
     }
     void AddFails(int anchor, UnityEngine::Vector2 pos, bool restarts) {
         auto group = MakeGroup(anchor, pos);
         TextSource::Static label;
         label.Input = restarts ? "Restarts" : "Fails";
-        AddText(group, "Static", label, 11).Position = UnityEngine::Vector2(0, 12.5);
+        AddText(group, TextSource::StaticName, label, 11).Position = UnityEngine::Vector2(0, 12.5);
         TextSource::Fails opts;
         opts.Restarts = restarts;
-        AddText(group, "Fails", opts);
+        AddText(group, TextSource::FailsName, opts);
         Editor::AddGroup(group);
     }
     void AddSongTime(int anchor, UnityEngine::Vector2 pos, int display, bool timeLeft) {
@@ -189,13 +189,13 @@ namespace Qounters::Templates {
             case 1: { // Ring
                 TextSource::Time timeOpts;
                 timeOpts.Remaining = timeLeft;
-                AddText(group, "Time", timeOpts);
+                AddText(group, TextSource::TimeName, timeOpts);
                 auto& comp = group.Components.emplace_back();
                 comp.Type = (int) Component::Types::Shape;
                 ShapeOptions opts;
                 opts.Shape = (int) ShapeOptions::Shapes::CircleOutline;
                 opts.Fill = (int) ShapeOptions::Fills::Circle;
-                opts.FillSource = "Time";
+                opts.FillSource = ShapeSource::TimeName;
                 opts.Inverse = timeLeft;
                 comp.Options = opts;
                 break;
@@ -204,7 +204,7 @@ namespace Qounters::Templates {
                 TextSource::Time timeOpts;
                 timeOpts.Percentage = true;
                 timeOpts.Remaining = timeLeft;
-                AddText(group, "Time", timeOpts);
+                AddText(group, TextSource::TimeName, timeOpts);
                 break;
             }
         }
@@ -218,7 +218,7 @@ namespace Qounters::Templates {
             ppOpts.Source = (int) TextSource::PP::Sources::BeatLeader;
             ppOpts.HideUnranked = hideUnranked;
             ppOpts.Decimals = decimals;
-            AddText(group, "PP", ppOpts, 12, TextOptions::Aligns::Left);
+            AddText(group, TextSource::PPName, ppOpts, 12, TextOptions::Aligns::Left);
             yPos += 15;
             auto& comp = group.Components.emplace_back();
             comp.Type = (int) Component::Types::Image;
@@ -233,7 +233,7 @@ namespace Qounters::Templates {
             ppOpts.Source = (int) TextSource::PP::Sources::ScoreSaber;
             ppOpts.HideUnranked = hideUnranked;
             ppOpts.Decimals = decimals;
-            auto& text = AddText(group, "PP", ppOpts, 12, TextOptions::Aligns::Left);
+            auto& text = AddText(group, TextSource::PPName, ppOpts, 12, TextOptions::Aligns::Left);
             text.Position = UnityEngine::Vector2(0, yPos);
             auto& comp = group.Components.emplace_back();
             comp.Type = (int) Component::Types::Image;
@@ -249,33 +249,33 @@ namespace Qounters::Templates {
         auto group = MakeGroup(anchor, pos);
         TextSource::Static label;
         label.Input = "Saber Speed";
-        AddText(group, "Static", label, 11).Position = UnityEngine::Vector2(0, 12.5);
+        AddText(group, TextSource::StaticName, label, 11).Position = UnityEngine::Vector2(0, 12.5);
         TextSource::SaberSpeed opts;
         opts.Decimals = decimals;
         opts.Mode = (int) (last5Secs ? TextSource::SaberSpeed::Modes::Best5Seconds : TextSource::SaberSpeed::Modes::Average);
         if (split) {
             opts.Saber = (int) Sabers::Left;
-            AddText(group, "Saber Speed", opts, 15, TextOptions::Aligns::Right).Position = UnityEngine::Vector2(-2, 0);
+            AddText(group, TextSource::SaberSpeedName, opts, 15, TextOptions::Aligns::Right).Position = UnityEngine::Vector2(-2, 0);
             opts.Saber = (int) Sabers::Right;
-            AddText(group, "Saber Speed", opts, 15, TextOptions::Aligns::Left).Position = UnityEngine::Vector2(2, 0);
+            AddText(group, TextSource::SaberSpeedName, opts, 15, TextOptions::Aligns::Left).Position = UnityEngine::Vector2(2, 0);
         } else
-            AddText(group, "Saber Speed", opts, 12);
+            AddText(group, TextSource::SaberSpeedName, opts, 12);
         Editor::AddGroup(group);
     }
     void AddSpinometer(int anchor, UnityEngine::Vector2 pos, bool split, bool highest) {
         auto group = MakeGroup(anchor, pos);
         TextSource::Static label;
         label.Input = "Spinometer";
-        AddText(group, "Static", label, 11).Position = UnityEngine::Vector2(0, 12.5);
+        AddText(group, TextSource::StaticName, label, 11).Position = UnityEngine::Vector2(0, 12.5);
         TextSource::Spinometer opts;
         opts.Mode = (int) (highest ? TextSource::Spinometer::Modes::Highest : TextSource::Spinometer::Modes::Average);
         if (split) {
             opts.Saber = (int) Sabers::Left;
-            AddText(group, "Spinometer", opts, 15, TextOptions::Aligns::Right).Position = UnityEngine::Vector2(-2, 0);
+            AddText(group, TextSource::SpinometerName, opts, 15, TextOptions::Aligns::Right).Position = UnityEngine::Vector2(-2, 0);
             opts.Saber = (int) Sabers::Right;
-            AddText(group, "Spinometer", opts, 15, TextOptions::Aligns::Left).Position = UnityEngine::Vector2(2, 0);
+            AddText(group, TextSource::SpinometerName, opts, 15, TextOptions::Aligns::Left).Position = UnityEngine::Vector2(2, 0);
         } else
-            AddText(group, "Spinometer", opts, 12);
+            AddText(group, TextSource::SpinometerName, opts, 12);
         Editor::AddGroup(group);
     }
 

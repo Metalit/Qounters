@@ -7,24 +7,24 @@
 #include "sourceui.hpp"
 #include "utils.hpp"
 
-std::vector<std::string> Qounters::TypeStrings = {
+const std::vector<std::string> Qounters::TypeStrings = {
     "Text",
     "Shape",
     "Image",
     "Base Game",
 };
-std::vector<std::string> Qounters::AnchorStrings = {
+const std::vector<std::string> Qounters::AnchorStrings = {
     "Left",
     "Right",
     "Top",
     "Bottom",
 };
-std::vector<std::string> Qounters::AlignStrings = {
+const std::vector<std::string> Qounters::AlignStrings = {
     "Left",
     "Right",
     "Center",
 };
-std::vector<std::string> Qounters::ShapeStrings = {
+const std::vector<std::string> Qounters::ShapeStrings = {
     "Rectangle",
     "Rectangle Border",
     "Circle",
@@ -32,16 +32,21 @@ std::vector<std::string> Qounters::ShapeStrings = {
     "Triangle",
     "Triangle Border",
 };
-std::vector<std::string> Qounters::FillStrings = {
+const std::vector<std::string> Qounters::FillStrings = {
     "None",
     "Horizontal",
     "Vertical",
     "Circle",
 };
-std::vector<std::string> Qounters::ComponentStrings = {
+const std::vector<std::string> Qounters::ComponentStrings = {
     "Multiplier",
     "Song Time",
     // "Health Bar",
+};
+const std::vector<std::string> Qounters::SaberStrings = {
+    "Left",
+    "Right",
+    "Both",
 };
 
 #include "questui/shared/BeatSaberUI.hpp"
@@ -239,7 +244,7 @@ namespace Qounters {
         TextSource::Score scoreOptions;
         // rank text
         component.Position = Vector2(0, -20);
-        textOptions.TextSource = "Rank";
+        textOptions.TextSource = TextSource::RankName;
         textOptions.Size = 33;
         component.Options = textOptions;
         colorOptions.Input = Color(1, 1, 1, 0.502);
@@ -247,14 +252,14 @@ namespace Qounters {
         ret.Components.push_back(component);
         // percent text
         component.Position = Vector2(0, -2);
-        textOptions.TextSource = "Score";
+        textOptions.TextSource = TextSource::ScoreName;
         textOptions.SourceOptions = scoreOptions;
         textOptions.Size = 12;
         component.Options = textOptions;
         ret.Components.push_back(component);
         // score text
         component.Position = Vector2(0, 12.5);
-        textOptions.TextSource = "Score";
+        textOptions.TextSource = TextSource::ScoreName;
         scoreOptions.Percentage = false;
         textOptions.SourceOptions = scoreOptions;
         textOptions.Size = 15;
@@ -277,7 +282,7 @@ namespace Qounters {
         shapeOptions.Shape = (int) ShapeOptions::Shapes::Square;
         // combo text
         component.Position = Vector2(0, -7.5);
-        textOptions.TextSource = "Combo";
+        textOptions.TextSource = TextSource::ComboName;
         textOptions.SourceOptions = TextSource::Combo();
         textOptions.Size = 20;
         component.Options = textOptions;
@@ -285,7 +290,7 @@ namespace Qounters {
         // "combo" text
         component.Position = Vector2(0, 7.5);
         component.Scale = Vector2{0.7, 1};
-        textOptions.TextSource = "Static";
+        textOptions.TextSource = TextSource::StaticName;
         staticOptions.Input = "COMBO";
         textOptions.SourceOptions = staticOptions;
         textOptions.Size = 15;

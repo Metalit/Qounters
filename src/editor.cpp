@@ -296,7 +296,7 @@ namespace Qounters::Editor {
         auto& newComponent = vec.emplace_back();
         newComponent.Type = (int) Component::Types::Text;
         TextOptions opts;
-        opts.TextSource = "Static";
+        opts.TextSource = TextSource::StaticName;
         TextSource::Static text;
         text.Input = "New Component";
         opts.SourceOptions = text;

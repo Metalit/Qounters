@@ -5,12 +5,9 @@
 #include "UnityEngine/GameObject.hpp"
 
 #include "config-utils/shared/config-utils.hpp"
+#include "types.hpp"
 
 namespace Qounters {
-    template<class T>
-    using SourceFn = std::function<T (UnparsedJSON)>;
-    using SourceUIFn = std::function<void (UnityEngine::GameObject*, UnparsedJSON)>;
-
     extern std::vector<std::pair<std::string, std::pair<SourceFn<std::string>, SourceUIFn>>> textSources;
     extern std::vector<std::pair<std::string, std::pair<SourceFn<float>, SourceUIFn>>> shapeSources;
     extern std::vector<std::pair<std::string, std::pair<SourceFn<UnityEngine::Color>, SourceUIFn>>> colorSources;
@@ -24,13 +21,44 @@ namespace Qounters {
         return {};
     }
 
-    enum class Sources {
-        Text,
-        Shape,
-        Color,
-    };
+    template<class T>
+    void RegisterSource(std::vector<std::pair<std::string, std::pair<T, SourceUIFn>>> sourceVec, std::string source, T sourceFn, SourceUIFn sourceUIFn) {
+        sourceVec.emplace_back(source, std::make_pair(sourceFn, sourceUIFn));
+    }
+
+    inline void RegisterTextSource(std::string sourceName, SourceFn<std::string> sourceFn, SourceUIFn sourceUIFn) {
+        RegisterSource(textSources, sourceName, sourceFn, sourceUIFn);
+    }
+    inline void RegisterShapeSource(std::string sourceName, SourceFn<float> sourceFn, SourceUIFn sourceUIFn) {
+        RegisterSource(shapeSources, sourceName, sourceFn, sourceUIFn);
+    }
+    inline void RegisterColorSource(std::string sourceName, SourceFn<UnityEngine::Color> sourceFn, SourceUIFn sourceUIFn) {
+        RegisterSource(colorSources, sourceName, sourceFn, sourceUIFn);
+    }
+
+    extern const std::vector<std::string> AverageCutPartStrings;
+    extern const std::vector<std::string> NotesDisplayStrings;
+    extern const std::vector<std::string> PPSourceStrings;
+    extern const std::vector<std::string> SaberSpeedModeStrings;
+    extern const std::vector<std::string> SpinometerModeStrings;
 
     namespace TextSource {
+        inline const std::string StaticName = "Static";
+        inline const std::string ScoreName = "Score";
+        inline const std::string RankName = "Rank";
+        inline const std::string PersonalBestName = "Personal Best";
+        inline const std::string ComboName = "Combo";
+        inline const std::string MultiplierName = "Multiplier";
+        inline const std::string HealthName = "Health";
+        inline const std::string TimeName = "Time";
+        inline const std::string AverageCutName = "Average Cut";
+        inline const std::string FailsName = "Fails";
+        inline const std::string MistakesName = "Mistakes";
+        inline const std::string NotesName = "Notes";
+        inline const std::string PPName = "PP";
+        inline const std::string SaberSpeedName = "Saber Speed";
+        inline const std::string SpinometerName = "Spinometer";
+
         DECLARE_JSON_CLASS(Static,
             VALUE_DEFAULT(std::string, Input, "")
         )
@@ -141,6 +169,14 @@ namespace Qounters {
     }
 
     namespace ShapeSource {
+        inline const std::string StaticName = "Static";
+        inline const std::string ScoreName = "Score";
+        inline const std::string MultiplierName = "Multiplier";
+        inline const std::string HealthName = "Health";
+        inline const std::string TimeName = "Time";
+        inline const std::string AverageCutName = "Average Cut";
+        inline const std::string NotesName = "Notes";
+
         DECLARE_JSON_CLASS(Static,
             VALUE_DEFAULT(float, Input, 1)
         )
@@ -178,10 +214,27 @@ namespace Qounters {
     }
 
     namespace ColorSource {
+        inline const std::string StaticName = "Static";
+        inline const std::string PlayerName = "Player";
+        inline const std::string RankName = "Rank";
+        inline const std::string PersonalBestName = "Personal Best";
+        inline const std::string ComboName = "Combo";
+        inline const std::string MultiplierName = "Multiplier";
+        inline const std::string HealthName = "Health";
+
         DECLARE_JSON_CLASS(Static,
             VALUE_DEFAULT(ConfigUtils::Color, Input, ConfigUtils::Color(1, 1, 1, 1))
         )
         DECLARE_JSON_CLASS(Player,
+            enum class ColorSettings {
+                LeftSaber,
+                RightSaber,
+                Lights1,
+                Lights2,
+                Walls,
+                Boost1,
+                Boost2,
+            };
             VALUE_DEFAULT(int, Setting, (int) ColorSettings::LeftSaber)
         )
         DECLARE_JSON_CLASS(Rank,

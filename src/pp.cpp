@@ -3,7 +3,6 @@
 
 #include "main.hpp"
 #include "rapidjson-macros/shared/macros.hpp"
-#include <exception>
 
 DECLARE_JSON_CLASS(BLModifiers,
     VALUE(float, da)

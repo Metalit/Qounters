@@ -1,12 +1,10 @@
 #pragma once
 
-#include "UnityEngine/GameObject.hpp"
 #include "UnityEngine/Vector2.hpp"
-#include <cstdarg>
+
+#include "types.hpp"
 
 namespace Qounters {
-    using TemplateUIFn = std::function<void (UnityEngine::GameObject*)>;
-
     extern std::vector<std::pair<std::string, TemplateUIFn>> templates;
 
     namespace Templates {

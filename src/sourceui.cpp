@@ -8,38 +8,7 @@
 using namespace UnityEngine;
 using namespace QuestUI;
 
-const std::vector<std::string> SaberStrings = {
-    "Left",
-    "Right",
-    "Both",
-};
-const std::vector<std::string> AverageCutPartStrings = {
-    "Preswing",
-    "Postswing",
-    "Accuracy",
-    "All",
-};
-
 namespace Qounters::TextSource {
-    const std::vector<std::string> NotesDisplayStrings = {
-        "Cut",
-        "Remaining",
-        "Cut Ratio",
-        "Cut Percent",
-    };
-    const std::vector<std::string> PPSourceStrings = {
-        "ScoreSaber",
-        "BeatLeader",
-    };
-    const std::vector<std::string> SaberSpeedModeStrings = {
-        "Average",
-        "Last 5 Seconds",
-    };
-    const std::vector<std::string> SpinometerModeStrings = {
-        "Average",
-        "Highest",
-    };
-
     void StaticUI(GameObject* parent, UnparsedJSON unparsed) {
         static Static opts;
         opts = unparsed.Parse<Static>();
