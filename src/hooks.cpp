@@ -75,11 +75,16 @@ MAKE_HOOK_MATCH(BeatmapObjectManager_HandleNoteControllerNoteWasMissed, &Beatmap
     if (noteController->noteData->gameplayType == NoteData::GameplayType::Bomb)
         return;
 
-    if (noteController->noteData->colorType == ColorType::ColorA)
+    combo = 0;
+    if (noteController->noteData->colorType == ColorType::ColorA) {
+        leftCombo = 0;
         notesLeftMissed++;
-    else
+    } else {
+        rightCombo = 0;
         notesRightMissed++;
+    }
     BroadcastEvent((int) Events::NoteMissed);
+    BroadcastEvent((int) Events::ComboChanged);
 }
 
 #include "GlobalNamespace/CutScoreBuffer.hpp"
