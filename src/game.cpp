@@ -124,8 +124,6 @@ namespace Qounters::Game {
         return ret / (float) notes;
     }
     float GetAverageSpeed(int saber) {
-        float time = GetSongTime();
-        if (time == 0) return 0;
         float ret = 0;
         int div = 0;
         if (IsLeft(saber)) {
@@ -138,7 +136,8 @@ namespace Qounters::Game {
             for (auto& val : rightSpeeds)
                 ret += val;
         }
-        return ret / div * SPEED_SAMPLES_PER_SEC * time;
+        if (div == 0) return 0;
+        return ret / div;
     }
     float GetBestSpeed5Secs(int saber) {
         float ret = 0;
