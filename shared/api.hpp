@@ -2,7 +2,6 @@
 
 #include "options.hpp"
 #include "sources.hpp"
-#include "utils.hpp"
 
 namespace Qounters::Shared {
     void RegisterTemplate(std::string title, TemplateUIFn function);
