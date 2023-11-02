@@ -1,59 +1,60 @@
 #include "events.hpp"
 #include "config.hpp"
 #include "qounters.hpp"
+#include "sources.hpp"
 
 namespace Qounters {
     std::map<int, std::vector<std::pair<Sources, std::string>>> eventSourceRegistry = {
         {(int) Events::ScoreChanged, {
-            {Sources::Text, "Score"},
-            {Sources::Text, "Rank"},
-            {Sources::Text, "PP"},
-            {Sources::Shape, "Score"},
-            {Sources::Color, "Rank"},
-            {Sources::Color, "Personal Best"},
+            {Sources::Text, TextSource::ScoreName},
+            {Sources::Text, TextSource::RankName},
+            {Sources::Text, TextSource::PPName},
+            {Sources::Shape, ShapeSource::ScoreName},
+            {Sources::Color, ColorSource::RankName},
+            {Sources::Color, ColorSource::PersonalBestName},
         }},
         {(int) Events::NoteCut, {
-            {Sources::Text, "Average Cut"},
-            {Sources::Text, "Mistakes"},
-            {Sources::Text, "Notes"},
-            {Sources::Shape, "Average Cut"},
-            {Sources::Shape, "Notes"},
+            {Sources::Text, TextSource::AverageCutName},
+            {Sources::Text, TextSource::MistakesName},
+            {Sources::Text, TextSource::NotesName},
+            {Sources::Shape, ShapeSource::AverageCutName},
+            {Sources::Shape, ShapeSource::NotesName},
         }},
         {(int) Events::NoteMissed, {
-            {Sources::Text, "Mistakes"},
-            {Sources::Text, "Notes"},
-            {Sources::Shape, "Notes"},
+            {Sources::Text, TextSource::MistakesName},
+            {Sources::Text, TextSource::NotesName},
+            {Sources::Shape, ShapeSource::NotesName},
         }},
         {(int) Events::BombCut, {
-            {Sources::Text, "Mistakes"},
-            {Sources::Text, "Notes"},
-            {Sources::Shape, "Notes"},
+            {Sources::Text, TextSource::MistakesName},
+            {Sources::Text, TextSource::NotesName},
+            {Sources::Shape, ShapeSource::NotesName},
         }},
         {(int) Events::WallHit, {
-            {Sources::Text, "Mistakes"},
+            {Sources::Text, TextSource::MistakesName},
         }},
         {(int) Events::ComboChanged, {
-            {Sources::Text, "Combo"},
-            {Sources::Text, "Multiplier"},
-            {Sources::Shape, "Multiplier"},
-            {Sources::Color, "Combo"},
-            {Sources::Color, "Multiplier"},
+            {Sources::Text, TextSource::ComboName},
+            {Sources::Text, TextSource::MultiplierName},
+            {Sources::Shape, ShapeSource::MultiplierName},
+            {Sources::Color, ColorSource::ComboName},
+            {Sources::Color, ColorSource::MultiplierName},
         }},
         {(int) Events::HealthChanged, {
-            {Sources::Text, "Health"},
-            {Sources::Text, "Fails"},
-            {Sources::Shape, "Health"},
-            {Sources::Color, "Health"},
+            {Sources::Text, TextSource::HealthName},
+            {Sources::Text, TextSource::FailsName},
+            {Sources::Shape, ShapeSource::HealthName},
+            {Sources::Color, ColorSource::HealthName},
         }},
         {(int) Events::Update, {
-            {Sources::Text, "Time"},
-            {Sources::Shape, "Time"},
+            {Sources::Text, TextSource::TimeName},
+            {Sources::Shape, ShapeSource::TimeName},
         }},
         {(int) Events::SlowUpdate, {
-            {Sources::Text, "Saber Speed"},
+            {Sources::Text, TextSource::SaberSpeedName},
         }},
         {(int) Events::PPInfo, {
-            {Sources::Text, "PP"},
+            {Sources::Text, TextSource::PPName},
         }},
     };
 
