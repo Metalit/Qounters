@@ -9,6 +9,7 @@ using namespace Qounters;
 #include <iomanip>
 
 std::string Qounters::Utils::FormatDecimals(double num, int decimals) {
+    if (decimals < 0) decimals = 0;
     std::stringstream stream;
     stream << std::fixed << std::setprecision(decimals) << num;
     return stream.str();

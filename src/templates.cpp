@@ -277,7 +277,7 @@ namespace Qounters::Templates {
             opts.Saber = (int) Sabers::Right;
             AddText(group, TextSource::SaberSpeedName, opts, 15, TextOptions::Aligns::Left).Position = UnityEngine::Vector2(2, 0);
         } else
-            AddText(group, TextSource::SaberSpeedName, opts, 12);
+            AddText(group, TextSource::SaberSpeedName, opts, 15);
         Editor::AddGroup(group);
     }
     void AddSpinometer(int anchor, UnityEngine::Vector2 pos, bool split, bool highest) {
@@ -293,7 +293,7 @@ namespace Qounters::Templates {
             opts.Saber = (int) Sabers::Right;
             AddText(group, TextSource::SpinometerName, opts, 15, TextOptions::Aligns::Left).Position = UnityEngine::Vector2(2, 0);
         } else
-            AddText(group, TextSource::SpinometerName, opts, 12);
+            AddText(group, TextSource::SpinometerName, opts, 15);
         Editor::AddGroup(group);
     }
 

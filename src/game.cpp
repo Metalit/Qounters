@@ -164,11 +164,13 @@ namespace Qounters::Game {
         }
         return ret;
     }
-    float GetPositiveModifiers() {
-        return positiveMods;
-    }
-    float GetNegativeModifiers() {
-        return negativeMods;
+    float GetModifierMultiplier(bool positive, bool negative) {
+        float ret = 1;
+        if (positive)
+            ret += positiveMods;
+        if (negative)
+            ret += negativeMods;
+        return ret;
     }
     int GetBestScore() {
         return personalBest;

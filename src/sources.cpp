@@ -96,23 +96,18 @@ namespace Qounters::TextSource {
         int max = Game::GetMaxScore(opts.Saber);
         if (max == 0)
             return "SS";
+        if (score == max)
+            return "SSS";
 
-        float pos = Game::GetPositiveModifiers();
-        float neg = Game::GetNegativeModifiers();
-        score *= (1 + pos - neg);
-
-        if (!opts.PositiveModifiers)
-            pos = 0;
-        if (!opts.NegativeModifiers)
-            neg = 0;
-        max *= (1 + pos - neg);
+        score *= Game::GetModifierMultiplier(true, true);
+        // if "Positive Modifiers" is enabled, we want an 82% with a +10% modifier to be an SS
+        // otherwise, we want that to be an S rank (same with negative)
+        max *= Game::GetModifierMultiplier(!opts.PositiveModifiers, !opts.NegativeModifiers);
 
         if (max == 0)
             return "E";
 
         double ratio = score / (double) max;
-        if (ratio == 1)
-            return "SSS";
         if (ratio >= 0.9)
             return "SS";
         if (ratio >= 0.8)
@@ -139,7 +134,7 @@ namespace Qounters::TextSource {
         }
         if (opts.Percentage) {
             int max = Game::GetSongMaxScore();
-            double ratio = max > 0 ? best / (double) max : 1;
+            double ratio = max > 0 ? best / ((double) Game::GetModifierMultiplier(true, true) * max) : 1;
             ratio *= 100;
             std::string ret = Utils::FormatDecimals(ratio, opts.Decimals) + "%";
             return opts.Label ? "PB: " + ret : ret;
@@ -342,15 +337,10 @@ namespace Qounters::ColorSource {
         if (max == 0)
             return opts.SS;
 
-        float pos = Game::GetPositiveModifiers();
-        float neg = Game::GetNegativeModifiers();
-        score *= (1 + pos - neg);
-
-        if (!opts.PositiveModifiers)
-            pos = 0;
-        if (!opts.NegativeModifiers)
-            neg = 0;
-        max *= (1 + pos - neg);
+        score *= Game::GetModifierMultiplier(true, true);
+        // if "Positive Modifiers" is enabled, we want an 82% with a +10% modifier to be an SS
+        // otherwise, we want that to be an S rank (same with negative)
+        max *= Game::GetModifierMultiplier(!opts.PositiveModifiers, !opts.NegativeModifiers);
 
         if (max == 0)
             return opts.E;
@@ -375,10 +365,12 @@ namespace Qounters::ColorSource {
 
         int best = Game::GetBestScore();
         int songMax = Game::GetSongMaxScore();
-        int current = Game::GetScore((int) Sabers::Both);
+        double current = Game::GetScore((int) Sabers::Both);
+        // PB modifiers would be applied to best score
+        current *= Game::GetModifierMultiplier(true, true);
         int max = Game::GetMaxScore((int) Sabers::Both);
         double bestRatio = songMax > 0 ? best / (double) songMax : 1;
-        double ratio = max > 0 ? current / (double) max : 1;
+        double ratio = max > 0 ? current / max : 1;
 
         return ratio >= bestRatio ? opts.Better : opts.Worse;
     }

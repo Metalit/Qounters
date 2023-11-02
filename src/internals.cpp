@@ -57,7 +57,6 @@ int GetFailCount(PlayerDataModel* data) {
 }
 
 #include "GlobalNamespace/GameplayModifierParamsSO.hpp"
-// #include "GlobalNamespace/GameplayModifiers.hpp"
 #include "beatsaber-hook/shared/utils/typedefs-list.hpp"
 
 float GetPositiveMods(ScoreController* controller) {
@@ -206,6 +205,8 @@ void Qounters::Initialize() {
     negativeMods = GetNegativeMods(scoreController);
     personalBest = GetHighScore(playerDataModel, gameplayCoreInstaller);
     fails = GetFailCount(playerDataModel);
+
+    getLogger().debug("modifiers %.2f -%.2f", positiveMods, negativeMods);
 
     if (beatmap != lastBeatmap)
         restarts = 0;

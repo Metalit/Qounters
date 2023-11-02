@@ -28,8 +28,7 @@ namespace Qounters::Game {
     float GetTimeDependence(int saber);
     float GetAverageSpeed(int saber);
     float GetBestSpeed5Secs(int saber);
-    float GetPositiveModifiers();
-    float GetNegativeModifiers();
+    float GetModifierMultiplier(bool positive, bool negative);
     int GetBestScore();
     int GetFails();
     int GetRestarts();
