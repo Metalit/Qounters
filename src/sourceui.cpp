@@ -181,6 +181,33 @@ namespace Qounters::TextSource {
             Editor::FinalizeAction();
         });
     }
+    void TimeDependenceUI(UnityEngine::GameObject* parent, UnparsedJSON unparsed) {
+        static TimeDependence opts;
+        opts = unparsed.Parse<TimeDependence>();
+
+        Utils::CreateDropdownEnum(parent, "Saber", opts.Saber, SaberStrings, [](int val) {
+            static int id = Editor::GetActionId();
+            opts.Saber = val;
+            Editor::SetSourceOptions(id, opts);
+            Editor::FinalizeAction();
+        });
+
+        auto inc = BeatSaberUI::CreateIncrementSetting(parent, "Decimals", 0, 1, opts.Decimals, 0, 10, [](float val) {
+            static int id = Editor::GetActionId();
+            opts.Decimals = val;
+            Editor::SetSourceOptions(id, opts);
+            Editor::FinalizeAction();
+        });
+        SetButtons(inc);
+
+        auto inc2 = BeatSaberUI::CreateIncrementSetting(parent, "Decimal Offset", 0, 1, opts.DecimalOffset, 0, 10, [](float val) {
+            static int id = Editor::GetActionId();
+            opts.DecimalOffset = val;
+            Editor::SetSourceOptions(id, opts);
+            Editor::FinalizeAction();
+        });
+        SetButtons(inc2);
+    }
     void FailsUI(GameObject* parent, UnparsedJSON unparsed) {
         static Fails opts;
         opts = unparsed.Parse<Fails>();

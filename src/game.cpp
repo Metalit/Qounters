@@ -123,18 +123,26 @@ namespace Qounters::Game {
         if (IsRight(saber)) ret += rightAccuracy;
         return ret / (float) notes;
     }
+    float GetTimeDependence(int saber) {
+        int notes = GetNotesCut(saber);
+        if (notes == 0) return 0;
+        float ret = 0;
+        if (IsLeft(saber)) ret += leftTimeDependence;
+        if (IsRight(saber)) ret += rightTimeDependence;
+        return ret / notes;
+    }
     float GetAverageSpeed(int saber) {
         float ret = 0;
         int div = 0;
         if (IsLeft(saber)) {
-            div++;
             for (auto& val : leftSpeeds)
                 ret += val;
+            div += leftSpeeds.size();
         }
         if (IsRight(saber)) {
-            div++;
             for (auto& val : rightSpeeds)
                 ret += val;
+            div += rightSpeeds.size();
         }
         if (div == 0) return 0;
         return ret / div;

@@ -15,6 +15,7 @@ namespace Qounters {
         }},
         {(int) Events::NoteCut, {
             {Sources::Text, TextSource::AverageCutName},
+            {Sources::Text, TextSource::TimeDependenceName},
             {Sources::Text, TextSource::MistakesName},
             {Sources::Text, TextSource::NotesName},
             {Sources::Shape, ShapeSource::AverageCutName},

@@ -14,6 +14,7 @@ std::vector<std::pair<std::string, TemplateUIFn>> Qounters::templates = {
     {"Score", Templates::ScoreUI},
     {"Personal Best", Templates::PersonalBestUI},
     {"Average Cut", Templates::AverageCutUI},
+    {"Time Dependence", Templates::TimeDependenceUI},
     {"Notes", Templates::NotesUI},
     {"Mistakes", Templates::MistakesUI},
     {"Fails", Templates::FailsUI},
@@ -131,6 +132,23 @@ namespace Qounters::Templates {
             addLine(opts, -yPos);
         } else
             addLine(opts, -12.5);
+        Editor::AddGroup(group);
+    }
+    void AddTimeDependence(int anchor, UnityEngine::Vector2 pos, bool splitSaber, int decimals, int decimalOffset) {
+        auto group = MakeGroup(anchor, pos);
+        TextSource::Static label;
+        label.Input = "Time Dependence";
+        AddText(group, TextSource::StaticName, label, 11).Position = UnityEngine::Vector2(0, 12.5);
+        TextSource::TimeDependence opts;
+        opts.Decimals = decimals;
+        opts.DecimalOffset = decimalOffset;
+        if (splitSaber) {
+            opts.Saber = (int) Sabers::Left;
+            AddText(group, TextSource::TimeDependenceName, opts, 15, TextOptions::Aligns::Right).Position = UnityEngine::Vector2(-2, 0);
+            opts.Saber = (int) Sabers::Right;
+            AddText(group, TextSource::TimeDependenceName, opts, 15, TextOptions::Aligns::Left).Position = UnityEngine::Vector2(2, 0);
+        } else
+            AddText(group, TextSource::TimeDependenceName, opts);
         Editor::AddGroup(group);
     }
     void AddNotes(int anchor, UnityEngine::Vector2 pos, int display, int decimals) {
@@ -324,6 +342,18 @@ namespace Qounters::Templates {
         BeatSaberUI::CreateToggle(parent, "Split Cut Parts", splitCut, [](bool val) { splitCut = val; });
         BeatSaberUI::CreateIncrementSetting(parent, "Decimals", 0, 1, decimals, [](float val) { decimals = val; });
         CreateButtons(parent, []() { AddAverageCut(anchor, {}, splitSaber, splitCut, decimals); });
+    }
+    void TimeDependenceUI(UnityEngine::GameObject* parent) {
+        static int anchor = 0;
+        static bool splitSaber = true;
+        static int decimals = 2;
+        static int decimalOffset = 0;
+
+        Utils::CreateDropdownEnum(parent, "Starting Anchor", anchor, AnchorStrings, [](int val) { anchor = val; });
+        BeatSaberUI::CreateToggle(parent, "Split Sabers", splitSaber, [](bool val) { splitSaber = val; });
+        BeatSaberUI::CreateIncrementSetting(parent, "Decimals", 0, 1, decimals, [](float val) { decimals = val; });
+        BeatSaberUI::CreateIncrementSetting(parent, "Decimal Offset", 0, 1, decimalOffset, [](float val) { decimalOffset = val; });
+        CreateButtons(parent, []() { AddTimeDependence(anchor, {}, splitSaber, decimals, decimalOffset); });
     }
     void NotesUI(UnityEngine::GameObject* parent) {
         static int anchor = 0;

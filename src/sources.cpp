@@ -19,6 +19,7 @@ std::vector<std::pair<std::string, std::pair<SourceFn<std::string>, SourceUIFn>>
     {TextSource::HealthName, {TextSource::GetHealth, TextSource::HealthUI}},
     {TextSource::TimeName, {TextSource::GetTime, TextSource::TimeUI}},
     {TextSource::AverageCutName, {TextSource::GetAverageCut, TextSource::AverageCutUI}},
+    {TextSource::TimeDependenceName, {TextSource::GetTimeDependence, TextSource::TimeDependenceUI}},
     {TextSource::FailsName, {TextSource::GetFails, TextSource::FailsUI}},
     {TextSource::MistakesName, {TextSource::GetMistakes, TextSource::MistakesUI}},
     {TextSource::NotesName, {TextSource::GetNotes, TextSource::NotesUI}},
@@ -189,6 +190,13 @@ namespace Qounters::TextSource {
             total += Game::GetAccuracy(opts.Saber);
 
         return Utils::FormatDecimals(total, opts.Decimals);
+    }
+    std::string GetTimeDependence(UnparsedJSON unparsed) {
+        auto opts = unparsed.Parse<TimeDependence>();
+
+        double ret = Game::GetTimeDependence(opts.Saber);
+        ret *= std::pow(10, opts.DecimalOffset);
+        return Utils::FormatDecimals(ret, opts.Decimals);
     }
     std::string GetFails(UnparsedJSON unparsed) {
         auto opts = unparsed.Parse<Fails>();

@@ -52,6 +52,7 @@ namespace Qounters {
         inline const std::string HealthName = "Health";
         inline const std::string TimeName = "Time";
         inline const std::string AverageCutName = "Average Cut";
+        inline const std::string TimeDependenceName = "Time Dependence";
         inline const std::string FailsName = "Fails";
         inline const std::string MistakesName = "Mistakes";
         inline const std::string NotesName = "Notes";
@@ -101,6 +102,11 @@ namespace Qounters {
             VALUE_DEFAULT(int, Saber, (int) Sabers::Both)
             VALUE_DEFAULT(int, Decimals, 1)
             VALUE_DEFAULT(int, Part, (int) Parts::All)
+        )
+        DECLARE_JSON_CLASS(TimeDependence,
+            VALUE_DEFAULT(int, Saber, (int) Sabers::Both)
+            VALUE_DEFAULT(int, Decimals, 1)
+            VALUE_DEFAULT(int, DecimalOffset, 0)
         )
         DECLARE_JSON_CLASS(Fails,
             VALUE_DEFAULT(bool, Restarts, false)
@@ -160,6 +166,7 @@ namespace Qounters {
         std::string GetHealth(UnparsedJSON options);
         std::string GetTime(UnparsedJSON options);
         std::string GetAverageCut(UnparsedJSON options);
+        std::string GetTimeDependence(UnparsedJSON options);
         std::string GetFails(UnparsedJSON options);
         std::string GetMistakes(UnparsedJSON options);
         std::string GetNotes(UnparsedJSON options);

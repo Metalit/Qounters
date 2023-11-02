@@ -17,6 +17,7 @@ namespace Qounters {
         void HealthUI(UnityEngine::GameObject* parent, UnparsedJSON options);
         void TimeUI(UnityEngine::GameObject* parent, UnparsedJSON options);
         void AverageCutUI(UnityEngine::GameObject* parent, UnparsedJSON options);
+        void TimeDependenceUI(UnityEngine::GameObject* parent, UnparsedJSON options);
         void FailsUI(UnityEngine::GameObject* parent, UnparsedJSON options);
         void MistakesUI(UnityEngine::GameObject* parent, UnparsedJSON options);
         void NotesUI(UnityEngine::GameObject* parent, UnparsedJSON options);

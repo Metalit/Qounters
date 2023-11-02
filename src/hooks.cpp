@@ -96,7 +96,7 @@ MAKE_HOOK_MATCH(CutScoreBuffer_HandleSaberSwingRatingCounterDidFinish, &CutScore
     CutScoreBuffer_HandleSaberSwingRatingCounterDidFinish(self, swingRatingCounter);
 
     if (self->noteCutInfo.get_allIsOK() && ShouldProcessNote(self->noteCutInfo.noteData)) {
-        float after = self->afterCutScore;
+        int after = self->afterCutScore;
         if (self->noteScoreDefinition->maxAfterCutScore == 0) // TODO: selectively exclude from averages?
             after = 30;
         if (self->noteCutInfo.saberType == SaberType::SaberA) {
@@ -104,11 +104,13 @@ MAKE_HOOK_MATCH(CutScoreBuffer_HandleSaberSwingRatingCounterDidFinish, &CutScore
             leftPreSwing += self->beforeCutScore;
             leftPostSwing += after;
             leftAccuracy += self->centerDistanceCutScore;
+            leftTimeDependence += std::abs(self->noteCutInfo.cutNormal.z);
         } else {
             notesRightCut++;
             rightPreSwing += self->beforeCutScore;
             rightPostSwing += after;
             rightAccuracy += self->centerDistanceCutScore;
+            rightTimeDependence += std::abs(self->noteCutInfo.cutNormal.z);
         }
         BroadcastEvent((int) Events::NoteCut);
     }

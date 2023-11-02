@@ -25,6 +25,7 @@ namespace Qounters::Game {
     float GetPreSwing(int saber);
     float GetPostSwing(int saber);
     float GetAccuracy(int saber);
+    float GetTimeDependence(int saber);
     float GetAverageSpeed(int saber);
     float GetBestSpeed5Secs(int saber);
     float GetPositiveModifiers();
