@@ -9,3 +9,7 @@ Logger& getLogger();
 #define MAX_SECS_WITHOUT_DRAG 0.2
 
 extern bool hasCJD;
+
+#include "GlobalNamespace/IConnectedPlayer.hpp"
+
+extern GlobalNamespace::IConnectedPlayer* localFakeConnectedPlayer;

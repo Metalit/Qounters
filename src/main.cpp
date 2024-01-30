@@ -7,6 +7,7 @@
 #include <filesystem>
 
 bool hasCJD = false;
+GlobalNamespace::IConnectedPlayer* localFakeConnectedPlayer = nullptr;
 
 Logger& getLogger() {
     static auto logger = new Logger(ModInfo{MOD_ID, VERSION}, LoggerOptions{false, true});

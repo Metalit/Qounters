@@ -180,29 +180,15 @@ MAKE_HOOK_MATCH(CoreGameHUDController_Start, &CoreGameHUDController::Start, void
     getLogger().info("Qounters start");
     self->initData->advancedHUD = true;
     saberManager = UnityEngine::Object::FindObjectOfType<SaberManager*>();
-    Initialize();
-    SetupObjects();
 
-    if (!InSettingsEnvironment())
+    if (!InSettingsEnvironment()) {
+        Initialize();
+        SetupObjects();
         CreateQounters();
+    }
 
     CoreGameHUDController_Start(self);
 }
-
-// #include "System/Action_2.hpp"
-
-// using ScoreChangeDelegate = System::Action_2<int, int>*;
-
-// MAKE_HOOK_MATCH(ScoreController_Start, &ScoreController::Start, void, ScoreController* self) {
-
-//     ScoreController_Start(self);
-
-//     self->add_scoreDidChangeEvent(il2cpp_utils::MakeDelegate<ScoreChangeDelegate>(
-//         classof(ScoreChangeDelegate), self, +[](ScoreController* self, int rawScore, int modifiedScore) {
-//             BroadcastEvent((int) Events::ScoreChanged);
-//         }
-//     ));
-// }
 
 #include "GlobalNamespace/StandardLevelDetailView.hpp"
 
@@ -225,25 +211,38 @@ MAKE_HOOK_MATCH(StandardLevelScenesTransitionSetupDataSO_Finish, &StandardLevelS
     StandardLevelScenesTransitionSetupDataSO_Finish(self, levelCompletionResults);
 }
 
-#include "GlobalNamespace/UIKeyboardManager.hpp"
+#include "GlobalNamespace/MultiplayerSessionManager.hpp"
 
-MAKE_HOOK_MATCH(log, &UIKeyboardManager::ProcessMousePress, void, UIKeyboardManager* self, UnityEngine::GameObject* currentOverGo) {
-    log(self, currentOverGo);
-    std::string name = currentOverGo->get_name();
-    getLogger().debug("process mouse press, go: %s", name.c_str());
+MAKE_HOOK_MATCH(MultiplayerSessionManager_get_localPlayer, &MultiplayerSessionManager::get_localPlayer, IConnectedPlayer*, MultiplayerSessionManager* self) {
+
+    auto ret = MultiplayerSessionManager_get_localPlayer(self);
+
+    if (!ret && localFakeConnectedPlayer)
+        return localFakeConnectedPlayer;
+    return ret;
+}
+
+#include "GlobalNamespace/MultiplayerLocalActivePlayerInGameMenuViewController.hpp"
+
+MAKE_HOOK_MATCH(MultiplayerLocalActivePlayerInGameMenuViewController_HideMenu, &MultiplayerLocalActivePlayerInGameMenuViewController::HideMenu,
+        void, MultiplayerLocalActivePlayerInGameMenuViewController* self) {
+
+    if (!InSettingsEnvironment())
+        MultiplayerLocalActivePlayerInGameMenuViewController_HideMenu(self);
 }
 
 void Qounters::InstallHooks() {
-    INSTALL_HOOK(getLogger(), ScoreController_DespawnScoringElement);
-    INSTALL_HOOK(getLogger(), BeatmapObjectManager_HandleNoteControllerNoteWasCut);
-    INSTALL_HOOK(getLogger(), BeatmapObjectManager_HandleNoteControllerNoteWasMissed);
-    INSTALL_HOOK(getLogger(), CutScoreBuffer_HandleSaberSwingRatingCounterDidFinish);
-    INSTALL_HOOK(getLogger(), BeatmapObjectExecutionRatingsRecorder_HandlePlayerHeadDidEnterObstacle);
-    INSTALL_HOOK(getLogger(), GameEnergyCounter_ProcessEnergyChange);
-    INSTALL_HOOK(getLogger(), AudioTimeSyncController_Update);
-    INSTALL_HOOK(getLogger(), CoreGameHUDController_Start);
-    // INSTALL_HOOK(getLogger(), ScoreController_Start);
-    INSTALL_HOOK(getLogger(), StandardLevelDetailView_SetContentForBeatmapDataAsync);
-    INSTALL_HOOK(getLogger(), StandardLevelScenesTransitionSetupDataSO_Finish);
-    // INSTALL_HOOK(getLogger(), log);
+    auto logger = getLogger().WithContext("Hooks");
+    INSTALL_HOOK(logger, ScoreController_DespawnScoringElement);
+    INSTALL_HOOK(logger, BeatmapObjectManager_HandleNoteControllerNoteWasCut);
+    INSTALL_HOOK(logger, BeatmapObjectManager_HandleNoteControllerNoteWasMissed);
+    INSTALL_HOOK(logger, CutScoreBuffer_HandleSaberSwingRatingCounterDidFinish);
+    INSTALL_HOOK(logger, BeatmapObjectExecutionRatingsRecorder_HandlePlayerHeadDidEnterObstacle);
+    INSTALL_HOOK(logger, GameEnergyCounter_ProcessEnergyChange);
+    INSTALL_HOOK(logger, AudioTimeSyncController_Update);
+    INSTALL_HOOK(logger, CoreGameHUDController_Start);
+    INSTALL_HOOK(logger, StandardLevelDetailView_SetContentForBeatmapDataAsync);
+    INSTALL_HOOK(logger, StandardLevelScenesTransitionSetupDataSO_Finish);
+    INSTALL_HOOK(logger, MultiplayerSessionManager_get_localPlayer);
+    INSTALL_HOOK(logger, MultiplayerLocalActivePlayerInGameMenuViewController_HideMenu);
 }

@@ -8,6 +8,7 @@
 #include "utils.hpp"
 
 using namespace Qounters;
+using namespace UnityEngine;
 
 #include "TMPro/TextMeshProUGUI.hpp"
 #include "HMUI/ImageView.hpp"
@@ -15,7 +16,7 @@ using namespace Qounters;
 
 std::map<std::string, std::vector<std::pair<TMPro::TextMeshProUGUI*, UnparsedJSON>>> texts;
 std::map<std::string, std::vector<std::pair<HMUI::ImageView*, UnparsedJSON>>> shapes;
-std::map<std::string, std::vector<std::pair<UnityEngine::UI::Graphic*, UnparsedJSON>>> colors;
+std::map<std::string, std::vector<std::pair<UI::Graphic*, UnparsedJSON>>> colors;
 
 template<class T>
 void UpdatePair(std::map<std::string, std::vector<std::pair<T, UnparsedJSON>>>& map, T update, std::string source, UnparsedJSON& value, bool forceAdd) {
@@ -55,7 +56,7 @@ void RemoveFromMap(std::map<std::string, std::vector<std::pair<T, UnparsedJSON>>
     }
 }
 
-UnityEngine::Sprite* GetShapeSprite(int shape) { // TODO
+Sprite* GetShapeSprite(int shape) { // TODO
     return QuestUI::BeatSaberUI::Base64ToSprite("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAACXBIWXMAAAABAAAAAQBPJcTWAAAADElEQVR4nGP4//8/AAX+Av4N70a4AAAAAElFTkSuQmCC");
     switch ((ShapeOptions::Shapes) shape) {
         case ShapeOptions::Shapes::Square:
@@ -73,7 +74,7 @@ UnityEngine::Sprite* GetShapeSprite(int shape) { // TODO
     }
 }
 
-void UpdateTextOptions(TMPro::TextMeshProUGUI* text, Component::OptionsTypes newOptions, bool creation) {
+void UpdateTextOptions(TMPro::TextMeshProUGUI* text, Qounters::Component::OptionsTypes newOptions, bool creation) {
     auto options = newOptions.GetValue<TextOptions>().value_or(TextOptions{});
 
     text->set_fontStyle(options.Italic ? TMPro::FontStyles::Italic : TMPro::FontStyles::Normal);
@@ -107,7 +108,7 @@ void UpdateTextOptions(TMPro::TextMeshProUGUI* text, Component::OptionsTypes new
 #include "UnityEngine/UI/Image_OriginVertical.hpp"
 #include "UnityEngine/UI/Image_Origin360.hpp"
 
-void UpdateShapeOptions(HMUI::ImageView* shape, Component::OptionsTypes newOptions, bool creation) {
+void UpdateShapeOptions(HMUI::ImageView* shape, Qounters::Component::OptionsTypes newOptions, bool creation) {
     auto options = newOptions.GetValue<ShapeOptions>().value_or(ShapeOptions{});
 
     shape->set_sprite(GetShapeSprite(options.Shape));
@@ -116,27 +117,27 @@ void UpdateShapeOptions(HMUI::ImageView* shape, Component::OptionsTypes newOptio
     switch ((ShapeOptions::Fills) fill) {
         case ShapeOptions::Fills::None:
             // could remove it from the source shapes map as well, but it's probably insignificant
-            shape->set_type(UnityEngine::UI::Image::Type::Simple);
+            shape->set_type(UI::Image::Type::Simple);
             return;
         case ShapeOptions::Fills::Horizontal:
-            shape->set_fillMethod(UnityEngine::UI::Image::FillMethod::Horizontal);
+            shape->set_fillMethod(UI::Image::FillMethod::Horizontal);
             shape->set_fillOrigin(options.Inverse
-                ? UnityEngine::UI::Image::OriginHorizontal::Right
-                : UnityEngine::UI::Image::OriginHorizontal::Left);
+                ? UI::Image::OriginHorizontal::Right
+                : UI::Image::OriginHorizontal::Left);
             break;
         case ShapeOptions::Fills::Vertical:
-            shape->set_fillMethod(UnityEngine::UI::Image::FillMethod::Vertical);
+            shape->set_fillMethod(UI::Image::FillMethod::Vertical);
             shape->set_fillOrigin(options.Inverse
-                ? UnityEngine::UI::Image::OriginVertical::Bottom
-                : UnityEngine::UI::Image::OriginVertical::Top);
+                ? UI::Image::OriginVertical::Bottom
+                : UI::Image::OriginVertical::Top);
             break;
         case ShapeOptions::Fills::Circle:
-            shape->set_fillMethod(UnityEngine::UI::Image::FillMethod::Radial360);
-            shape->set_fillOrigin(UnityEngine::UI::Image::Origin360::Top);
+            shape->set_fillMethod(UI::Image::FillMethod::Radial360);
+            shape->set_fillOrigin(UI::Image::Origin360::Top);
             shape->set_fillClockwise(!options.Inverse);
             break;
     }
-    shape->set_type(UnityEngine::UI::Image::Type::Filled);
+    shape->set_type(UI::Image::Type::Filled);
 
     std::string source = options.FillSource;
     auto sourceFn = GetSource(shapeSources, source).first;
@@ -152,22 +153,22 @@ void UpdateShapeOptions(HMUI::ImageView* shape, Component::OptionsTypes newOptio
 
 using namespace QuestUI;
 
-void UpdateImageOptions(HMUI::ImageView* image, Component::OptionsTypes newOptions, bool creation) {
+void UpdateImageOptions(HMUI::ImageView* image, Qounters::Component::OptionsTypes newOptions, bool creation) {
     auto options = newOptions.GetValue<ImageOptions>().value_or(ImageOptions{});
 
-    UnityEngine::Sprite* sprite = nullptr;
+    Sprite* sprite = nullptr;
     if (fileexists(IMAGE_DIRECTORY + options.Path))
         sprite = ImageSpriteCache::GetSprite(options.Path);
     image->set_sprite(sprite);
 }
 
-void UpdateBaseGameOptions(BaseGameGraphic* base, Component::OptionsTypes newOptions, bool creation) {
+void UpdateBaseGameOptions(BaseGameGraphic* base, Qounters::Component::OptionsTypes newOptions, bool creation) {
     auto options = newOptions.GetValue<BaseGameOptions>().value_or(BaseGameOptions{});
 
     base->SetComponent(options.Component);
 }
 
-void Qounters::UpdateComponentOptions(int componentType, UnityEngine::Component* component, Component::OptionsTypes newOptions) {
+void Qounters::UpdateComponentOptions(int componentType, UnityEngine::Component* component, Qounters::Component::OptionsTypes newOptions) {
     switch ((Component::Types) componentType) {
         case Component::Types::Text:
             UpdateTextOptions((TMPro::TextMeshProUGUI*) component, newOptions, false);
@@ -184,7 +185,7 @@ void Qounters::UpdateComponentOptions(int componentType, UnityEngine::Component*
     }
 }
 
-void UpdateColorOptions(UnityEngine::UI::Graphic* component, std::string colorSource, UnparsedJSON options, bool creation) {
+void UpdateColorOptions(UI::Graphic* component, std::string colorSource, UnparsedJSON options, bool creation) {
     auto sourceFn = GetSource(colorSources, colorSource).first;
     if (!sourceFn)
         return;
@@ -194,11 +195,11 @@ void UpdateColorOptions(UnityEngine::UI::Graphic* component, std::string colorSo
     UpdatePair(colors, component, colorSource, options, creation);
 }
 
-void Qounters::UpdateComponentColor(UnityEngine::UI::Graphic* component, std::string newSource, UnparsedJSON newOptions) {
+void Qounters::UpdateComponentColor(UI::Graphic* component, std::string newSource, UnparsedJSON newOptions) {
     UpdateColorOptions(component, newSource, newOptions, false);
 }
 
-void Qounters::UpdateComponentPosition(UnityEngine::RectTransform* component, Component const& qounterComponent) {
+void Qounters::UpdateComponentPosition(RectTransform* component, Component const& qounterComponent) {
     switch ((Component::Types) qounterComponent.Type) {
         case Component::Types::Text:
             component->set_sizeDelta({0, 0});
@@ -217,8 +218,10 @@ void Qounters::UpdateComponentPosition(UnityEngine::RectTransform* component, Co
     component->set_localScale({qounterComponent.Scale.x, qounterComponent.Scale.y, 0});
 }
 
-void Qounters::UpdateGroupPosition(UnityEngine::RectTransform* group, Group const& qounterGroup) {
+void Qounters::UpdateGroupPosition(RectTransform* group, Group const& qounterGroup) {
     auto anchor = GetAnchor(qounterGroup.Anchor);
+    if (!anchor)
+        return;
     group->SetParent(anchor, false);
 
     group->set_anchorMin({0.5, 0.5});
@@ -244,7 +247,7 @@ void Qounters::RemoveComponent(int componentType, UnityEngine::Component* compon
 }
 
 template<class T>
-inline void SetSourceOptions(Component::OptionsTypes& options, UnparsedJSON newOptions) {
+inline void SetSourceOptions(Qounters::Component::OptionsTypes& options, UnparsedJSON newOptions) {
     auto opts = options.GetValue<T>().value_or(T());
     opts.SourceOptions = newOptions;
     options.SetValue(opts);
@@ -282,21 +285,58 @@ void Qounters::SetDefaultOptions(Component& component) {
     }
 }
 
-UnityEngine::Transform* GetCanvas(std::string parentName) {
+const std::map<std::string, HUDType> supportedHUDs = {
+    {"BasicGameHUD", HUDType::Basic},
+    {"NarrowGameHUD", HUDType::Basic},
+    {"FlyingGameHUD/Container", HUDType::Rotational},
+    {"MultiplayerLocalActivePlayerController(Clone)/IsActiveObjects/HUD", HUDType::Multiplayer},
+    {"MultiplayerDuelLocalActivePlayerController(Clone)/IsActiveObjects/HUD", HUDType::Multiplayer},
+};
+
+const std::map<HUDType, std::map<Group::Anchors, std::tuple<std::string, Vector3, Vector2, Vector2>>> hudPanels = {
+    {HUDType::Basic, {
+        {Group::Anchors::Left, {"LeftPanel", {-3, 0.4, 7}, {50, 125}, {0, 0.75}}},
+        {Group::Anchors::Right, {"RightPanel", {3, 0.4, 7}, {50, 125}, {0, 0.75}}},
+        {Group::Anchors::Bottom, {"EnergyPanel", {0, -0.64, 7}, {-25, 25}, {0, -10}}},
+        {Group::Anchors::Top, {"QountersTopPanel", {0, 3, 7}, {125, 50}, {}}},
+    }},
+    {HUDType::Rotational, {
+        {Group::Anchors::Left, {"ComboPanel", {-80, 0, 0}, {10, 10}, {}}},
+        {Group::Anchors::Right, {"MultiplierCanvas", {80, 0, 0}, {10, 10}, {}}},
+        {Group::Anchors::Bottom, {"EnergyPanel", {0, -38, 0}, {10, 10}, {}}},
+        {Group::Anchors::Top, {"SongProgressCanvas", {0, 30, 0}, {10, 10}, {}}},
+    }},
+    {HUDType::Multiplayer, {
+        {Group::Anchors::Left, {"QountersLeftPanel", {-3, 0.4, 7}, {50, 125}, {0, 0.75}}},
+        {Group::Anchors::Right, {"QountersRightPanel", {3, 0.4, 7}, {50, 125}, {0, 0.75}}},
+        {Group::Anchors::Bottom, {"EnergyPanel", {0, -38, 0}, {10, 10}, {}}},
+        {Group::Anchors::Top, {"QountersTopPanel", {0, 3, 7}, {125, 50}, {}}},
+    }},
+};
+
+Transform* GetCanvas(std::string parentName, Transform* hud, Vector3 fallback) {
     static ConstString name("QountersCanvas");
 
-    if (!UnityEngine::GameObject::Find(parentName))
-        getLogger().error("Failed to find parent %s!", parentName.c_str());
-    // TODO: fallback, set world pos without parent
+    auto parent = Utils::FindRecursive(hud, parentName);
+    if (!parent && !parentName.starts_with("Qounters")) {
+        getLogger().info("Failed to find parent %s!", parentName.c_str());
+        parentName = "Qounters" + parentName;
+        parent = Utils::FindRecursive(hud, parentName);
+    }
+    if (!parent) {
+        getLogger().info("Creating replacement parent object");
+        parent = GameObject::New_ctor(parentName)->get_transform();
+        parent->set_position(fallback);
+    }
 
-    auto parent = UnityEngine::GameObject::Find(parentName)->get_transform();
     if (auto ret = parent->Find(name))
         return ret;
+    parent->SetParent(hud, false);
 
     auto canvas = BeatSaberUI::CreateCanvas();
     canvas->set_name(name);
 
-    canvas->GetComponent<UnityEngine::Canvas*>()->set_sortingOrder(0);
+    canvas->GetComponent<Canvas*>()->set_sortingOrder(0);
 
     auto ret = canvas->get_transform();
     ret->set_localScale({0.02, 0.02, 0.02});
@@ -307,66 +347,31 @@ UnityEngine::Transform* GetCanvas(std::string parentName) {
     return ret;
 }
 
-UnityEngine::Transform* GetTopAnchor() {
-    static ConstString name("QountersTopPanel");
-    static ConstString canvasName("QountersCanvas");
-
-    if (auto ret = UnityEngine::GameObject::Find(name))
-        return ret->get_transform()->Find(canvasName);
-
-    getLogger().debug("Creating top anchor");
-    auto hud = UnityEngine::GameObject::Find("LeftPanel")->get_transform()->get_parent();
-
-    auto parent = UnityEngine::GameObject::New_ctor(name)->get_transform();
-    parent->set_position({0, 3, 7});
-    parent->SetParent(hud, false);
-
-    auto canvas = BeatSaberUI::CreateCanvas();
-    canvas->set_name(canvasName);
-
-    canvas->GetComponent<UnityEngine::Canvas*>()->set_sortingOrder(0);
-
-    auto ret = canvas->get_transform();
-    ret->set_localScale({0.02, 0.02, 0.02});
-    ret->SetParent(parent, true);
-    ret->set_localPosition({0, 0, 0});
-    ret->set_localEulerAngles({0, 0, 0});
-
-    return ret;
-}
-
-UnityEngine::Transform* Qounters::GetAnchor(int anchor) {
-    UnityEngine::RectTransform* ret = nullptr;
-    switch ((Group::Anchors) anchor) {
-        case Group::Anchors::Left:
-            ret = (UnityEngine::RectTransform*) GetCanvas("LeftPanel");
-            ret->set_sizeDelta({50, 125});
-            ret->set_anchoredPosition({0, 0.75});
-            break;
-        case Group::Anchors::Right:
-            ret = (UnityEngine::RectTransform*) GetCanvas("RightPanel");
-            ret->set_sizeDelta({50, 125});
-            ret->set_anchoredPosition({0, 0.75});
-            break;
-        case Group::Anchors::Bottom:
-            ret = (UnityEngine::RectTransform*) GetCanvas("EnergyPanel");
-            ret->set_sizeDelta({-25, 25});
-            ret->set_anchoredPosition({0, -10});
-            break;
-        case Group::Anchors::Top:
-            ret = (UnityEngine::RectTransform*) GetTopAnchor();
-            ret->set_sizeDelta({125, 50});
-            break;
+std::pair<Transform*, HUDType> Qounters::GetHUD() {
+    for (auto& [name, type] : supportedHUDs) {
+        if (auto hud = GameObject::Find(name))
+            return {hud->get_transform(), type};
     }
-    if (!ret)
-        getLogger().error("Qounter group anchor %i was not in enum", anchor);
+    getLogger().error("Unable to find HUD object");
+    return {nullptr, HUDType::Unsupported};
+}
+
+Transform* Qounters::GetAnchor(int anchor) {
+    auto [hud, type] = GetHUD();
+    if (type == HUDType::Unsupported)
+        return nullptr;
+
+    auto [name, fallback, size, pos] = hudPanels.at(type).at((Group::Anchors) anchor);
+    auto ret = (RectTransform*) GetCanvas(name, hud, fallback);
+    ret->set_sizeDelta(size);
+    ret->set_anchoredPosition(pos);
     return ret;
 }
 
-void Qounters::CreateQounterComponent(Component const& qounterComponent, int componentIdx, UnityEngine::Transform* parent, bool editing) {
+void Qounters::CreateQounterComponent(Component const& qounterComponent, int componentIdx, Transform* parent, bool editing) {
     getLogger().debug("Creating qounter component of type %i", qounterComponent.Type);
 
-    UnityEngine::UI::Graphic* component;
+    UI::Graphic* component;
 
     switch ((Component::Types) qounterComponent.Type) {
         case Component::Types::Text: {
@@ -411,8 +416,8 @@ void Qounters::CreateQounterComponent(Component const& qounterComponent, int com
 void Qounters::CreateQounterGroup(Group const& qounterGroup, int groupIdx, bool editing) {
     getLogger().debug("Creating qounter group");
 
-    auto parent = UnityEngine::GameObject::New_ctor("QounterGroup");
-    auto parentTransform = parent->AddComponent<UnityEngine::RectTransform*>();
+    auto parent = GameObject::New_ctor("QounterGroup");
+    auto parentTransform = parent->AddComponent<RectTransform*>();
 
     UpdateGroupPosition(parentTransform, qounterGroup);
 
@@ -450,10 +455,14 @@ void Qounters::Reset() {
 void Qounters::SetupObjects() {
     Reset();
 
+    auto hud = GetHUD().first;
+    if (!hud)
+        return;
+
     BaseGameGraphic::MakeClones();
 
-    for (int i = 0; i <= (int) Group::Anchors::AnchorMax; i++)
-        Utils::DisableAllBut(GetAnchor(i)->get_parent(), {"QountersCanvas", "EnergyPanel"});
+    for (int i = 0; i <= (int) Group::Anchors::AnchorMax; i++) GetAnchor(i);
+    Utils::DisableAllBut(hud, {"QountersCanvas", "EnergyPanel"});
 }
 
 void UpdateTexts(std::string source) {

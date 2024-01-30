@@ -81,6 +81,10 @@ namespace Qounters::Editor {
     void SetupAnchors() {
         for (int i = 0; i < anchorCount; i++) {
             auto anchor = GetAnchor(i);
+            if (!anchor) {
+                anchors[i] = nullptr;
+                continue;
+            }
             anchors[i] = Utils::GetOrAddComponent<CanvasHighlight*>(anchor);
             anchors[i]->set_color({1, 1, 1, 0.2});
             anchors[i]->set_raycastTarget(false);
@@ -89,6 +93,10 @@ namespace Qounters::Editor {
 
     void CreateDragCanvases() {
         for (int i = 0; i < anchorCount; i++) {
+            if (!anchors[i]) {
+                dragCanvases[i] = nullptr;
+                continue;
+            }
             auto canvas = BeatSaberUI::CreateCanvas();
             canvas->set_name("QountersDragCanvas");
             canvas->get_transform()->SetParent(anchors[i]->get_transform(), false);

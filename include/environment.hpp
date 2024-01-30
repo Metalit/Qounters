@@ -7,8 +7,8 @@ namespace Qounters {
     void DismissSettingsEnvironment();
     void RefreshSettingsEnvironment();
     bool InSettingsEnvironment();
+    std::string CurrentSettingsEnvironment();
 
     void OnSceneStart();
     void OnSceneEnd();
-    void OnSceneRefresh();
 }

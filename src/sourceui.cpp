@@ -13,7 +13,7 @@ namespace Qounters::TextSource {
         static Static opts;
         opts = unparsed.Parse<Static>();
 
-        BeatSaberUI::CreateStringSetting(parent, "Input", opts.Input, [](StringW val) {
+        BeatSaberUI::CreateStringSetting(parent, "Text", opts.Input, [](StringW val) {
             static int id = Editor::GetActionId();
             opts.Input = (std::string) val;
             Editor::SetSourceOptions(id, opts);
@@ -357,7 +357,7 @@ namespace Qounters::ShapeSource {
         static Static opts;
         opts = unparsed.Parse<Static>();
 
-        auto slider = BeatSaberUI::CreateSliderSetting(parent, "Input", 0.01, opts.Input, 0, 1, 0, [](float val) {
+        auto slider = BeatSaberUI::CreateSliderSetting(parent, "Fill", 0.01, opts.Input, 0, 1, 0, [](float val) {
             static int id = Editor::GetActionId();
             opts.Input = val;
             Editor::SetSourceOptions(id, opts);
@@ -451,7 +451,7 @@ namespace Qounters::ColorSource {
         static Static opts;
         opts = unparsed.Parse<Static>();
 
-        Utils::CreateColorPicker(parent, "Input", opts.Input, [](Color val) {
+        Utils::CreateColorPicker(parent, "Color", opts.Input, [](Color val) {
             static int id = Editor::GetActionId();
             opts.Input = val;
             Editor::SetColorOptions(id, opts);

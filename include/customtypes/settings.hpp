@@ -9,6 +9,7 @@
 #include "System/Action.hpp"
 
 #define METHOD(...) il2cpp_utils::il2cpp_type_check::MetadataGetter<__VA_ARGS__>::get()
+#define INTERFACES(...) std::vector<Il2CppClass*>({ __VA_ARGS__ })
 
 DECLARE_CLASS_CODEGEN(Qounters, SettingsFlowCoordinator, HMUI::FlowCoordinator,
     DECLARE_OVERRIDE_METHOD(void, DidActivate, METHOD(&HMUI::FlowCoordinator::DidActivate), bool, bool, bool);
@@ -131,20 +132,13 @@ DECLARE_CLASS_CODEGEN(Qounters, OptionsViewController, HMUI::ViewController,
 
 #include "UnityEngine/EventSystems/IEndDragHandler.hpp"
 
-#define INTERFACES std::vector<Il2CppClass*>({ \
-    classof(UES::IEventSystemHandler*), \
-    classof(UES::IEndDragHandler*), \
-})
-
-DECLARE_CLASS_CODEGEN_INTERFACES(Qounters, EndDragHandler, UnityEngine::MonoBehaviour, INTERFACES,
+DECLARE_CLASS_CODEGEN_INTERFACES(Qounters, EndDragHandler, UnityEngine::MonoBehaviour, INTERFACES( classof(UES::IEventSystemHandler*), classof(UES::IEndDragHandler*) ),
     DECLARE_OVERRIDE_METHOD(void, OnEndDrag, METHOD(&UES::IEndDragHandler::OnEndDrag), UES::PointerEventData* eventData);
 
     DECLARE_DEFAULT_CTOR();
     public:
     std::function<void ()> callback = nullptr;
 )
-
-#undef INTERFACES
 
 #include "HMUI/TableCell.hpp"
 
@@ -172,11 +166,7 @@ DECLARE_CLASS_CODEGEN(Qounters, SpritesListCell, HMUI::TableCell,
 
 #include "HMUI/TableView_IDataSource.hpp"
 
-#define INTERFACES std::vector<Il2CppClass*>({ \
-    classof(HMUI::TableView::IDataSource*), \
-})
-
-DECLARE_CLASS_CODEGEN_INTERFACES(Qounters, SpritesListSource, UnityEngine::MonoBehaviour, INTERFACES,
+DECLARE_CLASS_CODEGEN_INTERFACES(Qounters, SpritesListSource, UnityEngine::MonoBehaviour, INTERFACES( classof(HMUI::TableView::IDataSource*) ),
     DECLARE_INSTANCE_FIELD(HMUI::TableView*, tableView);
 
     DECLARE_DEFAULT_CTOR();

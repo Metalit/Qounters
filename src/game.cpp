@@ -182,6 +182,8 @@ namespace Qounters::Game {
         return restarts;
     }
     UnityEngine::Color GetColor(int color) {
+        if (!colors)
+            return UnityEngine::Color::get_white();
         switch ((ColorSource::Player::ColorSettings) color) {
             case ColorSource::Player::ColorSettings::LeftSaber:
                 return colors->get_saberAColor();

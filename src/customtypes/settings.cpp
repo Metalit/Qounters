@@ -74,7 +74,8 @@ void Qounters::SettingsFlowCoordinator::DismissScene() {
 }
 
 void Qounters::SettingsFlowCoordinator::RefreshScene() {
-    RefreshSettingsEnvironment();
+    if (CurrentSettingsEnvironment() != getConfig().Environment.GetValue())
+        RefreshSettingsEnvironment();
 }
 
 Qounters::SettingsFlowCoordinator* Qounters::SettingsFlowCoordinator::GetInstance() {
@@ -102,6 +103,20 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
     auto manager = BeatSaberUI::GetMainFlowCoordinator()->playerDataModel->playerDataFileManager;
     for (auto& env : ListW<EnvironmentInfoSO*>(manager->allEnvironmentInfos->GetAllEnvironmentInfosWithType(manager->normalEnvironmentType)))
         dropdownStrings.emplace_back(env->environmentName);
+    for (auto& env : ListW<EnvironmentInfoSO*>(manager->allEnvironmentInfos->GetAllEnvironmentInfosWithType(manager->a360DegreesEnvironmentType)))
+        dropdownStrings.emplace_back(env->environmentName);
+    for (auto& env : manager->allEnvironmentInfos->environmentInfos) {
+        std::string str = env->environmentName;
+        bool add = true;
+        for (auto& added : dropdownStrings) {
+            if (added == str) {
+                add = false;
+                break;
+            }
+        }
+        if (add)
+            dropdownStrings.emplace_back(str);
+    }
 
     auto vertical = BeatSaberUI::CreateVerticalLayoutGroup(this);
     vertical->set_childControlHeight(false);
@@ -126,7 +141,7 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
     auto environment = BeatSaberUI::CreateHorizontalLayoutGroup(vertical);
     environment->set_spacing(3);
     auto dropdown = AddConfigValueDropdownString(environment, getConfig().Environment, dropdownStrings);
-    dropdown->GetComponentInParent<UI::LayoutElement*>()->set_preferredWidth(65);
+    dropdown->GetComponentsInParent<UI::LayoutElement*>(true).First()->set_preferredWidth(65);
     auto apply = BeatSaberUI::CreateUIButton(environment, "Apply", Qounters::SettingsFlowCoordinator::RefreshScene);
 
     previewToggle = BeatSaberUI::CreateToggle(vertical, "Preview Mode", false, Editor::SetPreviewMode);
@@ -535,3 +550,7 @@ int SpritesListSource::NumberOfCells() {
 void SpritesListSource::OnImageClicked(int imageIdx) {
     imageClickedCallback(imageIdx);
 }
+
+// IConnectedPlayer* MultiplayerSessionManager::get_localPlayer() {
+//     return localPlayer;
+// }

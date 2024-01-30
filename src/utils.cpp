@@ -40,6 +40,8 @@ std::tuple<std::string, std::string, int> Qounters::Utils::GetBeatmapDetails(IDi
 }
 
 std::string Qounters::Utils::GetBeatmapIdentifier(IDifficultyBeatmap* beatmap) {
+    if (!beatmap)
+        return "Unknown";
     auto [id, characteristic, difficulty] = GetBeatmapDetails(beatmap);
     return string_format("%s_%s_%i", id.c_str(), characteristic.c_str(), difficulty);
 }
@@ -67,6 +69,20 @@ void DisableAllBut(UnityEngine::Transform* original, UnityEngine::Transform* sou
 void Qounters::Utils::DisableAllBut(UnityEngine::Transform* parent, std::set<std::string> enabled, std::set<std::string> disabled) {
     if (!enabled.contains(parent->get_name()))
         DisableAllBut(parent, parent, enabled, disabled);
+}
+
+UnityEngine::Transform* Qounters::Utils::FindRecursive(UnityEngine::Transform* parent, std::string name) {
+    for (int i = 0; i < parent->GetChildCount(); i++) {
+        auto child = parent->GetChild(i);
+        if (child->get_name() == name)
+            return child;
+    }
+    // breadth first
+    for (int i = 0; i < parent->GetChildCount(); i++) {
+        if (auto ret = FindRecursive(parent->GetChild(i), name))
+            return ret;
+    }
+    return nullptr;
 }
 
 std::string Qounters::Utils::GetTransformPath(UnityEngine::Transform* parent, UnityEngine::Transform* child) {
@@ -198,7 +214,7 @@ UnityEngine::Transform* GetScrollViewTop(UnityEngine::GameObject* scrollView) {
 #include "UnityEngine/UI/LayoutRebuilder.hpp"
 
 void Qounters::Utils::FixScrollView(UnityEngine::GameObject* scrollView, float width) {
-    UnityEngine::Object::Destroy(scrollView->GetComponentInParent(il2cpp_utils::GetSystemType(il2cpp_utils::GetClassFromName("QuestUI", "ScrollViewContent"))));
+    UnityEngine::Object::Destroy(scrollView->GetComponentsInParent(il2cpp_utils::GetSystemType(il2cpp_utils::GetClassFromName("QuestUI", "ScrollViewContent")), true).First());
     scrollView->GetComponent<UnityEngine::UI::VerticalLayoutGroup*>()->set_spacing(0);
     GetScrollViewTop(scrollView)->GetComponent<UnityEngine::RectTransform*>()->set_sizeDelta({width - 100, 0});
     auto transform = scrollView->GetComponent<UnityEngine::RectTransform*>();

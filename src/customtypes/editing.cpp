@@ -330,7 +330,7 @@ void EditingBase::OnInitializePotentialDrag(EventSystems::PointerEventData* even
 }
 
 UnityEngine::Vector2 EditingBase::GetPointerPos(EventSystems::PointerEventData* eventData) {
-    auto pos = rectTransform->get_parent()->InverseTransformPoint({eventData->position.x, eventData->position.y, 0});
+    auto pos = rectTransform->get_parent()->InverseTransformPoint(eventData->pointerCurrentRaycast.worldPosition);
     return {pos.x, pos.y};
 }
 
@@ -472,7 +472,7 @@ void EditingComponent::OnEndDrag(EventSystems::PointerEventData* eventData) {
 
 EditingGroup* EditingComponent::GetEditingGroup() {
     if (!group)
-        group = GetComponentInParent<EditingGroup*>();
+        group = GetComponentsInParent<EditingGroup*>(true).First();
     return group;
 }
 

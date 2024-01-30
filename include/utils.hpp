@@ -15,6 +15,7 @@ namespace Qounters::Utils {
     std::tuple<std::string, std::string, int> GetBeatmapDetails(GlobalNamespace::IDifficultyBeatmap* beatmap);
     std::string GetBeatmapIdentifier(GlobalNamespace::IDifficultyBeatmap* beatmap);
     void DisableAllBut(UnityEngine::Transform* parent, std::set<std::string> enabled, std::set<std::string> disabled = {});
+    UnityEngine::Transform* FindRecursive(UnityEngine::Transform* parent, std::string name);
     std::string GetTransformPath(UnityEngine::Transform* parent, UnityEngine::Transform* child);
 
     template<class T>

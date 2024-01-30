@@ -163,6 +163,12 @@ void BaseGameGraphic::Update() {
     updateChildren = false;
 }
 
+float GetTimerWidth(Transform* songTimeInstance) {
+    auto slider = (RectTransform*) songTimeInstance->Find("Slider");
+    auto handle = (RectTransform*) slider->Find("Handle Slide Area/Handle");
+    return slider->get_rect().m_Width + handle->get_rect().m_Width;
+}
+
 void BaseGameGraphic::SetComponent(int comp) {
     component = comp;
     if (instance)
@@ -170,9 +176,12 @@ void BaseGameGraphic::SetComponent(int comp) {
 
     getLogger().debug("set component %i", comp);
 
-    instance = Object::Instantiate(clones[component]);
+    auto base = clones[component];
+    if (!base || !base->m_CachedPtr)
+        return;
+    instance = Object::Instantiate(base);
 
-    CopyFields(clones[component], instance, component);
+    CopyFields(base, instance, component);
 
     instance->SetParent(get_transform(), false);
     instance->get_gameObject()->SetActive(true);
@@ -188,7 +197,7 @@ void BaseGameGraphic::SetComponent(int comp) {
             instance->set_localScale({0.5, 0.5, 0.5});
             break;
         case BaseGameOptions::Components::ProgressBar:
-            get_rectTransform()->set_sizeDelta({52.5, 20});
+            get_rectTransform()->set_sizeDelta({GetTimerWidth(instance), 20});
             instance->set_localScale({1, 1, 1});
             break;
         case BaseGameOptions::Components::HealthBar:
@@ -196,6 +205,7 @@ void BaseGameGraphic::SetComponent(int comp) {
             instance->set_localScale({1, 1, 1});
             break;
     }
+    instance->set_localEulerAngles({});
 
     graphics = instance->GetComponentsInChildren<UI::Graphic*>();
     SetChildColors();
@@ -229,19 +239,27 @@ BaseGameGraphic* BaseGameGraphic::Create(Transform* parent) {
 }
 
 Transform* GetBase(int component) {
+    auto hud = GetHUD().first;
+    if (!hud)
+        return nullptr;
     switch ((BaseGameOptions::Components) component) {
         case BaseGameOptions::Components::Multiplier:
-            return GetAnchor((int) Group::Anchors::Right)->get_parent()->Find("MultiplierCanvas");
+            return Utils::FindRecursive(hud, "MultiplierCanvas");
         case BaseGameOptions::Components::ProgressBar:
-            return GetAnchor((int) Group::Anchors::Right)->get_parent()->Find("SongProgressCanvas");
+            return Utils::FindRecursive(hud, "SongProgressCanvas");
         case BaseGameOptions::Components::HealthBar:
-            return GetAnchor((int) Group::Anchors::Bottom)->get_parent();
+            return Utils::FindRecursive(hud, "EnergyPanel");
     }
 }
 
 void BaseGameGraphic::MakeClones() {
     for (int i = 0; i <= (int) BaseGameOptions::Components::ComponentsMax; i++) {
         auto base = GetBase(i);
+        if (!base) {
+            getLogger().error("Failed to find base component %i", i);
+            clones[i] = nullptr;
+            continue;
+        }
         clones[i] = Object::Instantiate(base);
 
         clones[i]->get_gameObject()->SetActive(false);

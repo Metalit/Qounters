@@ -4,6 +4,13 @@
 #include "config.hpp"
 
 namespace Qounters {
+    enum class HUDType {
+        Basic,
+        Rotational,
+        Multiplayer,
+        Unsupported,
+    };
+
     void UpdateComponentOptions(int componentType, UnityEngine::Component* component, Component::OptionsTypes newOptions);
     void UpdateComponentColor(UnityEngine::UI::Graphic* component, std::string newSource, UnparsedJSON newOptions);
 
@@ -15,6 +22,7 @@ namespace Qounters {
     void SetSourceOptions(Component& component, UnparsedJSON newOptions);
     void SetDefaultOptions(Component& component);
 
+    std::pair<UnityEngine::Transform*, HUDType> GetHUD();
     UnityEngine::Transform* GetAnchor(int anchor);
 
     void CreateQounterComponent(Component const& qounterComponent, int componentIdx, UnityEngine::Transform* parent, bool editing);
