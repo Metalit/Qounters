@@ -239,6 +239,14 @@ void Qounters::UpdateComponentPosition(RectTransform* component, Component const
 }
 
 void Qounters::UpdateGroupPosition(RectTransform* group, Group const& qounterGroup) {
+    if (qounterGroup.Detached) {
+        group->SetParent(nullptr, true);
+        group->set_position(qounterGroup.DetachedPosition);
+        group->set_eulerAngles(qounterGroup.DetachedRotation);
+        group->set_localScale({0.02, 0.02, 0.02});
+        return;
+    }
+
     auto anchor = GetAnchor(qounterGroup.Anchor);
     if (!anchor)
         return;
@@ -247,8 +255,9 @@ void Qounters::UpdateGroupPosition(RectTransform* group, Group const& qounterGro
     group->set_anchorMin({0.5, 0.5});
     group->set_anchorMax({0.5, 0.5});
     group->set_sizeDelta({0, 0});
-    group->set_anchoredPosition(qounterGroup.Position);
+    group->set_localPosition({qounterGroup.Position.x, qounterGroup.Position.y, 0});
     group->set_localEulerAngles({0, 0, qounterGroup.Rotation});
+    group->set_localScale({1, 1, 1});
 }
 
 void Qounters::RemoveComponent(int componentType, UnityEngine::Component* component) {
@@ -334,7 +343,7 @@ const std::map<HUDType, std::map<Group::Anchors, std::tuple<std::string, Vector3
     }},
 };
 
-Transform* GetCanvas(std::string parentName, Transform* hud, Vector3 fallback) {
+RectTransform* GetCanvas(std::string parentName, Transform* hud, Vector3 fallback) {
     static ConstString name("QountersCanvas");
 
     auto parent = Utils::FindRecursive(hud, parentName);
@@ -344,13 +353,13 @@ Transform* GetCanvas(std::string parentName, Transform* hud, Vector3 fallback) {
         parent = Utils::FindRecursive(hud, parentName);
     }
     if (!parent) {
-        getLogger().info("Creating replacement parent object");
+        getLogger().info("Creating custom parent object %s", parentName.c_str());
         parent = GameObject::New_ctor(parentName)->get_transform();
         parent->set_position(fallback);
     }
 
     if (auto ret = parent->Find(name))
-        return ret;
+        return (RectTransform*) ret;
     parent->SetParent(hud, false);
 
     auto canvas = BeatSaberUI::CreateCanvas();
@@ -361,10 +370,10 @@ Transform* GetCanvas(std::string parentName, Transform* hud, Vector3 fallback) {
     auto ret = canvas->get_transform();
     ret->set_localScale({0.02, 0.02, 0.02});
     ret->SetParent(parent, true);
-    ret->set_localPosition({});
+    ret->set_localPosition({0, 0, -0.5});
     ret->set_localEulerAngles({});
 
-    return ret;
+    return (RectTransform*) ret;
 }
 
 std::pair<Transform*, HUDType> Qounters::GetHUD() {
@@ -382,7 +391,7 @@ Transform* Qounters::GetAnchor(int anchor) {
         return nullptr;
 
     auto [name, fallback, size, pos] = hudPanels.at(type).at((Group::Anchors) anchor);
-    auto ret = (RectTransform*) GetCanvas(name, hud, fallback);
+    auto ret = GetCanvas(name, hud, fallback);
     ret->set_sizeDelta(size);
     ret->set_anchoredPosition(pos);
     return ret;
@@ -437,8 +446,10 @@ void Qounters::CreateQounterComponent(Component const& qounterComponent, int com
 void Qounters::CreateQounterGroup(Group const& qounterGroup, int groupIdx, bool editing) {
     getLogger().debug("Creating qounter group");
 
-    auto parent = GameObject::New_ctor("QounterGroup");
-    auto parentTransform = parent->AddComponent<RectTransform*>();
+    auto parent = BeatSaberUI::CreateCanvas();
+    parent->set_name("QounterGroup");
+    auto parentTransform = parent->GetComponent<RectTransform*>();
+    parentTransform->set_localScale({1, 1, 1});
 
     UpdateGroupPosition(parentTransform, qounterGroup);
 
@@ -471,6 +482,7 @@ void Qounters::Reset() {
     texts.clear();
     shapes.clear();
     colors.clear();
+    enables.clear();
 }
 
 void Qounters::SetupObjects() {

@@ -101,8 +101,13 @@ DECLARE_CLASS_CODEGEN(Qounters, OptionsViewController, HMUI::ViewController,
 
     DECLARE_INSTANCE_FIELD(QuestUI::IncrementSetting*, gPosIncrementX);
     DECLARE_INSTANCE_FIELD(QuestUI::IncrementSetting*, gPosIncrementY);
+    DECLARE_INSTANCE_FIELD(QuestUI::IncrementSetting*, gPosIncrementZ);
     DECLARE_INSTANCE_FIELD(QuestUI::SliderSetting*, gRotSlider);
+    DECLARE_INSTANCE_FIELD(QuestUI::SliderSetting*, gRotSliderX);
+    DECLARE_INSTANCE_FIELD(QuestUI::SliderSetting*, gRotSliderY);
+    DECLARE_INSTANCE_FIELD(QuestUI::SliderSetting*, gRotSliderZ);
     DECLARE_INSTANCE_FIELD(UnityEngine::UI::Button*, gComponentButton);
+    DECLARE_INSTANCE_FIELD(UnityEngine::UI::Button*, gDetachButton);
     DECLARE_INSTANCE_FIELD(UnityEngine::UI::Button*, gDeleteButton);
     DECLARE_INSTANCE_FIELD(UnityEngine::UI::Button*, gDeselectButton);
 

@@ -22,6 +22,7 @@ namespace Qounters::Editor {
 
     std::array<CanvasHighlight*, anchorCount> anchors;
     std::array<UnityEngine::GameObject*, anchorCount> dragCanvases;
+    UnityEngine::GameObject* detachedDragCanvas;
 
     int currentAnchor;
 
@@ -93,22 +94,30 @@ namespace Qounters::Editor {
         }
     }
 
+    UnityEngine::GameObject* CreateDragCanvas(std::string name, UnityEngine::Transform* parent) {
+        auto canvas = BeatSaberUI::CreateCanvas();
+        canvas->set_name(name);
+
+        if (parent)
+            canvas->get_transform()->SetParent(parent, false);
+        canvas->get_transform()->set_localScale({1, 1, 1});
+        // might be nice to have a constrained area later
+        canvas->GetComponent<UnityEngine::RectTransform*>()->set_sizeDelta({1000, 1000});
+        canvas->AddComponent<CanvasHighlight*>()->set_raycastTarget(true);
+        canvas->SetActive(false);
+        return canvas;
+    }
+
     void CreateDragCanvases() {
         for (int i = 0; i < anchorCount; i++) {
             if (!anchors[i]) {
                 dragCanvases[i] = nullptr;
                 continue;
             }
-            auto canvas = BeatSaberUI::CreateCanvas();
-            canvas->set_name("QountersDragCanvas");
-            canvas->get_transform()->SetParent(anchors[i]->get_transform(), false);
-            canvas->get_transform()->set_localScale({1, 1, 1});
-            // might be nice to have a constrained area later
-            canvas->GetComponent<UnityEngine::RectTransform*>()->set_sizeDelta({1000, 1000});
-            canvas->AddComponent<CanvasHighlight*>()->set_raycastTarget(true);
-            canvas->SetActive(false);
-            dragCanvases[i] = canvas;
+            auto parent = anchors[i]->get_transform();
+            dragCanvases[i] = CreateDragCanvas("QountersDragCanvas" + std::to_string(i), parent);
         }
+        detachedDragCanvas = CreateDragCanvas("QountersDetachedDragCanvas", nullptr);
     }
 
     void Initialize(Preset const& inPreset) {
@@ -298,13 +307,16 @@ namespace Qounters::Editor {
         return false;
     }
     void EndDrag() {
-        FinalizeAction();
-
         for (int i = 0; i < anchorCount; i++) {
             anchors[i]->set_raycastTarget(false);
             anchors[i]->SetHighlighted(false);
             dragCanvases[i]->SetActive(false);
         }
+    }
+    void EnableDetachedCanvas(bool enabled) {
+        detachedDragCanvas->SetActive(enabled);
+        if (enabled)
+            detachedDragCanvas->get_transform()->SetParent(selected->rectTransform, false);
     }
 
     void AddComponent() {
@@ -329,6 +341,22 @@ namespace Qounters::Editor {
         lastActionId = -1;
 
         AddUndo(Remove);
+    }
+
+    void ToggleAttachment() {
+        auto& group = GetSelectedGroup(-1, false);
+        group.Detached = !group.Detached;
+        group.DetachedPosition = selected->rectTransform->get_position();
+        group.DetachedRotation = selected->rectTransform->get_rotation().get_eulerAngles();
+        UpdateGroupPosition(selected->rectTransform, group);
+
+        if (!runningUndo)
+            OptionsViewController::GetInstance()->UpdateSimpleUI();
+
+        newAction = true;
+        lastActionId = -1;
+
+        AddUndo(ToggleAttachment);
     }
 
     void RemoveWithoutDeselect(int groupIdx, int componentIdx) {

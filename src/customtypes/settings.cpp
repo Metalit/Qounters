@@ -238,18 +238,33 @@ void Qounters::OptionsViewController::DidActivate(bool firstActivation, bool add
 
     gPosIncrementX = BeatSaberUI::CreateIncrementSetting(groupParent, "X Position", 1, 0.5, 0, [this](float val) {
         static int id = Editor::GetActionId();
-        Editor::GetSelectedGroup(id).Position.x = val;
+        auto& group = Editor::GetSelectedGroup(id);
+        if (group.Detached)
+            group.DetachedPosition.x = val;
+        else
+            group.Position.x = val;
         Editor::UpdatePosition();
         Editor::FinalizeAction();
     });
     Utils::AddIncrementIncrement(gPosIncrementX, 5);
     gPosIncrementY = BeatSaberUI::CreateIncrementSetting(groupParent, "Y Position", 1, 0.5, 0, [this](float val) {
         static int id = Editor::GetActionId();
-        Editor::GetSelectedGroup(id).Position.y = val;
+        auto& group = Editor::GetSelectedGroup(id);
+        if (group.Detached)
+            group.DetachedPosition.y = val;
+        else
+            group.Position.y = val;
         Editor::UpdatePosition();
         Editor::FinalizeAction();
     });
     Utils::AddIncrementIncrement(gPosIncrementY, 5);
+    gPosIncrementZ = BeatSaberUI::CreateIncrementSetting(groupParent, "Z Position", 1, 0.5, 0, [this](float val) {
+        static int id = Editor::GetActionId();
+        Editor::GetSelectedGroup(id).DetachedPosition.z = val;
+        Editor::UpdatePosition();
+        Editor::FinalizeAction();
+    });
+    Utils::AddIncrementIncrement(gPosIncrementZ, 5);
 
     gRotSlider = BeatSaberUI::CreateSliderSetting(groupParent, "Rotation", 1, 0, -180, 180, 0, [this](float val) {
         static int id = Editor::GetActionId();
@@ -262,13 +277,43 @@ void Qounters::OptionsViewController::DidActivate(bool firstActivation, bool add
     gRotSlider->GetComponent<RectTransform*>()->set_sizeDelta({0, 8});
     AddSliderIncrement(gRotSlider, 10);
 
+    gRotSliderX = BeatSaberUI::CreateSliderSetting(groupParent, "X Rotation", 1, 0, -180, 180, 0, [this](float val) {
+        static int id = Editor::GetActionId();
+        Editor::GetSelectedGroup(id).DetachedRotation.x = val;
+        Editor::UpdatePosition();
+    });
+    Utils::AddSliderEndDrag(gRotSliderX, []() {
+        Editor::FinalizeAction();
+    });
+    gRotSliderX->GetComponent<RectTransform*>()->set_sizeDelta({0, 8});
+    AddSliderIncrement(gRotSliderX, 10);
+    gRotSliderY = BeatSaberUI::CreateSliderSetting(groupParent, "Y Rotation", 1, 0, -180, 180, 0, [this](float val) {
+        static int id = Editor::GetActionId();
+        Editor::GetSelectedGroup(id).DetachedRotation.y = val;
+        Editor::UpdatePosition();
+    });
+    Utils::AddSliderEndDrag(gRotSliderY, []() {
+        Editor::FinalizeAction();
+    });
+    gRotSliderY->GetComponent<RectTransform*>()->set_sizeDelta({0, 8});
+    AddSliderIncrement(gRotSliderY, 10);
+    gRotSliderZ = BeatSaberUI::CreateSliderSetting(groupParent, "Z Rotation", 1, 0, -180, 180, 0, [this](float val) {
+        static int id = Editor::GetActionId();
+        Editor::GetSelectedGroup(id).DetachedRotation.z = val;
+        Editor::UpdatePosition();
+    });
+    Utils::AddSliderEndDrag(gRotSliderZ, []() {
+        Editor::FinalizeAction();
+    });
+    gRotSliderZ->GetComponent<RectTransform*>()->set_sizeDelta({0, 8});
+    AddSliderIncrement(gRotSliderZ, 10);
+
     auto gButtonsParent1 = BeatSaberUI::CreateHorizontalLayoutGroup(groupParent);
     gButtonsParent1->set_spacing(3);
 
     gComponentButton = BeatSaberUI::CreateUIButton(gButtonsParent1, "Add Component", Editor::AddComponent);
 
-    // detach button
-    BeatSaberUI::AddHoverHint(BeatSaberUI::CreateUIButton(gButtonsParent1, "Your Ad Here", "ActionButton"), "Contact Metalit (k.metalit@gmail.com or metalit on Discord) for low advertising prices! Can optionally even do something!");
+    gDetachButton = BeatSaberUI::CreateUIButton(gButtonsParent1, "Detach", Editor::ToggleAttachment);
 
     auto gButtonsParent2 = BeatSaberUI::CreateHorizontalLayoutGroup(groupParent);
     gButtonsParent2->set_spacing(3);
@@ -419,11 +464,29 @@ void Qounters::OptionsViewController::UpdateSimpleUI() {
 
     if (group) {
         auto& state = Editor::GetSelectedGroup(-1);
-        gPosIncrementX->CurrentValue = state.Position.x;
-        gPosIncrementX->UpdateValue();
-        gPosIncrementY->CurrentValue = state.Position.y;
-        gPosIncrementY->UpdateValue();
-        gRotSlider->set_value(state.Rotation);
+        if (state.Detached) {
+            gPosIncrementX->CurrentValue = state.DetachedPosition.x;
+            gPosIncrementX->UpdateValue();
+            gPosIncrementY->CurrentValue = state.DetachedPosition.y;
+            gPosIncrementY->UpdateValue();
+            gPosIncrementZ->CurrentValue = state.DetachedPosition.z;
+            gPosIncrementZ->UpdateValue();
+            gRotSliderX->set_value(state.DetachedRotation.x);
+            gRotSliderY->set_value(state.DetachedRotation.y);
+            gRotSliderZ->set_value(state.DetachedRotation.z);
+        } else {
+            gPosIncrementX->CurrentValue = state.Position.x;
+            gPosIncrementX->UpdateValue();
+            gPosIncrementY->CurrentValue = state.Position.y;
+            gPosIncrementY->UpdateValue();
+            gRotSlider->set_value(state.Rotation);
+        }
+        gPosIncrementZ->get_gameObject()->SetActive(state.Detached);
+        gRotSlider->get_gameObject()->SetActive(!state.Detached);
+        gRotSliderX->get_gameObject()->SetActive(state.Detached);
+        gRotSliderY->get_gameObject()->SetActive(state.Detached);
+        gRotSliderZ->get_gameObject()->SetActive(state.Detached);
+        BeatSaberUI::SetButtonText(gDetachButton, state.Detached ? "Attach" : "Detach");
     } else if (component) {
         auto& state = Editor::GetSelectedComponent(-1);
         cPosIncrementX->CurrentValue = state.Position.x;

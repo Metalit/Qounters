@@ -138,6 +138,7 @@ DECLARE_CLASS_CODEGEN_INTERFACES(Qounters, EditingBase, UnityEngine::MonoBehavio
 #include "UnityEngine/EventSystems/IPointerExitHandler.hpp"
 #include "UnityEngine/EventSystems/IDragHandler.hpp"
 #include "UnityEngine/EventSystems/IEndDragHandler.hpp"
+#include "VRUIControls/VRInputModule.hpp"
 
 #define INTERFACES std::vector<Il2CppClass*>({ \
     classof(UES::IPointerEnterHandler*), \
@@ -160,6 +161,7 @@ DECLARE_CLASS_CUSTOM_INTERFACES(Qounters, EditingGroup, EditingBase, INTERFACES,
     DECLARE_INSTANCE_METHOD(void, UpdateDragAnchor, int anchor);
 
     DECLARE_INSTANCE_FIELD_DEFAULT(Qounters::GroupOutlineSizer*, outlineSizer, nullptr);
+    DECLARE_INSTANCE_FIELD_DEFAULT(VRUIControls::VRInputModule*, cachedInputModule, nullptr);
 
     DECLARE_INSTANCE_METHOD(int, GetGroupIdx);
 
@@ -169,7 +171,14 @@ DECLARE_CLASS_CUSTOM_INTERFACES(Qounters, EditingGroup, EditingBase, INTERFACES,
 
     friend class EditingComponent;
 
+    void OnDragNormal(UES::PointerEventData* eventData);
+    void OnEndDragNormal(UES::PointerEventData* eventData);
+    void OnDragDetached(UES::PointerEventData* eventData);
+    void OnEndDragDetached(UES::PointerEventData* eventData);
     Group& GetGroup();
+
+    UnityEngine::Vector3 detachedGrabPos = {};
+    UnityEngine::Quaternion detachedGrabRot = {};
 
     public:
     void Init(int groupIdx);

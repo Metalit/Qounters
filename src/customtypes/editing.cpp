@@ -372,35 +372,106 @@ void EditingGroup::OnPointerExit(EventSystems::PointerEventData* eventData) {
 #include "UnityEngine/Time.hpp"
 
 void EditingGroup::OnDrag(EventSystems::PointerEventData* eventData) {
-    auto position = GetPointerPos(eventData);
     auto& group = Editor::GetSelectedGroup(dragActionId);
+    if (group.Detached)
+        OnDragDetached(eventData);
+    else
+        OnDragNormal(eventData);
 
     if (!dragging) {
-        grabOffset = group.Position - position;
-        Editor::BeginDrag(group.Anchor, true);
         dragStart = Time::get_time();
-
         outlineSizer->set_enabled(false);
     }
     dragging = true;
 
-    if (!Editor::UpdateDrag(this)) {
-        group.Position = position + grabOffset;
-        Editor::UpdatePosition();
-    }
     OptionsViewController::GetInstance()->UpdateSimpleUI();
 }
 
 void EditingGroup::OnEndDrag(EventSystems::PointerEventData* eventData) {
-    dragging = false;
-    Editor::EndDrag();
-    UpdateColor();
+    auto& group = Editor::GetSelectedGroup(dragActionId);
+    if (group.Detached)
+        OnEndDragDetached(eventData);
+    else
+        OnEndDragNormal(eventData);
 
+    Editor::FinalizeAction();
     bool tooShort = Time::get_time() - dragStart < MAX_SECS_WITHOUT_DRAG;
     if (tooShort)
         Editor::Undo();
 
     outlineSizer->set_enabled(true);
+    dragging = false;
+    UpdateColor();
+}
+
+void EditingGroup::OnDragNormal(EventSystems::PointerEventData* eventData) {
+    auto position = GetPointerPos(eventData);
+    auto& group = GetGroup();
+
+    if (!dragging) {
+        grabOffset = group.Position - position;
+        Editor::BeginDrag(group.Anchor, true);
+    }
+
+    if (!Editor::UpdateDrag(this)) {
+        group.Position = position + grabOffset;
+        Editor::UpdatePosition();
+    }
+}
+
+void EditingGroup::OnEndDragNormal(EventSystems::PointerEventData* eventData) {
+    Editor::EndDrag();
+}
+
+#include "VRUIControls/VRPointer.hpp"
+#include "GlobalNamespace/VRController.hpp"
+
+void EditingGroup::OnDragDetached(EventSystems::PointerEventData* eventData) {
+    if (!cachedInputModule)
+        cachedInputModule = il2cpp_utils::try_cast<VRUIControls::VRInputModule>(eventData->get_currentInputModule()).value_or(nullptr);
+    if (!cachedInputModule)
+        return;
+    auto position = eventData->worldPosition;
+    auto& group = GetGroup();
+
+    auto pointer = cachedInputModule->vrPointer;
+    auto controller = pointer->get_vrController();
+    if (!dragging) {
+        detachedGrabPos = controller->get_transform()->InverseTransformPoint(get_transform()->get_position());
+        detachedGrabRot = Quaternion::Inverse(controller->get_transform()->get_rotation()) * get_transform()->get_rotation();
+        Editor::EnableDetachedCanvas(true);
+    }
+
+    float unscaledDeltaTime = Time::get_unscaledDeltaTime();
+    // thumbstick movement
+    if(pointer->_get__lastControllerUsedWasRight()) {
+        float diff = controller->get_verticalAxisValue() * unscaledDeltaTime;
+        // no movement if too close
+        if(detachedGrabPos.get_magnitude() < 0.5 && diff > 0)
+            diff = 0;
+        else
+            detachedGrabPos = detachedGrabPos - (Vector3::get_forward() * diff);
+        // rotate on the third axis horizontally
+        float zRot = -30 * controller->get_horizontalAxisValue() * unscaledDeltaTime;
+        detachedGrabRot = detachedGrabRot * Quaternion::Euler({0, 0, zRot});
+    }
+    else {
+        float xRot = -30 * controller->get_verticalAxisValue() * unscaledDeltaTime;
+        float yRot = -30 * controller->get_horizontalAxisValue() * unscaledDeltaTime;
+        auto extraRot = Quaternion::Euler({0, yRot, 0}) * Quaternion::Euler({xRot, 0, 0});
+        detachedGrabRot = detachedGrabRot * extraRot;
+    }
+
+    auto pos = controller->get_transform()->TransformPoint(detachedGrabPos);
+    auto rot = controller->get_transform()->get_rotation() * detachedGrabRot;
+
+    group.DetachedPosition = Vector3::Lerp(group.DetachedPosition, pos, 10 * unscaledDeltaTime);
+    group.DetachedRotation = Quaternion::Slerp(Quaternion::Euler(group.DetachedRotation), rot, 5 * unscaledDeltaTime).get_eulerAngles();
+    Editor::UpdatePosition();
+}
+
+void EditingGroup::OnEndDragDetached(EventSystems::PointerEventData* eventData) {
+    Editor::EnableDetachedCanvas(false);
 }
 
 void EditingGroup::UpdateColorChildren() {

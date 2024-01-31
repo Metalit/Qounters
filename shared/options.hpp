@@ -85,6 +85,9 @@ namespace Qounters {
         VALUE(float, Rotation)
         VALUE(int, Anchor)
         VECTOR(Component, Components)
+        VALUE_DEFAULT(bool, Detached, false)
+        VALUE_DEFAULT(ConfigUtils::Vector3, DetachedPosition, {})
+        VALUE_DEFAULT(ConfigUtils::Vector3, DetachedRotation, {})
     )
 
     DECLARE_JSON_CLASS(Preset,

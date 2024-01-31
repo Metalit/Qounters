@@ -24,8 +24,10 @@ namespace Qounters::Editor {
     void BeginDrag(int anchor, bool group);
     bool UpdateDrag(EditingGroup* dragged);
     void EndDrag();
+    void EnableDetachedCanvas(bool enabled);
 
     void AddComponent();
+    void ToggleAttachment();
     void Remove();
     void UpdatePosition();
     void UpdateType();
