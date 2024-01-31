@@ -13,12 +13,14 @@ namespace Qounters::TextSource {
         static Static opts;
         opts = unparsed.Parse<Static>();
 
-        BeatSaberUI::CreateStringSetting(parent, "Text", opts.Input, [](StringW val) {
+        auto input = BeatSaberUI::CreateStringSetting(parent, "Text", opts.Input, [](StringW val) {
             static int id = Editor::GetActionId();
             opts.Input = (std::string) val;
             Editor::SetSourceOptions(id, opts);
         });
-        // TODO: finalize on close
+        Utils::AddStringSettingOk(input, []() {
+            Editor::FinalizeAction();
+        });
     }
     void ScoreUI(GameObject* parent, UnparsedJSON unparsed) {
         static Score opts;
@@ -28,6 +30,7 @@ namespace Qounters::TextSource {
             static int id = Editor::GetActionId();
             opts.Saber = val;
             Editor::SetSourceOptions(id, opts);
+            Editor::FinalizeAction();
         });
 
         auto inc = BeatSaberUI::CreateIncrementSetting(parent, "Decimals", 0, 1, opts.Decimals, 0, 10, [](float val) {

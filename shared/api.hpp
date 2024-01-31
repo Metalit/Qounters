@@ -14,7 +14,8 @@ namespace Qounters::Shared {
     void SetColorOptions(int actionId, UnparsedJSON options);
     void FinalizeAction();
 
-    void AddSliderEndDrag(QuestUI::SliderSetting *slider, std::function<void ()> onEndDrag);
+    void AddSliderEndDrag(QuestUI::SliderSetting* slider, std::function<void ()> onEndDrag);
+    void AddStringSettingOk(HMUI::InputFieldView* input, std::function<void ()> onOkPressed);
 }
 
 // see README

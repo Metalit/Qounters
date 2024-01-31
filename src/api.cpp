@@ -29,4 +29,7 @@ namespace Qounters::Shared {
     void AddSliderEndDrag(QuestUI::SliderSetting *slider, std::function<void ()> onEndDrag) {
         Utils::AddSliderEndDrag(slider, onEndDrag);
     }
+    void AddStringSettingOk(HMUI::InputFieldView* input, std::function<void ()> onOkPressed) {
+        Utils::AddStringSettingOk(input, onOkPressed);
+    }
 }

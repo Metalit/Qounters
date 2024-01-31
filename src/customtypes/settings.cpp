@@ -17,6 +17,7 @@ DEFINE_TYPE(Qounters, SettingsViewController);
 DEFINE_TYPE(Qounters, TemplatesViewController);
 DEFINE_TYPE(Qounters, OptionsViewController);
 DEFINE_TYPE(Qounters, EndDragHandler);
+DEFINE_TYPE(Qounters, KeyboardCloseHandler);
 DEFINE_TYPE(Qounters, SpritesListCell);
 DEFINE_TYPE(Qounters, SpritesListSource);
 
@@ -55,6 +56,10 @@ void Qounters::SettingsFlowCoordinator::Save() {
     getConfig().Presets.SetValue(presets);
 }
 
+bool Qounters::SettingsFlowCoordinator::IsSaved() {
+    return getConfig().Presets.GetValue()[GetInstance()->modifyingPresetName] == Editor::GetPreset();
+}
+
 void Qounters::SettingsFlowCoordinator::PresentTemplates() {
     auto instance = GetInstance();
     auto templates = TemplatesViewController::GetInstance();
@@ -70,12 +75,25 @@ void Qounters::SettingsFlowCoordinator::PresentOptions() {
 }
 
 void Qounters::SettingsFlowCoordinator::DismissScene() {
-    DismissSettingsEnvironment();
+    ConfirmAction(DismissSettingsEnvironment);
 }
 
 void Qounters::SettingsFlowCoordinator::RefreshScene() {
     if (CurrentSettingsEnvironment() != getConfig().Environment.GetValue())
-        RefreshSettingsEnvironment();
+        ConfirmAction(RefreshSettingsEnvironment);
+}
+
+void Qounters::SettingsFlowCoordinator::ConfirmAction(void(*action)()) {
+    nextModalAction = action;
+    if (IsSaved())
+        nextModalAction();
+    else
+        SettingsViewController::GetInstance()->ShowConfirmModal();
+}
+
+void Qounters::SettingsFlowCoordinator::OnModalConfirm() {
+    if (nextModalAction)
+        nextModalAction();
 }
 
 Qounters::SettingsFlowCoordinator* Qounters::SettingsFlowCoordinator::GetInstance() {
@@ -145,6 +163,27 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
     auto apply = BeatSaberUI::CreateUIButton(environment, "Apply", Qounters::SettingsFlowCoordinator::RefreshScene);
 
     previewToggle = BeatSaberUI::CreateToggle(vertical, "Preview Mode", false, Editor::SetPreviewMode);
+
+    confirmModal = BeatSaberUI::CreateModal(this, Vector2(85, 25), nullptr);
+    auto modalLayout = BeatSaberUI::CreateVerticalLayoutGroup(confirmModal);
+    modalLayout->set_childControlHeight(false);
+    modalLayout->set_childForceExpandHeight(true);
+    modalLayout->set_spacing(1);
+
+    auto text = BeatSaberUI::CreateText(modalLayout, "You have unsaved changes that will be lost.\nAre you sure you would like to exit?", Vector2(), Vector2(0, 13));
+    text->set_alignment(TMPro::TextAlignmentOptions::Bottom);
+
+    auto modalButtons = BeatSaberUI::CreateHorizontalLayoutGroup(modalLayout);
+    modalButtons->GetComponent<UI::LayoutElement*>()->set_preferredHeight(9);
+    modalButtons->set_spacing(3);
+    BeatSaberUI::CreateUIButton(modalButtons, "Exit", Qounters::SettingsFlowCoordinator::OnModalConfirm);
+    BeatSaberUI::CreateUIButton(modalButtons, "Save And Exit", []() {
+        Qounters::SettingsFlowCoordinator::Save();
+        Qounters::SettingsFlowCoordinator::OnModalConfirm();
+    });
+    BeatSaberUI::CreateUIButton(modalButtons, "Cancel", [this]() {
+        confirmModal->Hide(true, nullptr);
+    });
 }
 
 SettingsViewController* SettingsViewController::GetInstance() {
@@ -155,6 +194,11 @@ SettingsViewController* SettingsViewController::GetInstance() {
 
 void SettingsViewController::OnDestroy() {
     instance = nullptr;
+}
+
+void SettingsViewController::ShowConfirmModal() {
+    if (confirmModal)
+        confirmModal->Show(true, true, nullptr);
 }
 
 void TemplatesViewController::DidActivate(bool firstActivation, bool addedToHierarchy, bool screenSystemEnabling) {

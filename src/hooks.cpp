@@ -7,6 +7,7 @@
 #include "pp.hpp"
 #include "qounters.hpp"
 #include "environment.hpp"
+#include "customtypes/settings.hpp"
 
 using namespace GlobalNamespace;
 using namespace VRUIControls;
@@ -232,6 +233,15 @@ MAKE_HOOK_MATCH(MultiplayerLocalActivePlayerInGameMenuViewController_HideMenu, &
         MultiplayerLocalActivePlayerInGameMenuViewController_HideMenu(self);
 }
 
+#include "GlobalNamespace/MultiplayerLocalActivePlayerGameplayManager.hpp"
+
+MAKE_HOOK_MATCH(MultiplayerLocalActivePlayerGameplayManager_PerformPlayerFail, &MultiplayerLocalActivePlayerGameplayManager::PerformPlayerFail,
+        void, MultiplayerLocalActivePlayerGameplayManager* self) {
+
+    if (!InSettingsEnvironment())
+        MultiplayerLocalActivePlayerGameplayManager_PerformPlayerFail(self);
+}
+
 #include "VRUIControls/VRGraphicRaycaster.hpp"
 
 MAKE_HOOK_MATCH(VRGraphicRaycaster_Raycast, &VRGraphicRaycaster::Raycast,
@@ -241,6 +251,14 @@ MAKE_HOOK_MATCH(VRGraphicRaycaster_Raycast, &VRGraphicRaycaster::Raycast,
         return;
 
     VRGraphicRaycaster_Raycast(self, eventData, resultAppendList);
+}
+
+MAKE_HOOK_MATCH(InputFieldView_DeactivateKeyboard, &HMUI::InputFieldView::DeactivateKeyboard, void, HMUI::InputFieldView* self, HMUI::UIKeyboard* keyboard) {
+
+    InputFieldView_DeactivateKeyboard(self, keyboard);
+
+    if (auto handler = self->GetComponent<KeyboardCloseHandler*>())
+        handler->callback();
 }
 
 void Qounters::InstallHooks() {
@@ -258,4 +276,5 @@ void Qounters::InstallHooks() {
     INSTALL_HOOK(logger, MultiplayerSessionManager_get_localPlayer);
     INSTALL_HOOK(logger, MultiplayerLocalActivePlayerInGameMenuViewController_HideMenu);
     INSTALL_HOOK(logger, VRGraphicRaycaster_Raycast);
+    INSTALL_HOOK(logger, InputFieldView_DeactivateKeyboard);
 }

@@ -20,9 +20,11 @@ DECLARE_CLASS_CODEGEN(Qounters, SettingsFlowCoordinator, HMUI::FlowCoordinator,
     DECLARE_STATIC_METHOD(void, PresentOptions);
 
     DECLARE_STATIC_METHOD(void, Save);
+    DECLARE_STATIC_METHOD(bool, IsSaved);
 
     DECLARE_STATIC_METHOD(void, DismissScene);
     DECLARE_STATIC_METHOD(void, RefreshScene);
+    DECLARE_STATIC_METHOD(void, OnModalConfirm);
 
     DECLARE_INSTANCE_FIELD_DEFAULT(HMUI::ViewController*, blankViewController, nullptr);
 
@@ -32,6 +34,9 @@ DECLARE_CLASS_CODEGEN(Qounters, SettingsFlowCoordinator, HMUI::FlowCoordinator,
 
     private:
     static inline Qounters::SettingsFlowCoordinator* instance = nullptr;
+
+    static void ConfirmAction(void(*action)());
+    static inline void(*nextModalAction)() = nullptr;
 
     std::string modifyingPresetName;
 )
@@ -46,8 +51,10 @@ DECLARE_CLASS_CODEGEN(Qounters, SettingsViewController, HMUI::ViewController,
     DECLARE_STATIC_METHOD(SettingsViewController*, GetInstance);
 
     DECLARE_INSTANCE_METHOD(void, OnDestroy);
+    DECLARE_INSTANCE_METHOD(void, ShowConfirmModal);
 
     DECLARE_INSTANCE_FIELD(UnityEngine::UI::Toggle*, previewToggle);
+    DECLARE_INSTANCE_FIELD(HMUI::ModalView*, confirmModal);
 
     private:
     static inline SettingsViewController* instance = nullptr;
@@ -145,6 +152,13 @@ DECLARE_CLASS_CODEGEN_INTERFACES(Qounters, EndDragHandler, UnityEngine::MonoBeha
     DECLARE_OVERRIDE_METHOD(void, OnEndDrag, METHOD(&UES::IEndDragHandler::OnEndDrag), UES::PointerEventData* eventData);
 
     DECLARE_DEFAULT_CTOR();
+    public:
+    std::function<void ()> callback = nullptr;
+)
+
+DECLARE_CLASS_CODEGEN(Qounters, KeyboardCloseHandler,  UnityEngine::MonoBehaviour,
+    DECLARE_DEFAULT_CTOR();
+
     public:
     std::function<void ()> callback = nullptr;
 )

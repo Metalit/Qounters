@@ -472,8 +472,6 @@ void Qounters::CreateQounters() {
 
     auto& preset = presets[presetName];
 
-    // TODO: get correct preset for environment
-
     for (int i = 0; i < preset.Qounters.size(); i++)
         CreateQounterGroup(preset.Qounters[i], i, false);
 }

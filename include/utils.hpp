@@ -5,6 +5,7 @@
 #include "UnityEngine/GameObject.hpp"
 #include "UnityEngine/UI/Toggle.hpp"
 #include "HMUI/SimpleTextDropdown.hpp"
+#include "HMUI/InputFieldView.hpp"
 #include "questui/shared/CustomTypes/Components/Settings/ColorSetting.hpp"
 #include "questui/shared/CustomTypes/Components/Settings/IncrementSetting.hpp"
 #include "questui/shared/CustomTypes/Components/Settings/SliderSetting.hpp"
@@ -39,6 +40,7 @@ namespace Qounters::Utils {
     HMUI::SimpleTextDropdown* CreateDropdownEnum(UnityEngine::GameObject* parent, std::string name, int value, std::vector<std::string> values, std::function<void (int)> onChange);
     QuestUI::ColorSetting* CreateColorPicker(UnityEngine::GameObject* parent, std::string name, UnityEngine::Color value, std::function<void (UnityEngine::Color)> onChange, std::function<void ()> onClose);
     void AddSliderEndDrag(QuestUI::SliderSetting* slider, std::function<void()> onEndDrag);
+    void AddStringSettingOk(HMUI::InputFieldView* input, std::function<void ()> onOkPressed);
     void AddIncrementIncrement(QuestUI::IncrementSetting* setting, float increment);
     void SetChildrenWidth(UnityEngine::Transform* parent, float width);
     void FixScrollView(UnityEngine::GameObject* scrollView, float width);

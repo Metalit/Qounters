@@ -175,7 +175,14 @@ QuestUI::ColorSetting* Qounters::Utils::CreateColorPicker(UnityEngine::GameObjec
 }
 
 void Qounters::Utils::AddSliderEndDrag(QuestUI::SliderSetting* slider, std::function<void ()> onEndDrag) {
-    slider->slider->get_gameObject()->AddComponent<Qounters::EndDragHandler*>()->callback = onEndDrag;
+    GetOrAddComponent<EndDragHandler*>(slider->slider)->callback = onEndDrag;
+}
+
+#include "HMUI/ButtonBinder.hpp"
+
+void Qounters::Utils::AddStringSettingOk(HMUI::InputFieldView* input, std::function<void ()> onOkPressed) {
+    GetOrAddComponent<KeyboardCloseHandler*>(input)->callback = onOkPressed;
+    input->buttonBinder->AddBinding(input->clearSearchButton, custom_types::MakeDelegate<System::Action*>(onOkPressed));
 }
 
 void Qounters::Utils::AddIncrementIncrement(QuestUI::IncrementSetting* setting, float increment) {
@@ -204,8 +211,6 @@ void Qounters::Utils::SetChildrenWidth(UnityEngine::Transform* parent, float wid
         }
     }
 }
-
-#include "questui/shared/CustomTypes/Components/ExternalComponents.hpp"
 
 UnityEngine::Transform* GetScrollViewTop(UnityEngine::GameObject* scrollView) {
     return scrollView->get_transform()->GetParent()->GetParent()->GetParent();
