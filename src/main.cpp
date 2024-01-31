@@ -8,6 +8,8 @@
 
 bool hasCJD = false;
 GlobalNamespace::IConnectedPlayer* localFakeConnectedPlayer = nullptr;
+bool blockOtherRaycasts = false;
+std::unordered_set<UnityEngine::Canvas*> raycastCanvases = {};
 
 Logger& getLogger() {
     static auto logger = new Logger(ModInfo{MOD_ID, VERSION}, LoggerOptions{false, true});

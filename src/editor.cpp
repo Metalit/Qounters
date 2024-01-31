@@ -267,11 +267,15 @@ namespace Qounters::Editor {
     }
 
     void BeginDrag(int anchor, bool group) {
+        raycastCanvases.clear();
+        blockOtherRaycasts = true;
         for (int i = 0; i < anchorCount; i++) {
             anchors[i]->set_raycastTarget(group);
             anchors[i]->SetHighlighted(i != anchor && group);
             anchors[i]->set_color(normalColor);
             dragCanvases[i]->SetActive(i == anchor);
+            raycastCanvases.emplace(anchors[i]->GetComponent<UnityEngine::Canvas*>());
+            raycastCanvases.emplace(dragCanvases[i]->GetComponent<UnityEngine::Canvas*>());
         }
         currentAnchor = anchor;
     }
@@ -307,6 +311,8 @@ namespace Qounters::Editor {
         return false;
     }
     void EndDrag() {
+        raycastCanvases.clear();
+        blockOtherRaycasts = false;
         for (int i = 0; i < anchorCount; i++) {
             anchors[i]->set_raycastTarget(false);
             anchors[i]->SetHighlighted(false);
@@ -315,8 +321,13 @@ namespace Qounters::Editor {
     }
     void EnableDetachedCanvas(bool enabled) {
         detachedDragCanvas->SetActive(enabled);
-        if (enabled)
-            detachedDragCanvas->get_transform()->SetParent(selected->rectTransform, false);
+        raycastCanvases.clear();
+        blockOtherRaycasts = enabled;
+        if (enabled) {
+            auto group = editing[{selectedGroupIdx, -1}];
+            detachedDragCanvas->get_transform()->SetParent(group->rectTransform, false);
+            raycastCanvases.emplace(detachedDragCanvas->GetComponent<UnityEngine::Canvas*>());
+        }
     }
 
     void AddComponent() {
@@ -345,6 +356,15 @@ namespace Qounters::Editor {
 
     void ToggleAttachment() {
         auto& group = GetSelectedGroup(-1, false);
+
+        newAction = true;
+        lastActionId = -1;
+
+        AddUndo([state = group]() {
+            GetSelectedGroup(-1) = state;
+            UpdateGroupPosition(selected->rectTransform, state);
+        });
+
         group.Detached = !group.Detached;
         group.DetachedPosition = selected->rectTransform->get_position();
         group.DetachedRotation = selected->rectTransform->get_rotation().get_eulerAngles();
@@ -352,11 +372,6 @@ namespace Qounters::Editor {
 
         if (!runningUndo)
             OptionsViewController::GetInstance()->UpdateSimpleUI();
-
-        newAction = true;
-        lastActionId = -1;
-
-        AddUndo(ToggleAttachment);
     }
 
     void RemoveWithoutDeselect(int groupIdx, int componentIdx) {

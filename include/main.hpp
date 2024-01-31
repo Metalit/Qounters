@@ -13,3 +13,8 @@ extern bool hasCJD;
 #include "GlobalNamespace/IConnectedPlayer.hpp"
 
 extern GlobalNamespace::IConnectedPlayer* localFakeConnectedPlayer;
+
+#include "UnityEngine/Canvas.hpp"
+
+extern bool blockOtherRaycasts;
+extern std::unordered_set<UnityEngine::Canvas*> raycastCanvases;

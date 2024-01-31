@@ -521,7 +521,10 @@ void EditingComponent::OnDrag(EventSystems::PointerEventData* eventData) {
 
     if (!dragging) {
         grabOffset = component.Position - position;
-        Editor::BeginDrag(GetGroup().Anchor, false);
+        if (GetGroup().Detached)
+            Editor::EnableDetachedCanvas(true);
+        else
+            Editor::BeginDrag(GetGroup().Anchor, false);
         dragStart = Time::get_time();
     }
     dragging = true;
@@ -533,9 +536,13 @@ void EditingComponent::OnDrag(EventSystems::PointerEventData* eventData) {
 
 void EditingComponent::OnEndDrag(EventSystems::PointerEventData* eventData) {
     dragging = false;
-    Editor::EndDrag();
+    if (GetGroup().Detached)
+        Editor::EnableDetachedCanvas(false);
+    else
+        Editor::EndDrag();
     UpdateColor();
 
+    Editor::FinalizeAction();
     bool tooShort = Time::get_time() - dragStart < MAX_SECS_WITHOUT_DRAG;
     if (tooShort)
         Editor::Undo();

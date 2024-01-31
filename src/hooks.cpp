@@ -9,6 +9,7 @@
 #include "environment.hpp"
 
 using namespace GlobalNamespace;
+using namespace VRUIControls;
 using namespace Qounters;
 
 #include "GlobalNamespace/ScoreController.hpp"
@@ -231,6 +232,17 @@ MAKE_HOOK_MATCH(MultiplayerLocalActivePlayerInGameMenuViewController_HideMenu, &
         MultiplayerLocalActivePlayerInGameMenuViewController_HideMenu(self);
 }
 
+#include "VRUIControls/VRGraphicRaycaster.hpp"
+
+MAKE_HOOK_MATCH(VRGraphicRaycaster_Raycast, &VRGraphicRaycaster::Raycast,
+        void, VRGraphicRaycaster* self, UnityEngine::EventSystems::PointerEventData* eventData, List<UnityEngine::EventSystems::RaycastResult>* resultAppendList) {
+
+    if (blockOtherRaycasts && !raycastCanvases.contains(self->canvas))
+        return;
+
+    VRGraphicRaycaster_Raycast(self, eventData, resultAppendList);
+}
+
 void Qounters::InstallHooks() {
     auto logger = getLogger().WithContext("Hooks");
     INSTALL_HOOK(logger, ScoreController_DespawnScoringElement);
@@ -245,4 +257,5 @@ void Qounters::InstallHooks() {
     INSTALL_HOOK(logger, StandardLevelScenesTransitionSetupDataSO_Finish);
     INSTALL_HOOK(logger, MultiplayerSessionManager_get_localPlayer);
     INSTALL_HOOK(logger, MultiplayerLocalActivePlayerInGameMenuViewController_HideMenu);
+    INSTALL_HOOK(logger, VRGraphicRaycaster_Raycast);
 }
