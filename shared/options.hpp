@@ -66,8 +66,11 @@ namespace Qounters {
         VALUE_DEFAULT(ConfigUtils::Vector2, Scale, ConfigUtils::Vector2(1, 1))
         VALUE(int, Type)
         VALUE(OptionsTypes, Options)
-        VALUE_DEFAULT(std::string, ColorSource, TextSource::StaticName)
+        VALUE_DEFAULT(std::string, ColorSource, ColorSource::StaticName)
         VALUE_DEFAULT(UnparsedJSON, ColorOptions, ColorSource::Static())
+        VALUE_DEFAULT(std::string, EnableSource, EnableSource::StaticName)
+        VALUE_DEFAULT(bool, InvertEnable, false);
+        VALUE_DEFAULT(UnparsedJSON, EnableOptions, EnableSource::Static())
     )
 
     DECLARE_JSON_CLASS(Group,

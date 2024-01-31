@@ -280,9 +280,9 @@ namespace Qounters::TextSource {
         static PP opts;
         opts = unparsed.Parse<PP>();
 
-        Utils::CreateDropdownEnum(parent, "Source", opts.Source, PPSourceStrings, [](int val) {
+        Utils::CreateDropdownEnum(parent, "Source", opts.Leaderboard, PPLeaderboardStrings, [](int val) {
             static int id = Editor::GetActionId();
-            opts.Source = val;
+            opts.Leaderboard = val;
             Editor::SetSourceOptions(id, opts);
             Editor::FinalizeAction();
         });
@@ -362,7 +362,9 @@ namespace Qounters::ShapeSource {
             opts.Input = val;
             Editor::SetSourceOptions(id, opts);
         });
-        // TODO: finalize on release
+        Utils::AddSliderEndDrag(slider, []() {
+            Editor::FinalizeAction();
+        });
         slider->GetComponent<RectTransform*>()->set_sizeDelta({0, 8});
         AddSliderIncrement(slider, 0.01);
     }
@@ -669,6 +671,70 @@ namespace Qounters::ColorSource {
             UnityEngine::Object::DestroyImmediate(trans->GetChild(0)->get_gameObject());
 
         auto fn = GetSource(colorSources, source).second;
+        fn(parent, options);
+    }
+}
+
+namespace Qounters::EnableSource {
+    void StaticUI(UnityEngine::GameObject* parent, UnparsedJSON unparsed) {
+        // static Static opts;
+        // opts = unparsed.Parse<Static>();
+    }
+    void RankedUI(UnityEngine::GameObject* parent, UnparsedJSON unparsed) {
+        static Ranked opts;
+        opts = unparsed.Parse<Ranked>();
+
+        Utils::CreateDropdownEnum(parent, "Leaderboard", opts.Leaderboard, RankedStatusLeaderboardStrings, [](int val) {
+            static int id = Editor::GetActionId();
+            opts.Leaderboard = val;
+            Editor::SetEnableOptions(id, opts);
+            Editor::FinalizeAction();
+        });
+    }
+    void FullComboUI(UnityEngine::GameObject* parent, UnparsedJSON unparsed) {
+        static FullCombo opts;
+        opts = unparsed.Parse<FullCombo>();
+
+        Utils::CreateDropdownEnum(parent, "Saber", opts.Saber, SaberStrings, [](int val) {
+            static int id = Editor::GetActionId();
+            opts.Saber = val;
+            Editor::SetEnableOptions(id, opts);
+            Editor::FinalizeAction();
+        });
+    }
+    void PercentageUI(UnityEngine::GameObject* parent, UnparsedJSON unparsed) {
+        static Percentage opts;
+        opts = unparsed.Parse<Percentage>();
+
+        auto slider = BeatSaberUI::CreateSliderSetting(parent, "Percentage", 1, opts.Percent, 0, 100, 0, [](float val) {
+            static int id = Editor::GetActionId();
+            opts.Percent = val;
+            Editor::SetSourceOptions(id, opts);
+        });
+        Utils::AddSliderEndDrag(slider, []() {
+            Editor::FinalizeAction();
+        });
+        slider->GetComponent<RectTransform*>()->set_sizeDelta({0, 8});
+        AddSliderIncrement(slider, 1);
+
+        Utils::CreateDropdownEnum(parent, "Saber", opts.Saber, SaberStrings, [](int val) {
+            static int id = Editor::GetActionId();
+            opts.Saber = val;
+            Editor::SetEnableOptions(id, opts);
+            Editor::FinalizeAction();
+        });
+    }
+    void FailedUI(UnityEngine::GameObject* parent, UnparsedJSON unparsed) {
+        // static Failed opts;
+        // opts = unparsed.Parse<Failed>();
+    }
+
+    void CreateUI(UnityEngine::GameObject* parent, std::string source, UnparsedJSON options) {
+        auto trans = parent->get_transform();
+        while (trans->GetChildCount() > 0)
+            UnityEngine::Object::DestroyImmediate(trans->GetChild(0)->get_gameObject());
+
+        auto fn = GetSource(enableSources, source).second;
         fn(parent, options);
     }
 }

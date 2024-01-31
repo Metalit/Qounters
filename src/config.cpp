@@ -301,6 +301,8 @@ namespace Qounters {
         component.Position = Vector2(0, -19);
         component.Scale = Vector2{2, 0.12};
         component.Options = shapeOptions;
+        component.EnableSource = EnableSource::FullComboName;
+        component.EnableOptions = EnableSource::FullCombo();
         ret.Components.push_back(component);
         // upper line
         component.Position = Vector2(0, 19);

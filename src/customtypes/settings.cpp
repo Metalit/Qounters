@@ -251,7 +251,7 @@ void Qounters::OptionsViewController::DidActivate(bool firstActivation, bool add
     });
     Utils::AddIncrementIncrement(gPosIncrementY, 5);
 
-    gRotSlider = BeatSaberUI::CreateSliderSetting(groupParent, "Rotation", 1, 0, 0, 360, 0, [this](float val) {
+    gRotSlider = BeatSaberUI::CreateSliderSetting(groupParent, "Rotation", 1, 0, -180, 180, 0, [this](float val) {
         static int id = Editor::GetActionId();
         Editor::GetSelectedGroup(id).Rotation = val;
         Editor::UpdatePosition();
@@ -267,7 +267,7 @@ void Qounters::OptionsViewController::DidActivate(bool firstActivation, bool add
 
     gComponentButton = BeatSaberUI::CreateUIButton(gButtonsParent1, "Add Component", Editor::AddComponent);
 
-    // anything here? some other button? type dropdown?
+    // detach button
     BeatSaberUI::AddHoverHint(BeatSaberUI::CreateUIButton(gButtonsParent1, "Your Ad Here", "ActionButton"), "Contact Metalit (k.metalit@gmail.com or metalit on Discord) for low advertising prices! Can optionally even do something!");
 
     auto gButtonsParent2 = BeatSaberUI::CreateHorizontalLayoutGroup(groupParent);
@@ -296,7 +296,7 @@ void Qounters::OptionsViewController::DidActivate(bool firstActivation, bool add
     });
     Utils::AddIncrementIncrement(cPosIncrementY, 5);
 
-    cRotSlider = BeatSaberUI::CreateSliderSetting(componentParent, "Relative Rotation", 1, 0, 0, 360, 0, [this](float val) {
+    cRotSlider = BeatSaberUI::CreateSliderSetting(componentParent, "Relative Rotation", 1, 0, -180, 180, 0, [this](float val) {
         static int id = Editor::GetActionId();
         Editor::GetSelectedComponent(id).Rotation = val;
         Editor::UpdatePosition();
@@ -351,6 +351,28 @@ void Qounters::OptionsViewController::DidActivate(bool firstActivation, bool add
 
     cColorSourceOptions = BeatSaberUI::CreateVerticalLayoutGroup(componentParent);
     cColorSourceOptions->GetComponent<UI::ContentSizeFitter*>()->set_verticalFit(UI::ContentSizeFitter::FitMode::PreferredSize);
+
+    cEnableSourceDropdown = Utils::CreateDropdown(componentParent, "Enabled If", "", Utils::GetKeys(enableSources), [this](std::string val) {
+        static int id = Editor::GetActionId();
+        auto& comp = Editor::GetSelectedComponent(id);
+        if (comp.EnableSource != val) {
+            cEnableSourceDropdown->Hide(false);
+            comp.EnableSource = val;
+            Editor::UpdateEnableSource();
+        }
+        Editor::FinalizeAction();
+    });
+
+    cInvertEnableToggle = BeatSaberUI::CreateToggle(componentParent, "Invert Enabled", false, [this](bool val) {
+        static int id = Editor::GetActionId();
+        auto& comp = Editor::GetSelectedComponent(id);
+        comp.InvertEnable = val;
+        Editor::UpdateInvertEnabled();
+        Editor::FinalizeAction();
+    });
+
+    cEnableSourceOptions = BeatSaberUI::CreateVerticalLayoutGroup(componentParent);
+    cEnableSourceOptions->GetComponent<UI::ContentSizeFitter*>()->set_verticalFit(UI::ContentSizeFitter::FitMode::PreferredSize);
 
     auto cButtonsParent = BeatSaberUI::CreateHorizontalLayoutGroup(componentParent);
     cButtonsParent->set_spacing(3);
@@ -413,6 +435,8 @@ void Qounters::OptionsViewController::UpdateSimpleUI() {
         cScaleSliderY->set_value(state.Scale.y);
         cTypeDropdown->SelectCellWithIdx(state.Type);
         Utils::SetDropdownValue(cColorSourceDropdown, state.ColorSource);
+        Utils::SetDropdownValue(cEnableSourceDropdown, state.EnableSource);
+        Utils::InstantSetToggle(cInvertEnableToggle, state.InvertEnable);
     } else
         SettingsFlowCoordinator::PresentTemplates();
 
@@ -432,6 +456,7 @@ void Qounters::OptionsViewController::UpdateUI() {
 
     UpdateTypeOptions();
     UpdateColorSourceOptions();
+    UpdateEnableSourceOptions();
     Utils::RebuildWithScrollPosition(componentParent);
 
     Editor::EnableActions();
@@ -445,6 +470,11 @@ void Qounters::OptionsViewController::UpdateTypeOptions() {
 void Qounters::OptionsViewController::UpdateColorSourceOptions() {
     auto& state = Editor::GetSelectedComponent(-1, false);
     ColorSource::CreateUI(cColorSourceOptions->get_gameObject(), state.ColorSource, state.ColorOptions);
+}
+
+void Qounters::OptionsViewController::UpdateEnableSourceOptions() {
+    auto& state = Editor::GetSelectedComponent(-1, false);
+    EnableSource::CreateUI(cEnableSourceOptions->get_gameObject(), state.EnableSource, state.EnableOptions);
 }
 
 Qounters::OptionsViewController* Qounters::OptionsViewController::GetInstance() {

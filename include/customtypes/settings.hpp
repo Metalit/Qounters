@@ -89,6 +89,7 @@ DECLARE_CLASS_CODEGEN(Qounters, OptionsViewController, HMUI::ViewController,
     DECLARE_INSTANCE_METHOD(void, UpdateUI);
     DECLARE_INSTANCE_METHOD(void, UpdateTypeOptions);
     DECLARE_INSTANCE_METHOD(void, UpdateColorSourceOptions);
+    DECLARE_INSTANCE_METHOD(void, UpdateEnableSourceOptions);
 
     DECLARE_INSTANCE_FIELD_DEFAULT(bool, uiInitialized, false);
 
@@ -112,11 +113,14 @@ DECLARE_CLASS_CODEGEN(Qounters, OptionsViewController, HMUI::ViewController,
     DECLARE_INSTANCE_FIELD(QuestUI::SliderSetting*, cScaleSliderY);
     DECLARE_INSTANCE_FIELD(HMUI::SimpleTextDropdown*, cTypeDropdown);
     DECLARE_INSTANCE_FIELD(HMUI::SimpleTextDropdown*, cColorSourceDropdown);
+    DECLARE_INSTANCE_FIELD(HMUI::SimpleTextDropdown*, cEnableSourceDropdown);
+    DECLARE_INSTANCE_FIELD(UnityEngine::UI::Toggle*, cInvertEnableToggle);
     DECLARE_INSTANCE_FIELD(UnityEngine::UI::Button*, cDeleteButton);
     DECLARE_INSTANCE_FIELD(UnityEngine::UI::Button*, cDeselectButton);
 
     DECLARE_INSTANCE_FIELD(UnityEngine::UI::VerticalLayoutGroup*, cTypeOptions);
     DECLARE_INSTANCE_FIELD(UnityEngine::UI::VerticalLayoutGroup*, cColorSourceOptions);
+    DECLARE_INSTANCE_FIELD(UnityEngine::UI::VerticalLayoutGroup*, cEnableSourceOptions);
 
     DECLARE_STATIC_METHOD(Qounters::OptionsViewController*, GetInstance);
 

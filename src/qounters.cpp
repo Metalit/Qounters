@@ -3,6 +3,7 @@
 #include "customtypes/editing.hpp"
 #include "customtypes/components.hpp"
 #include "editor.hpp"
+#include "environment.hpp"
 #include "main.hpp"
 #include "sources.hpp"
 #include "utils.hpp"
@@ -17,9 +18,10 @@ using namespace UnityEngine;
 std::map<std::string, std::vector<std::pair<TMPro::TextMeshProUGUI*, UnparsedJSON>>> texts;
 std::map<std::string, std::vector<std::pair<HMUI::ImageView*, UnparsedJSON>>> shapes;
 std::map<std::string, std::vector<std::pair<UI::Graphic*, UnparsedJSON>>> colors;
+std::map<std::string, std::vector<std::pair<GameObject*, std::pair<UnparsedJSON, bool>>>> enables;
 
-template<class T>
-void UpdatePair(std::map<std::string, std::vector<std::pair<T, UnparsedJSON>>>& map, T update, std::string source, UnparsedJSON& value, bool forceAdd) {
+template<class TComp, class TOpts>
+void UpdatePair(std::map<std::string, std::vector<std::pair<TComp, TOpts>>>& map, TComp update, std::string source, TOpts value, bool forceAdd) {
     if (!map.contains(source))
         map[source] = {};
 
@@ -197,6 +199,24 @@ void UpdateColorOptions(UI::Graphic* component, std::string colorSource, Unparse
 
 void Qounters::UpdateComponentColor(UI::Graphic* component, std::string newSource, UnparsedJSON newOptions) {
     UpdateColorOptions(component, newSource, newOptions, false);
+}
+
+void UpdateEnableOptions(GameObject* component, std::string enableSource, UnparsedJSON options, bool creation, bool invert) {
+    auto sourceFn = GetSource(enableSources, enableSource).first;
+    if (!sourceFn)
+        return;
+    bool enable = sourceFn(options);
+    if (invert)
+        enable = !enable;
+    if (InSettingsEnvironment() && !Editor::GetPreviewMode())
+        enable = true;
+    component->SetActive(enable);
+
+    UpdatePair(enables, component, enableSource, {options, invert}, creation);
+}
+
+void Qounters::UpdateComponentEnabled(GameObject* component, std::string newSource, UnparsedJSON newOptions, bool invert) {
+    UpdateEnableOptions(component, newSource, newOptions, false, invert);
 }
 
 void Qounters::UpdateComponentPosition(RectTransform* component, Component const& qounterComponent) {
@@ -403,6 +423,7 @@ void Qounters::CreateQounterComponent(Component const& qounterComponent, int com
     }
 
     UpdateColorOptions(component, qounterComponent.ColorSource, qounterComponent.ColorOptions, true);
+    UpdateEnableOptions(component->get_gameObject(), qounterComponent.EnableSource, qounterComponent.EnableOptions, true, qounterComponent.InvertEnable);
 
     UpdateComponentPosition(component->get_rectTransform(), qounterComponent);
 
@@ -501,6 +522,25 @@ void UpdateColors(std::string source) {
         element->set_color(sourceFn(options));
 }
 
+void UpdateEnables(std::string source) {
+    auto sourceFn = GetSource(enableSources, source).first;
+
+    if (!enables.contains(source) || !sourceFn)
+        return;
+
+    auto& elements = enables[source];
+
+    for (auto& [element, options] : elements) {
+        auto& [json, invert] = options;
+        bool enable = sourceFn(json);
+        if (invert)
+            enable = !enable;
+        if (InSettingsEnvironment() && !Editor::GetPreviewMode())
+            enable = true;
+        element->SetActive(enable);
+    }
+}
+
 void Qounters::UpdateSource(Sources sourceType, std::string source) {
     switch (sourceType) {
         case Sources::Text:
@@ -512,5 +552,13 @@ void Qounters::UpdateSource(Sources sourceType, std::string source) {
         case Sources::Color:
             UpdateColors(source);
             break;
+        case Sources::Enable:
+            UpdateEnables(source);
+            break;
     }
+}
+
+void Qounters::UpdateAllEnables() {
+    for (auto& [source, _] : enables)
+        UpdateEnables(source);
 }

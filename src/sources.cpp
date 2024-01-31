@@ -48,6 +48,14 @@ std::vector<std::pair<std::string, std::pair<SourceFn<UnityEngine::Color>, Sourc
     {ColorSource::HealthName, {ColorSource::GetHealth, ColorSource::HealthUI}},
 };
 
+std::vector<std::pair<std::string, std::pair<SourceFn<bool>, SourceUIFn>>> Qounters::enableSources = {
+    {EnableSource::StaticName, {EnableSource::GetStatic, EnableSource::StaticUI}},
+    {EnableSource::RankedName, {EnableSource::GetRanked, EnableSource::RankedUI}},
+    {EnableSource::FullComboName, {EnableSource::GetFullCombo, EnableSource::FullComboUI}},
+    {EnableSource::PercentageName, {EnableSource::GetPercentage, EnableSource::PercentageUI}},
+    {EnableSource::FailedName, {EnableSource::GetFailed, EnableSource::FailedUI}},
+};
+
 const std::vector<std::string> Qounters::AverageCutPartStrings = {
     "Preswing",
     "Postswing",
@@ -60,7 +68,7 @@ const std::vector<std::string> Qounters::NotesDisplayStrings = {
     "Cut Ratio",
     "Cut Percent",
 };
-const std::vector<std::string> Qounters::PPSourceStrings = {
+const std::vector<std::string> Qounters::PPLeaderboardStrings = {
     "ScoreSaber",
     "BeatLeader",
 };
@@ -71,6 +79,12 @@ const std::vector<std::string> Qounters::SaberSpeedModeStrings = {
 const std::vector<std::string> Qounters::SpinometerModeStrings = {
     "Average",
     "Highest",
+};
+const std::vector<std::string> Qounters::RankedStatusLeaderboardStrings = {
+    "ScoreSaber",
+    "BeatLeader",
+    "Either",
+    "Both",
 };
 
 namespace Qounters::TextSource {
@@ -232,23 +246,15 @@ namespace Qounters::TextSource {
     std::string GetPP(UnparsedJSON unparsed) {
         auto opts = unparsed.Parse<PP>();
 
-        if (opts.HideUnranked && InSettingsEnvironment())
-            return "Hidden PP";
-
-        if (opts.Source == (int) PP::Sources::BeatLeader && opts.HideUnranked && !Qounters::PP::IsRankedBL())
-            return "";
-        else if (opts.Source == (int) PP::Sources::ScoreSaber && opts.HideUnranked && !Qounters::PP::IsRankedSS())
-            return "";
-
         int score = Game::GetScore((int) Sabers::Both);
         int max = Game::GetMaxScore((int) Sabers::Both);
         float percent = max > 0 ? score / (double) max : 0.95;
         bool failed = Game::GetHealth() == 0;
 
         float pp = 0;
-        if (opts.Source == (int) PP::Sources::BeatLeader)
+        if (opts.Leaderboard == (int) PP::Leaderboards::BeatLeader)
             pp = Qounters::PP::CalculateBL(percent, failed);
-        else if (opts.Source == (int) PP::Sources::ScoreSaber)
+        else if (opts.Leaderboard == (int) PP::Leaderboards::ScoreSaber)
             pp = Qounters::PP::CalculateSS(percent, failed);
 
         return Utils::FormatDecimals(pp, opts.Decimals) + " PP";
@@ -400,5 +406,41 @@ namespace Qounters::ColorSource {
             return opts.AboveHalf;
         else
             return opts.BelowHalf;
+    }
+}
+
+namespace Qounters::EnableSource {
+    bool GetStatic(UnparsedJSON unparsed) {
+        return true;
+    }
+    bool GetRanked(UnparsedJSON unparsed) {
+        auto opts = unparsed.Parse<Ranked>();
+
+        switch ((Ranked::Leaderboards) opts.Leaderboard) {
+            case Ranked::Leaderboards::ScoreSaber:
+                return PP::IsRankedSS();
+            case Ranked::Leaderboards::BeatLeader:
+                return PP::IsRankedBL();
+            case Ranked::Leaderboards::Either:
+                return PP::IsRankedSS() || PP::IsRankedBL();
+            case Ranked::Leaderboards::Both:
+                return PP::IsRankedSS() && PP::IsRankedBL();
+        }
+    }
+    bool GetFullCombo(UnparsedJSON unparsed) {
+        auto opts = unparsed.Parse<FullCombo>();
+
+        return Game::GetFullCombo(opts.Saber);
+    }
+    bool GetPercentage(UnparsedJSON unparsed) {
+        auto opts = unparsed.Parse<Percentage>();
+
+        int score = Game::GetScore(opts.Saber);
+        int max = Game::GetMaxScore(opts.Saber);
+        float percent = max > 0 ? score / (double) max : 1;
+        return percent * 100 >= opts.Percent;
+    }
+    bool GetFailed(UnparsedJSON unparsed) {
+        return Game::GetHealth() == 0;
     }
 }

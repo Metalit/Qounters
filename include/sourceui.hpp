@@ -49,4 +49,13 @@ namespace Qounters {
 
         void CreateUI(UnityEngine::GameObject* parent, std::string source, UnparsedJSON options);
     }
+    namespace EnableSource {
+        void StaticUI(UnityEngine::GameObject* parent, UnparsedJSON options);
+        void RankedUI(UnityEngine::GameObject* parent, UnparsedJSON options);
+        void FullComboUI(UnityEngine::GameObject* parent, UnparsedJSON options);
+        void PercentageUI(UnityEngine::GameObject* parent, UnparsedJSON options);
+        void FailedUI(UnityEngine::GameObject* parent, UnparsedJSON options);
+
+        void CreateUI(UnityEngine::GameObject* parent, std::string source, UnparsedJSON options);
+    }
 }

@@ -54,6 +54,8 @@ namespace Qounters::Editor {
 
     bool disableActions;
 
+    bool previewMode;
+
     int prevSelectedGroupIdx, prevSelectedComponentIdx;
     EditingBase* prevSelected;
 
@@ -123,6 +125,7 @@ namespace Qounters::Editor {
         newAction = true;
         runningUndo = false;
         disableActions = false;
+        previewMode = false;
         SetupAnchors();
         CreateDragCanvases();
 
@@ -131,9 +134,15 @@ namespace Qounters::Editor {
     }
 
     void SetPreviewMode(bool preview) {
+        previewMode = preview;
         for (auto& [_, obj] : editing)
             obj->outline->set_enabled(!preview);
         Deselect();
+        UpdateAllEnables();
+    }
+
+    bool GetPreviewMode() {
+        return previewMode;
     }
 
     void SetPresetForMigrating(Preset migratingPreset) {
@@ -409,6 +418,29 @@ namespace Qounters::Editor {
         }
     }
 
+    void UpdateEnableSource() {
+        AddUndo([state = nextUndoComponent]() {
+            GetSelectedComponent(-1) = state;
+            UpdateEnableSource();
+        });
+
+        if (!runningUndo) {
+            SetEnableOptions(lastActionId, EnableSource::Static());
+            OptionsViewController::GetInstance()->UpdateUI();
+        }
+    }
+
+    void UpdateInvertEnabled() {
+        AddUndo([state = nextUndoComponent]() {
+            GetSelectedComponent(-1) = state;
+            UpdateInvertEnabled();
+        });
+
+        auto& component = GetSelectedComponent(lastActionId);
+        auto editingComponent = (EditingComponent*) editing[{selectedGroupIdx, selectedComponentIdx}];
+        UpdateComponentEnabled(editingComponent->typeComponent->get_gameObject(), component.EnableSource, component.EnableOptions, component.InvertEnable);
+    }
+
     void SetOptions(int actionId, Component::OptionsTypes options) {
         auto& component = GetSelectedComponent(actionId);
 
@@ -443,6 +475,18 @@ namespace Qounters::Editor {
         component.ColorOptions = options;
         auto editingComponent = (EditingComponent*) editing[{selectedGroupIdx, selectedComponentIdx}];
         UpdateComponentColor(editingComponent->typeComponent, component.ColorSource, component.ColorOptions);
+    }
+
+    void SetEnableOptions(int actionId, UnparsedJSON options) {
+        auto& component = GetSelectedComponent(actionId);
+
+        AddUndo([state = nextUndoComponent]() {
+            SetEnableOptions(-1, state.EnableOptions);
+        });
+
+        component.EnableOptions = options;
+        auto editingComponent = (EditingComponent*) editing[{selectedGroupIdx, selectedComponentIdx}];
+        UpdateComponentEnabled(editingComponent->typeComponent->get_gameObject(), component.EnableSource, component.EnableOptions, component.InvertEnable);
     }
 
     void Undo() {

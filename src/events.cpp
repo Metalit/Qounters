@@ -12,6 +12,7 @@ namespace Qounters {
             {Sources::Shape, ShapeSource::ScoreName},
             {Sources::Color, ColorSource::RankName},
             {Sources::Color, ColorSource::PersonalBestName},
+            {Sources::Enable, EnableSource::PercentageName},
         }},
         {(int) Events::NoteCut, {
             {Sources::Text, TextSource::AverageCutName},
@@ -40,12 +41,14 @@ namespace Qounters {
             {Sources::Shape, ShapeSource::MultiplierName},
             {Sources::Color, ColorSource::ComboName},
             {Sources::Color, ColorSource::MultiplierName},
+            {Sources::Enable, EnableSource::FullComboName},
         }},
         {(int) Events::HealthChanged, {
             {Sources::Text, TextSource::HealthName},
             {Sources::Text, TextSource::FailsName},
             {Sources::Shape, ShapeSource::HealthName},
             {Sources::Color, ColorSource::HealthName},
+            {Sources::Enable, EnableSource::FailedName},
         }},
         {(int) Events::Update, {
             {Sources::Text, TextSource::TimeName},
@@ -56,6 +59,7 @@ namespace Qounters {
         }},
         {(int) Events::PPInfo, {
             {Sources::Text, TextSource::PPName},
+            {Sources::Enable, EnableSource::RankedName},
         }},
     };
 

@@ -7,6 +7,7 @@ namespace Qounters::Editor {
     void Initialize(Preset const& preset);
 
     void SetPreviewMode(bool preview);
+    bool GetPreviewMode();
 
     void SetPresetForMigrating(Preset preset);
     Preset GetPreset();
@@ -29,9 +30,12 @@ namespace Qounters::Editor {
     void UpdatePosition();
     void UpdateType();
     void UpdateColorSource();
+    void UpdateEnableSource();
+    void UpdateInvertEnabled();
     void SetOptions(int actionId, Component::OptionsTypes options);
     void SetSourceOptions(int actionId, UnparsedJSON options);
     void SetColorOptions(int actionId, UnparsedJSON options);
+    void SetEnableOptions(int actionId, UnparsedJSON options);
 
     void Undo();
     int GetActionId();

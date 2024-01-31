@@ -233,33 +233,43 @@ namespace Qounters::Templates {
         float yPos = 0;
         if (beatleader) {
             TextSource::PP ppOpts;
-            ppOpts.Source = (int) TextSource::PP::Sources::BeatLeader;
-            ppOpts.HideUnranked = hideUnranked;
+            ppOpts.Leaderboard = (int) TextSource::PP::Leaderboards::BeatLeader;
             ppOpts.Decimals = decimals;
-            AddText(group, TextSource::PPName, ppOpts, 12, TextOptions::Aligns::Left);
+            auto& text = AddText(group, TextSource::PPName, ppOpts, 12, TextOptions::Aligns::Left);
             yPos += 15;
-            auto& comp = group.Components.emplace_back();
-            comp.Type = (int) Component::Types::Image;
+            auto& image = group.Components.emplace_back();
+            image.Type = (int) Component::Types::Image;
             ImageOptions opts;
             opts.Path = "Beatleader.png";
-            comp.Options = opts;
-            comp.Scale = UnityEngine::Vector2(0.5, 0.5);
-            comp.Position = UnityEngine::Vector2(-10, 1);
+            image.Options = opts;
+            image.Scale = UnityEngine::Vector2(0.5, 0.5);
+            image.Position = UnityEngine::Vector2(-10, 1);
+            if (hideUnranked) {
+                EnableSource::Ranked enableOpts;
+                enableOpts.Leaderboard = (int) EnableSource::Ranked::Leaderboards::BeatLeader;
+                text.EnableSource = image.EnableSource = EnableSource::RankedName;
+                text.EnableOptions = image.EnableOptions = enableOpts;
+            }
         }
         if (scoresaber) {
             TextSource::PP ppOpts;
-            ppOpts.Source = (int) TextSource::PP::Sources::ScoreSaber;
-            ppOpts.HideUnranked = hideUnranked;
+            ppOpts.Leaderboard = (int) TextSource::PP::Leaderboards::ScoreSaber;
             ppOpts.Decimals = decimals;
             auto& text = AddText(group, TextSource::PPName, ppOpts, 12, TextOptions::Aligns::Left);
             text.Position = UnityEngine::Vector2(0, yPos);
-            auto& comp = group.Components.emplace_back();
-            comp.Type = (int) Component::Types::Image;
+            auto& image = group.Components.emplace_back();
+            image.Type = (int) Component::Types::Image;
             ImageOptions opts;
             opts.Path = "Scoresaber.png";
-            comp.Options = opts;
-            comp.Scale = UnityEngine::Vector2(0.5, 0.5);
-            comp.Position = UnityEngine::Vector2(-10, yPos + 1);
+            image.Options = opts;
+            image.Scale = UnityEngine::Vector2(0.5, 0.5);
+            image.Position = UnityEngine::Vector2(-10, yPos + 1);
+            if (hideUnranked) {
+                EnableSource::Ranked enableOpts;
+                enableOpts.Leaderboard = (int) EnableSource::Ranked::Leaderboards::ScoreSaber;
+                text.EnableSource = image.EnableSource = EnableSource::RankedName;
+                text.EnableOptions = image.EnableOptions = enableOpts;
+            }
         }
         Editor::AddGroup(group);
     }

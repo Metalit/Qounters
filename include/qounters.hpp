@@ -13,6 +13,7 @@ namespace Qounters {
 
     void UpdateComponentOptions(int componentType, UnityEngine::Component* component, Component::OptionsTypes newOptions);
     void UpdateComponentColor(UnityEngine::UI::Graphic* component, std::string newSource, UnparsedJSON newOptions);
+    void UpdateComponentEnabled(UnityEngine::GameObject* component, std::string newSource, UnparsedJSON newOptions, bool invert);
 
     void UpdateComponentPosition(UnityEngine::RectTransform* component, Component const& qounterComponent);
     void UpdateGroupPosition(UnityEngine::RectTransform* group, Group const& qounterGroup);
@@ -32,4 +33,5 @@ namespace Qounters {
     void SetupObjects();
 
     void UpdateSource(Sources sourceType, std::string source);
+    void UpdateAllEnables();
 }

@@ -50,6 +50,7 @@ namespace Qounters {
         Text,
         Shape,
         Color,
+        Enable,
     };
 
     template<class T>

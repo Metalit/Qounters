@@ -11,6 +11,7 @@ namespace Qounters {
     extern std::vector<std::pair<std::string, std::pair<SourceFn<std::string>, SourceUIFn>>> textSources;
     extern std::vector<std::pair<std::string, std::pair<SourceFn<float>, SourceUIFn>>> shapeSources;
     extern std::vector<std::pair<std::string, std::pair<SourceFn<UnityEngine::Color>, SourceUIFn>>> colorSources;
+    extern std::vector<std::pair<std::string, std::pair<SourceFn<bool>, SourceUIFn>>> enableSources;
 
     template<class T>
     T GetSource(std::vector<std::pair<std::string, T>> sourceVec, std::string source) {
@@ -35,12 +36,16 @@ namespace Qounters {
     inline void RegisterColorSource(std::string sourceName, SourceFn<UnityEngine::Color> sourceFn, SourceUIFn sourceUIFn) {
         RegisterSource(colorSources, sourceName, sourceFn, sourceUIFn);
     }
+    inline void RegisterEnableSource(std::string sourceName, SourceFn<bool> sourceFn, SourceUIFn sourceUIFn) {
+        RegisterSource(enableSources, sourceName, sourceFn, sourceUIFn);
+    }
 
     extern const std::vector<std::string> AverageCutPartStrings;
     extern const std::vector<std::string> NotesDisplayStrings;
-    extern const std::vector<std::string> PPSourceStrings;
+    extern const std::vector<std::string> PPLeaderboardStrings;
     extern const std::vector<std::string> SaberSpeedModeStrings;
     extern const std::vector<std::string> SpinometerModeStrings;
+    extern const std::vector<std::string> RankedStatusLeaderboardStrings;
 
     namespace TextSource {
         inline const std::string StaticName = "Static";
@@ -82,8 +87,8 @@ namespace Qounters {
         DECLARE_JSON_CLASS(Combo,
             VALUE_DEFAULT(int, Saber, (int) Sabers::Both)
         )
-        // DECLARE_JSON_CLASS(Multiplier,
-        // )
+        DECLARE_JSON_CLASS(Multiplier,
+        )
         DECLARE_JSON_CLASS(Health,
             VALUE_DEFAULT(int, Decimals, 1)
             VALUE_DEFAULT(bool, Percentage, true)
@@ -130,13 +135,12 @@ namespace Qounters {
             VALUE_DEFAULT(int, Decimals, 1)
         )
         DECLARE_JSON_CLASS(PP,
-            enum class Sources {
+            enum class Leaderboards {
                 ScoreSaber,
                 BeatLeader,
             };
-            VALUE_DEFAULT(int, Source, (int) Sources::ScoreSaber)
+            VALUE_DEFAULT(int, Leaderboard, (int) Leaderboards::ScoreSaber)
             VALUE_DEFAULT(int, Decimals, 1)
-            VALUE_DEFAULT(bool, HideUnranked, true)
         )
         DECLARE_JSON_CLASS(SaberSpeed,
             enum class Modes {
@@ -193,10 +197,10 @@ namespace Qounters {
         DECLARE_JSON_CLASS(Multiplier,
             VALUE_DEFAULT(bool, Absolute, false);
         )
-        // DECLARE_JSON_CLASS(Health,
-        // )
-        // DECLARE_JSON_CLASS(Time,
-        // )
+        DECLARE_JSON_CLASS(Health,
+        )
+        DECLARE_JSON_CLASS(Time,
+        )
         DECLARE_JSON_CLASS(AverageCut,
             enum class Parts {
                 Pre,
@@ -284,5 +288,40 @@ namespace Qounters {
         UnityEngine::Color GetCombo(UnparsedJSON options);
         UnityEngine::Color GetMultiplier(UnparsedJSON options);
         UnityEngine::Color GetHealth(UnparsedJSON options);
+    }
+
+    namespace EnableSource {
+        inline const std::string StaticName = "Always";
+        inline const std::string RankedName = "Ranked";
+        inline const std::string FullComboName = "Full Combo";
+        inline const std::string PercentageName = "Percentage Above";
+        inline const std::string FailedName = "Failed";
+
+        DECLARE_JSON_CLASS(Static,
+        )
+        DECLARE_JSON_CLASS(Ranked,
+            enum class Leaderboards {
+                ScoreSaber,
+                BeatLeader,
+                Either,
+                Both,
+            };
+            VALUE_DEFAULT(int, Leaderboard, (int) Leaderboards::Either)
+        )
+        DECLARE_JSON_CLASS(FullCombo,
+            VALUE_DEFAULT(int, Saber, (int) Sabers::Both)
+        )
+        DECLARE_JSON_CLASS(Percentage,
+            VALUE_DEFAULT(int, Saber, (int) Sabers::Both)
+            VALUE_DEFAULT(float, Percent, 90)
+        )
+        DECLARE_JSON_CLASS(Failed,
+        )
+
+        bool GetStatic(UnparsedJSON options);
+        bool GetRanked(UnparsedJSON options);
+        bool GetFullCombo(UnparsedJSON options);
+        bool GetPercentage(UnparsedJSON options);
+        bool GetFailed(UnparsedJSON options);
     }
 }
