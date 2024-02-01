@@ -344,6 +344,25 @@ namespace Qounters::TextSource {
 
         BeatSaberUI::CreateText(parent, "nyi - idk what this counts");
     }
+    void FCPercentUI(GameObject* parent, UnparsedJSON unparsed) {
+        static FCPercent opts;
+        opts = unparsed.Parse<FCPercent>();
+
+        Utils::CreateDropdownEnum(parent, "Saber", opts.Saber, SaberStrings, [](int val) {
+            static int id = Editor::GetActionId();
+            opts.Saber = val;
+            Editor::SetSourceOptions(id, opts);
+            Editor::FinalizeAction();
+        });
+
+        auto inc = BeatSaberUI::CreateIncrementSetting(parent, "Decimals", 0, 1, opts.Decimals, 0, 10, [](float val) {
+            static int id = Editor::GetActionId();
+            opts.Decimals = val;
+            Editor::SetSourceOptions(id, opts);
+            Editor::FinalizeAction();
+        });
+        SetButtons(inc);
+    }
 
     void CreateUI(UnityEngine::GameObject* parent, std::string source, UnparsedJSON options) {
         auto trans = parent->get_transform();

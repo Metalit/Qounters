@@ -3,6 +3,7 @@
 #include "GlobalNamespace/ColorScheme.hpp"
 #include "GlobalNamespace/NoteData.hpp"
 #include "GlobalNamespace/BeatmapData.hpp"
+#include "types.hpp"
 
 namespace Qounters {
     extern int leftScore;
@@ -44,6 +45,10 @@ namespace Qounters {
     extern int restarts;
     extern GlobalNamespace::ColorScheme* colors;
     extern GlobalNamespace::BeatmapData* beatmapData;
+    extern int leftMissedMaxScore;
+    extern int rightMissedMaxScore;
+    extern int leftMissedFixedScore;
+    extern int rightMissedFixedScore;
 
     void Initialize();
 

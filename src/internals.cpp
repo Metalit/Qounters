@@ -163,6 +163,10 @@ namespace Qounters {
     int restarts;
     ColorScheme* colors;
     BeatmapData* beatmapData;
+    int leftMissedMaxScore;
+    int rightMissedMaxScore;
+    int leftMissedFixedScore;
+    int rightMissedFixedScore;
 }
 
 #include "UnityEngine/Resources.hpp"
@@ -223,6 +227,11 @@ void Qounters::Initialize() {
 
     colors = gameplayCoreInstaller && gameplayCoreInstaller->sceneSetupData ? gameplayCoreInstaller->sceneSetupData->colorScheme : nullptr;
     beatmapData = beatmapCallbacksUpdater ? (BeatmapData*) beatmapCallbacksUpdater->beatmapCallbacksController->beatmapData : nullptr;
+
+    leftMissedMaxScore = 0;
+    rightMissedMaxScore = 0;
+    leftMissedFixedScore = 0;
+    rightMissedFixedScore = 0;
 }
 
 bool Qounters::ShouldProcessNote(NoteData* data) {

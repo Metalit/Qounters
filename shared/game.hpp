@@ -33,4 +33,5 @@ namespace Qounters::Game {
     int GetFails();
     int GetRestarts();
     UnityEngine::Color GetColor(int color);
+    int GetFCScore(int saber);
 }

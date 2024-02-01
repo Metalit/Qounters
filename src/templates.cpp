@@ -22,6 +22,7 @@ std::vector<std::pair<std::string, TemplateUIFn>> Qounters::templates = {
     {"PP", Templates::PPUI},
     {"Saber Speed", Templates::SaberSpeedUI},
     {"Spinometer", Templates::SpinometerUI},
+    {"FC Percentage", Templates::FCPercentUI},
 };
 
 const std::vector<std::string> NotesDisplayStrings = {
@@ -306,6 +307,47 @@ namespace Qounters::Templates {
             AddText(group, TextSource::SpinometerName, opts, 15);
         Editor::AddGroup(group);
     }
+    void AddFCPercent(int anchor, UnityEngine::Vector2 pos, bool split, bool saberColors, bool hideInFC, int decimals) {
+        auto group = MakeGroup(anchor, pos);
+        TextSource::Static label;
+        label.Input = "FC Percentage";
+        AddText(group, TextSource::StaticName, label, 11).Position = UnityEngine::Vector2(0, 12.5);
+        TextSource::FCPercent opts;
+        opts.Decimals = decimals;
+        if (split) {
+            opts.Saber = (int) Sabers::Left;
+            auto& leftText = AddText(group, TextSource::FCPercentName, opts, 15, TextOptions::Aligns::Right);
+            leftText.Position = UnityEngine::Vector2(-2, 0);
+            opts.Saber = (int) Sabers::Right;
+            auto& rightText = AddText(group, TextSource::FCPercentName, opts, 15, TextOptions::Aligns::Left);
+            rightText.Position = UnityEngine::Vector2(2, 0);
+            if (saberColors) {
+                ColorSource::Player colOpts;
+                colOpts.Setting = (int) ColorSource::Player::ColorSettings::LeftSaber;
+                leftText.ColorSource = ColorSource::PlayerName;
+                leftText.ColorOptions = colOpts;
+                colOpts.Setting = (int) ColorSource::Player::ColorSettings::RightSaber;
+                rightText.ColorSource = ColorSource::PlayerName;
+                rightText.ColorOptions = colOpts;
+            }
+            if (hideInFC) {
+                EnableSource::FullCombo showOpts;
+                showOpts.Saber = (int) Sabers::Left;
+                leftText.EnableSource = EnableSource::FullComboName;
+                leftText.EnableOptions = showOpts;
+                showOpts.Saber = (int) Sabers::Right;
+                rightText.EnableSource = EnableSource::FullComboName;
+                rightText.EnableOptions = showOpts;
+            }
+        } else {
+            auto& text = AddText(group, TextSource::FCPercentName, opts, 15);
+            if (hideInFC) {
+                text.EnableSource = EnableSource::FullComboName;
+                text.EnableOptions = EnableSource::FullCombo();
+            }
+        }
+        Editor::AddGroup(group);
+    }
 
     void EmptyUI(UnityEngine::GameObject* parent) {
         static int anchor = 0;
@@ -440,5 +482,19 @@ namespace Qounters::Templates {
         BeatSaberUI::CreateToggle(parent, "Split Sabers", split, [](bool val) { split = val; });
         BeatSaberUI::CreateToggle(parent, "Use Highest", highest, [](bool val) { highest = val; });
         CreateButtons(parent, []() { AddSpinometer(anchor, {}, split, highest); });
+    }
+    void FCPercentUI(UnityEngine::GameObject* parent) {
+        static int anchor = 0;
+        static bool split = false;
+        static bool saberColors = false;
+        static bool hideInFC = true;
+        static int decimals = 2;
+
+        Utils::CreateDropdownEnum(parent, "Starting Anchor", anchor, AnchorStrings, [](int val) { anchor = val; });
+        BeatSaberUI::CreateToggle(parent, "Split Sabers", split, [](bool val) { split = val; });
+        BeatSaberUI::CreateToggle(parent, "Use Saber Colors", saberColors, [](bool val) { saberColors = val; });
+        BeatSaberUI::CreateToggle(parent, "Hide With FC", hideInFC, [](bool val) { hideInFC = val; });
+        BeatSaberUI::CreateIncrementSetting(parent, "Decimals", 0, 1, decimals, [](float val) { decimals = val; });
+        CreateButtons(parent, []() { AddFCPercent(anchor, {}, split, saberColors, hideInFC, decimals); });
     }
 }

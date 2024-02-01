@@ -64,6 +64,7 @@ namespace Qounters {
         inline const std::string PPName = "PP";
         inline const std::string SaberSpeedName = "Saber Speed";
         inline const std::string SpinometerName = "Spinometer";
+        inline const std::string FCPercentName = "FC Percentage";
 
         DECLARE_JSON_CLASS(Static,
             VALUE_DEFAULT(std::string, Input, "")
@@ -160,6 +161,10 @@ namespace Qounters {
             VALUE_DEFAULT(int, Mode, (int) Modes::Average)
             // what the hell does this even measure though
         )
+        DECLARE_JSON_CLASS(FCPercent,
+            VALUE_DEFAULT(int, Saber, (int) Sabers::Both)
+            VALUE_DEFAULT(int, Decimals, 1)
+        )
 
         std::string GetStatic(UnparsedJSON options);
         std::string GetScore(UnparsedJSON options);
@@ -177,6 +182,7 @@ namespace Qounters {
         std::string GetPP(UnparsedJSON options);
         std::string GetSaberSpeed(UnparsedJSON options);
         std::string GetSpinometer(UnparsedJSON options);
+        std::string GetFCPercent(UnparsedJSON options);
     }
 
     namespace ShapeSource {

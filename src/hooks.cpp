@@ -19,12 +19,36 @@ MAKE_HOOK_MATCH(ScoreController_DespawnScoringElement, &ScoreController::Despawn
 
     ScoreController_DespawnScoringElement(self, scoringElement);
 
+    int cutScore = scoringElement->get_cutScore() * scoringElement->multiplier;
+    int maxCutScore = scoringElement->get_maxPossibleCutScore() * scoringElement->maxMultiplier;
+
+    bool badCut = scoringElement->get_multiplierEventType() == ScoreMultiplierCounter::MultiplierEventType::Negative
+        && scoringElement->get_wouldBeCorrectCutBestPossibleMultiplierEventType() == ScoreMultiplierCounter::MultiplierEventType::Positive
+        && cutScore == 0 && maxCutScore > 0;
+
+    // NoteScoreDefinition fixedCutScore, for now only this case
+    bool isGoodScoreFixed = scoringElement->noteData->gameplayType == NoteData::GameplayType::BurstSliderElement;
+
     if (scoringElement->noteData->colorType == ColorType::ColorA) {
-        leftScore += scoringElement->get_cutScore() * scoringElement->multiplier;
-        leftMaxScore += scoringElement->get_maxPossibleCutScore() * scoringElement->maxMultiplier;
+        leftScore += cutScore;
+        leftMaxScore += maxCutScore;
+        if (badCut) {
+            if (isGoodScoreFixed)
+                leftMissedFixedScore += maxCutScore;
+            else
+                leftMissedMaxScore += maxCutScore;
+        } else
+            leftMissedFixedScore += (scoringElement->get_cutScore() * scoringElement->maxMultiplier) - cutScore;
     } else {
-        rightScore += scoringElement->get_cutScore() * scoringElement->multiplier;
-        rightMaxScore += scoringElement->get_maxPossibleCutScore() * scoringElement->maxMultiplier;
+        rightScore += cutScore;
+        rightMaxScore += maxCutScore;
+        if (badCut) {
+            if (isGoodScoreFixed)
+                rightMissedFixedScore += maxCutScore;
+            else
+                rightMissedMaxScore += maxCutScore;
+        } else
+            rightMissedFixedScore += (scoringElement->get_cutScore() * scoringElement->maxMultiplier) - cutScore;
     }
     BroadcastEvent((int) Events::ScoreChanged);
 }

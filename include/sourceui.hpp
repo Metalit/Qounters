@@ -24,6 +24,7 @@ namespace Qounters {
         void PPUI(UnityEngine::GameObject* parent, UnparsedJSON options);
         void SaberSpeedUI(UnityEngine::GameObject* parent, UnparsedJSON options);
         void SpinometerUI(UnityEngine::GameObject* parent, UnparsedJSON options);
+        void FCPercentUI(UnityEngine::GameObject* parent, UnparsedJSON options);
 
         void CreateUI(UnityEngine::GameObject* parent, std::string source, UnparsedJSON options);
     }

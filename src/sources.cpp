@@ -26,6 +26,7 @@ std::vector<std::pair<std::string, std::pair<SourceFn<std::string>, SourceUIFn>>
     {TextSource::PPName, {TextSource::GetPP, TextSource::PPUI}},
     {TextSource::SaberSpeedName, {TextSource::GetSaberSpeed, TextSource::SaberSpeedUI}},
     {TextSource::SpinometerName, {TextSource::GetSpinometer, TextSource::SpinometerUI}},
+    {TextSource::FCPercentName, {TextSource::GetFCPercent, TextSource::FCPercentUI}},
 };
 
 std::vector<std::pair<std::string, std::pair<SourceFn<float>, SourceUIFn>>> Qounters::shapeSources = {
@@ -274,6 +275,15 @@ namespace Qounters::TextSource {
         auto opts = unparsed.Parse<Spinometer>();
 
         return "spin spin spin spin";
+    }
+    std::string GetFCPercent(UnparsedJSON unparsed) {
+        auto opts = unparsed.Parse<FCPercent>();
+
+        int score = Game::GetFCScore(opts.Saber);
+        int max = Game::GetMaxScore(opts.Saber);
+        float percent = max > 0 ? score / (double) max : 1;
+        percent *= 100;
+        return Utils::FormatDecimals(percent, opts.Decimals) + "%";
     }
 }
 

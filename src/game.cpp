@@ -201,4 +201,18 @@ namespace Qounters::Game {
                 return colors->get_environmentColor1Boost();
         }
     }
+    int GetFCScore(int saber) {
+        float swingRatio = (GetPreSwing(saber) + GetPostSwing(saber) + GetAccuracy(saber)) / 115;
+        int missed = 0;
+        int fixed = 0;
+        if (IsLeft(saber)) {
+            missed += leftMissedMaxScore;
+            fixed += leftMissedFixedScore;
+        }
+        if (IsRight(saber)) {
+            missed += rightMissedMaxScore;
+            fixed += rightMissedFixedScore;
+        }
+        return (missed * swingRatio) + fixed + GetScore(saber);
+    }
 }

@@ -22,6 +22,7 @@ namespace Qounters {
         void AddPP(int anchor, UnityEngine::Vector2 pos, bool beatleader, bool scoresaber, bool hideUnranked, int decimals);
         void AddSaberSpeed(int anchor, UnityEngine::Vector2 pos, bool split, bool last5Secs, int decimals);
         void AddSpinometer(int anchor, UnityEngine::Vector2 pos, bool split, bool highest);
+        void AddFCPercent(int anchor, UnityEngine::Vector2 pos, bool split, bool saberColors, bool hideInFC, int decimals);
 
         void EmptyUI(UnityEngine::GameObject* parent);
         void ScoreUI(UnityEngine::GameObject* parent);
@@ -35,5 +36,6 @@ namespace Qounters {
         void PPUI(UnityEngine::GameObject* parent);
         void SaberSpeedUI(UnityEngine::GameObject* parent);
         void SpinometerUI(UnityEngine::GameObject* parent);
+        void FCPercentUI(UnityEngine::GameObject* parent);
     }
 }
