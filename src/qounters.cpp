@@ -44,9 +44,9 @@ void UpdatePair(std::map<std::string, std::vector<std::pair<TComp, TOpts>>>& map
         map[source].emplace_back(update, value);
 }
 
-template<class T>
-void RemoveFromMap(std::map<std::string, std::vector<std::pair<T, UnparsedJSON>>>& map, void* remove) {
-    auto cast = (T) remove;
+template<class TComp, class TOpts>
+void RemoveFromMap(std::map<std::string, std::vector<std::pair<TComp, TOpts>>>& map, void* remove) {
+    auto cast = (TComp) remove;
 
     for (auto& [mapSource, vec] : map) {
         for (auto it = vec.begin(); it != vec.end(); it++) {
@@ -273,6 +273,7 @@ void Qounters::RemoveComponent(int componentType, UnityEngine::Component* compon
             break;
     }
     RemoveFromMap(colors, component);
+    RemoveFromMap(enables, component->get_gameObject());
 }
 
 template<class T>

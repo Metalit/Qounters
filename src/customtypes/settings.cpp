@@ -218,6 +218,7 @@ void TemplatesViewController::DidActivate(bool firstActivation, bool addedToHier
         list->data.emplace_back(templateName);
 
     list->tableView->ReloadData();
+    list->simpleTextTableCellInstance = nullptr;
 
     modal = BeatSaberUI::CreateModal(this);
     modalLayout = BeatSaberUI::CreateVerticalLayoutGroup(modal)->get_rectTransform();
