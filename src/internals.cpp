@@ -175,7 +175,17 @@ void Qounters::Initialize() {
     auto beatmapCallbacksUpdater = UnityEngine::Object::FindObjectOfType<BeatmapCallbacksUpdater*>();
     auto scoreController = UnityEngine::Object::FindObjectOfType<ScoreController*>();
     auto playerDataModel = UnityEngine::Object::FindObjectOfType<PlayerDataModel*>();
-    auto gameplayCoreInstaller = UnityEngine::Resources::FindObjectsOfTypeAll<GameplayCoreInstaller*>().First();
+
+    auto gameplayCoreInstallers = UnityEngine::Resources::FindObjectsOfTypeAll<GameplayCoreInstaller*>();
+    GameplayCoreInstaller* gameplayCoreInstaller;
+    for (auto& installer : gameplayCoreInstallers) {
+        if (installer->get_isActiveAndEnabled() && installer->sceneSetupData != nullptr) {
+            gameplayCoreInstaller = installer;
+            break;
+        }
+    }
+    if (!gameplayCoreInstaller) gameplayCoreInstaller = gameplayCoreInstallers[0];
+
 
     std::string beatmap = "Unknown";
     if (gameplayCoreInstaller && gameplayCoreInstaller->sceneSetupData)

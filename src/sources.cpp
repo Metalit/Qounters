@@ -75,7 +75,7 @@ const std::vector<std::string> Qounters::PPLeaderboardStrings = {
 };
 const std::vector<std::string> Qounters::SaberSpeedModeStrings = {
     "Average",
-    "Last 5 Seconds",
+    "5 Second Highest",
 };
 const std::vector<std::string> Qounters::SpinometerModeStrings = {
     "Average",

@@ -163,6 +163,8 @@ void Qounters::DismissSettingsEnvironment() {
 void Qounters::RefreshSettingsEnvironment() {
     getLogger().debug("Refreshing environment");
 
+    Reset();
+
     DismissFlowCoordinator();
 
     PresentScene(GetLevelStarter(), true);

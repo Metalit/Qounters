@@ -237,18 +237,22 @@ MAKE_HOOK_MATCH(StandardLevelScenesTransitionSetupDataSO_Finish, &StandardLevelS
     StandardLevelScenesTransitionSetupDataSO_Finish(self, levelCompletionResults);
 }
 
-#include "GlobalNamespace/MultiplayerSessionManager.hpp"
+#include "GlobalNamespace/PauseController.hpp"
 
-MAKE_HOOK_MATCH(MultiplayerSessionManager_get_localPlayer, &MultiplayerSessionManager::get_localPlayer, IConnectedPlayer*, MultiplayerSessionManager* self) {
+MAKE_HOOK_MATCH(PauseController_Pause, &PauseController::Pause, void, PauseController* self) {
 
-    auto ret = MultiplayerSessionManager_get_localPlayer(self);
-
-    if (!ret && localFakeConnectedPlayer)
-        return localFakeConnectedPlayer;
-    return ret;
+    if (!InSettingsEnvironment())
+        PauseController_Pause(self);
 }
 
 #include "GlobalNamespace/MultiplayerLocalActivePlayerInGameMenuViewController.hpp"
+
+MAKE_HOOK_MATCH(MultiplayerLocalActivePlayerInGameMenuViewController_ShowMenu, &MultiplayerLocalActivePlayerInGameMenuViewController::ShowMenu,
+        void, MultiplayerLocalActivePlayerInGameMenuViewController* self) {
+
+    if (!InSettingsEnvironment())
+        MultiplayerLocalActivePlayerInGameMenuViewController_ShowMenu(self);
+}
 
 MAKE_HOOK_MATCH(MultiplayerLocalActivePlayerInGameMenuViewController_HideMenu, &MultiplayerLocalActivePlayerInGameMenuViewController::HideMenu,
         void, MultiplayerLocalActivePlayerInGameMenuViewController* self) {
@@ -264,6 +268,17 @@ MAKE_HOOK_MATCH(MultiplayerLocalActivePlayerGameplayManager_PerformPlayerFail, &
 
     if (!InSettingsEnvironment())
         MultiplayerLocalActivePlayerGameplayManager_PerformPlayerFail(self);
+}
+
+#include "GlobalNamespace/MultiplayerSessionManager.hpp"
+
+MAKE_HOOK_MATCH(MultiplayerSessionManager_get_localPlayer, &MultiplayerSessionManager::get_localPlayer, IConnectedPlayer*, MultiplayerSessionManager* self) {
+
+    auto ret = MultiplayerSessionManager_get_localPlayer(self);
+
+    if (!ret && localFakeConnectedPlayer)
+        return localFakeConnectedPlayer;
+    return ret;
 }
 
 #include "VRUIControls/VRGraphicRaycaster.hpp"
@@ -320,8 +335,11 @@ void Qounters::InstallHooks() {
     INSTALL_HOOK(logger, CoreGameHUDController_Start);
     INSTALL_HOOK(logger, StandardLevelDetailView_SetContentForBeatmapDataAsync);
     INSTALL_HOOK(logger, StandardLevelScenesTransitionSetupDataSO_Finish);
-    INSTALL_HOOK(logger, MultiplayerSessionManager_get_localPlayer);
+    INSTALL_HOOK(logger, PauseController_Pause);
+    INSTALL_HOOK(logger, MultiplayerLocalActivePlayerInGameMenuViewController_ShowMenu);
     INSTALL_HOOK(logger, MultiplayerLocalActivePlayerInGameMenuViewController_HideMenu);
+    INSTALL_HOOK(logger, MultiplayerLocalActivePlayerGameplayManager_PerformPlayerFail);
+    INSTALL_HOOK(logger, MultiplayerSessionManager_get_localPlayer);
     INSTALL_HOOK(logger, VRGraphicRaycaster_Raycast);
     INSTALL_HOOK(logger, InputFieldView_DeactivateKeyboard);
     INSTALL_HOOK(logger, UIKeyboardManager_OpenKeyboardFor);
