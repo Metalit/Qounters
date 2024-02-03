@@ -180,6 +180,9 @@ MAKE_HOOK_MATCH(GameEnergyCounter_ProcessEnergyChange, &GameEnergyCounter::Proce
 SaberManager* saberManager = nullptr;
 float lastUpdated = 0;
 
+UnityEngine::Quaternion prevRotLeft;
+UnityEngine::Quaternion prevRotRight;
+
 MAKE_HOOK_MATCH(AudioTimeSyncController_Update, &AudioTimeSyncController::Update, void, AudioTimeSyncController* self) {
 
     AudioTimeSyncController_Update(self);
@@ -189,6 +192,16 @@ MAKE_HOOK_MATCH(AudioTimeSyncController_Update, &AudioTimeSyncController::Update
         if (saberManager) {
             leftSpeeds.emplace_back(saberManager->leftSaber->get_bladeSpeed());
             rightSpeeds.emplace_back(saberManager->rightSaber->get_bladeSpeed());
+
+            auto rotLeft = saberManager->leftSaber->get_transform()->get_rotation();
+            auto rotRight = saberManager->rightSaber->get_transform()->get_rotation();
+            // use speeds array as tracker for if prevRots have accurate values
+            if (leftSpeeds.size() > 1) {
+                leftAngles.emplace_back(UnityEngine::Quaternion::Angle(rotLeft, prevRotLeft));
+                rightAngles.emplace_back(UnityEngine::Quaternion::Angle(rotRight, prevRotRight));
+            }
+            prevRotLeft = rotLeft;
+            prevRotRight = rotRight;
         }
         lastUpdated = 0;
         BroadcastEvent((int) Events::SlowUpdate);

@@ -37,6 +37,8 @@ namespace Qounters {
     extern float rightTimeDependence;
     extern std::vector<float> leftSpeeds;
     extern std::vector<float> rightSpeeds;
+    extern std::vector<float> leftAngles;
+    extern std::vector<float> rightAngles;
     extern bool noFail;
     extern float positiveMods;
     extern float negativeMods;

@@ -28,6 +28,8 @@ namespace Qounters::Game {
     float GetTimeDependence(int saber);
     float GetAverageSpeed(int saber);
     float GetBestSpeed5Secs(int saber);
+    float GetLastSecAngle(int saber);
+    float GetHighestSecAngle(int saber);
     float GetModifierMultiplier(bool positive, bool negative);
     int GetBestScore();
     int GetFails();

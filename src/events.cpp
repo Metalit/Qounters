@@ -58,6 +58,7 @@ namespace Qounters {
         }},
         {(int) Events::SlowUpdate, {
             {Sources::Text, TextSource::SaberSpeedName},
+            {Sources::Text, TextSource::SpinometerName},
         }},
         {(int) Events::PPInfo, {
             {Sources::Text, TextSource::PPName},

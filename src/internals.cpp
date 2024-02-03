@@ -155,6 +155,8 @@ namespace Qounters {
     float rightTimeDependence;
     std::vector<float> leftSpeeds;
     std::vector<float> rightSpeeds;
+    std::vector<float> leftAngles;
+    std::vector<float> rightAngles;
     bool noFail;
     float positiveMods;
     float negativeMods;
@@ -222,6 +224,8 @@ void Qounters::Initialize() {
     rightTimeDependence = 0;
     leftSpeeds = {};
     rightSpeeds = {};
+    leftAngles = {};
+    rightAngles = {};
     noFail = false;
     // GetNegativeMods sets noFail
     positiveMods = GetPositiveMods(scoreController);

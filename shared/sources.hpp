@@ -159,7 +159,6 @@ namespace Qounters {
             };
             VALUE_DEFAULT(int, Saber, (int) Sabers::Both)
             VALUE_DEFAULT(int, Mode, (int) Modes::Average)
-            // what the hell does this even measure though
         )
         DECLARE_JSON_CLASS(FCPercent,
             VALUE_DEFAULT(int, Saber, (int) Sabers::Both)

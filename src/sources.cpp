@@ -266,7 +266,7 @@ namespace Qounters::TextSource {
         float speed = 0;
         if (opts.Mode == (int) SaberSpeed::Modes::Average)
             speed = Game::GetAverageSpeed(opts.Saber);
-        if (opts.Mode == (int) SaberSpeed::Modes::Best5Seconds)
+        else if (opts.Mode == (int) SaberSpeed::Modes::Best5Seconds)
             speed = Game::GetBestSpeed5Secs(opts.Saber);
 
         return Utils::FormatDecimals(speed, opts.Decimals);
@@ -274,7 +274,13 @@ namespace Qounters::TextSource {
     std::string GetSpinometer(UnparsedJSON unparsed) {
         auto opts = unparsed.Parse<Spinometer>();
 
-        return "spin spin spin spin";
+        float anglePerSec = 0;
+        if (opts.Mode == (int) Spinometer::Modes::Average)
+            anglePerSec = Game::GetLastSecAngle(opts.Saber);
+        else if (opts.Mode == (int) Spinometer::Modes::Highest)
+            anglePerSec = Game::GetHighestSecAngle(opts.Saber);
+
+        return std::to_string((int) anglePerSec);
     }
     std::string GetFCPercent(UnparsedJSON unparsed) {
         auto opts = unparsed.Parse<FCPercent>();

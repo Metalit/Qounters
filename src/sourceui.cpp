@@ -341,8 +341,6 @@ namespace Qounters::TextSource {
             Editor::SetSourceOptions(id, opts);
             Editor::FinalizeAction();
         });
-
-        BeatSaberUI::CreateText(parent, "nyi - idk what this counts");
     }
     void FCPercentUI(GameObject* parent, UnparsedJSON unparsed) {
         static FCPercent opts;

@@ -1,3 +1,4 @@
+#include "main.hpp"
 #include "sources.hpp"
 #include "game.hpp"
 #include "internals.hpp"
@@ -163,6 +164,37 @@ namespace Qounters::Game {
                 ret = std::max(ret, rightSpeeds[i]);
         }
         return ret;
+    }
+    float GetLastSecAngle(int saber) {
+        float ret = 0;
+        int back = SPEED_SAMPLES_PER_SEC;
+        if (IsLeft(saber)) {
+            int size = leftAngles.size();
+            int start = std::max(0, size - back);
+            for (int i = start; i < size; i++)
+                ret += leftAngles[i];
+        }
+        if (IsRight(saber)) {
+            int size = rightAngles.size();
+            int start = std::max(0, size - back);
+            for (int i = start; i < size; i++)
+                ret += rightAngles[i];
+        }
+        if (saber == (int) Sabers::Both)
+            ret /= 2;
+        return ret;
+    }
+    float GetHighestSecAngle(int saber) {
+        float ret = 0;
+        if (IsLeft(saber)) {
+            for (auto& val : leftAngles)
+                ret = std::max(ret, val);
+        }
+        if (IsRight(saber)) {
+            for (auto& val : rightAngles)
+                ret = std::max(ret, val);
+        }
+        return ret * SPEED_SAMPLES_PER_SEC;
     }
     float GetModifierMultiplier(bool positive, bool negative) {
         float ret = 1;
