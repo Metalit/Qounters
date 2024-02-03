@@ -32,13 +32,12 @@ using namespace Qounters;
 void Qounters::SettingsFlowCoordinator::DidActivate(bool firstActivation, bool addedToHierarchy, bool screenSystemEnabling) {
     if (addedToHierarchy) {
         auto presets = getConfig().Presets.GetValue();
-        if (!presets.contains(modifyingPresetName))
-            modifyingPresetName = getConfig().Preset.GetValue();
-        if (!presets.contains(modifyingPresetName))
-            modifyingPresetName = getConfig().Preset.GetDefaultValue();
-        auto& preset = presets[modifyingPresetName];
-
-        // TODO: preset layouts
+        auto presetName = getConfig().Preset.GetValue();
+        if (!presets.contains(presetName)) {
+            presetName = presets.begin()->first;
+            getConfig().Preset.SetValue(presetName);
+        }
+        auto& preset = presets[presetName];
 
         Editor::Initialize(preset);
     }
@@ -52,12 +51,12 @@ void Qounters::SettingsFlowCoordinator::DidActivate(bool firstActivation, bool a
 
 void Qounters::SettingsFlowCoordinator::Save() {
     auto presets = getConfig().Presets.GetValue();
-    presets[GetInstance()->modifyingPresetName] = Editor::GetPreset();
+    presets[getConfig().Preset.GetValue()] = Editor::GetPreset();
     getConfig().Presets.SetValue(presets);
 }
 
 bool Qounters::SettingsFlowCoordinator::IsSaved() {
-    return getConfig().Presets.GetValue()[GetInstance()->modifyingPresetName] == Editor::GetPreset();
+    return getConfig().Presets.GetValue()[getConfig().Preset.GetValue()] == Editor::GetPreset();
 }
 
 void Qounters::SettingsFlowCoordinator::PresentTemplates() {
@@ -83,17 +82,55 @@ void Qounters::SettingsFlowCoordinator::RefreshScene() {
         ConfirmAction(RefreshSettingsEnvironment);
 }
 
-void Qounters::SettingsFlowCoordinator::ConfirmAction(void(*action)()) {
-    nextModalAction = action;
-    if (IsSaved())
-        nextModalAction();
-    else
-        SettingsViewController::GetInstance()->ShowConfirmModal();
-}
-
 void Qounters::SettingsFlowCoordinator::OnModalConfirm() {
     if (nextModalAction)
         nextModalAction();
+    SettingsViewController::GetInstance()->HideConfirmModal();
+}
+
+void Qounters::SettingsFlowCoordinator::OnModalCancel() {
+    if (nextModalCancel)
+        nextModalCancel();
+    SettingsViewController::GetInstance()->HideConfirmModal();
+}
+
+void Qounters::SettingsFlowCoordinator::SelectPreset(StringW name) {
+    ConfirmAction([name = (std::string) name]() {
+        auto presets = getConfig().Presets.GetValue();
+        if (!presets.contains(name)) {
+            SettingsViewController::GetInstance()->UpdateUI();
+            return;
+        }
+        getConfig().Preset.SetValue(name);
+        Editor::LoadPreset(presets[name]);
+    }, []() {
+        SettingsViewController::GetInstance()->UpdateUI();
+    });
+}
+
+void Qounters::SettingsFlowCoordinator::RenamePreset(StringW name) {
+    MakeNewPreset(name, true);
+}
+
+void Qounters::SettingsFlowCoordinator::DuplicatePreset(StringW newName) {
+    ConfirmAction([name = (std::string) newName]() {
+        MakeNewPreset(name, false);
+    });
+}
+
+void Qounters::SettingsFlowCoordinator::DeletePreset() {
+    auto presets = getConfig().Presets.GetValue();
+    if (presets.size() < 2)
+        return;
+
+    auto name = getConfig().Preset.GetValue();
+    presets.erase(name);
+    getConfig().Presets.SetValue(presets);
+
+    name = presets.begin()->first;
+    getConfig().Preset.SetValue(name);
+
+    Editor::LoadPreset(presets[name]);
 }
 
 Qounters::SettingsFlowCoordinator* Qounters::SettingsFlowCoordinator::GetInstance() {
@@ -106,6 +143,34 @@ void Qounters::SettingsFlowCoordinator::OnDestroy() {
     instance = nullptr;
 }
 
+void Qounters::SettingsFlowCoordinator::ConfirmAction(std::function<void ()> action, std::function<void ()> cancel) {
+    nextModalAction = action;
+    nextModalCancel = cancel;
+    if (IsSaved())
+        nextModalAction();
+    else
+        SettingsViewController::GetInstance()->ShowConfirmModal();
+}
+
+void Qounters::SettingsFlowCoordinator::MakeNewPreset(std::string name, bool removeOld) {
+    auto presets = getConfig().Presets.GetValue();
+    if (presets.contains(name))
+        return;
+
+    auto currentName = getConfig().Preset.GetValue();
+    if (removeOld) {
+        presets[name] = std::move(presets[currentName]);
+        presets.erase(currentName);
+    } else {
+        presets[name] = presets[currentName];
+        Editor::LoadPreset(presets[name]);
+    }
+
+    getConfig().Preset.SetValue(name);
+    getConfig().Presets.SetValue(presets);
+    SettingsViewController::GetInstance()->UpdateUI();
+}
+
 #include "GlobalNamespace/EnvironmentInfoSO.hpp"
 #include "GlobalNamespace/PlayerDataModel.hpp"
 #include "GlobalNamespace/PlayerDataFileManagerSO.hpp"
@@ -113,7 +178,7 @@ void Qounters::SettingsFlowCoordinator::OnDestroy() {
 
 void SettingsViewController::DidActivate(bool firstActivation, bool addedToHierarchy, bool screenSystemEnabling) {
     if (!firstActivation) {
-        Utils::InstantSetToggle(previewToggle, false);
+        UpdateUI();
         return;
     }
 
@@ -144,7 +209,7 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
     auto buttons1 = BeatSaberUI::CreateHorizontalLayoutGroup(vertical);
     buttons1->GetComponent<UI::LayoutElement*>()->set_preferredHeight(9);
     buttons1->set_spacing(3);
-    BeatSaberUI::CreateUIButton(buttons1, "Undo", Editor::Undo);
+    undoButton = BeatSaberUI::CreateUIButton(buttons1, "Undo", Editor::Undo);
     BeatSaberUI::CreateUIButton(buttons1, "Exit", Qounters::SettingsFlowCoordinator::DismissScene);
 
     auto buttons2 = BeatSaberUI::CreateHorizontalLayoutGroup(vertical);
@@ -162,28 +227,82 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
     dropdown->GetComponentsInParent<UI::LayoutElement*>(true).First()->set_preferredWidth(65);
     auto apply = BeatSaberUI::CreateUIButton(environment, "Apply", Qounters::SettingsFlowCoordinator::RefreshScene);
 
+    BeatSaberUI::CreateText(vertical, "Changes to the preset list are always saved!")->set_alignment(TMPro::TextAlignmentOptions::Center);
+
+    presetDropdown = BeatSaberUI::CreateDropdown(vertical, "Current Preset", "", {}, Qounters::SettingsFlowCoordinator::SelectPreset);
+
+    auto buttons3 = BeatSaberUI::CreateHorizontalLayoutGroup(vertical);
+    buttons3->GetComponent<UI::LayoutElement*>()->set_preferredHeight(9);
+    buttons3->set_spacing(3);
+    BeatSaberUI::CreateUIButton(buttons3, "Rename", [this]() {
+        nameModalIsRename = true;
+        nameModal->Show(true, true, nullptr);
+    });
+    BeatSaberUI::CreateUIButton(buttons3, "Duplicate", [this]() {
+        nameModalIsRename = false;
+        nameModal->Show(true, true, nullptr);
+    });
+    deleteButton = BeatSaberUI::CreateUIButton(buttons3, "Delete", Qounters::SettingsFlowCoordinator::DeletePreset);
+
+    auto snapIncrement = AddConfigValueIncrementFloat(vertical, getConfig().SnapStep, 1, 0.5, 0.5, 5)->get_transform()->GetChild(1);
+    snapIncrement->get_gameObject()->SetActive(getConfig().Snap.GetValue());
+    ((UnityEngine::RectTransform*) snapIncrement)->set_anchoredPosition({-20, 0});
+
+    auto snapToggle = BeatSaberUI::CreateToggle(vertical, getConfig().Snap.GetName(), getConfig().Snap.GetValue(), [snapIncrement](bool value) {
+        getConfig().Snap.SetValue(value);
+        snapIncrement->get_gameObject()->SetActive(value);
+    })->get_transform();
+    auto oldParent = snapToggle->GetParent()->get_gameObject();
+    snapToggle->SetParent(snapIncrement->GetParent(), false);
+    UnityEngine::Object::Destroy(oldParent);
+
     previewToggle = BeatSaberUI::CreateToggle(vertical, "Preview Mode", false, Editor::SetPreviewMode);
 
-    confirmModal = BeatSaberUI::CreateModal(this, Vector2(85, 25), nullptr);
-    auto modalLayout = BeatSaberUI::CreateVerticalLayoutGroup(confirmModal);
-    modalLayout->set_childControlHeight(false);
-    modalLayout->set_childForceExpandHeight(true);
-    modalLayout->set_spacing(1);
+    confirmModal = BeatSaberUI::CreateModal(this, Vector2(95, 25), [](HMUI::ModalView* _) { Qounters::SettingsFlowCoordinator::OnModalCancel(); });
+    auto modalLayout1 = BeatSaberUI::CreateVerticalLayoutGroup(confirmModal);
+    modalLayout1->set_childControlHeight(false);
+    modalLayout1->set_childForceExpandHeight(true);
+    modalLayout1->set_spacing(1);
 
-    auto text = BeatSaberUI::CreateText(modalLayout, "You have unsaved changes that will be lost.\nAre you sure you would like to exit?", Vector2(), Vector2(0, 13));
-    text->set_alignment(TMPro::TextAlignmentOptions::Bottom);
+    auto warningString = "You have unsaved changes that will be lost.\nAre you sure you would like to continue? This action cannot be undone.";
+    auto text1 = BeatSaberUI::CreateText(modalLayout1, warningString, Vector2(), Vector2(0, 13));
+    text1->set_alignment(TMPro::TextAlignmentOptions::Bottom);
 
-    auto modalButtons = BeatSaberUI::CreateHorizontalLayoutGroup(modalLayout);
+    auto modalButtons = BeatSaberUI::CreateHorizontalLayoutGroup(modalLayout1);
     modalButtons->GetComponent<UI::LayoutElement*>()->set_preferredHeight(9);
     modalButtons->set_spacing(3);
-    BeatSaberUI::CreateUIButton(modalButtons, "Exit", Qounters::SettingsFlowCoordinator::OnModalConfirm);
-    BeatSaberUI::CreateUIButton(modalButtons, "Save And Exit", []() {
+    BeatSaberUI::CreateUIButton(modalButtons, "Continue", Qounters::SettingsFlowCoordinator::OnModalConfirm);
+    BeatSaberUI::CreateUIButton(modalButtons, "Save And Continue", []() {
         Qounters::SettingsFlowCoordinator::Save();
         Qounters::SettingsFlowCoordinator::OnModalConfirm();
     });
     BeatSaberUI::CreateUIButton(modalButtons, "Cancel", [this]() {
-        confirmModal->Hide(true, nullptr);
+        Qounters::SettingsFlowCoordinator::OnModalCancel();
     });
+
+    nameModal = BeatSaberUI::CreateModal(this, Vector2(95, 20), nullptr);
+    auto modalLayout2 = BeatSaberUI::CreateVerticalLayoutGroup(nameModal);
+    modalLayout2->set_childControlHeight(false);
+    modalLayout2->set_childForceExpandHeight(true);
+    modalLayout2->set_spacing(1);
+
+    auto text2 = BeatSaberUI::CreateText(modalLayout2, "Enter new preset name", Vector2(), Vector2(0, 8));
+    text2->set_alignment(TMPro::TextAlignmentOptions::Bottom);
+
+    auto nameInput = BeatSaberUI::CreateStringSetting(modalLayout2, "Name", "", Vector2(), Vector3());
+    Utils::GetOrAddComponent<KeyboardCloseHandler*>(nameInput)->okCallback = [this, nameInput]() {
+        std::string val = nameInput->get_text();
+        if (val.empty())
+            return;
+        nameModal->Hide(true, nullptr);
+        if (nameModalIsRename)
+            Qounters::SettingsFlowCoordinator::RenamePreset(val);
+        else
+            Qounters::SettingsFlowCoordinator::DuplicatePreset(val);
+    };
+
+    uiInitialized = true;
+    UpdateUI();
 }
 
 SettingsViewController* SettingsViewController::GetInstance() {
@@ -197,8 +316,38 @@ void SettingsViewController::OnDestroy() {
 }
 
 void SettingsViewController::ShowConfirmModal() {
-    if (confirmModal)
+    if (confirmModal && !confirmModal->isShown)
         confirmModal->Show(true, true, nullptr);
+}
+
+void SettingsViewController::HideConfirmModal() {
+    if (confirmModal && confirmModal->isShown)
+        confirmModal->Hide(true, nullptr);
+}
+
+void SettingsViewController::UpdateUI() {
+    if (!uiInitialized)
+        return;
+
+    undoButton->set_interactable(Editor::HasUndo());
+
+    auto presets = getConfig().Presets.GetValue();
+    auto preset = getConfig().Preset.GetValue();
+    auto texts = List<StringW>::New_ctor(presets.size());
+    int selectedIdx = 0;
+    int i = 0;
+    for (auto& [name, _] : presets) {
+        texts->Add(name);
+        if (name == preset)
+            selectedIdx = i;
+        i++;
+    }
+    presetDropdown->SetTexts(texts->i_IReadOnlyList_1_T());
+    presetDropdown->SelectCellWithIdx(selectedIdx);
+
+    deleteButton->set_interactable(presets.size() > 1);
+
+    Utils::InstantSetToggle(previewToggle, Editor::GetPreviewMode());
 }
 
 void TemplatesViewController::DidActivate(bool firstActivation, bool addedToHierarchy, bool screenSystemEnabling) {
@@ -288,7 +437,7 @@ void Qounters::OptionsViewController::DidActivate(bool firstActivation, bool add
             group.DetachedPosition.x = val;
         else
             group.Position.x = val;
-        Editor::UpdatePosition();
+        Editor::UpdatePosition(true);
         Editor::FinalizeAction();
     });
     Utils::AddIncrementIncrement(gPosIncrementX, 5);
@@ -299,14 +448,14 @@ void Qounters::OptionsViewController::DidActivate(bool firstActivation, bool add
             group.DetachedPosition.y = val;
         else
             group.Position.y = val;
-        Editor::UpdatePosition();
+        Editor::UpdatePosition(true);
         Editor::FinalizeAction();
     });
     Utils::AddIncrementIncrement(gPosIncrementY, 5);
     gPosIncrementZ = BeatSaberUI::CreateIncrementSetting(groupParent, "Z Position", 1, 0.5, 0, [this](float val) {
         static int id = Editor::GetActionId();
         Editor::GetSelectedGroup(id).DetachedPosition.z = val;
-        Editor::UpdatePosition();
+        Editor::UpdatePosition(true);
         Editor::FinalizeAction();
     });
     Utils::AddIncrementIncrement(gPosIncrementZ, 5);
@@ -316,7 +465,7 @@ void Qounters::OptionsViewController::DidActivate(bool firstActivation, bool add
         Editor::GetSelectedGroup(id).Rotation = val;
         Editor::UpdatePosition();
     });
-    Utils::AddSliderEndDrag(gRotSlider, []() {
+    Utils::AddSliderEndDrag(gRotSlider, [](float _) {
         Editor::FinalizeAction();
     });
     gRotSlider->GetComponent<RectTransform*>()->set_sizeDelta({0, 8});
@@ -327,7 +476,7 @@ void Qounters::OptionsViewController::DidActivate(bool firstActivation, bool add
         Editor::GetSelectedGroup(id).DetachedRotation.x = val;
         Editor::UpdatePosition();
     });
-    Utils::AddSliderEndDrag(gRotSliderX, []() {
+    Utils::AddSliderEndDrag(gRotSliderX, [](float _) {
         Editor::FinalizeAction();
     });
     gRotSliderX->GetComponent<RectTransform*>()->set_sizeDelta({0, 8});
@@ -337,7 +486,7 @@ void Qounters::OptionsViewController::DidActivate(bool firstActivation, bool add
         Editor::GetSelectedGroup(id).DetachedRotation.y = val;
         Editor::UpdatePosition();
     });
-    Utils::AddSliderEndDrag(gRotSliderY, []() {
+    Utils::AddSliderEndDrag(gRotSliderY, [](float _) {
         Editor::FinalizeAction();
     });
     gRotSliderY->GetComponent<RectTransform*>()->set_sizeDelta({0, 8});
@@ -347,7 +496,7 @@ void Qounters::OptionsViewController::DidActivate(bool firstActivation, bool add
         Editor::GetSelectedGroup(id).DetachedRotation.z = val;
         Editor::UpdatePosition();
     });
-    Utils::AddSliderEndDrag(gRotSliderZ, []() {
+    Utils::AddSliderEndDrag(gRotSliderZ, [](float _) {
         Editor::FinalizeAction();
     });
     gRotSliderZ->GetComponent<RectTransform*>()->set_sizeDelta({0, 8});
@@ -374,14 +523,14 @@ void Qounters::OptionsViewController::DidActivate(bool firstActivation, bool add
     cPosIncrementX = BeatSaberUI::CreateIncrementSetting(componentParent, "Rel. X Position", 1, 0.5, 0, [this](float val) {
         static int id = Editor::GetActionId();
         Editor::GetSelectedComponent(id).Position.x = val;
-        Editor::UpdatePosition();
+        Editor::UpdatePosition(true);
         Editor::FinalizeAction();
     });
     Utils::AddIncrementIncrement(cPosIncrementX, 5);
     cPosIncrementY = BeatSaberUI::CreateIncrementSetting(componentParent, "Rel. Y Position", 1, 0.5, 0, [this](float val) {
         static int id = Editor::GetActionId();
         Editor::GetSelectedComponent(id).Position.y = val;
-        Editor::UpdatePosition();
+        Editor::UpdatePosition(true);
         Editor::FinalizeAction();
     });
     Utils::AddIncrementIncrement(cPosIncrementY, 5);
@@ -391,7 +540,7 @@ void Qounters::OptionsViewController::DidActivate(bool firstActivation, bool add
         Editor::GetSelectedComponent(id).Rotation = val;
         Editor::UpdatePosition();
     });
-    Utils::AddSliderEndDrag(cRotSlider, []() {
+    Utils::AddSliderEndDrag(cRotSlider, [](float _) {
         Editor::FinalizeAction();
     });
     cRotSlider->GetComponent<RectTransform*>()->set_sizeDelta({0, 8});
@@ -402,7 +551,7 @@ void Qounters::OptionsViewController::DidActivate(bool firstActivation, bool add
         Editor::GetSelectedComponent(id).Scale.x = val;
         Editor::UpdatePosition();
     });
-    Utils::AddSliderEndDrag(cScaleSliderX, []() {
+    Utils::AddSliderEndDrag(cScaleSliderX, [](float _) {
         Editor::FinalizeAction();
     });
     cScaleSliderX->GetComponent<RectTransform*>()->set_sizeDelta({0, 8});
@@ -412,7 +561,7 @@ void Qounters::OptionsViewController::DidActivate(bool firstActivation, bool add
         Editor::GetSelectedComponent(id).Scale.y = val;
         Editor::UpdatePosition();
     });
-    Utils::AddSliderEndDrag(cScaleSliderY, []() {
+    Utils::AddSliderEndDrag(cScaleSliderY, [](float _) {
         Editor::FinalizeAction();
     });
     cScaleSliderY->GetComponent<RectTransform*>()->set_sizeDelta({0, 8});

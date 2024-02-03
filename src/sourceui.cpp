@@ -18,7 +18,7 @@ namespace Qounters::TextSource {
             opts.Input = (std::string) val;
             Editor::SetSourceOptions(id, opts);
         });
-        Utils::AddStringSettingOk(input, []() {
+        Utils::AddStringSettingOnClose(input, [](std::string _) {
             Editor::FinalizeAction();
         });
     }
@@ -384,7 +384,7 @@ namespace Qounters::ShapeSource {
             opts.Input = val;
             Editor::SetSourceOptions(id, opts);
         });
-        Utils::AddSliderEndDrag(slider, []() {
+        Utils::AddSliderEndDrag(slider, [](float _) {
             Editor::FinalizeAction();
         });
         slider->GetComponent<RectTransform*>()->set_sizeDelta({0, 8});
@@ -733,7 +733,7 @@ namespace Qounters::EnableSource {
             opts.Percent = val;
             Editor::SetSourceOptions(id, opts);
         });
-        Utils::AddSliderEndDrag(slider, []() {
+        Utils::AddSliderEndDrag(slider, [](float _) {
             Editor::FinalizeAction();
         });
         slider->GetComponent<RectTransform*>()->set_sizeDelta({0, 8});

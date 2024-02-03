@@ -115,6 +115,11 @@ void PresentScene(SimpleLevelStarter* levelStarter, bool refresh) {
 void Qounters::PresentSettingsEnvironment() {
     getLogger().debug("Presenting environment");
 
+    if (getConfig().Presets.GetValue().empty()) {
+        getLogger().error("No presets!");
+        return;
+    }
+
     inSettings = true;
 
     menuEnvironment = Object::FindObjectOfType<MenuEnvironmentManager*>();
@@ -142,6 +147,8 @@ void DismissFlowCoordinator() {
 
 void Qounters::DismissSettingsEnvironment() {
     getLogger().debug("Dismissing environment");
+
+    Reset();
 
     inSettings = false;
 

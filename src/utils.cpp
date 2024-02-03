@@ -174,15 +174,17 @@ QuestUI::ColorSetting* Qounters::Utils::CreateColorPicker(UnityEngine::GameObjec
     return ret;
 }
 
-void Qounters::Utils::AddSliderEndDrag(QuestUI::SliderSetting* slider, std::function<void ()> onEndDrag) {
-    GetOrAddComponent<EndDragHandler*>(slider->slider)->callback = onEndDrag;
+void Qounters::Utils::AddSliderEndDrag(QuestUI::SliderSetting* slider, std::function<void (float)> onEndDrag) {
+    std::function<void ()> boundCallback = [slider, onEndDrag]() { onEndDrag(slider->slider->get_value()); };
+    GetOrAddComponent<EndDragHandler*>(slider->slider)->callback = boundCallback;
 }
 
 #include "HMUI/ButtonBinder.hpp"
 
-void Qounters::Utils::AddStringSettingOk(HMUI::InputFieldView* input, std::function<void ()> onOkPressed) {
-    GetOrAddComponent<KeyboardCloseHandler*>(input)->callback = onOkPressed;
-    input->buttonBinder->AddBinding(input->clearSearchButton, custom_types::MakeDelegate<System::Action*>(onOkPressed));
+void Qounters::Utils::AddStringSettingOnClose(HMUI::InputFieldView* input, std::function<void (std::string)> onKeyboardClosed) {
+    std::function<void ()> boundCallback = [input, onKeyboardClosed]() { onKeyboardClosed(input->get_text()); };
+    GetOrAddComponent<KeyboardCloseHandler*>(input)->closeCallback = boundCallback;
+    input->buttonBinder->AddBinding(input->clearSearchButton, custom_types::MakeDelegate<System::Action*>(boundCallback));
 }
 
 void Qounters::Utils::AddIncrementIncrement(QuestUI::IncrementSetting* setting, float increment) {

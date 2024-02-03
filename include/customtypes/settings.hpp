@@ -25,6 +25,12 @@ DECLARE_CLASS_CODEGEN(Qounters, SettingsFlowCoordinator, HMUI::FlowCoordinator,
     DECLARE_STATIC_METHOD(void, DismissScene);
     DECLARE_STATIC_METHOD(void, RefreshScene);
     DECLARE_STATIC_METHOD(void, OnModalConfirm);
+    DECLARE_STATIC_METHOD(void, OnModalCancel);
+
+    DECLARE_STATIC_METHOD(void, SelectPreset, StringW name);
+    DECLARE_STATIC_METHOD(void, RenamePreset, StringW name);
+    DECLARE_STATIC_METHOD(void, DuplicatePreset, StringW newName);
+    DECLARE_STATIC_METHOD(void, DeletePreset);
 
     DECLARE_INSTANCE_FIELD_DEFAULT(HMUI::ViewController*, blankViewController, nullptr);
 
@@ -35,10 +41,11 @@ DECLARE_CLASS_CODEGEN(Qounters, SettingsFlowCoordinator, HMUI::FlowCoordinator,
     private:
     static inline Qounters::SettingsFlowCoordinator* instance = nullptr;
 
-    static void ConfirmAction(void(*action)());
-    static inline void(*nextModalAction)() = nullptr;
+    static void ConfirmAction(std::function<void ()> action, std::function<void ()> cancel = nullptr);
+    static inline std::function<void ()> nextModalAction = nullptr;
+    static inline std::function<void ()> nextModalCancel = nullptr;
 
-    std::string modifyingPresetName;
+    static void MakeNewPreset(std::string name, bool removeOld);
 )
 
 #include "HMUI/ViewController.hpp"
@@ -52,11 +59,21 @@ DECLARE_CLASS_CODEGEN(Qounters, SettingsViewController, HMUI::ViewController,
 
     DECLARE_INSTANCE_METHOD(void, OnDestroy);
     DECLARE_INSTANCE_METHOD(void, ShowConfirmModal);
+    DECLARE_INSTANCE_METHOD(void, HideConfirmModal);
+    DECLARE_INSTANCE_METHOD(void, UpdateUI);
 
+    DECLARE_INSTANCE_FIELD_DEFAULT(bool, uiInitialized, false);
+
+    DECLARE_INSTANCE_FIELD(UnityEngine::UI::Button*, undoButton);
+    DECLARE_INSTANCE_FIELD(HMUI::SimpleTextDropdown*, presetDropdown);
+    DECLARE_INSTANCE_FIELD(UnityEngine::UI::Button*, deleteButton);
     DECLARE_INSTANCE_FIELD(UnityEngine::UI::Toggle*, previewToggle);
     DECLARE_INSTANCE_FIELD(HMUI::ModalView*, confirmModal);
+    DECLARE_INSTANCE_FIELD(HMUI::ModalView*, nameModal);
 
     private:
+    bool nameModalIsRename = false;
+
     static inline SettingsViewController* instance = nullptr;
 )
 
@@ -160,7 +177,8 @@ DECLARE_CLASS_CODEGEN(Qounters, KeyboardCloseHandler,  UnityEngine::MonoBehaviou
     DECLARE_DEFAULT_CTOR();
 
     public:
-    std::function<void ()> callback = nullptr;
+    std::function<void ()> closeCallback = nullptr;
+    std::function<void ()> okCallback = nullptr;
 )
 
 #include "HMUI/TableCell.hpp"

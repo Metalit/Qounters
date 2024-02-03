@@ -15,8 +15,9 @@ namespace Qounters {
 DECLARE_CONFIG(Config,
     CONFIG_VALUE(Enabled, bool, "Enabled", true)
     CONFIG_VALUE(Migrated, bool, "Migrated", false)
-    CONFIG_VALUE(Outlines, bool, "Outlines", true)
     CONFIG_VALUE(Presets, StringKeyedMap<Qounters::Preset>, "Presets", {})
     CONFIG_VALUE(Preset, std::string, "Preset", "Default")
     CONFIG_VALUE(Environment, std::string, "Settings Environment", "The First")
+    CONFIG_VALUE(Snap, bool, "Snap Enabled", true)
+    CONFIG_VALUE(SnapStep, float, "Snap To Grid", 2)
 )

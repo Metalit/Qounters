@@ -468,8 +468,10 @@ void Qounters::CreateQounters() {
     auto presets = getConfig().Presets.GetValue();
     auto presetName = getConfig().Preset.GetValue();
 
-    if (!presets.contains(presetName))
-        presetName = getConfig().Preset.GetDefaultValue();
+    if (!presets.contains(presetName)) {
+        presetName = presets.begin()->first;
+        getConfig().Preset.SetValue(presetName);
+    }
 
     auto& preset = presets[presetName];
 

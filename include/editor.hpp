@@ -5,6 +5,7 @@
 
 namespace Qounters::Editor {
     void Initialize(Preset const& preset);
+    void LoadPreset(Preset const& preset);
 
     void SetPreviewMode(bool preview);
     bool GetPreviewMode();
@@ -16,7 +17,6 @@ namespace Qounters::Editor {
 
     void RegisterEditingGroup(EditingGroup* object, int groupIdx);
     void RegisterEditingComponent(EditingComponent* object, int groupIdx, int componentIdx);
-    void UnregisterEditing(EditingBase* object);
 
     void SelectEditing(EditingBase* object);
     void Deselect();
@@ -29,7 +29,7 @@ namespace Qounters::Editor {
     void AddComponent();
     void ToggleAttachment();
     void Remove();
-    void UpdatePosition();
+    void UpdatePosition(bool neverSnap = false);
     void UpdateType();
     void UpdateColorSource();
     void UpdateEnableSource();
@@ -40,6 +40,8 @@ namespace Qounters::Editor {
     void SetEnableOptions(int actionId, UnparsedJSON options);
 
     void Undo();
+    bool HasUndo();
+    void ClearUndos();
     int GetActionId();
     void FinalizeAction();
 

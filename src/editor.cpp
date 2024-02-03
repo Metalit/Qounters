@@ -78,7 +78,10 @@ namespace Qounters::Editor {
     inline void AddUndo(auto&& fn) {
         if (runningUndo || disableActions || !newAction)
             return;
+        bool wasEmpty = undos.empty();
         undos.emplace_back(selectedGroupIdx, selectedComponentIdx, fn);
+        if (wasEmpty)
+            SettingsViewController::GetInstance()->UpdateUI();
     }
 
     void SetupAnchors() {
@@ -120,9 +123,8 @@ namespace Qounters::Editor {
         detachedDragCanvas = CreateDragCanvas("QountersDetachedDragCanvas", nullptr);
     }
 
-    void Initialize(Preset const& inPreset) {
+    void InitializeInternal(Preset const& inPreset, bool newEnvironment) {
         preset = inPreset;
-        vrInput = UnityEngine::Resources::FindObjectsOfTypeAll<VRUIControls::VRInputModule*>().First();
         editing.clear();
         undos.clear();
         removedGroupIdxs.clear();
@@ -135,11 +137,29 @@ namespace Qounters::Editor {
         runningUndo = false;
         disableActions = false;
         previewMode = false;
-        SetupAnchors();
-        CreateDragCanvases();
+        if (newEnvironment) {
+            vrInput = UnityEngine::Resources::FindObjectsOfTypeAll<VRUIControls::VRInputModule*>().First();
+            SetupAnchors();
+            CreateDragCanvases();
+        }
 
         for (int i = 0; i < preset.Qounters.size(); i++)
             CreateQounterGroup(preset.Qounters[i], i, true);
+    }
+
+    void Initialize(Preset const& inPreset) {
+        InitializeInternal(inPreset, true);
+    }
+
+    void LoadPreset(Preset const& preset) {
+        for (auto& [idxs, obj] : editing) {
+            auto& [groupIdx, componentIdx] = idxs;
+            if (componentIdx == -1)
+                UnityEngine::Object::Destroy(obj->get_gameObject());
+        }
+        Reset();
+        InitializeInternal(preset, false);
+        SettingsViewController::GetInstance()->UpdateUI();
     }
 
     void SetPreviewMode(bool preview) {
@@ -209,6 +229,7 @@ namespace Qounters::Editor {
         if (removedComponentIdxs.contains(groupIdx))
             removedComponentIdxs[groupIdx].erase(componentIdx);
     }
+
     void UnregisterEditing(EditingBase* object) {
         for (auto it = editing.begin(); it != editing.end(); it++) {
             if (it->second == object) {
@@ -216,18 +237,14 @@ namespace Qounters::Editor {
                 break;
             }
         }
-        if (auto opt = il2cpp_utils::try_cast<EditingGroup>(object)) {
-            auto group = *opt;
-            int groupIdx = group->GetGroupIdx();
-            removedGroupIdxs.emplace(groupIdx);
-        } else if (auto opt = il2cpp_utils::try_cast<EditingComponent>(object)) {
-            auto component = *opt;
-            int groupIdx = component->GetEditingGroup()->GetGroupIdx();
-            int componentIdx = component->GetComponentIdx();
+    }
+    void MarkAsRemoved(int groupIdx, int componentIdx) {
+        if (componentIdx != -1) {
             if (!removedComponentIdxs.contains(groupIdx))
                 removedComponentIdxs[groupIdx] = {};
             removedComponentIdxs[groupIdx].emplace(componentIdx);
-        }
+        } else
+            removedGroupIdxs.emplace(groupIdx);
     }
 
     void SelectEditing(EditingBase* object) {
@@ -379,6 +396,16 @@ namespace Qounters::Editor {
         if (componentIdx != -1) {
             auto comp = (EditingComponent*) remove;
             RemoveComponent(GetGroup(groupIdx).Components[componentIdx].Type, comp->typeComponent);
+        } else {
+            // remove references to destroyed children
+            for (auto& [idxs, obj] : editing) {
+                auto& [otherGroupIdx, otherComponentIdx] = idxs;
+                if (otherGroupIdx != groupIdx || otherComponentIdx == -1)
+                    continue;
+                UnregisterEditing(obj);
+                auto comp = (EditingComponent*) obj;
+                RemoveComponent(GetGroup(groupIdx).Components[otherComponentIdx].Type, comp->typeComponent);
+            }
         }
         UnregisterEditing(remove);
         UnityEngine::Object::Destroy(remove->get_gameObject());
@@ -402,30 +429,44 @@ namespace Qounters::Editor {
                 if (removedComponentIdxs.contains(selectedGroupIdx))
                     toRemove = removedComponentIdxs[selectedGroupIdx];
                 CreateQounterGroup(state, selectedGroupIdx, true);
+                // removed components aren't actually erased, so we have to remove them again when recreating a group
                 for (auto componentIdx : toRemove)
                     RemoveWithoutDeselect(selectedGroupIdx, componentIdx);
+                removedComponentIdxs[selectedGroupIdx] = toRemove;
             });
         }
 
         RemoveWithoutDeselect(selectedGroupIdx, selectedComponentIdx);
+        MarkAsRemoved(selectedGroupIdx, selectedComponentIdx);
         Deselect();
     }
 
-    void UpdatePosition() {
+    void SnapPosition(ConfigUtils::Vector2& position) {
+        float step = getConfig().SnapStep.GetValue();
+        position.x = floor((position.x / step) + 0.5) * step;
+        position.y = floor((position.y / step) + 0.5) * step;
+    }
+
+    void UpdatePosition(bool neverSnap) {
         if (!selected)
             return;
+        bool snap = !neverSnap && !runningUndo && getConfig().Snap.GetValue();
         auto rect = selected->rectTransform;
         if (selectedComponentIdx != -1) {
             AddUndo([state = nextUndoComponent]() {
                 GetSelectedComponent(-1) = state;
                 UpdatePosition();
             });
+            if (snap)
+                SnapPosition(GetSelectedComponent(lastActionId).Position);
             UpdateComponentPosition(rect, GetSelectedComponent(lastActionId));
         } else {
             AddUndo([state = nextUndoGroup]() {
                 GetSelectedGroup(-1) = state;
                 UpdatePosition();
             });
+            if (snap)
+                SnapPosition(GetSelectedGroup(lastActionId).Position);
             UpdateGroupPosition(rect, GetSelectedGroup(lastActionId));
         }
     }
@@ -458,6 +499,10 @@ namespace Qounters::Editor {
         if (!runningUndo) {
             SetColorOptions(lastActionId, ColorSource::Static());
             OptionsViewController::GetInstance()->UpdateUI();
+        } else {
+            auto& component = GetSelectedComponent(-1);
+            auto editingComponent = (EditingComponent*) selected;
+            UpdateComponentColor(editingComponent->typeComponent, component.ColorSource, component.ColorOptions);
         }
     }
 
@@ -470,6 +515,10 @@ namespace Qounters::Editor {
         if (!runningUndo) {
             SetEnableOptions(lastActionId, EnableSource::Static());
             OptionsViewController::GetInstance()->UpdateUI();
+        } else {
+            auto& component = GetSelectedComponent(-1);
+            auto editingComponent = (EditingComponent*) selected;
+            UpdateComponentEnabled(editingComponent->typeComponent->get_gameObject(), component.EnableSource, component.EnableOptions, component.InvertEnable);
         }
     }
 
@@ -480,7 +529,7 @@ namespace Qounters::Editor {
         });
 
         auto& component = GetSelectedComponent(lastActionId);
-        auto editingComponent = (EditingComponent*) editing[{selectedGroupIdx, selectedComponentIdx}];
+        auto editingComponent = (EditingComponent*) selected;
         UpdateComponentEnabled(editingComponent->typeComponent->get_gameObject(), component.EnableSource, component.EnableOptions, component.InvertEnable);
     }
 
@@ -492,7 +541,7 @@ namespace Qounters::Editor {
         });
 
         component.Options = options;
-        auto editingComponent = (EditingComponent*) editing[{selectedGroupIdx, selectedComponentIdx}];
+        auto editingComponent = (EditingComponent*) selected;
         UpdateComponentOptions(component.Type, editingComponent->typeComponent, options);
     }
 
@@ -504,7 +553,7 @@ namespace Qounters::Editor {
         });
 
         SetSourceOptions(component, options);
-        auto editingComponent = (EditingComponent*) editing[{selectedGroupIdx, selectedComponentIdx}];
+        auto editingComponent = (EditingComponent*) selected;
         UpdateComponentOptions(component.Type, editingComponent->typeComponent, component.Options);
     }
 
@@ -516,7 +565,7 @@ namespace Qounters::Editor {
         });
 
         component.ColorOptions = options;
-        auto editingComponent = (EditingComponent*) editing[{selectedGroupIdx, selectedComponentIdx}];
+        auto editingComponent = (EditingComponent*) selected;
         UpdateComponentColor(editingComponent->typeComponent, component.ColorSource, component.ColorOptions);
     }
 
@@ -528,7 +577,7 @@ namespace Qounters::Editor {
         });
 
         component.EnableOptions = options;
-        auto editingComponent = (EditingComponent*) editing[{selectedGroupIdx, selectedComponentIdx}];
+        auto editingComponent = (EditingComponent*) selected;
         UpdateComponentEnabled(editingComponent->typeComponent->get_gameObject(), component.EnableSource, component.EnableOptions, component.InvertEnable);
     }
 
@@ -545,6 +594,17 @@ namespace Qounters::Editor {
         undos.erase(undo);
         if (groupIdx == selectedGroupIdx && componentIdx == selectedComponentIdx)
             OptionsViewController::GetInstance()->UpdateUI();
+        if (undos.empty())
+            SettingsViewController::GetInstance()->UpdateUI();
+    }
+
+    bool HasUndo() {
+        return !undos.empty();
+    }
+
+    void ClearUndos() {
+        undos.clear();
+        SettingsViewController::GetInstance()->UpdateUI();
     }
 
     int GetActionId() {

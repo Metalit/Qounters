@@ -26,10 +26,10 @@ namespace Qounters::Shared {
         Editor::FinalizeAction();
     }
 
-    void AddSliderEndDrag(QuestUI::SliderSetting *slider, std::function<void ()> onEndDrag) {
+    void AddSliderEndDrag(QuestUI::SliderSetting *slider, std::function<void (float)> onEndDrag) {
         Utils::AddSliderEndDrag(slider, onEndDrag);
     }
-    void AddStringSettingOk(HMUI::InputFieldView* input, std::function<void ()> onOkPressed) {
-        Utils::AddStringSettingOk(input, onOkPressed);
+    void AddStringSettingOnClose(HMUI::InputFieldView* input, std::function<void (std::string)> onKeyboardClosed) {
+        Utils::AddStringSettingOnClose(input, onKeyboardClosed);
     }
 }

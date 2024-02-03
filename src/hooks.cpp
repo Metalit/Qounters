@@ -281,8 +281,31 @@ MAKE_HOOK_MATCH(InputFieldView_DeactivateKeyboard, &HMUI::InputFieldView::Deacti
 
     InputFieldView_DeactivateKeyboard(self, keyboard);
 
-    if (auto handler = self->GetComponent<KeyboardCloseHandler*>())
-        handler->callback();
+    auto handler = self->GetComponent<KeyboardCloseHandler*>();
+    if (handler && handler->closeCallback)
+        handler->closeCallback();
+}
+
+#include "GlobalNamespace/UIKeyboardManager.hpp"
+
+MAKE_HOOK_MATCH(UIKeyboardManager_OpenKeyboardFor, &UIKeyboardManager::OpenKeyboardFor, void, UIKeyboardManager* self, HMUI::InputFieldView* input) {
+
+    if (auto inputModal = input->GetComponentInParent<HMUI::ModalView*>()) {
+        auto inputModalCanvas = inputModal->GetComponent<UnityEngine::Canvas*>();
+        auto keyboardModalCanvas = self->keyboardModalView->GetComponent<UnityEngine::Canvas*>();
+        keyboardModalCanvas->set_sortingOrder(inputModalCanvas->get_sortingOrder());
+    }
+
+    UIKeyboardManager_OpenKeyboardFor(self, input);
+}
+
+MAKE_HOOK_MATCH(UIKeyboardManager_HandleKeyboardOkButton, &UIKeyboardManager::HandleKeyboardOkButton, void, UIKeyboardManager* self) {
+
+    auto handler = self->selectedInput->GetComponent<KeyboardCloseHandler*>();
+    if (handler && handler->okCallback)
+        handler->okCallback();
+
+    UIKeyboardManager_HandleKeyboardOkButton(self);
 }
 
 void Qounters::InstallHooks() {
@@ -301,4 +324,6 @@ void Qounters::InstallHooks() {
     INSTALL_HOOK(logger, MultiplayerLocalActivePlayerInGameMenuViewController_HideMenu);
     INSTALL_HOOK(logger, VRGraphicRaycaster_Raycast);
     INSTALL_HOOK(logger, InputFieldView_DeactivateKeyboard);
+    INSTALL_HOOK(logger, UIKeyboardManager_OpenKeyboardFor);
+    INSTALL_HOOK(logger, UIKeyboardManager_HandleKeyboardOkButton);
 }

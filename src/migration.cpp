@@ -49,6 +49,13 @@ namespace Qounters::Migration {
             return;
         }
 
+        auto presets = getConfig().Presets.GetValue();
+        std::string newPresetName = "Migrated";
+        if (presets.contains(newPresetName)) {
+            getLogger().info("Migrated preset found, skipping migration");
+            return;
+        }
+
         getLogger().info("Migrating qounters- config");
 
         OldConfig config;
@@ -58,11 +65,6 @@ namespace Qounters::Migration {
             getLogger().error("Failed to read old config: %s", exc.what());
             return;
         }
-
-        auto presets = getConfig().Presets.GetValue();
-        std::string newPresetName = "Migrated";
-        while (presets.contains(newPresetName))
-            newPresetName += "+";
 
         if (!config.Enabled) {
             presets.emplace(newPresetName, Preset());
