@@ -3,6 +3,7 @@
 #include "main.hpp"
 #include "qounters.hpp"
 #include "utils.hpp"
+
 #include <filesystem>
 
 DEFINE_TYPE(Qounters, Shape);
@@ -13,23 +14,96 @@ using namespace GlobalNamespace;
 using namespace UnityEngine;
 using namespace Qounters;
 
-#include <cmath>
+void Shape::SetFilled(bool value) {
+    filled = value;
+    SetVerticesDirty();
+}
+
+void Shape::SetSideCount(int value) {
+    sideCount = value;
+    SetVerticesDirty();
+}
+
+void Shape::SetBorder(float value) {
+    border = value;
+    SetVerticesDirty();
+}
+
+#include "UnityEngine/UI/Image_OriginHorizontal.hpp"
+#include "UnityEngine/UI/Image_OriginVertical.hpp"
+#include "UnityEngine/UI/Image_Origin360.hpp"
+
+void Shape::SetMaskOptions(int type, bool inverse) {
+    if (!mask)
+        return;
+
+    switch ((ShapeOptions::Fills) type) {
+        case ShapeOptions::Fills::None:
+            // could remove it from the source shapes map as well, but it's probably insignificant
+            mask->set_type(UI::Image::Type::Simple);
+            return;
+        case ShapeOptions::Fills::Horizontal:
+            mask->set_fillMethod(UI::Image::FillMethod::Horizontal);
+            mask->set_fillOrigin(inverse
+                ? UI::Image::OriginHorizontal::Right
+                : UI::Image::OriginHorizontal::Left);
+            break;
+        case ShapeOptions::Fills::Vertical:
+            mask->set_fillMethod(UI::Image::FillMethod::Vertical);
+            mask->set_fillOrigin(inverse
+                ? UI::Image::OriginVertical::Bottom
+                : UI::Image::OriginVertical::Top);
+            break;
+        case ShapeOptions::Fills::Circle:
+            mask->set_fillMethod(UI::Image::FillMethod::Radial360);
+            mask->set_fillOrigin(UI::Image::Origin360::Top);
+            mask->set_fillClockwise(!inverse);
+            break;
+    }
+    mask->set_type(UI::Image::Type::Filled);
+}
+
+void Shape::SetMaskAmount(float value) {
+    if (!mask)
+        return;
+    mask->set_fillAmount(value);
+}
 
 #include "UnityEngine/Rect.hpp"
 
-std::vector<UnityEngine::Vector3> GetCircumferencePoints(int sides, UnityEngine::Rect& bounds) {
-    std::vector<UnityEngine::Vector3> ret = {};
+// centering a triangle bc I'm too lazy to size the outline
+// regular (unit equil.) triangle height is sqrt(3)/2 ~ 0.866
+// circumcircle height is 2/sqrt(3) ~ 1.1547
+// circumcircle centered in square has top at (2/sqrt(3) - 1)/2 + 1 ~ 1.07735
+// average of centered circumcircle and regular triangle is ((2/sqrt(3) - 1)/2 + 1 + sqrt(3)/2)/2 ~ 0.97169
+// height of base is that - sqrt(3)/2 ~ 0.10566
+
+const std::map<int, std::vector<Vector2>> fixedPoints = {
+    {3, {{0, 0.10566}, {0.5, 0.97169}, {1, 0.10566}}}, // doesn't work with outline T-T
+    {4, {{0, 0}, {0, 1}, {1, 1}, {1, 0}}},
+};
+
+std::vector<Vector2> GetCircumferencePoints(int sides, Rect& bounds) {
+    std::vector<Vector2> ret = {};
+
+    if (fixedPoints.contains(sides)) {
+        auto& base = fixedPoints.at(sides);
+        for (auto& [x, y] : base)
+            ret.emplace_back(bounds.m_XMin + x * bounds.m_Width, bounds.m_YMin + y * bounds.m_Height);
+        return ret;
+    }
+
     double circumferenceProgressPerStep = 1 / (double) sides;
     double radianProgressPerStep = circumferenceProgressPerStep * 2 * M_PI;
 
     for(int i = 0; i < sides; i++) {
         double currentRadian = radianProgressPerStep * i;
-        ret.emplace_back(bounds.m_XMin + std::cos(currentRadian) * bounds.m_Width, bounds.m_YMin + std::sin(currentRadian) * bounds.m_Height, 0);
+        ret.emplace_back(bounds.m_XMin + (std::cos(currentRadian) / 2 + 0.5) * bounds.m_Width, bounds.m_YMin + (std::sin(currentRadian) / 2 + 0.5) * bounds.m_Height);
     }
     return ret;
 }
 
-std::vector<std::tuple<int, int, int>> GetFilledTriangles(std::vector<UnityEngine::Vector3> points) {
+std::vector<std::tuple<int, int, int>> GetFilledTriangles(std::vector<Vector2> points) {
     std::vector<std::tuple<int, int, int>> ret;
     ret.reserve(points.size() - 2);
 
@@ -39,7 +113,7 @@ std::vector<std::tuple<int, int, int>> GetFilledTriangles(std::vector<UnityEngin
     return ret;
 }
 
-std::vector<std::tuple<int, int, int>> GetHollowTriangles(std::vector<UnityEngine::Vector3> points) {
+std::vector<std::tuple<int, int, int>> GetHollowTriangles(std::vector<Vector2> points) {
     std::vector<std::tuple<int, int, int>> ret;
     ret.reserve(points.size());
 
@@ -61,44 +135,32 @@ Color32 ToColor32(Color color) {
 #include "UnityEngine/RectTransform.hpp"
 
 // curved ui can probably be done as simple as {curvedCanvasRadius, 0} in AddVert uv2
-void Shape::OnPopulateMesh(UnityEngine::UI::VertexHelper *vh) {
-    // TODO: oh god I have to fill it myself oh no
-
+void Shape::OnPopulateMesh(UI::VertexHelper *vh) {
     auto bounds = GetPixelAdjustedRect();
+    auto scale = get_transform()->get_lossyScale();
+
     bool hollowAndSpace = !filled && bounds.m_Width > border && bounds.m_Height > border;
 
-    int sides = 0;
+    float borderX = border * 5 * 0.02 / scale.x;
+    float borderY = border * 5 * 0.02 / scale.y;
 
-    switch ((ShapeType) shape) {
-        case Shape::Circle:
-            sides = 50;
-            break;
-        case Shape::Square:
-            sides = 4;
-            break;
-        case Shape::Triangle:
-            sides = 3;
-            break;
-    }
-
-    std::vector<UnityEngine::Vector3> points;
+    std::vector<Vector2> points;
     auto color = ToColor32(get_color());
 
     vh->Clear();
-    for (auto& point : GetCircumferencePoints(sides, bounds)) {
-        vh->AddVert(point, color, {});
-        points.emplace_back(point);
+    for (auto& [x, y] : GetCircumferencePoints(sideCount, bounds)) {
+        vh->AddVert({x, y, 0}, color, {});
+        points.emplace_back(x, y);
     }
     if (hollowAndSpace) {
-        // TODO: fancy math to get the border to refer to the width instead of the corner diagonals? or does it??
         auto innerBounds = bounds;
-        innerBounds.m_XMin += border * 0.5;
-        innerBounds.m_YMin += border * 0.5;
-        innerBounds.m_Width -= border;
-        innerBounds.m_Height -= border;
-        for (auto& point : GetCircumferencePoints(sides, innerBounds)) {
-            vh->AddVert(point, color, {});
-            points.emplace_back(point);
+        innerBounds.m_XMin += borderX * 0.5;
+        innerBounds.m_YMin += borderY * 0.5;
+        innerBounds.m_Width -= borderX;
+        innerBounds.m_Height -= borderY;
+        for (auto& [x, y] : GetCircumferencePoints(sideCount, innerBounds)) {
+            vh->AddVert({x, y, 0}, color, {});
+            points.emplace_back(x, y);
         }
     }
 
@@ -107,22 +169,31 @@ void Shape::OnPopulateMesh(UnityEngine::UI::VertexHelper *vh) {
         vh->AddTriangle(p0, p1, p2);
 }
 
-// #include "questui/shared/BeatSaberUI.hpp"
+#include "questui/shared/BeatSaberUI.hpp"
 
-// using namespace QuestUI;
+using namespace QuestUI;
 
-#include "UnityEngine/Resources.hpp"
-#include "UnityEngine/Material.hpp"
+#include "UnityEngine/UI/Mask.hpp"
 
-Shape* Shape::Create(UnityEngine::GameObject* object, int shape, bool filled, float borderWidth) {
-    auto ret = object->AddComponent<Shape*>();
+Shape* Shape::Create(Transform* parent) {
+    // TODO: cache and convert to asset
+    auto sprite = QuestUI::BeatSaberUI::Base64ToSprite("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAACXBIWXMAAAABAAAAAQBPJcTWAAAADElEQVR4nGP4//8/AAX+Av4N70a4AAAAAElFTkSuQmCC");
+    auto maskImage = BeatSaberUI::CreateImage(parent, sprite);
 
-    auto mat = Resources::FindObjectsOfTypeAll<Material*>().First([](auto x) { return x->get_name() == "UINoGlow"; });
-    ret->set_material(mat);
+    auto mask = maskImage->get_gameObject()->AddComponent<UI::Mask*>();
+    mask->set_showMaskGraphic(false);
 
-    ret->shape = shape;
-    ret->filled = filled;
-    ret->border = borderWidth;
+    auto shapeObject = GameObject::New_ctor("QountersShape");
+    auto ret = shapeObject->AddComponent<Shape*>();
+
+    ret->mask = maskImage;
+    ret->set_material(maskImage->get_material());
+
+    auto transform = ret->get_rectTransform();
+    transform->SetParent(maskImage->get_transform(), false);
+    transform->set_anchorMin({0, 0});
+    transform->set_anchorMax({1, 1});
+    transform->set_sizeDelta({0, 0});
 
     return ret;
 }
@@ -154,7 +225,7 @@ void CopyFields(Transform* base, Transform* target, int component) {
     }
 }
 
-std::array<UnityEngine::Transform*, BaseGameGraphic::cloneCount> BaseGameGraphic::clones = {};
+std::array<Transform*, BaseGameGraphic::cloneCount> BaseGameGraphic::clones = {};
 std::array<std::map<std::string, float>, BaseGameGraphic::cloneCount> BaseGameGraphic::alphaIndex = {};
 
 void BaseGameGraphic::Update() {
@@ -313,7 +384,7 @@ Sprite* ImageSpriteCache::GetSprite(std::string name) {
             return inst->sprites->get_Item(i);
     }
     inst->spritePaths.emplace_back(name);
-    auto ret = QuestUI::BeatSaberUI::FileToSprite(IMAGE_DIRECTORY + name);
+    auto ret = BeatSaberUI::FileToSprite(IMAGE_DIRECTORY + name);
     inst->sprites->Add(ret);
     return ret;
 }

@@ -16,7 +16,7 @@ using namespace UnityEngine;
 #include "UnityEngine/UI/Graphic.hpp"
 
 std::map<std::string, std::vector<std::pair<TMPro::TextMeshProUGUI*, UnparsedJSON>>> texts;
-std::map<std::string, std::vector<std::pair<HMUI::ImageView*, UnparsedJSON>>> shapes;
+std::map<std::string, std::vector<std::pair<Shape*, UnparsedJSON>>> shapes;
 std::map<std::string, std::vector<std::pair<UI::Graphic*, UnparsedJSON>>> colors;
 std::map<std::string, std::vector<std::pair<GameObject*, std::pair<UnparsedJSON, bool>>>> enables;
 
@@ -58,24 +58,6 @@ void RemoveFromMap(std::map<std::string, std::vector<std::pair<TComp, TOpts>>>& 
     }
 }
 
-Sprite* GetShapeSprite(int shape) { // TODO
-    return QuestUI::BeatSaberUI::Base64ToSprite("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAACXBIWXMAAAABAAAAAQBPJcTWAAAADElEQVR4nGP4//8/AAX+Av4N70a4AAAAAElFTkSuQmCC");
-    switch ((ShapeOptions::Shapes) shape) {
-        case ShapeOptions::Shapes::Square:
-            return nullptr;
-        case ShapeOptions::Shapes::SquareOutline:
-            return nullptr;
-        case ShapeOptions::Shapes::Circle:
-            return nullptr;
-        case ShapeOptions::Shapes::CircleOutline:
-            return nullptr;
-        case ShapeOptions::Shapes::Triangle:
-            return nullptr;
-        case ShapeOptions::Shapes::TriangleOutline:
-            return nullptr;
-    }
-}
-
 void UpdateTextOptions(TMPro::TextMeshProUGUI* text, Qounters::Component::OptionsTypes newOptions, bool creation) {
     auto options = newOptions.GetValue<TextOptions>().value_or(TextOptions{});
 
@@ -106,47 +88,41 @@ void UpdateTextOptions(TMPro::TextMeshProUGUI* text, Qounters::Component::Option
         outline->SetDirty();
 }
 
-#include "UnityEngine/UI/Image_OriginHorizontal.hpp"
-#include "UnityEngine/UI/Image_OriginVertical.hpp"
-#include "UnityEngine/UI/Image_Origin360.hpp"
-
-void UpdateShapeOptions(HMUI::ImageView* shape, Qounters::Component::OptionsTypes newOptions, bool creation) {
+void UpdateShapeOptions(Shape* shape, Qounters::Component::OptionsTypes newOptions, bool creation) {
     auto options = newOptions.GetValue<ShapeOptions>().value_or(ShapeOptions{});
 
-    shape->set_sprite(GetShapeSprite(options.Shape));
+    bool filled = false;
+    int sideCount = 4;
 
-    auto fill = options.Fill;
-    switch ((ShapeOptions::Fills) fill) {
-        case ShapeOptions::Fills::None:
-            // could remove it from the source shapes map as well, but it's probably insignificant
-            shape->set_type(UI::Image::Type::Simple);
-            return;
-        case ShapeOptions::Fills::Horizontal:
-            shape->set_fillMethod(UI::Image::FillMethod::Horizontal);
-            shape->set_fillOrigin(options.Inverse
-                ? UI::Image::OriginHorizontal::Right
-                : UI::Image::OriginHorizontal::Left);
+    switch ((ShapeOptions::Shapes) options.Shape) {
+        case ShapeOptions::Shapes::Square:
+            filled = true;
+        case ShapeOptions::Shapes::SquareOutline:
+            sideCount = 4;
             break;
-        case ShapeOptions::Fills::Vertical:
-            shape->set_fillMethod(UI::Image::FillMethod::Vertical);
-            shape->set_fillOrigin(options.Inverse
-                ? UI::Image::OriginVertical::Bottom
-                : UI::Image::OriginVertical::Top);
+        case ShapeOptions::Shapes::Circle:
+            filled = true;
+        case ShapeOptions::Shapes::CircleOutline:
+            sideCount = 50;
             break;
-        case ShapeOptions::Fills::Circle:
-            shape->set_fillMethod(UI::Image::FillMethod::Radial360);
-            shape->set_fillOrigin(UI::Image::Origin360::Top);
-            shape->set_fillClockwise(!options.Inverse);
+        case ShapeOptions::Shapes::Triangle:
+            filled = true;
+        case ShapeOptions::Shapes::TriangleOutline:
+            sideCount = 3;
             break;
     }
-    shape->set_type(UI::Image::Type::Filled);
+
+    shape->SetFilled(filled);
+    shape->SetSideCount(sideCount);
+    shape->SetBorder(options.OutlineWidth);
+    shape->SetMaskOptions(options.Fill, options.Inverse);
 
     std::string source = options.FillSource;
     auto sourceFn = GetSource(shapeSources, source).first;
     if (!sourceFn)
         return;
     float fillLevel = sourceFn(options.SourceOptions);
-    shape->set_fillAmount(fillLevel);
+    shape->SetMaskAmount(fillLevel);
 
     UpdatePair(shapes, shape, source, options.SourceOptions, creation);
 }
@@ -176,7 +152,7 @@ void Qounters::UpdateComponentOptions(int componentType, UnityEngine::Component*
             UpdateTextOptions((TMPro::TextMeshProUGUI*) component, newOptions, false);
             break;
         case Component::Types::Shape:
-            UpdateShapeOptions((HMUI::ImageView*) component, newOptions, false);
+            UpdateShapeOptions((Shape*) component, newOptions, false);
             break;
         case Component::Types::Image:
             UpdateImageOptions((HMUI::ImageView*) component, newOptions, false);
@@ -225,6 +201,7 @@ void Qounters::UpdateComponentPosition(RectTransform* component, Component const
             component->set_sizeDelta({0, 0});
             break;
         case Component::Types::Shape:
+            component = (RectTransform*) component->get_parent();
         case Component::Types::Image:
             component->set_sizeDelta({25, 25});
             break;
@@ -290,7 +267,6 @@ void Qounters::SetSourceOptions(Component& component, UnparsedJSON newOptions) {
             break;
         case Component::Types::Shape:
             SetSourceOptions<ShapeOptions>(component.Options, newOptions);
-            component.Options = ShapeOptions();
             break;
         case Component::Types::Image:
         case Component::Types::BaseGame:
@@ -413,7 +389,7 @@ void Qounters::CreateQounterComponent(Component const& qounterComponent, int com
             break;
         }
         case Component::Types::Shape: {
-            auto shape = BeatSaberUI::CreateImage(parent, nullptr);
+            auto shape = Shape::Create(parent);
             component = shape;
             UpdateShapeOptions(shape, qounterComponent.Options, true);
             break;
@@ -520,7 +496,7 @@ void UpdateShapes(std::string source) {
     auto& elements = shapes[source];
 
     for (auto& [element, options] : elements)
-        element->set_fillAmount(sourceFn(options));
+        element->SetMaskAmount(sourceFn(options));
 }
 
 void UpdateColors(std::string source) {

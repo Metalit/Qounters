@@ -3,6 +3,7 @@
 #include "customtypes/settings.hpp"
 #include "editor.hpp"
 #include "main.hpp"
+#include "options.hpp"
 #include "sources.hpp"
 #include "sourceui.hpp"
 #include "utils.hpp"
@@ -29,8 +30,6 @@ const std::vector<std::string> Qounters::ShapeStrings = {
     "Rectangle Border",
     "Circle",
     "Circle Border",
-    "Triangle",
-    "Triangle Border",
 };
 const std::vector<std::string> Qounters::FillStrings = {
     "None",
@@ -56,14 +55,12 @@ using namespace UnityEngine;
 
 namespace Qounters {
     void CreateTextOptionsUI(GameObject* parent, TextOptions const& options) {
-        static TextOptions opts;
         static HMUI::SimpleTextDropdown* sourceDropdown;
         static UI::VerticalLayoutGroup* sourceOptions;
 
-        opts = options;
-
         Utils::CreateDropdownEnum(parent, "Align", options.Align, AlignStrings, [](int val) {
             static int id = Editor::GetActionId();
+            auto opts = Editor::GetOptions<TextOptions>(id);
             opts.Align = val;
             Editor::SetOptions(id, opts);
             Editor::FinalizeAction();
@@ -71,6 +68,7 @@ namespace Qounters {
 
         auto inc = BeatSaberUI::CreateIncrementSetting(parent, "Font Size", 1, 0.5, options.Size, true, false, 0, -1, Vector2(), [](float val) {
             static int id = Editor::GetActionId();
+            auto opts = Editor::GetOptions<TextOptions>(id);
             opts.Size = val;
             Editor::SetOptions(id, opts);
             Editor::FinalizeAction();
@@ -80,6 +78,7 @@ namespace Qounters {
 
         BeatSaberUI::CreateToggle(parent, "Italic", options.Italic, [](bool val) {
             static int id = Editor::GetActionId();
+            auto opts = Editor::GetOptions<TextOptions>(id);
             opts.Italic = val;
             Editor::SetOptions(id, opts);
             Editor::FinalizeAction();
@@ -87,7 +86,8 @@ namespace Qounters {
 
         sourceDropdown = Utils::CreateDropdown(parent, "Text Source", options.TextSource, Utils::GetKeys(textSources), [parent](std::string val) {
             static int id = Editor::GetActionId();
-            if (val == opts.TextSource)
+            auto opts = Editor::GetOptions<TextOptions>(id);
+            if (val != opts.TextSource)
                 return;
             sourceDropdown->Hide(false);
             opts.TextSource = val;
@@ -98,18 +98,16 @@ namespace Qounters {
         });
 
         sourceOptions = BeatSaberUI::CreateVerticalLayoutGroup(parent);
-        TextSource::CreateUI(sourceOptions->get_gameObject(), opts.TextSource, opts.SourceOptions);
+        TextSource::CreateUI(sourceOptions->get_gameObject(), options.TextSource, options.SourceOptions);
     }
 
     void CreateShapeOptionsUI(GameObject* parent, ShapeOptions const& options) {
-        static ShapeOptions opts;
         static HMUI::SimpleTextDropdown* sourceDropdown;
         static UI::VerticalLayoutGroup* sourceOptions;
 
-        opts = options;
-
         Utils::CreateDropdownEnum(parent, "Shape", options.Shape, ShapeStrings, [](int val) {
             static int id = Editor::GetActionId();
+            auto opts = Editor::GetOptions<ShapeOptions>(id);
             opts.Shape = val;
             Editor::SetOptions(id, opts);
             Editor::FinalizeAction();
@@ -117,6 +115,7 @@ namespace Qounters {
 
         auto inc = BeatSaberUI::CreateIncrementSetting(parent, "Outline Width", 1, 0.1, options.OutlineWidth, true, false, 0.1, -1, Vector2(), [](float val) {
             static int id = Editor::GetActionId();
+            auto opts = Editor::GetOptions<ShapeOptions>(id);
             opts.OutlineWidth = val;
             Editor::SetOptions(id, opts);
             Editor::FinalizeAction();
@@ -125,6 +124,7 @@ namespace Qounters {
 
         Utils::CreateDropdownEnum(parent, "Fill", options.Fill, FillStrings, [](int val) {
             static int id = Editor::GetActionId();
+            auto opts = Editor::GetOptions<ShapeOptions>(id);
             opts.Fill = val;
             Editor::SetOptions(id, opts);
             Editor::FinalizeAction();
@@ -132,6 +132,7 @@ namespace Qounters {
 
         sourceDropdown = Utils::CreateDropdown(parent, "Fill Source", options.FillSource, Utils::GetKeys(shapeSources), [parent](std::string val) {
             static int id = Editor::GetActionId();
+            auto opts = Editor::GetOptions<ShapeOptions>(id);
             if (opts.FillSource != val) {
                 sourceDropdown->Hide(false);
                 opts.FillSource = val;
@@ -143,10 +144,11 @@ namespace Qounters {
         });
 
         sourceOptions = BeatSaberUI::CreateVerticalLayoutGroup(parent);
-        ShapeSource::CreateUI(sourceOptions->get_gameObject(), opts.FillSource, opts.SourceOptions);
+        ShapeSource::CreateUI(sourceOptions->get_gameObject(), options.FillSource, options.SourceOptions);
 
         BeatSaberUI::CreateToggle(parent, "Inverse Fill", options.Inverse, [](bool val) {
             static int id = Editor::GetActionId();
+            auto opts = Editor::GetOptions<ShapeOptions>(id);
             opts.Inverse = val;
             Editor::SetOptions(id, opts);
             Editor::FinalizeAction();
@@ -154,10 +156,8 @@ namespace Qounters {
     }
 
     void CreateImageOptionsUI(GameObject* parent, ImageOptions const& options) {
-        static ImageOptions opts;
         static HMUI::ModalView* modal;
         static HMUI::ImageView* currentImage;
-        opts = options;
 
         ImageSpriteCache::LoadAllSprites();
         auto currentSprite = ImageSpriteCache::GetSprite(options.Path);
@@ -171,6 +171,7 @@ namespace Qounters {
             modal->Hide(true, nullptr);
             currentImage->set_sprite(ImageSpriteCache::GetSpriteIdx(idx));
             static int actionId = Editor::GetActionId();
+            auto opts = Editor::GetOptions<ImageOptions>(actionId);
             opts.Path = ImageSpriteCache::GetInstance()->spritePaths[idx];
             Editor::SetOptions(actionId, opts);
             Editor::FinalizeAction();
@@ -195,11 +196,9 @@ namespace Qounters {
     }
 
     void CreateBaseGameOptionsUI(GameObject* parent, BaseGameOptions const& options) {
-        static BaseGameOptions opts;
-        opts = options;
-
         Utils::CreateDropdownEnum(parent, "Component", options.Component, ComponentStrings, [](int val) {
             static int id = Editor::GetActionId();
+            auto opts = Editor::GetOptions<BaseGameOptions>(id);
             opts.Component = val;
             Editor::SetOptions(id, opts);
             Editor::FinalizeAction();

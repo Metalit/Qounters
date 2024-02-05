@@ -5,8 +5,6 @@
 #include "pp.hpp"
 #include "environment.hpp"
 
-// TODO: Spinometer
-
 using namespace Qounters;
 
 std::vector<std::pair<std::string, std::pair<SourceFn<std::string>, SourceUIFn>>> Qounters::textSources = {

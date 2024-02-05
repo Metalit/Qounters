@@ -207,7 +207,9 @@ DECLARE_CLASS_CUSTOM_INTERFACES(Qounters, EditingComponent, EditingBase, INTERFA
     Qounters::Component& GetComponent();
 
     public:
-    void Init(UnityEngine::UI::Graphic* typeComponent, int componentIdx);
+    void Init(UUI::Graphic* typeComponent, int componentIdx);
 )
 
 #undef INTERFACES
+#undef UUI
+#undef UES

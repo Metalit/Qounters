@@ -234,7 +234,7 @@ namespace Qounters::Editor {
         for (auto it = editing.begin(); it != editing.end(); it++) {
             if (it->second == object) {
                 editing.erase(it);
-                break;
+                return;
             }
         }
     }
@@ -398,13 +398,16 @@ namespace Qounters::Editor {
             RemoveComponent(GetGroup(groupIdx).Components[componentIdx].Type, comp->typeComponent);
         } else {
             // remove references to destroyed children
+            std::vector<std::pair<int, EditingComponent*>> toRemove = {};
             for (auto& [idxs, obj] : editing) {
                 auto& [otherGroupIdx, otherComponentIdx] = idxs;
                 if (otherGroupIdx != groupIdx || otherComponentIdx == -1)
                     continue;
-                UnregisterEditing(obj);
-                auto comp = (EditingComponent*) obj;
-                RemoveComponent(GetGroup(groupIdx).Components[otherComponentIdx].Type, comp->typeComponent);
+                toRemove.emplace_back(otherComponentIdx, (EditingComponent*) obj);
+            }
+            for (auto& [otherComponentIdx, component] : toRemove) {
+                UnregisterEditing(component);
+                RemoveComponent(GetGroup(groupIdx).Components[otherComponentIdx].Type, component->typeComponent);
             }
         }
         UnregisterEditing(remove);

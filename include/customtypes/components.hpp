@@ -5,15 +5,16 @@
 
 #include "custom-types/shared/macros.hpp"
 
-#include "HMUI/ImageView.hpp"
+#include "UnityEngine/UI/MaskableGraphic.hpp"
 #include "UnityEngine/UI/VertexHelper.hpp"
-#include "UnityEngine/GameObject.hpp"
-#include <array>
+#include "UnityEngine/Transform.hpp"
+
+#define UUI UnityEngine::UI
 
 #define METHOD(...) il2cpp_utils::il2cpp_type_check::MetadataGetter<__VA_ARGS__>::get()
 #define CAST_METHOD(c, m, ...) METHOD(static_cast<void (c::*)(__VA_ARGS__)>(&c::m))
 
-DECLARE_CLASS_CODEGEN(Qounters, Shape, HMUI::ImageView,
+DECLARE_CLASS_CODEGEN(Qounters, Shape, UUI::MaskableGraphic,
     enum ShapeType {
         Square,
         Circle,
@@ -21,19 +22,27 @@ DECLARE_CLASS_CODEGEN(Qounters, Shape, HMUI::ImageView,
     };
 
     DECLARE_INSTANCE_FIELD(bool, filled);
-    DECLARE_INSTANCE_FIELD(int, shape);
+    DECLARE_INSTANCE_FIELD(int, sideCount);
     DECLARE_INSTANCE_FIELD(float, border);
 
-    DECLARE_OVERRIDE_METHOD(void, OnPopulateMesh, CAST_METHOD(UnityEngine::UI::Graphic, OnPopulateMesh, UnityEngine::UI::VertexHelper*), UnityEngine::UI::VertexHelper* vh);
+    DECLARE_INSTANCE_METHOD(void, SetFilled, bool value);
+    DECLARE_INSTANCE_METHOD(void, SetSideCount, int value);
+    DECLARE_INSTANCE_METHOD(void, SetBorder, float value);
 
-    DECLARE_STATIC_METHOD(Shape*, Create, UnityEngine::GameObject* object, int shape, bool filled, float borderWidth = 0);
+    DECLARE_INSTANCE_METHOD(void, SetMaskOptions, int type, bool inverse);
+    DECLARE_INSTANCE_METHOD(void, SetMaskAmount, float value);
+
+    DECLARE_OVERRIDE_METHOD(void, OnPopulateMesh, CAST_METHOD(UUI::Graphic, OnPopulateMesh, UUI::VertexHelper*), UUI::VertexHelper* vh);
+
+    DECLARE_STATIC_METHOD(Shape*, Create, UnityEngine::Transform* parent);
+
+    private:
+    HMUI::ImageView* mask = nullptr;
 )
 
-#include "UnityEngine/Transform.hpp"
-
-DECLARE_CLASS_CODEGEN(Qounters, BaseGameGraphic, UnityEngine::UI::Graphic,
+DECLARE_CLASS_CODEGEN(Qounters, BaseGameGraphic, UUI::Graphic,
     DECLARE_INSTANCE_FIELD_DEFAULT(UnityEngine::Transform*, instance, nullptr);
-    DECLARE_INSTANCE_FIELD_DEFAULT(ArrayW<UnityEngine::UI::Graphic*>, graphics, nullptr);
+    DECLARE_INSTANCE_FIELD_DEFAULT(ArrayW<UUI::Graphic*>, graphics, nullptr);
 
     DECLARE_DEFAULT_CTOR();
 
@@ -43,7 +52,7 @@ DECLARE_CLASS_CODEGEN(Qounters, BaseGameGraphic, UnityEngine::UI::Graphic,
 
     DECLARE_INSTANCE_METHOD(void, SetComponent, int component);
     DECLARE_INSTANCE_METHOD(void, SetChildColors);
-    DECLARE_OVERRIDE_METHOD(void, OnPopulateMesh, CAST_METHOD(UnityEngine::UI::Graphic, OnPopulateMesh, UnityEngine::UI::VertexHelper*), UnityEngine::UI::VertexHelper* vh);
+    DECLARE_OVERRIDE_METHOD(void, OnPopulateMesh, CAST_METHOD(UUI::Graphic, OnPopulateMesh, UUI::VertexHelper*), UUI::VertexHelper* vh);
 
     DECLARE_STATIC_METHOD(BaseGameGraphic*, Create, UnityEngine::Transform* parent);
     DECLARE_STATIC_METHOD(void, MakeClones);
@@ -74,3 +83,5 @@ DECLARE_CLASS_CODEGEN(Qounters, ImageSpriteCache, UnityEngine::MonoBehaviour,
     private:
     static ImageSpriteCache* instance;
 )
+
+#undef UUI

@@ -217,6 +217,7 @@ namespace Qounters::Templates {
                 opts.FillSource = ShapeSource::TimeName;
                 opts.Inverse = timeLeft;
                 comp.Options = opts;
+                comp.Scale = ConfigUtils::Vector2(1.5, 1.5);
                 break;
             }
             default: { // Percentage

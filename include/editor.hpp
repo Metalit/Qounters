@@ -50,4 +50,8 @@ namespace Qounters::Editor {
 
     Group& GetSelectedGroup(int actionId, bool addUndo = true);
     Component& GetSelectedComponent(int actionId, bool addUndo = true);
+    template<class T>
+    T GetOptions(int actionId, bool addUndo = true) {
+        return GetSelectedComponent(actionId, addUndo).Options.GetValue<T>().value_or(T());
+    }
 }

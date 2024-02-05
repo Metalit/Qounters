@@ -752,7 +752,7 @@ custom_types::Helpers::Coroutine Qounters::OptionsViewController::UpdateScrollVi
 }
 
 
-void Qounters::EndDragHandler::OnEndDrag(UES::PointerEventData *eventData) {
+void Qounters::EndDragHandler::OnEndDrag(UnityEngine::EventSystems::PointerEventData *eventData) {
     callback();
 }
 
