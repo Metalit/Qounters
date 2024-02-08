@@ -22,7 +22,7 @@
     },
     {
       "id": "bs-cordl",
-      "versionRange": "*",
+      "versionRange": "^3402.1.2",
       "additionalData": {}
     },
     {
@@ -37,7 +37,7 @@
     },
     {
       "id": "rapidjson-macros",
-      "versionRange": "*",
+      "versionRange": "^1.2.0",
       "additionalData": {}
     },
     {
@@ -47,7 +47,7 @@
     },
     {
       "id": "song-details",
-      "versionRange": "*",
+      "versionRange": "^0.3.2",
       "additionalData": {}
     },
     {
@@ -57,7 +57,7 @@
     },
     {
       "id": "fmt",
-      "versionRange": "*",
+      "versionRange": "^10.0.0",
       "additionalData": {}
     }
   ],
