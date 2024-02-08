@@ -23,40 +23,40 @@ int GetNoteCount(BeatmapCallbacksUpdater* updater) {
         return 0;
     using LinkedList = System::Collections::Generic::LinkedList_1<NoteData*>;
     int noteCount = 0;
-    auto bcc = updater->beatmapCallbacksController;
-    auto songTime = bcc->startFilterTime;
-    auto noteDataItemsList = (LinkedList*) ((BeatmapData*) bcc->beatmapData)->beatmapDataItemsPerTypeAndId->GetList(csTypeOf(NoteData*), 0)->get_items();
+    auto bcc = updater->_beatmapCallbacksController;
+    auto songTime = bcc->_startFilterTime;
+    //TODO: fix this
+    /*auto noteDataItemsList = (LinkedList*) ((BeatmapData*) bcc->_beatmapData)->_beatmapDataItemsPerTypeAndId->GetList(csTypeOf(NoteData*), 0)->get_items();
     auto enumerator = (LinkedList::Enumerator*) noteDataItemsList->System_Collections_IEnumerable_GetEnumerator();
     while(enumerator->MoveNext()) {
         auto noteData = (NoteData*) enumerator->System_Collections_IEnumerator_get_Current();
         if(ShouldProcessNote(noteData) && noteData->get_time() > songTime)
             noteCount++;
-    }
+    }*/
     return noteCount;
 }
 
 #include "GlobalNamespace/ScoreModel.hpp"
 
 int GetMaxScore(BeatmapCallbacksUpdater* updater) {
-    if (!updater)
+    if (!updater || !updater->_beatmapCallbacksController)
         return 0;
-    return ScoreModel::ComputeMaxMultipliedScoreForBeatmap(updater->beatmapCallbacksController->beatmapData);
+    return ScoreModel::ComputeMaxMultipliedScoreForBeatmap(updater->_beatmapCallbacksController->_beatmapData);
 }
 
 #include "GlobalNamespace/ScoreController.hpp"
-#include "GlobalNamespace/AudioTimeSyncController_InitData.hpp"
+#include "GlobalNamespace/AudioTimeSyncController.hpp"
 #include "UnityEngine/AudioClip.hpp"
 
 float GetSongLength(ScoreController* controller) {
     if (!controller)
         return 0;
-    return controller->audioTimeSyncController->initData->audioClip->get_length();
+    return controller->_audioTimeSyncController->_initData->audioClip->get_length();
 }
 
 #include "GlobalNamespace/PlayerDataModel.hpp"
 #include "GlobalNamespace/PlayerData.hpp"
 #include "GlobalNamespace/PlayerAllOverallStatsData.hpp"
-#include "GlobalNamespace/PlayerAllOverallStatsData_PlayerOverallStatsData.hpp"
 
 int GetFailCount(PlayerDataModel* data) {
     if (!data)
@@ -68,12 +68,12 @@ int GetFailCount(PlayerDataModel* data) {
 #include "beatsaber-hook/shared/utils/typedefs-list.hpp"
 
 float GetPositiveMods(ScoreController* controller) {
-    if (!controller || !controller->gameplayModifierParams)
+    if (!controller || !controller->_gameplayModifierParams)
         return 0;
     float ret = 0;
-    auto mods = ListW<GameplayModifierParamsSO*>(controller->gameplayModifierParams);
+    auto mods = ListW<GameplayModifierParamsSO*>(controller->_gameplayModifierParams);
     for (auto& mod : mods) {
-        float mult = mod->multiplier;
+        float mult = mod->get_multiplier();
         if (mult > 0)
             ret += mult;
     }
@@ -83,16 +83,16 @@ float GetPositiveMods(ScoreController* controller) {
 #include "GlobalNamespace/GameplayModifiersModelSO.hpp"
 
 float GetNegativeMods(ScoreController* controller) {
-    if (!controller || !controller->gameplayModifierParams)
+    if (!controller || !controller->_gameplayModifierParams)
         return 0;
     float ret = 0;
-    auto mods = ListW<GameplayModifierParamsSO*>(controller->gameplayModifierParams);
+    auto mods = ListW<GameplayModifierParamsSO*>(controller->_gameplayModifierParams);
     for (auto& mod : mods) {
-        if (mod == controller->gameplayModifiersModel->noFailOn0Energy) {
+        if (mod == controller->_gameplayModifiersModel->_noFailOn0Energy.ptr()) {
             noFail = true;
             continue;
         }
-        float mult = mod->multiplier;
+        float mult = mod->get_multiplier();
         if (mult < 0)
             ret += mult;
     }
@@ -105,22 +105,23 @@ float GetNegativeMods(ScoreController* controller) {
 #include "GlobalNamespace/BeatmapCharacteristicSO.hpp"
 
 int GetHighScore(PlayerDataModel* data, GameplayCoreInstaller* installer) {
-    if (!data || !installer || !installer->sceneSetupData)
+    if (!data || !installer || !installer->_sceneSetupData)
         return 0;
-    auto [id, characteristic, difficulty] = Utils::GetBeatmapDetails(installer->sceneSetupData->difficultyBeatmap);
+    auto [id, characteristic, difficulty] = Utils::GetBeatmapDetails(installer->_sceneSetupData->difficultyBeatmap);
     for (auto& stats : ListW<PlayerLevelStatsData*>(data->playerData->levelsStatsData)) {
-        if (stats->levelID == id && stats->beatmapCharacteristic->serializedName == characteristic && stats->difficulty == difficulty)
-            return stats->highScore;
+        if (stats->levelID == id && stats->beatmapCharacteristic->serializedName == characteristic && stats->difficulty.value__ == difficulty)
+            return stats->get_highScore();
     }
     return -1;
 }
 
+#include "GlobalNamespace/IGameEnergyCounter.hpp"
 #include "GlobalNamespace/GameEnergyCounter.hpp"
 
 float GetHealth(ScoreController* controller) {
     if (!controller)
         return 1;
-    return controller->gameEnergyCounter->get_energy();
+    return controller->_gameEnergyCounter->get_energy();
 }
 
 namespace Qounters {
@@ -179,19 +180,20 @@ void Qounters::Initialize() {
     auto playerDataModel = UnityEngine::Object::FindObjectOfType<PlayerDataModel*>();
 
     auto gameplayCoreInstallers = UnityEngine::Resources::FindObjectsOfTypeAll<GameplayCoreInstaller*>();
+
     GameplayCoreInstaller* gameplayCoreInstaller;
     for (auto& installer : gameplayCoreInstallers) {
-        if (installer->get_isActiveAndEnabled() && installer->sceneSetupData != nullptr) {
+        if (installer->get_isActiveAndEnabled() && installer->_sceneSetupData != nullptr) {
             gameplayCoreInstaller = installer;
             break;
         }
     }
+
     if (!gameplayCoreInstaller) gameplayCoreInstaller = gameplayCoreInstallers[0];
 
-
     std::string beatmap = "Unknown";
-    if (gameplayCoreInstaller && gameplayCoreInstaller->sceneSetupData)
-        beatmap = Utils::GetBeatmapIdentifier(gameplayCoreInstaller->sceneSetupData->difficultyBeatmap);
+    if (gameplayCoreInstaller && gameplayCoreInstaller->_sceneSetupData)
+        beatmap = Utils::GetBeatmapIdentifier(gameplayCoreInstaller->_sceneSetupData->difficultyBeatmap);
 
     leftScore = 0;
     rightScore = 0;
@@ -239,8 +241,8 @@ void Qounters::Initialize() {
         restarts = 0;
     lastBeatmap = beatmap;
 
-    colors = gameplayCoreInstaller && gameplayCoreInstaller->sceneSetupData ? gameplayCoreInstaller->sceneSetupData->colorScheme : nullptr;
-    beatmapData = beatmapCallbacksUpdater ? (BeatmapData*) beatmapCallbacksUpdater->beatmapCallbacksController->beatmapData : nullptr;
+    colors = gameplayCoreInstaller && gameplayCoreInstaller->_sceneSetupData ? gameplayCoreInstaller->_sceneSetupData->colorScheme : nullptr;
+    beatmapData = beatmapCallbacksUpdater ? (BeatmapData*) beatmapCallbacksUpdater->_beatmapCallbacksController->_beatmapData : nullptr;
 
     leftMissedMaxScore = 0;
     rightMissedMaxScore = 0;

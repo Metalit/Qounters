@@ -8,49 +8,51 @@
 #include "sourceui.hpp"
 #include "utils.hpp"
 
-const std::vector<std::string> Qounters::TypeStrings = {
+#include "UnityEngine/UI/ContentSizeFitter.hpp"
+
+const std::vector<std::string_view> Qounters::TypeStrings = {
     "Text",
     "Shape",
     "Image",
     "Base Game",
 };
-const std::vector<std::string> Qounters::AnchorStrings = {
+const std::vector<std::string_view> Qounters::AnchorStrings = {
     "Left",
     "Right",
     "Top",
     "Bottom",
 };
-const std::vector<std::string> Qounters::AlignStrings = {
+const std::vector<std::string_view> Qounters::AlignStrings = {
     "Left",
     "Right",
     "Center",
 };
-const std::vector<std::string> Qounters::ShapeStrings = {
+const std::vector<std::string_view> Qounters::ShapeStrings = {
     "Rectangle",
     "Rectangle Border",
     "Circle",
     "Circle Border",
 };
-const std::vector<std::string> Qounters::FillStrings = {
+const std::vector<std::string_view> Qounters::FillStrings = {
     "None",
     "Horizontal",
     "Vertical",
     "Circle",
 };
-const std::vector<std::string> Qounters::ComponentStrings = {
+const std::vector<std::string_view> Qounters::ComponentStrings = {
     "Multiplier",
     "Song Time",
     // "Health Bar",
 };
-const std::vector<std::string> Qounters::SaberStrings = {
+const std::vector<std::string_view> Qounters::SaberStrings = {
     "Left",
     "Right",
     "Both",
 };
 
-#include "questui/shared/BeatSaberUI.hpp"
+#include "bsml/shared/BSML-Lite.hpp"
 
-using namespace QuestUI;
+using namespace BSML;
 using namespace UnityEngine;
 
 namespace Qounters {
@@ -66,17 +68,16 @@ namespace Qounters {
             Editor::FinalizeAction();
         });
 
-        auto inc = BeatSaberUI::CreateIncrementSetting(parent, "Font Size", 1, 0.5, options.Size, true, false, 0, -1, Vector2(), [](float val) {
+        auto inc = Lite::CreateIncrementSetting(parent, "Font Size", 1, 0.5, options.Size, true, false, 0, -1, Vector2(), [](float val) {
             static int id = Editor::GetActionId();
             auto opts = Editor::GetOptions<TextOptions>(id);
             opts.Size = val;
             Editor::SetOptions(id, opts);
             Editor::FinalizeAction();
         });
-        Utils::AddIncrementIncrement(inc, 5);
-        SetButtons(inc);
+        //SetButtons(inc);
 
-        BeatSaberUI::CreateToggle(parent, "Italic", options.Italic, [](bool val) {
+        Lite::CreateToggle(parent, "Italic", options.Italic, [](bool val) {
             static int id = Editor::GetActionId();
             auto opts = Editor::GetOptions<TextOptions>(id);
             opts.Italic = val;
@@ -97,7 +98,7 @@ namespace Qounters {
             Editor::FinalizeAction();
         });
 
-        sourceOptions = BeatSaberUI::CreateVerticalLayoutGroup(parent);
+        sourceOptions = Lite::CreateVerticalLayoutGroup(parent);
         TextSource::CreateUI(sourceOptions->get_gameObject(), options.TextSource, options.SourceOptions);
     }
 
@@ -113,14 +114,14 @@ namespace Qounters {
             Editor::FinalizeAction();
         });
 
-        auto inc = BeatSaberUI::CreateIncrementSetting(parent, "Outline Width", 1, 0.1, options.OutlineWidth, true, false, 0.1, -1, Vector2(), [](float val) {
+        auto inc = Lite::CreateIncrementSetting(parent, "Outline Width", 1, 0.1, options.OutlineWidth, true, false, 0.1, -1, Vector2(), [](float val) {
             static int id = Editor::GetActionId();
             auto opts = Editor::GetOptions<ShapeOptions>(id);
             opts.OutlineWidth = val;
             Editor::SetOptions(id, opts);
             Editor::FinalizeAction();
         });
-        SetButtons(inc);
+        //SetButtons(inc);
 
         Utils::CreateDropdownEnum(parent, "Fill", options.Fill, FillStrings, [](int val) {
             static int id = Editor::GetActionId();
@@ -143,10 +144,10 @@ namespace Qounters {
             Editor::FinalizeAction();
         });
 
-        sourceOptions = BeatSaberUI::CreateVerticalLayoutGroup(parent);
+        sourceOptions = Lite::CreateVerticalLayoutGroup(parent);
         ShapeSource::CreateUI(sourceOptions->get_gameObject(), options.FillSource, options.SourceOptions);
 
-        BeatSaberUI::CreateToggle(parent, "Inverse Fill", options.Inverse, [](bool val) {
+        Lite::CreateToggle(parent, "Inverse Fill", options.Inverse, [](bool val) {
             static int id = Editor::GetActionId();
             auto opts = Editor::GetOptions<ShapeOptions>(id);
             opts.Inverse = val;
@@ -164,9 +165,9 @@ namespace Qounters {
 
         constexpr int width = SpritesListCell::cellSize * SpritesListCell::imagesPerCell + SpritesListCell::imageSpacing * (SpritesListCell::imagesPerCell - 1);
         Vector2 listSize = {width, 60};
-        modal = BeatSaberUI::CreateModal(parent, listSize + Vector2(5, 0), nullptr);
+        modal = Lite::CreateModal(parent, Vector2::op_Addition(listSize, Vector2(5, 0)), nullptr);
 
-        auto list = BeatSaberUI::CreateScrollableCustomSourceList<SpritesListSource*>(modal);
+        auto list = Lite::CreateScrollableCustomSourceList<SpritesListSource*>(modal);
         list->imageClickedCallback = [](int idx) {
             modal->Hide(true, nullptr);
             currentImage->set_sprite(ImageSpriteCache::GetSpriteIdx(idx));
@@ -178,19 +179,19 @@ namespace Qounters {
         };
         list->tableView->ReloadData();
 
-        auto rect = (RectTransform*) list->get_transform()->GetParent();
+        auto rect = list->get_transform()->GetParent().try_cast<RectTransform>().value_or(nullptr);
         rect->set_anchorMin({0.5, 0.5});
         rect->set_anchorMax({0.5, 0.5});
         rect->set_sizeDelta(listSize);
         rect->GetComponent<UI::ContentSizeFitter*>()->set_horizontalFit(UI::ContentSizeFitter::FitMode::Unconstrained);
 
-        auto horizontal = BeatSaberUI::CreateHorizontalLayoutGroup(parent);
+        auto horizontal = Lite::CreateHorizontalLayoutGroup(parent);
         horizontal->set_spacing(5);
 
-        currentImage = BeatSaberUI::CreateImage(horizontal, currentSprite);
+        currentImage = Lite::CreateImage(horizontal, currentSprite);
         currentImage->set_preserveAspect(true);
 
-        BeatSaberUI::CreateUIButton(horizontal, "Select Image", []() {
+        Lite::CreateUIButton(horizontal, "Select Image", []() {
             modal->Show(true, true, nullptr);
         });
     }

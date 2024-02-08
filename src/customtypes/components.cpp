@@ -29,9 +29,7 @@ void Shape::SetBorder(float value) {
     SetVerticesDirty();
 }
 
-#include "UnityEngine/UI/Image_OriginHorizontal.hpp"
-#include "UnityEngine/UI/Image_OriginVertical.hpp"
-#include "UnityEngine/UI/Image_Origin360.hpp"
+#include "UnityEngine/UI/Image.hpp"
 
 void Shape::SetMaskOptions(int type, bool inverse) {
     if (!mask)
@@ -45,18 +43,18 @@ void Shape::SetMaskOptions(int type, bool inverse) {
         case ShapeOptions::Fills::Horizontal:
             mask->set_fillMethod(UI::Image::FillMethod::Horizontal);
             mask->set_fillOrigin(inverse
-                ? UI::Image::OriginHorizontal::Right
-                : UI::Image::OriginHorizontal::Left);
+                ? UI::Image::OriginHorizontal::Right.value__
+                : UI::Image::OriginHorizontal::Left.value__);
             break;
         case ShapeOptions::Fills::Vertical:
             mask->set_fillMethod(UI::Image::FillMethod::Vertical);
             mask->set_fillOrigin(inverse
-                ? UI::Image::OriginVertical::Bottom
-                : UI::Image::OriginVertical::Top);
+                ? UI::Image::OriginVertical::Bottom.value__
+                : UI::Image::OriginVertical::Top.value__);
             break;
         case ShapeOptions::Fills::Circle:
             mask->set_fillMethod(UI::Image::FillMethod::Radial360);
-            mask->set_fillOrigin(UI::Image::Origin360::Top);
+            mask->set_fillOrigin(UI::Image::Origin360::Top.value__);
             mask->set_fillClockwise(!inverse);
             break;
     }
@@ -129,7 +127,7 @@ std::vector<std::tuple<int, int, int>> GetHollowTriangles(std::vector<Vector2> p
 }
 
 Color32 ToColor32(Color color) {
-    return Color32(color.r * 255, color.g * 255, color.b * 255, color.a * 255);
+    return Color32(0, color.r * 255, color.g * 255, color.b * 255, color.a * 255);
 }
 
 #include "UnityEngine/RectTransform.hpp"
@@ -169,16 +167,16 @@ void Shape::OnPopulateMesh(UI::VertexHelper *vh) {
         vh->AddTriangle(p0, p1, p2);
 }
 
-#include "questui/shared/BeatSaberUI.hpp"
+#include "bsml/shared/BSML-Lite.hpp"
 
-using namespace QuestUI;
+using namespace BSML;
 
 #include "UnityEngine/UI/Mask.hpp"
 
 Shape* Shape::Create(Transform* parent) {
     // TODO: cache and convert to asset
-    auto sprite = QuestUI::BeatSaberUI::Base64ToSprite("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAACXBIWXMAAAABAAAAAQBPJcTWAAAADElEQVR4nGP4//8/AAX+Av4N70a4AAAAAElFTkSuQmCC");
-    auto maskImage = BeatSaberUI::CreateImage(parent, sprite);
+    auto sprite = Lite::Base64ToSprite("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAACXBIWXMAAAABAAAAAQBPJcTWAAAADElEQVR4nGP4//8/AAX+Av4N70a4AAAAAElFTkSuQmCC");
+    auto maskImage = Lite::CreateImage(parent, sprite);
 
     auto mask = maskImage->get_gameObject()->AddComponent<UI::Mask*>();
     mask->set_showMaskGraphic(false);
@@ -207,19 +205,19 @@ void CopyFields(Transform* base, Transform* target, int component) {
         case BaseGameOptions::Components::Multiplier: {
             auto baseComp = base->GetComponent<ScoreMultiplierUIController*>();
             auto targetComp = target->GetComponent<ScoreMultiplierUIController*>();
-            targetComp->scoreController = baseComp->scoreController;
+            targetComp->_scoreController = baseComp->_scoreController;
             break;
         }
         case BaseGameOptions::Components::ProgressBar: {
             auto baseComp = base->GetComponent<SongProgressUIController*>();
             auto targetComp = target->GetComponent<SongProgressUIController*>();
-            targetComp->audioTimeSource = baseComp->audioTimeSource;
+            targetComp->_audioTimeSource = baseComp->_audioTimeSource;
             break;
         }
         case BaseGameOptions::Components::HealthBar: {
             auto baseComp = base->GetComponent<GameEnergyUIPanel*>();
             auto targetComp = target->GetComponent<GameEnergyUIPanel*>();
-            targetComp->gameEnergyCounter = baseComp->gameEnergyCounter;
+            targetComp->_gameEnergyCounter = baseComp->_gameEnergyCounter;
             break;
         }
     }
@@ -235,8 +233,8 @@ void BaseGameGraphic::Update() {
 }
 
 float GetTimerWidth(Transform* songTimeInstance) {
-    auto slider = (RectTransform*) songTimeInstance->Find("Slider");
-    auto handle = (RectTransform*) slider->Find("Handle Slide Area/Handle");
+    auto slider = songTimeInstance->Find("Slider").try_cast<RectTransform>().value_or(nullptr);
+    auto handle = slider->Find("Handle Slide Area/Handle").try_cast<RectTransform>().value_or(nullptr);
     return slider->get_rect().m_Width + handle->get_rect().m_Width;
 }
 
@@ -366,7 +364,7 @@ ImageSpriteCache* ImageSpriteCache::GetInstance() {
         auto go = GameObject::New_ctor("QountersImageSpriteCache");
         Object::DontDestroyOnLoad(go);
         instance = go->AddComponent<ImageSpriteCache*>();
-        instance->sprites = List<Sprite*>::New_ctor();
+        instance->sprites = ListW<Sprite*>();
     }
     return instance;
 }
@@ -381,18 +379,18 @@ Sprite* ImageSpriteCache::GetSprite(std::string name) {
     auto inst = GetInstance();
     for (int i = 0; i < inst->spritePaths.size(); i++) {
         if (inst->spritePaths[i] == name)
-            return inst->sprites->get_Item(i);
+            return inst->sprites->_items[i];
     }
     inst->spritePaths.emplace_back(name);
-    auto ret = BeatSaberUI::FileToSprite(IMAGE_DIRECTORY + name);
+    auto ret = Lite::FileToSprite(IMAGE_DIRECTORY + name);
     inst->sprites->Add(ret);
     return ret;
 }
 
 int ImageSpriteCache::NumberOfSprites() {
-    return GetInstance()->sprites->get_Count();
+    return GetInstance()->sprites.size();
 }
 
 Sprite* ImageSpriteCache::GetSpriteIdx(int spriteIdx) {
-    return GetInstance()->sprites->get_Item(spriteIdx);
+    return GetInstance()->sprites->_items[spriteIdx];
 }

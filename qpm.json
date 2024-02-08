@@ -13,7 +13,7 @@
   "dependencies": [
     {
       "id": "beatsaber-hook",
-      "versionRange": "^3.14.0",
+      "versionRange": "^5.0.8",
       "additionalData": {
         "extraFiles": [
           "src/inline-hook"
@@ -21,48 +21,43 @@
       }
     },
     {
-      "id": "codegen",
-      "versionRange": "^0.33.0",
-      "additionalData": {}
-    },
-    {
-      "id": "questui",
-      "versionRange": "^0.17.3",
+      "id": "bs-cordl",
+      "versionRange": "*",
       "additionalData": {}
     },
     {
       "id": "custom-types",
-      "versionRange": "^0.15.21",
+      "versionRange": "^0.16.16",
       "additionalData": {}
     },
     {
-      "id": "modloader",
-      "versionRange": "^1.2.3",
+      "id": "scotland2",
+      "versionRange": "*",
       "additionalData": {}
     },
     {
       "id": "rapidjson-macros",
-      "versionRange": "^1.0.0",
+      "versionRange": "*",
       "additionalData": {}
     },
     {
       "id": "config-utils",
-      "versionRange": "^1.1.0",
+      "versionRange": "0.0.1",
       "additionalData": {}
     },
     {
       "id": "song-details",
-      "versionRange": "^0.3.1",
+      "versionRange": "*",
       "additionalData": {}
     },
     {
       "id": "bsml",
-      "versionRange": "^0.3.3",
+      "versionRange": "^0.4.6",
       "additionalData": {}
     },
     {
       "id": "fmt",
-      "versionRange": "^10.0.0",
+      "versionRange": "*",
       "additionalData": {}
     }
   ],

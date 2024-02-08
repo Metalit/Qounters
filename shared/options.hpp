@@ -97,11 +97,11 @@ namespace Qounters {
 
     Preset GetDefaultHUDPreset();
 
-    extern const std::vector<std::string> TypeStrings;
-    extern const std::vector<std::string> AnchorStrings;
-    extern const std::vector<std::string> AlignStrings;
-    extern const std::vector<std::string> ShapeStrings;
-    extern const std::vector<std::string> FillStrings;
-    extern const std::vector<std::string> ComponentStrings;
-    extern const std::vector<std::string> SaberStrings;
+    extern const std::vector<std::string_view> TypeStrings;
+    extern const std::vector<std::string_view> AnchorStrings;
+    extern const std::vector<std::string_view> AlignStrings;
+    extern const std::vector<std::string_view> ShapeStrings;
+    extern const std::vector<std::string_view> FillStrings;
+    extern const std::vector<std::string_view> ComponentStrings;
+    extern const std::vector<std::string_view> SaberStrings;
 }

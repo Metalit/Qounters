@@ -7,15 +7,17 @@
 #include "sources.hpp"
 #include "utils.hpp"
 
-#include "questui/shared/BeatSaberUI.hpp"
+#include "bsml/shared/BSML-Lite.hpp"
 
 #include "VRUIControls/VRInputModule.hpp"
+#include "VRUIControls/VRGraphicRaycaster.hpp"
 #include "VRUIControls/VRPointer.hpp"
 #include "GlobalNamespace/VRController.hpp"
-#include "VRUIControls/VRGraphicRaycaster.hpp"
 #include "UnityEngine/Rect.hpp"
+#include "UnityEngine/Ray.hpp"
+#include "UnityEngine/Resources.hpp"
 
-using namespace QuestUI;
+using namespace BSML;
 
 namespace Qounters::Editor {
     constexpr int anchorCount = (int) Group::Anchors::AnchorMax + 1;
@@ -98,7 +100,7 @@ namespace Qounters::Editor {
     }
 
     UnityEngine::GameObject* CreateDragCanvas(std::string name, UnityEngine::Transform* parent) {
-        auto canvas = BeatSaberUI::CreateCanvas();
+        auto canvas = Lite::CreateCanvas();
         canvas->set_name(name);
 
         if (parent)
@@ -138,7 +140,7 @@ namespace Qounters::Editor {
         disableActions = false;
         previewMode = false;
         if (newEnvironment) {
-            vrInput = UnityEngine::Resources::FindObjectsOfTypeAll<VRUIControls::VRInputModule*>().First();
+            vrInput = UnityEngine::Resources::FindObjectsOfTypeAll<VRUIControls::VRInputModule*>()->First();
             SetupAnchors();
             CreateDragCanvases();
         }
@@ -299,21 +301,21 @@ namespace Qounters::Editor {
     bool UpdateDrag(EditingGroup* dragged) {
         using RaycastResult = VRUIControls::VRGraphicRaycaster::VRGraphicRaycastResult;
 
-        auto controller = vrInput->vrPointer->vrController;
+        auto controller = vrInput->_vrPointer->_lastSelectedVrController;
         auto ray = UnityEngine::Ray(controller->get_position(), controller->get_forward());
 
-        auto results = List<RaycastResult>::New_ctor();
+        auto results = System::Collections::Generic::List_1<RaycastResult>::New_ctor();
         for (int i = 0; i < anchorCount; i++) {
             if (i == currentAnchor)
                 continue;
 
             auto raycaster = anchors[i]->GetComponent<VRUIControls::VRGraphicRaycaster*>();
-            raycaster->RaycastCanvas(raycaster->canvas, ray, System::Single::MaxValue, 0, results);
+            raycaster->RaycastCanvas(raycaster->_canvas, ray, std::numeric_limits<float>::max(), 0, results);
 
             RaycastResult* hit = nullptr;
             for (int j = 0; !hit && j < results->get_Count(); j++) {
-                if (results->items->values[j].graphic == anchors[i])
-                    hit = &results->items->values[j];
+                if (results->_items->_values[j].graphic == anchors[i])
+                    hit = &results->_items->_values[j];
             }
             if (hit) {
                 BeginDrag(i, true);

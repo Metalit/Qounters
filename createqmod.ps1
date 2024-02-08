@@ -28,16 +28,14 @@ if ($qmodName -eq "") {
 }
 
 $filelist = @($mod)
-
 $cover = "./" + $modJson.coverImage
 if ((-not ($cover -eq "./")) -and (Test-Path $cover)) {
     $filelist += ,$cover
 }
-
-foreach ($modFile in $modJson.modFiles) {
-    $path = "./build/" + $modFile
+foreach ($mod in $modJson.modFiles) {
+    $path = "./build/" + $mod
     if (-not (Test-Path $path)) {
-        $path = "./extern/libs/" + $modFile
+        $path = "./extern/libs/" + $mod
     }
     if (-not (Test-Path $path)) {
         Write-Output "Error: could not find dependency: $path"
@@ -45,7 +43,6 @@ foreach ($modFile in $modJson.modFiles) {
     }
     $filelist += $path
 }
-
 foreach ($lib in $modJson.libraryFiles) {
     $path = "./build/" + $lib
     if (-not (Test-Path $path)) {
@@ -58,10 +55,9 @@ foreach ($lib in $modJson.libraryFiles) {
     $filelist += $path
 }
 
-$destinationPath = "/sdcard/ModData/" + $modJson.packageId + "/Mods/" + $modJson.id
 
 Get-ChildItem "./images/" | ForEach-Object {
-    $name = $_.NameString
+    $name = $_
     $filelist += "./images/" + $name
     $modJson.fileCopies += (ConvertFrom-Json -InputObject "{
         `"name`": `"$name`",
@@ -69,11 +65,8 @@ Get-ChildItem "./images/" | ForEach-Object {
     }")
 }
 
-ConvertTo-Json -InputObject $modJson -Depth 32 | Set-Content $mod
-
 $zip = $qmodName + ".zip"
 $qmod = $qmodName + ".qmod"
 
 Compress-Archive -Path $filelist -DestinationPath $zip -Update
-Start-Sleep 1
 Move-Item $zip $qmod -Force

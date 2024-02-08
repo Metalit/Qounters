@@ -210,7 +210,10 @@ using DownloadCompleteDelegate = System::Action_1<UnityEngine::AsyncOperation*>*
 void GetMapInfoBL(IDifficultyBeatmap* map, std::string hash) {
     auto request = UnityEngine::Networking::UnityWebRequest::Get("api.beatleader.xyz/map/hash/" + hash);
     getLogger().debug("bl url: api.beatleader.xyz/map/hash/%s", hash.c_str());
-    request->SetRequestHeader("User-Agent", MOD_ID " " VERSION);
+
+    static auto s_UnityWebRequest_InternalSetRequestHeader = il2cpp_utils::resolve_icall<UnityEngine::Networking::UnityWebRequest::UnityWebRequestError, UnityEngine::Networking::UnityWebRequest*, StringW, StringW>("UnityEngine.Networking.UnityWebRequest::InternalSetRequestHeader");
+    s_UnityWebRequest_InternalSetRequestHeader(request, "User-Agent", MOD_ID " " VERSION);
+
     auto completed = custom_types::MakeDelegate<DownloadCompleteDelegate>((std::function<void (UnityEngine::AsyncOperation*)>) [map, request](UnityEngine::AsyncOperation* op) {
         getLogger().debug("got bl respose");
         if (map != latestRequest)
@@ -246,11 +249,11 @@ void GetSongDetails(auto&& callback) {
     }).detach();
 }
 
-#include "questui/shared/CustomTypes/Components/MainThreadScheduler.hpp"
+#include "bsml/shared/BSML/MainThreadScheduler.hpp"
 
 void GetMapInfoSS(IDifficultyBeatmap* map, std::string hash) {
     std::string characteristic = map->get_parentDifficultyBeatmapSet()->get_beatmapCharacteristic()->serializedName;
-    int difficulty = map->get_difficulty();
+    int difficulty = map->get_difficulty().value__;
 
     GetSongDetails([hash, characteristic, difficulty](auto details) {
         getLogger().debug("got song details");
@@ -263,7 +266,7 @@ void GetMapInfoSS(IDifficultyBeatmap* map, std::string hash) {
             return;
         getLogger().debug("found correct difficulty, %.2f stars", diff.starsSS);
 
-        QuestUI::MainThreadScheduler::Schedule([&diff]() {
+        BSML::MainThreadScheduler::Schedule([&diff]() {
             latestScoresaberSong = diff.starsSS;
             ssSongValid = true;
             Qounters::BroadcastEvent((int) Qounters::Events::PPInfo);
@@ -276,7 +279,7 @@ void Qounters::PP::GetMapInfo(IDifficultyBeatmap* map) {
     ssSongValid = false;
     latestRequest = map;
 
-    std::string id = map->get_level()->i_IPreviewBeatmapLevel()->get_levelID();
+    std::string id = map->get_level()->i___GlobalNamespace__IPreviewBeatmapLevel()->get_levelID();
     static const std::string prefix = "custom_level_";
     if (id.ends_with(" WIP") || !id.starts_with(prefix))
         return;

@@ -5,13 +5,15 @@
 
 #include "custom-types/shared/macros.hpp"
 
+#include "HMUI/ImageView.hpp"
+#include "UnityEngine/Sprite.hpp"
 #include "UnityEngine/UI/MaskableGraphic.hpp"
 #include "UnityEngine/UI/VertexHelper.hpp"
 #include "UnityEngine/Transform.hpp"
 
 #define UUI UnityEngine::UI
 
-#define METHOD(...) il2cpp_utils::il2cpp_type_check::MetadataGetter<__VA_ARGS__>::get()
+#define METHOD(...) il2cpp_utils::il2cpp_type_check::MetadataGetter<__VA_ARGS__>::methodInfo()
 #define CAST_METHOD(c, m, ...) METHOD(static_cast<void (c::*)(__VA_ARGS__)>(&c::m))
 
 DECLARE_CLASS_CODEGEN(Qounters, Shape, UUI::MaskableGraphic,
@@ -74,7 +76,7 @@ DECLARE_CLASS_CODEGEN(Qounters, ImageSpriteCache, UnityEngine::MonoBehaviour,
     DECLARE_STATIC_METHOD(int, NumberOfSprites);
     DECLARE_STATIC_METHOD(UnityEngine::Sprite*, GetSpriteIdx, int spriteIdx);
 
-    DECLARE_INSTANCE_FIELD(List<UnityEngine::Sprite*>*, sprites);
+    DECLARE_INSTANCE_FIELD(ListW<UnityEngine::Sprite*>, sprites);
 
     public:
     std::vector<std::string> spritePaths;

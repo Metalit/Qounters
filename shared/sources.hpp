@@ -40,12 +40,12 @@ namespace Qounters {
         RegisterSource(enableSources, sourceName, sourceFn, sourceUIFn);
     }
 
-    extern const std::vector<std::string> AverageCutPartStrings;
-    extern const std::vector<std::string> NotesDisplayStrings;
-    extern const std::vector<std::string> PPLeaderboardStrings;
-    extern const std::vector<std::string> SaberSpeedModeStrings;
-    extern const std::vector<std::string> SpinometerModeStrings;
-    extern const std::vector<std::string> RankedStatusLeaderboardStrings;
+    extern const std::vector<std::string_view> AverageCutPartStrings;
+    extern const std::vector<std::string_view> NotesDisplayStrings;
+    extern const std::vector<std::string_view> PPLeaderboardStrings;
+    extern const std::vector<std::string_view> SaberSpeedModeStrings;
+    extern const std::vector<std::string_view> SpinometerModeStrings;
+    extern const std::vector<std::string_view> RankedStatusLeaderboardStrings;
 
     namespace TextSource {
         inline const std::string StaticName = "Static";

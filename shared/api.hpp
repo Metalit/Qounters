@@ -3,6 +3,9 @@
 #include "options.hpp"
 #include "sources.hpp"
 
+#include "HMUI/InputFieldView.hpp"
+#include "bsml/shared/BSML/Components/Settings/SliderSetting.hpp"
+
 namespace Qounters::Shared {
     void RegisterTemplate(std::string title, TemplateUIFn function);
 
@@ -14,7 +17,7 @@ namespace Qounters::Shared {
     void SetColorOptions(int actionId, UnparsedJSON options);
     void FinalizeAction();
 
-    void AddSliderEndDrag(QuestUI::SliderSetting* slider, std::function<void (float)> onEndDrag);
+    void AddSliderEndDrag(BSML::SliderSetting* slider, std::function<void (float)> onEndDrag);
     void AddStringSettingOnClose(HMUI::InputFieldView* input, std::function<void (std::string)> onKeyboardClosed);
 }
 

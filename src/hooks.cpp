@@ -14,13 +14,15 @@ using namespace VRUIControls;
 using namespace Qounters;
 
 #include "GlobalNamespace/ScoreController.hpp"
+#include "GlobalNamespace/ScoringElement.hpp"
+#include "GlobalNamespace/ScoreMultiplierCounter.hpp"
 
 MAKE_HOOK_MATCH(ScoreController_DespawnScoringElement, &ScoreController::DespawnScoringElement, void, ScoreController* self, ScoringElement* scoringElement) {
 
     ScoreController_DespawnScoringElement(self, scoringElement);
 
-    int cutScore = scoringElement->get_cutScore() * scoringElement->multiplier;
-    int maxCutScore = scoringElement->get_maxPossibleCutScore() * scoringElement->maxMultiplier;
+    int cutScore = scoringElement->get_cutScore() * scoringElement->get_multiplier();
+    int maxCutScore = scoringElement->get_maxPossibleCutScore() * scoringElement->get_maxMultiplier();
 
     bool badCut = scoringElement->get_multiplierEventType() == ScoreMultiplierCounter::MultiplierEventType::Negative
         && scoringElement->get_wouldBeCorrectCutBestPossibleMultiplierEventType() == ScoreMultiplierCounter::MultiplierEventType::Positive
@@ -38,7 +40,7 @@ MAKE_HOOK_MATCH(ScoreController_DespawnScoringElement, &ScoreController::Despawn
             else
                 leftMissedMaxScore += maxCutScore;
         } else
-            leftMissedFixedScore += (scoringElement->get_cutScore() * scoringElement->maxMultiplier) - cutScore;
+            leftMissedFixedScore += (scoringElement->get_cutScore() * scoringElement->get_maxMultiplier()) - cutScore;
     } else {
         rightScore += cutScore;
         rightMaxScore += maxCutScore;
@@ -48,7 +50,7 @@ MAKE_HOOK_MATCH(ScoreController_DespawnScoringElement, &ScoreController::Despawn
             else
                 rightMissedMaxScore += maxCutScore;
         } else
-            rightMissedFixedScore += (scoringElement->get_cutScore() * scoringElement->maxMultiplier) - cutScore;
+            rightMissedFixedScore += (scoringElement->get_cutScore() * scoringElement->get_maxMultiplier()) - cutScore;
     }
     BroadcastEvent((int) Events::ScoreChanged);
 }
@@ -114,7 +116,7 @@ MAKE_HOOK_MATCH(BeatmapObjectManager_HandleNoteControllerNoteWasMissed, &Beatmap
 }
 
 #include "GlobalNamespace/CutScoreBuffer.hpp"
-#include "GlobalNamespace/ScoreModel_NoteScoreDefinition.hpp"
+#include "GlobalNamespace/ScoreModel.hpp"
 
 MAKE_HOOK_MATCH(CutScoreBuffer_HandleSaberSwingRatingCounterDidFinish, &CutScoreBuffer::HandleSaberSwingRatingCounterDidFinish,
         void, CutScoreBuffer* self, ISaberSwingRatingCounter* swingRatingCounter) {
@@ -122,20 +124,20 @@ MAKE_HOOK_MATCH(CutScoreBuffer_HandleSaberSwingRatingCounterDidFinish, &CutScore
     CutScoreBuffer_HandleSaberSwingRatingCounterDidFinish(self, swingRatingCounter);
 
     if (self->noteCutInfo.get_allIsOK() && ShouldProcessNote(self->noteCutInfo.noteData)) {
-        int after = self->afterCutScore;
+        int after = self->get_afterCutScore();
         if (self->noteScoreDefinition->maxAfterCutScore == 0) // TODO: selectively exclude from averages?
             after = 30;
         if (self->noteCutInfo.saberType == SaberType::SaberA) {
             notesLeftCut++;
-            leftPreSwing += self->beforeCutScore;
+            leftPreSwing += self->get_beforeCutScore();
             leftPostSwing += after;
-            leftAccuracy += self->centerDistanceCutScore;
+            leftAccuracy += self->get_centerDistanceCutScore();
             leftTimeDependence += std::abs(self->noteCutInfo.cutNormal.z);
         } else {
             notesRightCut++;
-            rightPreSwing += self->beforeCutScore;
+            rightPreSwing += self->get_beforeCutScore();
             rightPostSwing += after;
-            rightAccuracy += self->centerDistanceCutScore;
+            rightAccuracy += self->get_centerDistanceCutScore();
             rightTimeDependence += std::abs(self->noteCutInfo.cutNormal.z);
         }
         BroadcastEvent((int) Events::NoteCut);
@@ -160,15 +162,15 @@ MAKE_HOOK_MATCH(BeatmapObjectExecutionRatingsRecorder_HandlePlayerHeadDidEnterOb
 
 MAKE_HOOK_MATCH(GameEnergyCounter_ProcessEnergyChange, &GameEnergyCounter::ProcessEnergyChange, void, GameEnergyCounter* self, float energyChange) {
 
-    bool wasAbove0 = !self->didReach0Energy;
+    bool wasAbove0 = !self->_didReach0Energy;
 
     GameEnergyCounter_ProcessEnergyChange(self, energyChange);
 
-    if (wasAbove0 && self->didReach0Energy) {
+    if (wasAbove0 && self->_didReach0Energy) {
         negativeMods -= 0.5;
         BroadcastEvent((int) Events::ScoreChanged);
     }
-    health = self->energy;
+    health = self->get_energy();
     BroadcastEvent((int) Events::HealthChanged);
 }
 
@@ -207,17 +209,16 @@ MAKE_HOOK_MATCH(AudioTimeSyncController_Update, &AudioTimeSyncController::Update
         BroadcastEvent((int) Events::SlowUpdate);
     }
 
-    songTime = self->songTime;
+    songTime = self->get_songTime();
     BroadcastEvent((int) Events::Update);
 }
 
 #include "GlobalNamespace/CoreGameHUDController.hpp"
-#include "GlobalNamespace/CoreGameHUDController_InitData.hpp"
 
-MAKE_HOOK_MATCH(CoreGameHUDController_Start, &CoreGameHUDController::Start, void, CoreGameHUDController* self) {
+MAKE_HOOK_MATCH(CoreGameHUDController_Initialize, &CoreGameHUDController::Initialize, void, CoreGameHUDController* self, CoreGameHUDController::InitData* initData) {
 
     getLogger().info("Qounters start");
-    self->initData->advancedHUD = true;
+    initData->advancedHUD = true;
     saberManager = UnityEngine::Object::FindObjectOfType<SaberManager*>();
 
     if (!InSettingsEnvironment()) {
@@ -226,7 +227,7 @@ MAKE_HOOK_MATCH(CoreGameHUDController_Start, &CoreGameHUDController::Start, void
         CreateQounters();
     }
 
-    CoreGameHUDController_Start(self);
+    CoreGameHUDController_Initialize(self, initData);
 }
 
 #include "GlobalNamespace/StandardLevelDetailView.hpp"
@@ -297,13 +298,16 @@ MAKE_HOOK_MATCH(MultiplayerSessionManager_get_localPlayer, &MultiplayerSessionMa
 #include "VRUIControls/VRGraphicRaycaster.hpp"
 
 MAKE_HOOK_MATCH(VRGraphicRaycaster_Raycast, &VRGraphicRaycaster::Raycast,
-        void, VRGraphicRaycaster* self, UnityEngine::EventSystems::PointerEventData* eventData, List<UnityEngine::EventSystems::RaycastResult>* resultAppendList) {
+        void, VRGraphicRaycaster* self, UnityEngine::EventSystems::PointerEventData* eventData, System::Collections::Generic::List_1<UnityEngine::EventSystems::RaycastResult>* resultAppendList) {
 
-    if (blockOtherRaycasts && !raycastCanvases.contains(self->canvas))
+    if (blockOtherRaycasts && !raycastCanvases.contains(self->_canvas))
         return;
 
     VRGraphicRaycaster_Raycast(self, eventData, resultAppendList);
 }
+
+#include "HMUI/InputFieldView.hpp"
+#include "HMUI/UIKeyboard.hpp"
 
 MAKE_HOOK_MATCH(InputFieldView_DeactivateKeyboard, &HMUI::InputFieldView::DeactivateKeyboard, void, HMUI::InputFieldView* self, HMUI::UIKeyboard* keyboard) {
 
@@ -320,7 +324,7 @@ MAKE_HOOK_MATCH(UIKeyboardManager_OpenKeyboardFor, &UIKeyboardManager::OpenKeybo
 
     if (auto inputModal = input->GetComponentInParent<HMUI::ModalView*>()) {
         auto inputModalCanvas = inputModal->GetComponent<UnityEngine::Canvas*>();
-        auto keyboardModalCanvas = self->keyboardModalView->GetComponent<UnityEngine::Canvas*>();
+        auto keyboardModalCanvas = self->_keyboardModalView->GetComponent<UnityEngine::Canvas*>();
         keyboardModalCanvas->set_sortingOrder(inputModalCanvas->get_sortingOrder());
     }
 
@@ -329,11 +333,18 @@ MAKE_HOOK_MATCH(UIKeyboardManager_OpenKeyboardFor, &UIKeyboardManager::OpenKeybo
 
 MAKE_HOOK_MATCH(UIKeyboardManager_HandleKeyboardOkButton, &UIKeyboardManager::HandleKeyboardOkButton, void, UIKeyboardManager* self) {
 
-    auto handler = self->selectedInput->GetComponent<KeyboardCloseHandler*>();
+    auto handler = self->_selectedInput->GetComponent<KeyboardCloseHandler*>();
     if (handler && handler->okCallback)
         handler->okCallback();
 
     UIKeyboardManager_HandleKeyboardOkButton(self);
+}
+
+MAKE_HOOK(abort_hook, nullptr, void) {
+    getLogger().info("abort called");
+    getLogger().Backtrace(40);
+
+    abort_hook();
 }
 
 void Qounters::InstallHooks() {
@@ -345,7 +356,7 @@ void Qounters::InstallHooks() {
     INSTALL_HOOK(logger, BeatmapObjectExecutionRatingsRecorder_HandlePlayerHeadDidEnterObstacle);
     INSTALL_HOOK(logger, GameEnergyCounter_ProcessEnergyChange);
     INSTALL_HOOK(logger, AudioTimeSyncController_Update);
-    INSTALL_HOOK(logger, CoreGameHUDController_Start);
+    INSTALL_HOOK(logger, CoreGameHUDController_Initialize);
     INSTALL_HOOK(logger, StandardLevelDetailView_SetContentForBeatmapDataAsync);
     INSTALL_HOOK(logger, StandardLevelScenesTransitionSetupDataSO_Finish);
     INSTALL_HOOK(logger, PauseController_Pause);
@@ -357,4 +368,9 @@ void Qounters::InstallHooks() {
     INSTALL_HOOK(logger, InputFieldView_DeactivateKeyboard);
     INSTALL_HOOK(logger, UIKeyboardManager_OpenKeyboardFor);
     INSTALL_HOOK(logger, UIKeyboardManager_HandleKeyboardOkButton);
+
+    auto libc = dlopen("libc.so", RTLD_NOW);
+    auto abort = dlsym(libc, "abort");
+
+    INSTALL_HOOK_DIRECT(getLogger(), abort_hook, abort)
 }

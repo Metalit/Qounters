@@ -4,11 +4,20 @@
 #include "config.hpp"
 
 #include "custom-types/shared/macros.hpp"
+#include "custom-types/shared/coroutine.hpp"
 
+#include "bsml/shared/BSML/Components/Settings/IncrementSetting.hpp"
+#include "bsml/shared/BSML/Components/Settings/SliderSetting.hpp"
+#include "bsml/shared/BSML/Components/ClickableImage.hpp"
+
+#include "UnityEngine/UI/VerticalLayoutGroup.hpp"
+#include "UnityEngine/UI/Toggle.hpp"
+#include "HMUI/SimpleTextDropdown.hpp"
+#include "HMUI/ModalView.hpp"
 #include "HMUI/FlowCoordinator.hpp"
 #include "System/Action.hpp"
 
-#define METHOD(...) il2cpp_utils::il2cpp_type_check::MetadataGetter<__VA_ARGS__>::get()
+#define METHOD(...) il2cpp_utils::il2cpp_type_check::MetadataGetter<__VA_ARGS__>::methodInfo()
 #define INTERFACES(...) std::vector<Il2CppClass*>({ __VA_ARGS__ })
 
 DECLARE_CLASS_CODEGEN(Qounters, SettingsFlowCoordinator, HMUI::FlowCoordinator,
@@ -77,7 +86,7 @@ DECLARE_CLASS_CODEGEN(Qounters, SettingsViewController, HMUI::ViewController,
     static inline SettingsViewController* instance = nullptr;
 )
 
-#include "questui/shared/CustomTypes/Components/List/CustomListTableData.hpp"
+#include "bsml/shared/BSML/Components/CustomListTableData.hpp"
 
 DECLARE_CLASS_CODEGEN(Qounters, TemplatesViewController, HMUI::ViewController,
     DECLARE_OVERRIDE_METHOD(void, DidActivate, METHOD(&HMUI::ViewController::DidActivate), bool, bool, bool);
@@ -90,7 +99,7 @@ DECLARE_CLASS_CODEGEN(Qounters, TemplatesViewController, HMUI::ViewController,
 
     DECLARE_INSTANCE_FIELD_DEFAULT(bool, uiInitialized, false);
 
-    DECLARE_INSTANCE_FIELD(QuestUI::CustomListTableData*, list);
+    DECLARE_INSTANCE_FIELD(BSML::CustomListTableData*, list);
     DECLARE_INSTANCE_FIELD(HMUI::ModalView*, modal);
     DECLARE_INSTANCE_FIELD(UnityEngine::RectTransform*, modalLayout);
 
@@ -123,23 +132,23 @@ DECLARE_CLASS_CODEGEN(Qounters, OptionsViewController, HMUI::ViewController,
     DECLARE_INSTANCE_FIELD(UnityEngine::GameObject*, groupParent);
     DECLARE_INSTANCE_FIELD(UnityEngine::GameObject*, componentParent);
 
-    DECLARE_INSTANCE_FIELD(QuestUI::IncrementSetting*, gPosIncrementX);
-    DECLARE_INSTANCE_FIELD(QuestUI::IncrementSetting*, gPosIncrementY);
-    DECLARE_INSTANCE_FIELD(QuestUI::IncrementSetting*, gPosIncrementZ);
-    DECLARE_INSTANCE_FIELD(QuestUI::SliderSetting*, gRotSlider);
-    DECLARE_INSTANCE_FIELD(QuestUI::SliderSetting*, gRotSliderX);
-    DECLARE_INSTANCE_FIELD(QuestUI::SliderSetting*, gRotSliderY);
-    DECLARE_INSTANCE_FIELD(QuestUI::SliderSetting*, gRotSliderZ);
+    DECLARE_INSTANCE_FIELD(BSML::IncrementSetting*, gPosIncrementX);
+    DECLARE_INSTANCE_FIELD(BSML::IncrementSetting*, gPosIncrementY);
+    DECLARE_INSTANCE_FIELD(BSML::IncrementSetting*, gPosIncrementZ);
+    DECLARE_INSTANCE_FIELD(BSML::SliderSetting*, gRotSlider);
+    DECLARE_INSTANCE_FIELD(BSML::SliderSetting*, gRotSliderX);
+    DECLARE_INSTANCE_FIELD(BSML::SliderSetting*, gRotSliderY);
+    DECLARE_INSTANCE_FIELD(BSML::SliderSetting*, gRotSliderZ);
     DECLARE_INSTANCE_FIELD(UnityEngine::UI::Button*, gComponentButton);
     DECLARE_INSTANCE_FIELD(UnityEngine::UI::Button*, gDetachButton);
     DECLARE_INSTANCE_FIELD(UnityEngine::UI::Button*, gDeleteButton);
     DECLARE_INSTANCE_FIELD(UnityEngine::UI::Button*, gDeselectButton);
 
-    DECLARE_INSTANCE_FIELD(QuestUI::IncrementSetting*, cPosIncrementX);
-    DECLARE_INSTANCE_FIELD(QuestUI::IncrementSetting*, cPosIncrementY);
-    DECLARE_INSTANCE_FIELD(QuestUI::SliderSetting*, cRotSlider);
-    DECLARE_INSTANCE_FIELD(QuestUI::SliderSetting*, cScaleSliderX);
-    DECLARE_INSTANCE_FIELD(QuestUI::SliderSetting*, cScaleSliderY);
+    DECLARE_INSTANCE_FIELD(BSML::IncrementSetting*, cPosIncrementX);
+    DECLARE_INSTANCE_FIELD(BSML::IncrementSetting*, cPosIncrementY);
+    DECLARE_INSTANCE_FIELD(BSML::SliderSetting*, cRotSlider);
+    DECLARE_INSTANCE_FIELD(BSML::SliderSetting*, cScaleSliderX);
+    DECLARE_INSTANCE_FIELD(BSML::SliderSetting*, cScaleSliderY);
     DECLARE_INSTANCE_FIELD(HMUI::SimpleTextDropdown*, cTypeDropdown);
     DECLARE_INSTANCE_FIELD(HMUI::SimpleTextDropdown*, cColorSourceDropdown);
     DECLARE_INSTANCE_FIELD(HMUI::SimpleTextDropdown*, cEnableSourceDropdown);
@@ -186,7 +195,7 @@ DECLARE_CLASS_CODEGEN(Qounters, KeyboardCloseHandler,  UnityEngine::MonoBehaviou
 DECLARE_CLASS_CODEGEN(Qounters, SpritesListCell, HMUI::TableCell,
     DECLARE_DEFAULT_CTOR();
 
-    DECLARE_INSTANCE_FIELD(ArrayW<QuestUI::ClickableImage*>, images);
+    DECLARE_INSTANCE_FIELD(ArrayW<BSML::ClickableImage*>, images);
     DECLARE_INSTANCE_FIELD(UnityEngine::RectTransform*, layout);
     DECLARE_INSTANCE_FIELD(int, imageStartIdx);
 
@@ -205,7 +214,7 @@ DECLARE_CLASS_CODEGEN(Qounters, SpritesListCell, HMUI::TableCell,
     static constexpr float cellSize = 10;
 )
 
-#include "HMUI/TableView_IDataSource.hpp"
+#include "HMUI/TableView.hpp"
 
 DECLARE_CLASS_CODEGEN_INTERFACES(Qounters, SpritesListSource, UnityEngine::MonoBehaviour, INTERFACES( classof(HMUI::TableView::IDataSource*) ),
     DECLARE_INSTANCE_FIELD(HMUI::TableView*, tableView);

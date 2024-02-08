@@ -127,9 +127,9 @@ void UpdateShapeOptions(Shape* shape, Qounters::Component::OptionsTypes newOptio
     UpdatePair(shapes, shape, source, options.SourceOptions, creation);
 }
 
-#include "questui/shared/BeatSaberUI.hpp"
+#include "bsml/shared/BSML-Lite.hpp"
 
-using namespace QuestUI;
+using namespace BSML;
 
 void UpdateImageOptions(HMUI::ImageView* image, Qounters::Component::OptionsTypes newOptions, bool creation) {
     auto options = newOptions.GetValue<ImageOptions>().value_or(ImageOptions{});
@@ -201,7 +201,7 @@ void Qounters::UpdateComponentPosition(RectTransform* component, Component const
             component->set_sizeDelta({0, 0});
             break;
         case Component::Types::Shape:
-            component = (RectTransform*) component->get_parent();
+            component = component->get_parent().try_cast<RectTransform>().value_or(nullptr);
         case Component::Types::Image:
             component->set_sizeDelta({25, 25});
             break;
@@ -336,10 +336,10 @@ RectTransform* GetCanvas(std::string parentName, Transform* hud, Vector3 fallbac
     }
 
     if (auto ret = parent->Find(name))
-        return (RectTransform*) ret;
+        return ret.try_cast<RectTransform>().value_or(nullptr);
     parent->SetParent(hud, false);
 
-    auto canvas = BeatSaberUI::CreateCanvas();
+    auto canvas = Lite::CreateCanvas();
     canvas->set_name(name);
 
     canvas->GetComponent<Canvas*>()->set_sortingOrder(0);
@@ -350,7 +350,7 @@ RectTransform* GetCanvas(std::string parentName, Transform* hud, Vector3 fallbac
     ret->set_localPosition({0, 0, -0.5});
     ret->set_localEulerAngles({});
 
-    return (RectTransform*) ret;
+    return ret.try_cast<RectTransform>().value_or(nullptr);
 }
 
 std::pair<Transform*, HUDType> Qounters::GetHUD() {
@@ -381,7 +381,7 @@ void Qounters::CreateQounterComponent(Component const& qounterComponent, int com
 
     switch ((Component::Types) qounterComponent.Type) {
         case Component::Types::Text: {
-            auto text = BeatSaberUI::CreateText(parent, "");
+            auto text = Lite::CreateText(parent, "");
             if (editing)
                 text->get_gameObject()->AddComponent<TextOutlineSizer*>();
             component = text;
@@ -395,7 +395,7 @@ void Qounters::CreateQounterComponent(Component const& qounterComponent, int com
             break;
         }
         case Component::Types::Image: {
-            auto image = BeatSaberUI::CreateImage(parent, nullptr);
+            auto image = Lite::CreateImage(parent, nullptr);
             component = image;
             UpdateImageOptions(image, qounterComponent.Options, true);
             break;
@@ -423,7 +423,7 @@ void Qounters::CreateQounterComponent(Component const& qounterComponent, int com
 void Qounters::CreateQounterGroup(Group const& qounterGroup, int groupIdx, bool editing) {
     getLogger().debug("Creating qounter group");
 
-    auto parent = BeatSaberUI::CreateCanvas();
+    auto parent = Lite::CreateCanvas();
     parent->set_name("QounterGroup");
     auto parentTransform = parent->GetComponent<RectTransform*>();
     parentTransform->set_localScale({1, 1, 1});

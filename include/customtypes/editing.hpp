@@ -6,12 +6,17 @@
 
 #include "custom-types/shared/macros.hpp"
 
+#include "UnityEngine/EventSystems/PointerEventData.hpp"
+#include "UnityEngine/EventSystems/IEventSystemHandler.hpp"
+#include "UnityEngine/EventSystems/IInitializePotentialDragHandler.hpp"
 #include "UnityEngine/UI/Graphic.hpp"
-#include "UnityEngine/UI/VertexHelper.hpp"
+#include "UnityEngine/UI/Graphic.hpp"
+#include "UnityEngine/UI/ILayoutController.hpp"
+#include "TMPro/TextMeshProUGUI.hpp"
 
 #define UUI UnityEngine::UI
 
-#define METHOD(...) il2cpp_utils::il2cpp_type_check::MetadataGetter<__VA_ARGS__>::get()
+#define METHOD(...) il2cpp_utils::il2cpp_type_check::MetadataGetter<__VA_ARGS__>::methodInfo()
 #define CAST_METHOD(c, m, ...) METHOD(static_cast<void (c::*)(__VA_ARGS__)>(&c::m))
 
 DECLARE_CLASS_CODEGEN(Qounters, Outline, UUI::Graphic,

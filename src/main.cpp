@@ -4,6 +4,8 @@
 #include "config.hpp"
 #include "migration.hpp"
 
+#include "scotland2/shared/modloader.h"
+
 #include <filesystem>
 
 bool hasCJD = false;
@@ -12,15 +14,16 @@ bool blockOtherRaycasts = false;
 std::unordered_set<UnityEngine::Canvas*> raycastCanvases = {};
 
 Logger& getLogger() {
-    static auto logger = new Logger(ModInfo{MOD_ID, VERSION}, LoggerOptions{false, true});
+    static auto logger = new Logger(modloader::ModInfo{MOD_ID, VERSION, 0}, LoggerOptions{false, true});
     return *logger;
 }
 
-extern "C" void setup(ModInfo& info) {
-    info.id = MOD_ID;
-    info.version = VERSION;
+extern "C" void setup(CModInfo* info) {
+    info->id = MOD_ID;
+    info->version = VERSION;
+    info->version_long = 0;
 
-    getConfig().Init(info);
+    getConfig().Init(modloader::ModInfo{MOD_ID, VERSION, 0});
 
     auto presets = getConfig().Presets.GetValue();
     auto defaultPreset = getConfig().Preset.GetDefaultValue();
@@ -37,17 +40,26 @@ extern "C" void setup(ModInfo& info) {
     std::filesystem::create_directories(IMAGE_DIRECTORY);
 }
 
-#include "questui/shared/QuestUI.hpp"
 #include "bsml/shared/BSML.hpp"
 
-extern "C" void load() {
+#include "scotland2/shared/loader.hpp"
+
+extern "C" void late_load() {
     il2cpp_functions::Init();
-    QuestUI::Init();
     BSML::Init();
 
     BSML::Register::RegisterMenuButton("Qounters++", "Qounters++ Settings", Qounters::PresentSettingsEnvironment);
 
-    hasCJD = Modloader::requireMod("CustomJSONData");
+    /*auto loaded = modloader:modloader::get_loaded();
+    if(std::find_if(loaded.begin(), loaded.end(), [](const modloader::ModResult &arg) {
+        if(std::holds_alternative<modloader::ModData>(arg)) {
+            auto modData = std::get<modloader::ModData>(arg);
+            return modData.info.id == "CustomJSONData";
+        }
+        return false;
+    }) != loaded.end()) {
+        hasCJD = true;
+    }*/
 
     getLogger().debug("Installing hooks");
     Qounters::InstallHooks();

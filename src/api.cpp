@@ -26,7 +26,7 @@ namespace Qounters::Shared {
         Editor::FinalizeAction();
     }
 
-    void AddSliderEndDrag(QuestUI::SliderSetting *slider, std::function<void (float)> onEndDrag) {
+    void AddSliderEndDrag(BSML::SliderSetting *slider, std::function<void (float)> onEndDrag) {
         Utils::AddSliderEndDrag(slider, onEndDrag);
     }
     void AddStringSettingOnClose(HMUI::InputFieldView* input, std::function<void (std::string)> onKeyboardClosed) {

@@ -1,5 +1,8 @@
 #pragma once
 
+#include "UnityEngine/RectTransform.hpp"
+#include "UnityEngine/UI/Graphic.hpp"
+
 #include "sources.hpp"
 #include "config.hpp"
 

@@ -7,6 +7,7 @@
 #include "customtypes/settings.hpp"
 #include "customtypes/components.hpp"
 
+#include "UnityEngine/Resources.hpp"
 #include "GlobalNamespace/MenuEnvironmentManager.hpp"
 #include "GlobalNamespace/SongPreviewPlayer.hpp"
 #include "VRUIControls/VRInputModule.hpp"
@@ -27,7 +28,7 @@ std::string currentEnvironment = "";
 #include "GlobalNamespace/SimpleLevelStarter.hpp"
 
 SimpleLevelStarter* GetLevelStarter() {
-    return Resources::FindObjectsOfTypeAll<SimpleLevelStarter*>().First([](auto x) {return x->level->levelID == "PerformanceTest";});
+    return Resources::FindObjectsOfTypeAll<SimpleLevelStarter*>()->First([](auto x) {return x->_level->levelID == std::string("PerformanceTest");});
 }
 
 #include "GlobalNamespace/GameScenesManager.hpp"
@@ -42,9 +43,9 @@ void Present(SimpleLevelStarter* levelStarter, bool refresh, ScenesTransitionSet
     });
 
     if (refresh)
-        levelStarter->gameScenesManager->ReplaceScenes(setupData, nullptr, 0.25, nullptr, startDelegate);
+        levelStarter->_gameScenesManager->ReplaceScenes(setupData, nullptr, 0.25, nullptr, startDelegate);
     else
-        levelStarter->gameScenesManager->PushScenes(setupData, 0.25, nullptr, startDelegate);
+        levelStarter->_gameScenesManager->PushScenes(setupData, 0.25, nullptr, startDelegate);
 }
 
 #include "GlobalNamespace/MenuTransitionsHelper.hpp"
@@ -54,12 +55,14 @@ void Present(SimpleLevelStarter* levelStarter, bool refresh, ScenesTransitionSet
 #include "GlobalNamespace/MultiplayerResultsData.hpp"
 #include "GlobalNamespace/MultiplayerPlayerResultsData.hpp"
 #include "GlobalNamespace/MultiplayerLevelCompletionResults.hpp"
+#include "GlobalNamespace/RecordingToolManager.hpp"
 
 #include "System/Action_2.hpp"
+#include "System/Nullable_1.hpp"
 
 void PresentMultiplayer(SimpleLevelStarter* levelStarter, bool refresh, IDifficultyBeatmap* diff, ColorScheme* colors) {
-    auto setupData = levelStarter->menuTransitionsHelper->multiplayerLevelScenesTransitionSetupData;
-    setupData->Init("Settings", (IPreviewBeatmapLevel*) levelStarter->level, levelStarter->beatmapDifficulty, levelStarter->beatmapCharacteristic, diff, colors, levelStarter->gameplayModifiers, levelStarter->playerDataModel->playerData->playerSpecificSettings, nullptr, false);
+    auto setupData = levelStarter->_menuTransitionsHelper->_multiplayerLevelScenesTransitionSetupData;
+    setupData->Init("Settings", levelStarter->_level->i___GlobalNamespace__IPreviewBeatmapLevel(), levelStarter->_beatmapDifficulty, levelStarter->_beatmapCharacteristic, diff, colors, levelStarter->_gameplayModifiers, levelStarter->_playerDataModel->playerData->playerSpecificSettings, nullptr, false);
     localFakeConnectedPlayer = nullptr;
 
     Present(levelStarter, refresh, setupData);
@@ -74,23 +77,23 @@ void PresentMultiplayer(SimpleLevelStarter* levelStarter, bool refresh, IDifficu
 
 void PresentSingleplayer(SimpleLevelStarter* levelStarter, bool refresh, IDifficultyBeatmap* diff, ColorScheme* colors) {
     auto env = OverrideEnvironmentSettings::New_ctor();
-    auto dataManager = levelStarter->playerDataModel->playerDataFileManager;
+    auto dataManager = levelStarter->_playerDataModel->playerDataFileManager;
     env->overrideEnvironments = true;
     EnvironmentInfoSO* environment = nullptr;
-    for (auto& info : dataManager->allEnvironmentInfos->environmentInfos) {
+    for (auto& info : dataManager->_allEnvironmentInfos->environmentInfos) {
         if (info->environmentName == getConfig().Environment.GetValue()) {
             environment = info;
             break;
         }
     }
     if (!environment) {
-        environment = dataManager->allEnvironmentInfos->GetFirstEnvironmentInfoWithType(dataManager->normalEnvironmentType);
+        environment = dataManager->_allEnvironmentInfos->GetFirstEnvironmentInfoWithType(dataManager->_normalEnvironmentType);
         getConfig().Environment.SetValue(environment->environmentName);
     }
-    env->SetEnvironmentInfoForType(dataManager->normalEnvironmentType, environment);
+    env->SetEnvironmentInfoForType(dataManager->_normalEnvironmentType, environment);
 
-    auto setupData = levelStarter->menuTransitionsHelper->standardLevelScenesTransitionSetupData;
-    setupData->Init("Settings", diff, (IPreviewBeatmapLevel*) levelStarter->level, env, colors, levelStarter->gameplayModifiers, levelStarter->playerDataModel->playerData->playerSpecificSettings, nullptr, "", false, false, nullptr);
+    auto setupData = levelStarter->_menuTransitionsHelper->_standardLevelScenesTransitionSetupData;
+    setupData->Init("Settings", diff, levelStarter->_level->i___GlobalNamespace__IPreviewBeatmapLevel(), env, colors, nullptr, levelStarter->_gameplayModifiers, levelStarter->_playerDataModel->playerData->playerSpecificSettings, nullptr, "", false, false, nullptr, System::Nullable_1<RecordingToolManager::SetupData>());
 
     Present(levelStarter, refresh, setupData);
 }
@@ -100,8 +103,8 @@ void PresentSingleplayer(SimpleLevelStarter* levelStarter, bool refresh, IDiffic
 #include "GlobalNamespace/ColorSchemesSettings.hpp"
 
 void PresentScene(SimpleLevelStarter* levelStarter, bool refresh) {
-    auto diff = BeatmapLevelDataExtensions::GetDifficultyBeatmap(levelStarter->level->beatmapLevelData, levelStarter->beatmapCharacteristic, levelStarter->beatmapDifficulty);
-    auto colors = levelStarter->playerDataModel->playerData->colorSchemesSettings->GetOverrideColorScheme();
+    auto diff = BeatmapLevelDataExtensions::GetDifficultyBeatmap(levelStarter->_level->beatmapLevelData, levelStarter->_beatmapCharacteristic, levelStarter->_beatmapDifficulty);
+    auto colors = levelStarter->_playerDataModel->playerData->colorSchemesSettings->GetOverrideColorScheme();
 
     currentEnvironment = getConfig().Environment.GetValue();
     if (currentEnvironment == "Multiplayer")
@@ -129,12 +132,12 @@ void Qounters::PresentSettingsEnvironment() {
     menuEnv = GameObject::Find("MenuEnvironmentCore");
 
     auto levelStarter = GetLevelStarter();
-    levelStarter->gameScenesManager->neverUnloadScenes->Add("MenuCore");
+    levelStarter->_gameScenesManager->_neverUnloadScenes->Add("MenuCore");
     menuEnvironment->ShowEnvironmentType(MenuEnvironmentManager::MenuEnvironmentType::None);
     PresentScene(levelStarter, false);
 }
 
-#include "HMUI/ViewController_AnimationDirection.hpp"
+#include "HMUI/ViewController.hpp"
 
 void DismissFlowCoordinator() {
     auto mainFlow = GameObject::Find("MainFlowCoordinator")->GetComponent<HMUI::FlowCoordinator*>();
@@ -157,7 +160,7 @@ void Qounters::DismissSettingsEnvironment() {
     auto endDelegate = custom_types::MakeDelegate<System::Action_1<Zenject::DiContainer*>*>((std::function<void (Zenject::DiContainer*)>) [](Zenject::DiContainer*) {
         Qounters::OnSceneEnd();
     });
-    GetLevelStarter()->gameScenesManager->PopScenes(0.25, nullptr, endDelegate);
+    GetLevelStarter()->_gameScenesManager->PopScenes(0.25, nullptr, endDelegate);
 }
 
 void Qounters::RefreshSettingsEnvironment() {
@@ -185,7 +188,7 @@ std::string Qounters::CurrentSettingsEnvironment() {
 #include "GlobalNamespace/MultiplayerIntroAnimationController.hpp"
 
 void OnMultiplayerSceneStart(MultiplayerController* multiplayerController) {
-    auto fakeConnectedPlayers = List<IConnectedPlayer*>::New_ctor(1);
+    auto fakeConnectedPlayers = System::Collections::Generic::List_1<IConnectedPlayer*>::New_ctor(1);
     auto settings = MockPlayerSettings::New_ctor();
     settings->userId = "qounters_settings_player";
     settings->userName = settings->userId;
@@ -193,11 +196,11 @@ void OnMultiplayerSceneStart(MultiplayerController* multiplayerController) {
     player->set_isReady(true);
     player->set_wasActiveAtLevelStart(true);
     player->set_isActive(true);
-    localFakeConnectedPlayer = player->i_IConnectedPlayer();
+    localFakeConnectedPlayer = player->i___GlobalNamespace__IConnectedPlayer();
     fakeConnectedPlayers->Add(localFakeConnectedPlayer);
 
-    multiplayerController->playersManager->SpawnPlayers(MultiplayerPlayerStartState::InSync, fakeConnectedPlayers->i_IReadOnlyList_1_T());
-    multiplayerController->introAnimationController->TransitionToAfterIntroAnimationState();
+    multiplayerController->_playersManager->SpawnPlayers(MultiplayerPlayerStartState::InSync, fakeConnectedPlayers->i___System__Collections__Generic__IReadOnlyList_1_T_());
+    multiplayerController->_introAnimationController->TransitionToAfterIntroAnimationState();
 
     GameObject::Find("WaitingForOtherPlayersEnvironment")->SetActive(false);
     GameObject::Find("MultiplayerOtherPlayersScoreDiffTextManager")->SetActive(false);
@@ -232,9 +235,10 @@ void Qounters::OnSceneStart() {
     songPreview->CrossfadeToDefault();
     vrInput->get_gameObject()->SetActive(false);
 
-    auto newInput = Resources::FindObjectsOfTypeAll<VRUIControls::VRInputModule*>().FirstOrDefault([](auto x) { return x != vrInput; });
+    auto newInput = Resources::FindObjectsOfTypeAll<VRUIControls::VRInputModule*>()->FirstOrDefault([](auto x) { return x != vrInput; });
+
     if (newInput) {
-        keyboardManager->vrInputModule = newInput;
+        keyboardManager->_vrInputModule = newInput;
         keyboardManager->Start();
     }
 
@@ -254,7 +258,7 @@ void Qounters::OnSceneStart() {
 
     // TODO: v3 (weave is pitch black)
     if (auto bcu = Object::FindObjectOfType<BeatmapCallbacksUpdater*>()) {
-        auto bcc = bcu->beatmapCallbacksController;
+        auto bcc = bcu->_beatmapCallbacksController;
         bcc->TriggerBeatmapEvent(BasicBeatmapEventData::New_ctor(0, BasicBeatmapEventType::Event0, 1, 1));
         bcc->TriggerBeatmapEvent(BasicBeatmapEventData::New_ctor(0, BasicBeatmapEventType::Event1, 1, 1));
         bcc->TriggerBeatmapEvent(BasicBeatmapEventData::New_ctor(0, BasicBeatmapEventType::Event2, 1, 1));
@@ -263,7 +267,7 @@ void Qounters::OnSceneStart() {
     }
 
     auto renderParams = Object::FindObjectOfType<VRRenderingParamsSetup*>();
-    renderParams->sceneType = VRRenderingParamsSetup::SceneType::Menu;
+    renderParams->_sceneType = VRRenderingParamsSetup::SceneType::Menu;
     renderParams->OnEnable();
 
     getLogger().debug("Disabling objects");
@@ -283,13 +287,13 @@ void Qounters::OnSceneEnd() {
     getLogger().info("Settings scene end");
 
     auto levelStarter = GetLevelStarter();
-    levelStarter->menuTransitionsHelper->standardLevelScenesTransitionSetupData->didFinishEvent = nullptr;
-    levelStarter->gameScenesManager->neverUnloadScenes->Remove("MenuCore");
+    levelStarter->_menuTransitionsHelper->_standardLevelScenesTransitionSetupData->didFinishEvent = nullptr;
+    levelStarter->_gameScenesManager->_neverUnloadScenes->Remove("MenuCore");
     menuEnvironment->ShowEnvironmentType(MenuEnvironmentManager::MenuEnvironmentType::Default);
     songPreview->CrossfadeToDefault();
     vrInput->get_gameObject()->SetActive(true);
     keyboardManager->OnDestroy();
-    keyboardManager->vrInputModule = vrInput;
+    keyboardManager->_vrInputModule = vrInput;
     menuEnv->SetActive(true);
     Object::FindObjectOfType<FadeInOutController*>()->FadeIn();
     localFakeConnectedPlayer = nullptr;

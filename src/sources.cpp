@@ -55,31 +55,31 @@ std::vector<std::pair<std::string, std::pair<SourceFn<bool>, SourceUIFn>>> Qount
     {EnableSource::FailedName, {EnableSource::GetFailed, EnableSource::FailedUI}},
 };
 
-const std::vector<std::string> Qounters::AverageCutPartStrings = {
+const std::vector<std::string_view> Qounters::AverageCutPartStrings = {
     "Preswing",
     "Postswing",
     "Accuracy",
     "All",
 };
-const std::vector<std::string> Qounters::NotesDisplayStrings = {
+const std::vector<std::string_view> Qounters::NotesDisplayStrings = {
     "Cut",
     "Remaining",
     "Cut Ratio",
     "Cut Percent",
 };
-const std::vector<std::string> Qounters::PPLeaderboardStrings = {
+const std::vector<std::string_view> Qounters::PPLeaderboardStrings = {
     "ScoreSaber",
     "BeatLeader",
 };
-const std::vector<std::string> Qounters::SaberSpeedModeStrings = {
+const std::vector<std::string_view> Qounters::SaberSpeedModeStrings = {
     "Average",
     "5 Second Highest",
 };
-const std::vector<std::string> Qounters::SpinometerModeStrings = {
+const std::vector<std::string_view> Qounters::SpinometerModeStrings = {
     "Average",
     "Highest",
 };
-const std::vector<std::string> Qounters::RankedStatusLeaderboardStrings = {
+const std::vector<std::string_view> Qounters::RankedStatusLeaderboardStrings = {
     "ScoreSaber",
     "BeatLeader",
     "Either",

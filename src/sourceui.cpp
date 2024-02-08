@@ -2,18 +2,18 @@
 #include "editor.hpp"
 #include "sources.hpp"
 
-#include "questui/shared/BeatSaberUI.hpp"
+#include "bsml/shared/BSML-Lite.hpp"
 #include "utils.hpp"
 
 using namespace UnityEngine;
-using namespace QuestUI;
+using namespace BSML;
 
 namespace Qounters::TextSource {
     void StaticUI(GameObject* parent, UnparsedJSON unparsed) {
         static Static opts;
         opts = unparsed.Parse<Static>();
 
-        auto input = BeatSaberUI::CreateStringSetting(parent, "Text", opts.Input, [](StringW val) {
+        auto input = Lite::CreateStringSetting(parent, "Text", opts.Input, [](StringW val) {
             static int id = Editor::GetActionId();
             opts.Input = (std::string) val;
             Editor::SetSourceOptions(id, opts);
@@ -33,7 +33,7 @@ namespace Qounters::TextSource {
             Editor::FinalizeAction();
         });
 
-        auto inc = BeatSaberUI::CreateIncrementSetting(parent, "Decimals", 0, 1, opts.Decimals, 0, 10, [](float val) {
+        auto inc = Lite::CreateIncrementSetting(parent, "Decimals", 0, 1, opts.Decimals, 0, 10, [](float val) {
             static int id = Editor::GetActionId();
             opts.Decimals = val;
             Editor::SetSourceOptions(id, opts);
@@ -41,7 +41,7 @@ namespace Qounters::TextSource {
         });
         SetButtons(inc);
 
-        BeatSaberUI::CreateToggle(parent, "Percentage", opts.Percentage, [](bool val) {
+        Lite::CreateToggle(parent, "Percentage", opts.Percentage, [](bool val) {
             static int id = Editor::GetActionId();
             opts.Percentage = val;
             Editor::SetSourceOptions(id, opts);
@@ -59,14 +59,14 @@ namespace Qounters::TextSource {
             Editor::FinalizeAction();
         });
 
-        BeatSaberUI::CreateToggle(parent, "Positive Modifiers", opts.PositiveModifiers, [](bool val) {
+        Lite::CreateToggle(parent, "Positive Modifiers", opts.PositiveModifiers, [](bool val) {
             static int id = Editor::GetActionId();
             opts.PositiveModifiers = val;
             Editor::SetSourceOptions(id, opts);
             Editor::FinalizeAction();
         });
 
-        BeatSaberUI::CreateToggle(parent, "Negative Modifiers", opts.NegativeModifiers, [](bool val) {
+        Lite::CreateToggle(parent, "Negative Modifiers", opts.NegativeModifiers, [](bool val) {
             static int id = Editor::GetActionId();
             opts.NegativeModifiers = val;
             Editor::SetSourceOptions(id, opts);
@@ -77,7 +77,7 @@ namespace Qounters::TextSource {
         static PersonalBest opts;
         opts = unparsed.Parse<PersonalBest>();
 
-        auto inc = BeatSaberUI::CreateIncrementSetting(parent, "Decimals", 0, 1, opts.Decimals, 0, 10, [](float val) {
+        auto inc = Lite::CreateIncrementSetting(parent, "Decimals", 0, 1, opts.Decimals, 0, 10, [](float val) {
             static int id = Editor::GetActionId();
             opts.Decimals = val;
             Editor::SetSourceOptions(id, opts);
@@ -85,21 +85,21 @@ namespace Qounters::TextSource {
         });
         SetButtons(inc);
 
-        BeatSaberUI::CreateToggle(parent, "Percentage", opts.Percentage, [](bool val) {
+        Lite::CreateToggle(parent, "Percentage", opts.Percentage, [](bool val) {
             static int id = Editor::GetActionId();
             opts.Percentage = val;
             Editor::SetSourceOptions(id, opts);
             Editor::FinalizeAction();
         });
 
-        BeatSaberUI::CreateToggle(parent, "Hide On First Score", opts.HideFirstScore, [](bool val) {
+        Lite::CreateToggle(parent, "Hide On First Score", opts.HideFirstScore, [](bool val) {
             static int id = Editor::GetActionId();
             opts.HideFirstScore = val;
             Editor::SetSourceOptions(id, opts);
             Editor::FinalizeAction();
         });
 
-        BeatSaberUI::CreateToggle(parent, "Label Text", opts.Label, [](bool val) {
+        Lite::CreateToggle(parent, "Label Text", opts.Label, [](bool val) {
             static int id = Editor::GetActionId();
             opts.Label = val;
             Editor::SetSourceOptions(id, opts);
@@ -125,7 +125,7 @@ namespace Qounters::TextSource {
         static Health opts;
         opts = unparsed.Parse<Health>();
 
-        auto inc = BeatSaberUI::CreateIncrementSetting(parent, "Decimals", 0, 1, opts.Decimals, 0, 10, [](float val) {
+        auto inc = Lite::CreateIncrementSetting(parent, "Decimals", 0, 1, opts.Decimals, 0, 10, [](float val) {
             static int id = Editor::GetActionId();
             opts.Decimals = val;
             Editor::SetSourceOptions(id, opts);
@@ -133,7 +133,7 @@ namespace Qounters::TextSource {
         });
         SetButtons(inc);
 
-        BeatSaberUI::CreateToggle(parent, "Percentage", opts.Percentage, [](bool val) {
+        Lite::CreateToggle(parent, "Percentage", opts.Percentage, [](bool val) {
             static int id = Editor::GetActionId();
             opts.Percentage = val;
             Editor::SetSourceOptions(id, opts);
@@ -144,14 +144,14 @@ namespace Qounters::TextSource {
         static Time opts;
         opts = unparsed.Parse<Time>();
 
-        BeatSaberUI::CreateToggle(parent, "Remaining", opts.Remaining, [](bool val) {
+        Lite::CreateToggle(parent, "Remaining", opts.Remaining, [](bool val) {
             static int id = Editor::GetActionId();
             opts.Remaining = val;
             Editor::SetSourceOptions(id, opts);
             Editor::FinalizeAction();
         });
 
-        BeatSaberUI::CreateToggle(parent, "Percentage", opts.Percentage, [](bool val) {
+        Lite::CreateToggle(parent, "Percentage", opts.Percentage, [](bool val) {
             static int id = Editor::GetActionId();
             opts.Percentage = val;
             Editor::SetSourceOptions(id, opts);
@@ -169,7 +169,7 @@ namespace Qounters::TextSource {
             Editor::FinalizeAction();
         });
 
-        auto inc = BeatSaberUI::CreateIncrementSetting(parent, "Decimals", 0, 1, opts.Decimals, 0, 10, [](float val) {
+        auto inc = Lite::CreateIncrementSetting(parent, "Decimals", 0, 1, opts.Decimals, 0, 10, [](float val) {
             static int id = Editor::GetActionId();
             opts.Decimals = val;
             Editor::SetSourceOptions(id, opts);
@@ -195,7 +195,7 @@ namespace Qounters::TextSource {
             Editor::FinalizeAction();
         });
 
-        auto inc = BeatSaberUI::CreateIncrementSetting(parent, "Decimals", 0, 1, opts.Decimals, 0, 10, [](float val) {
+        auto inc = Lite::CreateIncrementSetting(parent, "Decimals", 0, 1, opts.Decimals, 0, 10, [](float val) {
             static int id = Editor::GetActionId();
             opts.Decimals = val;
             Editor::SetSourceOptions(id, opts);
@@ -203,7 +203,7 @@ namespace Qounters::TextSource {
         });
         SetButtons(inc);
 
-        auto inc2 = BeatSaberUI::CreateIncrementSetting(parent, "Decimal Offset", 0, 1, opts.DecimalOffset, 0, 10, [](float val) {
+        auto inc2 = Lite::CreateIncrementSetting(parent, "Decimal Offset", 0, 1, opts.DecimalOffset, 0, 10, [](float val) {
             static int id = Editor::GetActionId();
             opts.DecimalOffset = val;
             Editor::SetSourceOptions(id, opts);
@@ -215,7 +215,7 @@ namespace Qounters::TextSource {
         static Fails opts;
         opts = unparsed.Parse<Fails>();
 
-        BeatSaberUI::CreateToggle(parent, "Restarts", opts.Restarts, [](bool val) {
+        Lite::CreateToggle(parent, "Restarts", opts.Restarts, [](bool val) {
             static int id = Editor::GetActionId();
             opts.Restarts = val;
             Editor::SetSourceOptions(id, opts);
@@ -233,28 +233,28 @@ namespace Qounters::TextSource {
             Editor::FinalizeAction();
         });
 
-        BeatSaberUI::CreateToggle(parent, "Misses", opts.Misses, [](bool val) {
+        Lite::CreateToggle(parent, "Misses", opts.Misses, [](bool val) {
             static int id = Editor::GetActionId();
             opts.Misses = val;
             Editor::SetSourceOptions(id, opts);
             Editor::FinalizeAction();
         });
 
-        BeatSaberUI::CreateToggle(parent, "Bad Cuts", opts.BadCuts, [](bool val) {
+        Lite::CreateToggle(parent, "Bad Cuts", opts.BadCuts, [](bool val) {
             static int id = Editor::GetActionId();
             opts.BadCuts = val;
             Editor::SetSourceOptions(id, opts);
             Editor::FinalizeAction();
         });
 
-        BeatSaberUI::CreateToggle(parent, "Bombs", opts.Bombs, [](bool val) {
+        Lite::CreateToggle(parent, "Bombs", opts.Bombs, [](bool val) {
             static int id = Editor::GetActionId();
             opts.Bombs = val;
             Editor::SetSourceOptions(id, opts);
             Editor::FinalizeAction();
         });
 
-        BeatSaberUI::CreateToggle(parent, "Walls", opts.Walls, [](bool val) {
+        Lite::CreateToggle(parent, "Walls", opts.Walls, [](bool val) {
             static int id = Editor::GetActionId();
             opts.Walls = val;
             Editor::SetSourceOptions(id, opts);
@@ -290,7 +290,7 @@ namespace Qounters::TextSource {
             Editor::FinalizeAction();
         });
 
-        auto inc = BeatSaberUI::CreateIncrementSetting(parent, "Decimals", 0, 1, opts.Decimals, 0, 10, [](float val) {
+        auto inc = Lite::CreateIncrementSetting(parent, "Decimals", 0, 1, opts.Decimals, 0, 10, [](float val) {
             static int id = Editor::GetActionId();
             opts.Decimals = val;
             Editor::SetSourceOptions(id, opts);
@@ -309,7 +309,7 @@ namespace Qounters::TextSource {
             Editor::FinalizeAction();
         });
 
-        auto inc = BeatSaberUI::CreateIncrementSetting(parent, "Decimals", 0, 1, opts.Decimals, 0, 10, [](float val) {
+        auto inc = Lite::CreateIncrementSetting(parent, "Decimals", 0, 1, opts.Decimals, 0, 10, [](float val) {
             static int id = Editor::GetActionId();
             opts.Decimals = val;
             Editor::SetSourceOptions(id, opts);
@@ -353,7 +353,7 @@ namespace Qounters::TextSource {
             Editor::FinalizeAction();
         });
 
-        auto inc = BeatSaberUI::CreateIncrementSetting(parent, "Decimals", 0, 1, opts.Decimals, 0, 10, [](float val) {
+        auto inc = Lite::CreateIncrementSetting(parent, "Decimals", 0, 1, opts.Decimals, 0, 10, [](float val) {
             static int id = Editor::GetActionId();
             opts.Decimals = val;
             Editor::SetSourceOptions(id, opts);
@@ -377,7 +377,7 @@ namespace Qounters::ShapeSource {
         static Static opts;
         opts = unparsed.Parse<Static>();
 
-        auto slider = BeatSaberUI::CreateSliderSetting(parent, "Fill", 0.01, opts.Input, 0, 1, 0, [](float val) {
+        auto slider = Lite::CreateSliderSetting(parent, "Fill", 0.01, opts.Input, 0, 1, 0, [](float val) {
             static int id = Editor::GetActionId();
             opts.Input = val;
             Editor::SetSourceOptions(id, opts);
@@ -386,7 +386,6 @@ namespace Qounters::ShapeSource {
             Editor::FinalizeAction();
         });
         slider->GetComponent<RectTransform*>()->set_sizeDelta({0, 8});
-        AddSliderIncrement(slider, 0.01);
     }
     void ScoreUI(GameObject* parent, UnparsedJSON unparsed) {
         static Score opts;
@@ -403,7 +402,7 @@ namespace Qounters::ShapeSource {
         static Multiplier opts;
         opts = unparsed.Parse<Multiplier>();
 
-        BeatSaberUI::CreateToggle(parent, "Absolute", opts.Absolute, [](bool val) {
+        Lite::CreateToggle(parent, "Absolute", opts.Absolute, [](bool val) {
             static int id = Editor::GetActionId();
             opts.Absolute = val;
             Editor::SetSourceOptions(id, opts);
@@ -459,7 +458,7 @@ namespace Qounters::ShapeSource {
 }
 
 namespace Qounters::ColorSource {
-    const std::vector<std::string> ColorSettingsStrings = {
+    const std::vector<std::string_view> ColorSettingsStrings = {
         "Left Saber",
         "Right Saber",
         "Lights 1",
@@ -503,14 +502,14 @@ namespace Qounters::ColorSource {
             Editor::FinalizeAction();
         });
 
-        BeatSaberUI::CreateToggle(parent, "Positive Modifiers", opts.PositiveModifiers, [](bool val) {
+        Lite::CreateToggle(parent, "Positive Modifiers", opts.PositiveModifiers, [](bool val) {
             static int id = Editor::GetActionId();
             opts.PositiveModifiers = val;
             Editor::SetColorOptions(id, opts);
             Editor::FinalizeAction();
         });
 
-        BeatSaberUI::CreateToggle(parent, "Negative Modifiers", opts.NegativeModifiers, [](bool val) {
+        Lite::CreateToggle(parent, "Negative Modifiers", opts.NegativeModifiers, [](bool val) {
             static int id = Editor::GetActionId();
             opts.NegativeModifiers = val;
             Editor::SetColorOptions(id, opts);
@@ -726,7 +725,7 @@ namespace Qounters::EnableSource {
         static Percentage opts;
         opts = unparsed.Parse<Percentage>();
 
-        auto slider = BeatSaberUI::CreateSliderSetting(parent, "Percentage", 1, opts.Percent, 0, 100, 0, [](float val) {
+        auto slider = Lite::CreateSliderSetting(parent, "Percentage", 1, opts.Percent, 0, 100, 0, [](float val) {
             static int id = Editor::GetActionId();
             opts.Percent = val;
             Editor::SetSourceOptions(id, opts);
@@ -735,7 +734,6 @@ namespace Qounters::EnableSource {
             Editor::FinalizeAction();
         });
         slider->GetComponent<RectTransform*>()->set_sizeDelta({0, 8});
-        AddSliderIncrement(slider, 1);
 
         Utils::CreateDropdownEnum(parent, "Saber", opts.Saber, SaberStrings, [](int val) {
             static int id = Editor::GetActionId();
