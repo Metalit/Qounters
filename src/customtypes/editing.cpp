@@ -441,15 +441,15 @@ void EditingGroup::OnDragDetached(EventSystems::PointerEventData* eventData) {
     auto pointer = cachedInputModule->_vrPointer;
     auto controller = pointer->_lastSelectedVrController;
     if (!dragging) {
-        detachedGrabPos = controller->get_transform()->InverseTransformPoint(get_transform()->get_position());
-        detachedGrabRot = Quaternion::op_Multiply(Quaternion::Inverse(controller->get_transform()->get_rotation()), get_transform()->get_rotation());
+        detachedGrabPos = controller->_viewAnchorTransform->InverseTransformPoint(get_transform()->get_position());
+        detachedGrabRot = Quaternion::op_Multiply(Quaternion::Inverse(controller->_viewAnchorTransform->get_rotation()), get_transform()->get_rotation());
         Editor::EnableDetachedCanvas(true);
     }
 
     float unscaledDeltaTime = Time::get_unscaledDeltaTime();
     // thumbstick movement
     if(pointer->_lastSelectedControllerWasRight) {
-        float diff = controller->thumbstick.y * unscaledDeltaTime;
+        float diff = -controller->thumbstick.y * unscaledDeltaTime;
         // no movement if too close
         if(detachedGrabPos.get_magnitude() < 0.5 && diff > 0)
             diff = 0;
@@ -466,8 +466,8 @@ void EditingGroup::OnDragDetached(EventSystems::PointerEventData* eventData) {
         detachedGrabRot = Quaternion::op_Multiply(detachedGrabRot, extraRot);
     }
 
-    auto pos = controller->get_transform()->TransformPoint(detachedGrabPos);
-    auto rot = Quaternion::op_Multiply(controller->get_transform()->get_rotation(), detachedGrabRot);
+    auto pos = controller->_viewAnchorTransform->TransformPoint(detachedGrabPos);
+    auto rot = Quaternion::op_Multiply(controller->_viewAnchorTransform->get_rotation(), detachedGrabRot);
 
     group.DetachedPosition = Vector3::Lerp(group.DetachedPosition, pos, 10 * unscaledDeltaTime);
     group.DetachedRotation = Quaternion::Slerp(Quaternion::Euler(group.DetachedRotation), rot, 5 * unscaledDeltaTime).get_eulerAngles();
