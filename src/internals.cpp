@@ -59,6 +59,7 @@ float GetSongLength(ScoreController* controller) {
 #include "GlobalNamespace/PlayerAllOverallStatsData.hpp"
 
 int GetFailCount(PlayerDataModel* data) {
+    return 0;
     if (!data)
         return 0;
     return data->playerData->playerAllOverallStatsData->get_allOverallStatsData()->failedLevelsCount;
@@ -68,6 +69,7 @@ int GetFailCount(PlayerDataModel* data) {
 #include "beatsaber-hook/shared/utils/typedefs-list.hpp"
 
 float GetPositiveMods(ScoreController* controller) {
+    return 0;
     if (!controller || !controller->_gameplayModifierParams)
         return 0;
     float ret = 0;
@@ -83,6 +85,7 @@ float GetPositiveMods(ScoreController* controller) {
 #include "GlobalNamespace/GameplayModifiersModelSO.hpp"
 
 float GetNegativeMods(ScoreController* controller) {
+    return 0;
     if (!controller || !controller->_gameplayModifierParams)
         return 0;
     float ret = 0;
@@ -105,12 +108,16 @@ float GetNegativeMods(ScoreController* controller) {
 #include "GlobalNamespace/BeatmapCharacteristicSO.hpp"
 
 int GetHighScore(PlayerDataModel* data, GameplayCoreInstaller* installer) {
+    return 0;
     if (!data || !installer || !installer->_sceneSetupData)
         return 0;
     auto [id, characteristic, difficulty] = Utils::GetBeatmapDetails(installer->_sceneSetupData->difficultyBeatmap);
     for (auto& stats : ListW<PlayerLevelStatsData*>(data->playerData->levelsStatsData)) {
-        if (stats->levelID == id && stats->beatmapCharacteristic->serializedName == characteristic && stats->difficulty.value__ == difficulty)
-            return stats->get_highScore();
+        getLogger().info("ptr %p", stats);
+        if(stats != nullptr) {
+            if (stats->_levelID == id && stats->beatmapCharacteristic->serializedName == characteristic && stats->difficulty.value__ == difficulty)
+                return stats->get_highScore();
+        }
     }
     return -1;
 }
@@ -242,7 +249,7 @@ void Qounters::Initialize() {
     lastBeatmap = beatmap;
 
     colors = gameplayCoreInstaller && gameplayCoreInstaller->_sceneSetupData ? gameplayCoreInstaller->_sceneSetupData->colorScheme : nullptr;
-    beatmapData = beatmapCallbacksUpdater ? (BeatmapData*) beatmapCallbacksUpdater->_beatmapCallbacksController->_beatmapData : nullptr;
+    beatmapData = beatmapCallbacksUpdater && beatmapCallbacksUpdater->_beatmapCallbacksController ? (BeatmapData*) beatmapCallbacksUpdater->_beatmapCallbacksController->_beatmapData : nullptr;
 
     leftMissedMaxScore = 0;
     rightMissedMaxScore = 0;

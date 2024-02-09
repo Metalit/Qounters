@@ -198,10 +198,10 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
     auto manager = Helpers::GetMainFlowCoordinator()->_playerDataModel->_playerDataFileManager;
 
     for (auto& env : ListW<EnvironmentInfoSO*>(manager->_allEnvironmentInfos->GetAllEnvironmentInfosWithType(manager->_normalEnvironmentType)))
-        dropdownStrings.emplace_back(static_cast<std::string>(env->environmentName));
+        dropdownStrings.push_back(static_cast<std::string>(env->environmentName));
 
     for (auto& env : ListW<EnvironmentInfoSO*>(manager->_allEnvironmentInfos->GetAllEnvironmentInfosWithType(manager->_a360DegreesEnvironmentType)))
-        dropdownStrings.emplace_back(static_cast<std::string>(env->environmentName));
+        dropdownStrings.push_back(static_cast<std::string>(env->environmentName));
 
     for (auto& env : manager->_allEnvironmentInfos->environmentInfos) {
         std::string str = env->environmentName;
@@ -244,7 +244,6 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
 
     Lite::CreateText(vertical, "Changes to the preset list are always saved!")->set_alignment(TMPro::TextAlignmentOptions::Center);
 
-    //TODO: Get rid of this when bsml/bs-hook is fixed
     std::string_view hi = ":p";
     std::vector<std::string_view> dropdownStrings2 = { hi };
     presetDropdown = Lite::CreateDropdown(vertical, "Current Preset", ":p", dropdownStrings2, Qounters::SettingsFlowCoordinator::SelectPreset)->dropdown;
@@ -266,14 +265,16 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
     snapIncrement->get_gameObject()->SetActive(getConfig().Snap.GetValue());
     snapIncrement.try_cast<RectTransform>().value_or(nullptr)->set_anchoredPosition({-20, 0});
 
-    auto snapToggle = Lite::CreateToggle(vertical, getConfig().Snap.GetName(), getConfig().Snap.GetValue(), [&snapIncrement](bool value) {
+    auto snapPtr = snapIncrement.ptr();
+
+    auto snapToggle = Lite::CreateToggle(vertical, getConfig().Snap.GetName(), getConfig().Snap.GetValue(), [snapPtr](bool value) {
         getConfig().Snap.SetValue(value);
-        snapIncrement->get_gameObject()->SetActive(value);
+        snapPtr->get_gameObject()->SetActive(value);
     })->get_transform();
 
-    auto oldParent = snapToggle->GetParent()->get_gameObject();
+    //auto oldParent = snapToggle->GetParent()->get_gameObject();
     snapToggle->SetParent(snapIncrement->GetParent(), false);
-    UnityEngine::Object::Destroy(oldParent);
+    //UnityEngine::Object::Destroy(oldParent);
 
     previewToggle = Lite::CreateToggle(vertical, "Preview Mode", false, Editor::SetPreviewMode)->toggle;
 
@@ -324,8 +325,6 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
 
     uiInitialized = true;
     UpdateUI();
-
-    //TODO: Figure out why everything except modals is getting destroyed after this point???
 }
 
 SettingsViewController* SettingsViewController::GetInstance() {

@@ -1,4 +1,5 @@
 #include "qounters.hpp"
+
 #include "config.hpp"
 #include "customtypes/editing.hpp"
 #include "customtypes/components.hpp"
@@ -8,12 +9,11 @@
 #include "sources.hpp"
 #include "utils.hpp"
 
+#include "HMUI/ImageView.hpp"
+#include "UnityEngine/UI/ContentSizeFitter.hpp"
+
 using namespace Qounters;
 using namespace UnityEngine;
-
-#include "TMPro/TextMeshProUGUI.hpp"
-#include "HMUI/ImageView.hpp"
-#include "UnityEngine/UI/Graphic.hpp"
 
 std::map<std::string, std::vector<std::pair<TMPro::TextMeshProUGUI*, UnparsedJSON>>> texts;
 std::map<std::string, std::vector<std::pair<Shape*, UnparsedJSON>>> shapes;
@@ -198,7 +198,7 @@ void Qounters::UpdateComponentEnabled(GameObject* component, std::string newSour
 void Qounters::UpdateComponentPosition(RectTransform* component, Component const& qounterComponent) {
     switch ((Component::Types) qounterComponent.Type) {
         case Component::Types::Text:
-            component->set_sizeDelta({0, 0});
+            //component->set_sizeDelta({0, 0});
             break;
         case Component::Types::Shape:
             component = component->get_parent().try_cast<RectTransform>().value_or(nullptr);
@@ -382,6 +382,11 @@ void Qounters::CreateQounterComponent(Component const& qounterComponent, int com
     switch ((Component::Types) qounterComponent.Type) {
         case Component::Types::Text: {
             auto text = Lite::CreateText(parent, "");
+
+            auto fitter = text->gameObject->AddComponent<UnityEngine::UI::ContentSizeFitter*>();
+            fitter->set_horizontalFit(UnityEngine::UI::ContentSizeFitter::FitMode::PreferredSize);
+            fitter->set_verticalFit(UnityEngine::UI::ContentSizeFitter::FitMode::PreferredSize);
+
             if (editing)
                 text->get_gameObject()->AddComponent<TextOutlineSizer*>();
             component = text;
