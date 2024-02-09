@@ -85,7 +85,12 @@ namespace Qounters {
             Editor::FinalizeAction();
         });
 
-        sourceDropdown = Utils::CreateDropdown(parent, "Text Source", options.TextSource, Utils::GetKeys(textSources), [parent](std::string val) {
+        auto textSourceKeys = Utils::GetKeys(textSources);
+        auto textSourceStringViews = std::vector<std::string_view>(textSourceKeys.size());
+        for (int i = 0; i < textSourceKeys.size(); ++i)
+            textSourceStringViews[i] = textSourceKeys[i];
+
+        sourceDropdown = Utils::CreateDropdown(parent, "Text Source", options.TextSource, textSourceStringViews, [parent](std::string val) {
             static int id = Editor::GetActionId();
             auto opts = Editor::GetOptions<TextOptions>(id);
             if (val != opts.TextSource)
@@ -131,7 +136,12 @@ namespace Qounters {
             Editor::FinalizeAction();
         });
 
-        sourceDropdown = Utils::CreateDropdown(parent, "Fill Source", options.FillSource, Utils::GetKeys(shapeSources), [parent](std::string val) {
+        auto shapeSourceKeys = Utils::GetKeys(shapeSources);
+        auto shapeSourceStringViews = std::vector<std::string_view>(shapeSourceKeys.size());
+        for (int i = 0; i < shapeSourceKeys.size(); ++i)
+            shapeSourceStringViews[i] = shapeSourceKeys[i];
+
+        sourceDropdown = Utils::CreateDropdown(parent, "Fill Source", options.FillSource, shapeSourceStringViews, [parent](std::string val) {
             static int id = Editor::GetActionId();
             auto opts = Editor::GetOptions<ShapeOptions>(id);
             if (opts.FillSource != val) {

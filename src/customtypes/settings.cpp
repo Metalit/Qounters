@@ -194,7 +194,7 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
         return;
     }
 
-    std::vector<std::string_view> dropdownStrings = {};
+    std::vector<std::string> dropdownStrings = {};
     auto manager = Helpers::GetMainFlowCoordinator()->_playerDataModel->_playerDataFileManager;
 
     for (auto& env : ListW<EnvironmentInfoSO*>(manager->_allEnvironmentInfos->GetAllEnvironmentInfosWithType(manager->_normalEnvironmentType)))
@@ -215,6 +215,12 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
         if (add)
             dropdownStrings.emplace_back(str);
     }
+
+    //bsml requires string views for dropdowns. Needs a seperate vector to keep original strings from leaving scope until the dropdown is created.
+    auto dropdownStringViews = std::vector<std::string_view>(dropdownStrings.size());
+    for (int i = 0; i < dropdownStrings.size(); ++i)
+        dropdownStringViews[i] = dropdownStrings[i];
+    
 
     auto vertical = Lite::CreateVerticalLayoutGroup(this);
     vertical->set_childControlHeight(false);
@@ -238,7 +244,7 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
 
     auto environment = Lite::CreateHorizontalLayoutGroup(vertical);
     environment->set_spacing(3);
-    auto dropdown = AddConfigValueDropdownString(environment, getConfig().Environment, dropdownStrings);
+    auto dropdown = AddConfigValueDropdownString(environment, getConfig().Environment, dropdownStringViews);
     dropdown->GetComponentsInParent<UI::LayoutElement*>(true)->First()->set_preferredWidth(65);
     auto apply = Lite::CreateUIButton(environment, "Apply", Qounters::SettingsFlowCoordinator::RefreshScene);
 
@@ -270,11 +276,12 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
     auto snapToggle = Lite::CreateToggle(vertical, getConfig().Snap.GetName(), getConfig().Snap.GetValue(), [snapPtr](bool value) {
         getConfig().Snap.SetValue(value);
         snapPtr->get_gameObject()->SetActive(value);
-    })->get_transform();
+    })->toggle->get_transform();
 
-    //auto oldParent = snapToggle->GetParent()->get_gameObject();
+    //TODO: Fix this
+    auto oldParent = snapToggle->GetParent()->get_gameObject();
     snapToggle->SetParent(snapIncrement->GetParent(), false);
-    //UnityEngine::Object::Destroy(oldParent);
+    UnityEngine::Object::Destroy(oldParent);
 
     previewToggle = Lite::CreateToggle(vertical, "Preview Mode", false, Editor::SetPreviewMode)->toggle;
 
@@ -321,8 +328,6 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
             Qounters::SettingsFlowCoordinator::DuplicatePreset(val);
     };
 
-    LogTransform(get_transform());
-
     uiInitialized = true;
     UpdateUI();
 }
@@ -347,15 +352,12 @@ void SettingsViewController::HideConfirmModal() {
         confirmModal->Hide(true, nullptr);
 }
 
-//TODO: readd broken things here
 void SettingsViewController::UpdateUI() {
     if (!uiInitialized)
         return;
 
-    LogTransform(get_transform());
-
     if(undoButton) {
-        //undoButton->set_interactable(Editor::HasUndo());
+        undoButton->set_interactable(Editor::HasUndo());
     }
 
     auto presets = getConfig().Presets.GetValue();
@@ -369,12 +371,12 @@ void SettingsViewController::UpdateUI() {
             selectedIdx = i;
         i++;
     }
-    //presetDropdown->SetTexts(texts->i___System__Collections__Generic__IReadOnlyList_1_T_());
-    //presetDropdown->SelectCellWithIdx(selectedIdx);
+    presetDropdown->SetTexts(texts->i___System__Collections__Generic__IReadOnlyList_1_T_());
+    presetDropdown->SelectCellWithIdx(selectedIdx);
 
-    //deleteButton->set_interactable(presets.size() > 1);
+    deleteButton->set_interactable(presets.size() > 1);
 
-    //Utils::InstantSetToggle(previewToggle, Editor::GetPreviewMode());
+    Utils::InstantSetToggle(previewToggle, Editor::GetPreviewMode());
 }
 
 void TemplatesViewController::DidActivate(bool firstActivation, bool addedToHierarchy, bool screenSystemEnabling) {
@@ -385,6 +387,25 @@ void TemplatesViewController::DidActivate(bool firstActivation, bool addedToHier
         list->tableView->ClearSelection();
         ShowTemplateModal(idx);
     });
+
+    list->set_listStyle(CustomListTableData::ListStyle::Simple);
+
+    for (auto templateName : Utils::GetKeys(templates))
+        list->data.push_back(CustomCellInfo::construct(templateName));
+
+    list->tableView->ReloadData();
+    list->simpleTextTableCell = nullptr;
+
+    /*auto listParent = list->transform->parent;
+
+    auto layout = listParent->get_gameObject()->AddComponent<UnityEngine::UI::LayoutElement*>();
+    listParent->GetComponent<UI::VerticalLayoutGroup*>()->set_childForceExpandHeight(false);
+    listParent->GetComponent<UI::VerticalLayoutGroup*>()->set_childControlHeight(false);
+    listParent->GetComponent<UI::VerticalLayoutGroup*>()->set_childScaleHeight(false);
+    layout->set_preferredHeight(80);
+    layout->set_preferredWidth(50);
+
+
     list->set_listStyle(CustomListTableData::ListStyle::Simple);
     auto rect = list->get_transform()->GetParent().try_cast<RectTransform>().value_or(nullptr);
     rect->set_anchorMin({0.5, 0.5});
@@ -405,7 +426,9 @@ void TemplatesViewController::DidActivate(bool firstActivation, bool addedToHier
     fitter->set_verticalFit(UI::ContentSizeFitter::FitMode::PreferredSize);
     fitter->set_horizontalFit(UI::ContentSizeFitter::FitMode::PreferredSize);
 
-    uiInitialized = true;
+    LogTransform(transform);
+
+    uiInitialized = true;*/
 }
 
 #include "custom-types/shared/coroutine.hpp"
@@ -597,7 +620,12 @@ void Qounters::OptionsViewController::DidActivate(bool firstActivation, bool add
     cTypeOptions = Lite::CreateVerticalLayoutGroup(componentParent);
     cTypeOptions->GetComponent<UI::ContentSizeFitter*>()->set_verticalFit(UI::ContentSizeFitter::FitMode::PreferredSize);
 
-    cColorSourceDropdown = Utils::CreateDropdown(componentParent, "Color Source", "", Utils::GetKeys(colorSources), [this](std::string val) {
+    auto colorSourceKeys = Utils::GetKeys(colorSources);
+    auto colorSourceStringViews = std::vector<std::string_view>(colorSourceKeys.size());
+    for (int i = 0; i < colorSourceKeys.size(); ++i)
+        colorSourceStringViews[i] = colorSourceKeys[i];
+
+    cColorSourceDropdown = Utils::CreateDropdown(componentParent, "Color Source", "", colorSourceStringViews, [this](std::string val) {
         static int id = Editor::GetActionId();
         auto& comp = Editor::GetSelectedComponent(id);
         if (comp.ColorSource != val) {
@@ -611,7 +639,12 @@ void Qounters::OptionsViewController::DidActivate(bool firstActivation, bool add
     cColorSourceOptions = Lite::CreateVerticalLayoutGroup(componentParent);
     cColorSourceOptions->GetComponent<UI::ContentSizeFitter*>()->set_verticalFit(UI::ContentSizeFitter::FitMode::PreferredSize);
 
-    cEnableSourceDropdown = Utils::CreateDropdown(componentParent, "Enabled If", "", Utils::GetKeys(enableSources), [this](std::string val) {
+    auto enableSourceKeys = Utils::GetKeys(enableSources);
+    auto enableSourceStringViews = std::vector<std::string_view>(enableSourceKeys.size());
+    for (int i = 0; i < enableSourceKeys.size(); ++i)
+        enableSourceStringViews[i] = enableSourceKeys[i];
+
+    cEnableSourceDropdown = Utils::CreateDropdown(componentParent, "Enabled If", "", enableSourceStringViews, [this](std::string val) {
         static int id = Editor::GetActionId();
         auto& comp = Editor::GetSelectedComponent(id);
         if (comp.EnableSource != val) {

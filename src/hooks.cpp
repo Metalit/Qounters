@@ -235,8 +235,8 @@ MAKE_HOOK_MATCH(CoreGameHUDController_Initialize, &CoreGameHUDController::Initia
 MAKE_HOOK_MATCH(StandardLevelDetailView_SetContentForBeatmapDataAsync, &StandardLevelDetailView::SetContentForBeatmapDataAsync,
         void, StandardLevelDetailView* self, IDifficultyBeatmap* selectedDifficultyBeatmap) {
 
-    if (selectedDifficultyBeatmap)
-        PP::GetMapInfo(selectedDifficultyBeatmap);
+    //if (selectedDifficultyBeatmap)
+    //    PP::GetMapInfo(selectedDifficultyBeatmap);
 
     StandardLevelDetailView_SetContentForBeatmapDataAsync(self, selectedDifficultyBeatmap);
 }

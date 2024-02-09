@@ -27,8 +27,8 @@ namespace Qounters::Utils {
     }
 
     template<class T>
-    std::vector<std::string_view> GetKeys(std::vector<std::pair<std::string, T>> vec) {
-        std::vector<std::string_view> keys;
+    std::vector<std::string> GetKeys(std::vector<std::pair<std::string, T>> vec) {
+        std::vector<std::string> keys;
         for (auto& [key, _] : vec)
             keys.emplace_back(key);
         return keys;
