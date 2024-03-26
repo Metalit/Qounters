@@ -294,6 +294,9 @@ void Qounters::SetDefaultOptions(Component& component) {
 const std::map<std::string, HUDType> supportedHUDs = {
     {"BasicGameHUD", HUDType::Basic},
     {"NarrowGameHUD", HUDType::Basic},
+    {"NarrowGameHUDVariant", HUDType::Basic},
+    {"LatticeHUD", HUDType::Basic},
+    {"RockGameHUD", HUDType::Basic},
     {"FlyingGameHUD/Container", HUDType::Rotational},
     {"MultiplayerLocalActivePlayerController(Clone)/IsActiveObjects/HUD", HUDType::Multiplayer},
     {"MultiplayerDuelLocalActivePlayerController(Clone)/IsActiveObjects/HUD", HUDType::Multiplayer},

@@ -248,6 +248,11 @@ void OnMultiplayerSceneStart(MultiplayerController* multiplayerController) {
 #include "GlobalNamespace/BeatmapCallbacksController.hpp"
 #include "GlobalNamespace/BasicBeatmapEventData.hpp"
 #include "GlobalNamespace/VRRenderingParamsSetup.hpp"
+#include "GlobalNamespace/LightColorBeatmapEventData.hpp"
+#include "GlobalNamespace/EnvironmentColorType.hpp"
+#include "GlobalNamespace/LightColorGroupEffectManager.hpp"
+#include "GlobalNamespace/LightColorGroup.hpp"
+#include "GlobalNamespace/LightGroup.hpp"
 
 void Qounters::OnSceneStart() {
     QountersLogger::Logger.info("Settings scene start");
@@ -284,14 +289,32 @@ void Qounters::OnSceneStart() {
     env->SetActive(false);
     env->SetActive(true);
 
-    // TODO: v3 (weave is pitch black)
     if (auto bcu = Object::FindObjectOfType<BeatmapCallbacksUpdater*>()) {
         auto bcc = bcu->_beatmapCallbacksController;
+        
+        //V2
         bcc->TriggerBeatmapEvent(BasicBeatmapEventData::New_ctor(0, BasicBeatmapEventType::Event0, 1, 1));
         bcc->TriggerBeatmapEvent(BasicBeatmapEventData::New_ctor(0, BasicBeatmapEventType::Event1, 1, 1));
         bcc->TriggerBeatmapEvent(BasicBeatmapEventData::New_ctor(0, BasicBeatmapEventType::Event2, 1, 1));
         bcc->TriggerBeatmapEvent(BasicBeatmapEventData::New_ctor(0, BasicBeatmapEventType::Event3, 1, 1));
         bcc->TriggerBeatmapEvent(BasicBeatmapEventData::New_ctor(0, BasicBeatmapEventType::Event4, 1, 1));
+
+        //V3
+        auto manager = Resources::FindObjectsOfTypeAll<LightColorGroupEffectManager*>()->FirstOrDefault();
+        if(manager) {
+            auto groups = manager->_lightGroups;
+            int i = 0;
+            for (size_t g = 0; g < groups.size(); g++)
+            {
+                auto lightGroup = groups[g];
+                for (size_t e = 0; e < lightGroup->get_numberOfElements(); e++)
+                {
+                    i++;
+                    auto color = (i % 2) == 0 ? EnvironmentColorType::Color0 : EnvironmentColorType::Color1;
+                    bcc->TriggerBeatmapEvent(LightColorBeatmapEventData::New_ctor(0, g, e, false, EaseType::Linear, color, 1.0f, 0, 0.0f, false));
+                }
+            }
+        }
     }
 
     auto renderParams = Object::FindObjectOfType<VRRenderingParamsSetup*>();
