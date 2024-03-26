@@ -28,7 +28,7 @@ std::string currentEnvironment = "";
 #include "GlobalNamespace/SimpleLevelStarter.hpp"
 
 SimpleLevelStarter* GetLevelStarter() {
-    return Resources::FindObjectsOfTypeAll<SimpleLevelStarter*>()->First([](auto x) {return x->_level->levelID == std::string("PerformanceTest");});
+    return Resources::FindObjectsOfTypeAll<SimpleLevelStarter*>()->First();
 }
 
 #include "GlobalNamespace/GameScenesManager.hpp"
@@ -56,70 +56,92 @@ void Present(SimpleLevelStarter* levelStarter, bool refresh, ScenesTransitionSet
 #include "GlobalNamespace/MultiplayerPlayerResultsData.hpp"
 #include "GlobalNamespace/MultiplayerLevelCompletionResults.hpp"
 #include "GlobalNamespace/RecordingToolManager.hpp"
+#include "GlobalNamespace/IBeatmapLevelLoader.hpp"
+#include "GlobalNamespace/BeatmapLevelsModel.hpp"
 
+#include "System/Threading/CancellationToken.hpp"
+#include "System/Threading/Tasks/Task_1.hpp"
 #include "System/Action_2.hpp"
 #include "System/Nullable_1.hpp"
 
-void PresentMultiplayer(SimpleLevelStarter* levelStarter, bool refresh, IDifficultyBeatmap* diff, ColorScheme* colors) {
-    auto setupData = levelStarter->_menuTransitionsHelper->_multiplayerLevelScenesTransitionSetupData;
-    setupData->Init("Settings", levelStarter->_level->i___GlobalNamespace__IPreviewBeatmapLevel(), levelStarter->_beatmapDifficulty, levelStarter->_beatmapCharacteristic, diff, colors, levelStarter->_gameplayModifiers, levelStarter->_playerDataModel->playerData->playerSpecificSettings, nullptr, false);
-    localFakeConnectedPlayer = nullptr;
+#include "bsml/shared/BSML/MainThreadScheduler.hpp"
 
-    Present(levelStarter, refresh, setupData);
+void PresentMultiplayer(SimpleLevelStarter* levelStarter, bool refresh, BeatmapLevel* level, BeatmapKey diff, ColorScheme* colors) {
+    auto setupData = levelStarter->_menuTransitionsHelper->_multiplayerLevelScenesTransitionSetupData;
+    auto levelLoader = levelStarter->_menuTransitionsHelper->_beatmapLevelsModel->levelLoader;
+    //TODO: In the future, make a custom type inheriting IBeatmapLevelData and return hardcoded beatmaps, this sucks -Future
+    auto levelData = levelLoader->LoadBeatmapLevelDataAsync(level, System::Threading::CancellationToken::get_None()); // FUCK
+    BSML::MainThreadScheduler::ScheduleUntil(std::function<bool ()>([&](){
+        return levelData->GetAwaiter().IsCompleted;
+    }), [&](){
+        auto beatmapLevelData = levelData->Result.beatmapLevelData;
+        setupData->Init("Settings", diff, level, beatmapLevelData, colors, levelStarter->_gameplayModifiers, levelStarter->_playerDataModel->playerData->playerSpecificSettings, nullptr, levelStarter->_menuTransitionsHelper->_audioClipAsyncLoader, levelStarter->_menuTransitionsHelper->_beatmapDataLoader, false);
+        localFakeConnectedPlayer = nullptr;
+
+        Present(levelStarter, refresh, setupData);
+    });
 }
 
 #include "GlobalNamespace/PlayerDataFileManagerSO.hpp"
-#include "GlobalNamespace/EnvironmentsListSO.hpp"
 #include "GlobalNamespace/EnvironmentInfoSO.hpp"
 #include "GlobalNamespace/OverrideEnvironmentSettings.hpp"
 #include "GlobalNamespace/StandardLevelScenesTransitionSetupDataSO.hpp"
 #include "GlobalNamespace/LevelCompletionResults.hpp"
+#include "GlobalNamespace/EnvironmentsListModel.hpp"
+#include "GlobalNamespace/PlayerDataFileModel.hpp"
 
-void PresentSingleplayer(SimpleLevelStarter* levelStarter, bool refresh, IDifficultyBeatmap* diff, ColorScheme* colors) {
+void PresentSingleplayer(SimpleLevelStarter* levelStarter, bool refresh, BeatmapLevel* level, BeatmapKey diff, ColorScheme* colors) {
     auto env = OverrideEnvironmentSettings::New_ctor();
-    auto dataManager = levelStarter->_playerDataModel->playerDataFileManager;
+
+    auto dataManager = levelStarter->_playerDataModel->playerDataFileModel;
+    auto listModel = dataManager->_environmentsListModel;
+
     env->overrideEnvironments = true;
     EnvironmentInfoSO* environment = nullptr;
-    for (auto& info : dataManager->_allEnvironmentInfos->environmentInfos) {
+    ListW<UnityW<EnvironmentInfoSO>> environments = ListW<UnityW<EnvironmentInfoSO>>::New();
+    environments->AddRange(listModel->GetAllEnvironmentInfosWithType(GlobalNamespace::EnvironmentType::Normal)->i___System__Collections__Generic__IEnumerable_1_T_());
+    for (auto& info : environments) {
         if (info->environmentName == getConfig().Environment.GetValue()) {
             environment = info;
             break;
         }
     }
     if (!environment) {
-        environment = dataManager->_allEnvironmentInfos->GetFirstEnvironmentInfoWithType(dataManager->_normalEnvironmentType);
+        environment = listModel->GetFirstEnvironmentInfoWithType(GlobalNamespace::EnvironmentType::Normal);
         getConfig().Environment.SetValue(environment->environmentName);
     }
-    env->SetEnvironmentInfoForType(dataManager->_normalEnvironmentType, environment);
+    env->SetEnvironmentInfoForType(GlobalNamespace::EnvironmentType::Normal, environment);
 
     auto setupData = levelStarter->_menuTransitionsHelper->_standardLevelScenesTransitionSetupData;
-    setupData->Init("Settings", diff, levelStarter->_level->i___GlobalNamespace__IPreviewBeatmapLevel(), env, colors, nullptr, levelStarter->_gameplayModifiers, levelStarter->_playerDataModel->playerData->playerSpecificSettings, nullptr, "", false, false, nullptr, System::Nullable_1<RecordingToolManager::SetupData>());
+    setupData->Init("Settings", diff, level, env, colors, nullptr, levelStarter->_gameplayModifiers, levelStarter->_playerDataModel->playerData->playerSpecificSettings, nullptr, levelStarter->_environmentsListModel, levelStarter->_menuTransitionsHelper->_audioClipAsyncLoader, levelStarter->_menuTransitionsHelper->_beatmapDataLoader, "", levelStarter->_menuTransitionsHelper->_beatmapLevelsModel, false, false, System::Nullable_1<RecordingToolManager::SetupData>());
 
     Present(levelStarter, refresh, setupData);
 }
 
 #include "GlobalNamespace/BeatmapLevelSO.hpp"
-#include "GlobalNamespace/BeatmapLevelDataExtensions.hpp"
 #include "GlobalNamespace/ColorSchemesSettings.hpp"
+#include "GlobalNamespace/BeatmapLevelExtensions.hpp"
+#include "UnityEngine/AddressableAssets/AssetReferenceT_1.hpp"
 
 void PresentScene(SimpleLevelStarter* levelStarter, bool refresh) {
-    auto diff = BeatmapLevelDataExtensions::GetDifficultyBeatmap(levelStarter->_level->beatmapLevelData, levelStarter->_beatmapCharacteristic, levelStarter->_beatmapDifficulty);
+    auto level = BeatmapLevelExtensions::ToRuntime(levelStarter->_beatmapLevel->LoadAssetAsync().WaitForCompletion().ptr()); // This is GROSS and I DO NOT care, maybe we can just make this ourselves instead of relying on the game. -Future
+    auto diff = BeatmapKey(levelStarter->_beatmapCharacteristic, levelStarter->_beatmapDifficulty, level->levelID);
     auto colors = levelStarter->_playerDataModel->playerData->colorSchemesSettings->GetOverrideColorScheme();
 
     currentEnvironment = getConfig().Environment.GetValue();
     if (currentEnvironment == "Multiplayer")
-        PresentMultiplayer(levelStarter, refresh, diff, colors);
+        PresentMultiplayer(levelStarter, refresh, level, diff, colors);
     else
-        PresentSingleplayer(levelStarter, refresh, diff, colors);
+        PresentSingleplayer(levelStarter, refresh, level, diff, colors);
 }
 
 #include "System/Collections/Generic/HashSet_1.hpp"
 
 void Qounters::PresentSettingsEnvironment() {
-    getLogger().debug("Presenting environment");
+    QountersLogger::Logger.debug("Presenting environment");
 
     if (getConfig().Presets.GetValue().empty()) {
-        getLogger().error("No presets!");
+        QountersLogger::Logger.error("No presets!");
         return;
     }
 
@@ -149,7 +171,7 @@ void DismissFlowCoordinator() {
 #include "GlobalNamespace/MultiplayerController.hpp"
 
 void Qounters::DismissSettingsEnvironment() {
-    getLogger().debug("Dismissing environment");
+    QountersLogger::Logger.debug("Dismissing environment");
 
     Reset();
 
@@ -164,7 +186,7 @@ void Qounters::DismissSettingsEnvironment() {
 }
 
 void Qounters::RefreshSettingsEnvironment() {
-    getLogger().debug("Refreshing environment");
+    QountersLogger::Logger.debug("Refreshing environment");
 
     Reset();
 
@@ -222,7 +244,7 @@ void OnMultiplayerSceneStart(MultiplayerController* multiplayerController) {
 #include "GlobalNamespace/VRRenderingParamsSetup.hpp"
 
 void Qounters::OnSceneStart() {
-    getLogger().info("Settings scene start");
+    QountersLogger::Logger.info("Settings scene start");
 
     if (auto multiplayerController = Object::FindObjectOfType<MultiplayerController*>())
         OnMultiplayerSceneStart(multiplayerController);
@@ -249,7 +271,7 @@ void Qounters::OnSceneStart() {
     if (!mainFlow->IsFlowCoordinatorInHierarchy(settingsFlow))
         mainFlow->PresentFlowCoordinator(settingsFlow, nullptr, HMUI::ViewController::AnimationDirection::Horizontal, true, false);
 
-    getLogger().debug("Fixing environment lighting");
+    QountersLogger::Logger.debug("Fixing environment lighting");
 
     // rendering order issues
     auto env = GameObject::Find("Environment");
@@ -270,7 +292,7 @@ void Qounters::OnSceneStart() {
     renderParams->_sceneType = VRRenderingParamsSetup::SceneType::Menu;
     renderParams->OnEnable();
 
-    getLogger().debug("Disabling objects");
+    QountersLogger::Logger.debug("Disabling objects");
 
     if (auto gameplay = GameObject::Find("StandardGameplay"))
         Utils::DisableAllBut(gameplay->get_transform(), {"EventSystem", "ControllerLeft", "ControllerRight"});
@@ -284,7 +306,7 @@ void Qounters::OnSceneStart() {
 #include "GlobalNamespace/FadeInOutController.hpp"
 
 void Qounters::OnSceneEnd() {
-    getLogger().info("Settings scene end");
+    QountersLogger::Logger.info("Settings scene end");
 
     auto levelStarter = GetLevelStarter();
     levelStarter->_menuTransitionsHelper->_standardLevelScenesTransitionSetupData->didFinishEvent = nullptr;

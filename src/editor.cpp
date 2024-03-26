@@ -250,7 +250,7 @@ namespace Qounters::Editor {
     }
 
     void SelectEditing(EditingBase* object) {
-        getLogger().debug("selected %p -> %p", selected, object);
+        QountersLogger::Logger.debug("selected {} -> {}", fmt::ptr(selected), fmt::ptr(object));
         if (runningUndo || object == selected)
             return;
         if (selected)

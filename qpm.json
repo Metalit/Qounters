@@ -1,4 +1,5 @@
 {
+  "version": "0.1.0",
   "sharedDir": "shared",
   "dependenciesDir": "extern",
   "info": {
@@ -10,10 +11,13 @@
       "overrideSoName": "libqountersplusplus.so"
     }
   },
+  "workspace": {
+    "scripts": {}
+  },
   "dependencies": [
     {
       "id": "beatsaber-hook",
-      "versionRange": "^5.0.8",
+      "versionRange": "^5.1.4",
       "additionalData": {
         "extraFiles": [
           "src/inline-hook"
@@ -22,12 +26,12 @@
     },
     {
       "id": "bs-cordl",
-      "versionRange": "^3402.1.2",
+      "versionRange": "3500.*",
       "additionalData": {}
     },
     {
       "id": "custom-types",
-      "versionRange": "^0.16.16",
+      "versionRange": "^0.17.0",
       "additionalData": {}
     },
     {
@@ -42,7 +46,7 @@
     },
     {
       "id": "config-utils",
-      "versionRange": "0.0.1",
+      "versionRange": "^1.4.1",
       "additionalData": {}
     },
     {
@@ -59,7 +63,11 @@
       "id": "fmt",
       "versionRange": "^10.0.0",
       "additionalData": {}
+    },
+    {
+      "id": "paper",
+      "versionRange": "^3.6.3",
+      "additionalData": {}
     }
-  ],
-  "workspace": null
+  ]
 }

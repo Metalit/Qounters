@@ -325,12 +325,12 @@ RectTransform* GetCanvas(std::string parentName, Transform* hud, Vector3 fallbac
 
     auto parent = Utils::FindRecursive(hud, parentName);
     if (!parent && !parentName.starts_with("Qounters")) {
-        getLogger().info("Failed to find parent %s!", parentName.c_str());
+        QountersLogger::Logger.info("Failed to find parent {}!", parentName.c_str());
         parentName = "Qounters" + parentName;
         parent = Utils::FindRecursive(hud, parentName);
     }
     if (!parent) {
-        getLogger().info("Creating custom parent object %s", parentName.c_str());
+        QountersLogger::Logger.info("Creating custom parent object {}", parentName.c_str());
         parent = GameObject::New_ctor(parentName)->get_transform();
         parent->set_position(fallback);
     }
@@ -358,7 +358,7 @@ std::pair<Transform*, HUDType> Qounters::GetHUD() {
         if (auto hud = GameObject::Find(name))
             return {hud->get_transform(), type};
     }
-    getLogger().error("Unable to find HUD object");
+    QountersLogger::Logger.error("Unable to find HUD object");
     return {nullptr, HUDType::Unsupported};
 }
 
@@ -375,7 +375,7 @@ Transform* Qounters::GetAnchor(int anchor) {
 }
 
 void Qounters::CreateQounterComponent(Component const& qounterComponent, int componentIdx, Transform* parent, bool editing) {
-    getLogger().debug("Creating qounter component of type %i", qounterComponent.Type);
+    QountersLogger::Logger.debug("Creating qounter component of type {}", qounterComponent.Type);
 
     UI::Graphic* component;
 
@@ -426,7 +426,7 @@ void Qounters::CreateQounterComponent(Component const& qounterComponent, int com
 }
 
 void Qounters::CreateQounterGroup(Group const& qounterGroup, int groupIdx, bool editing) {
-    getLogger().debug("Creating qounter group");
+    QountersLogger::Logger.debug("Creating qounter group");
 
     auto parent = Lite::CreateCanvas();
     parent->set_name("QounterGroup");

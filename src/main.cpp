@@ -13,11 +13,6 @@ GlobalNamespace::IConnectedPlayer* localFakeConnectedPlayer = nullptr;
 bool blockOtherRaycasts = false;
 std::unordered_set<UnityEngine::Canvas*> raycastCanvases = {};
 
-Logger& getLogger() {
-    static auto logger = new Logger(modloader::ModInfo{MOD_ID, VERSION, 0}, LoggerOptions{false, true});
-    return *logger;
-}
-
 extern "C" void setup(CModInfo* info) {
     info->id = MOD_ID;
     info->version = VERSION;
@@ -61,6 +56,6 @@ extern "C" void late_load() {
         hasCJD = true;
     }*/
 
-    getLogger().debug("Installing hooks");
+    QountersLogger::Logger.debug("Installing hooks");
     Qounters::InstallHooks();
 }

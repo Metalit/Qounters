@@ -243,7 +243,7 @@ void BaseGameGraphic::SetComponent(int comp) {
     if (instance)
         Object::Destroy(instance->get_gameObject());
 
-    getLogger().debug("set component %i", comp);
+    QountersLogger::Logger.debug("set component {}", comp);
 
     auto base = clones[component];
     if (!base || !base->m_CachedPtr)
@@ -325,7 +325,7 @@ void BaseGameGraphic::MakeClones() {
     for (int i = 0; i <= (int) BaseGameOptions::Components::ComponentsMax; i++) {
         auto base = GetBase(i);
         if (!base) {
-            getLogger().error("Failed to find base component %i", i);
+            QountersLogger::Logger.error("Failed to find base component {}", i);
             clones[i] = nullptr;
             continue;
         }
@@ -348,7 +348,7 @@ void BaseGameGraphic::MakeClones() {
         for (auto graphic : graphics) {
             std::string path = Utils::GetTransformPath(base, graphic->get_transform());
             alphaIndex[i][path] = graphic->get_color().a;
-            getLogger().debug("%.2f alpha for %i %s", graphic->get_color().a, i, path.c_str());
+            QountersLogger::Logger.debug("%.2f alpha for {} {}", graphic->get_color().a, i, path.c_str());
         }
     }
 }
@@ -375,7 +375,7 @@ void ImageSpriteCache::LoadAllSprites() {
 }
 
 Sprite* ImageSpriteCache::GetSprite(std::string name) {
-    getLogger().debug("loading sprite %s", name.c_str());
+    QountersLogger::Logger.debug("loading sprite {}", name.c_str());
     auto inst = GetInstance();
     for (int i = 0; i < inst->spritePaths.size(); i++) {
         if (inst->spritePaths[i] == name)

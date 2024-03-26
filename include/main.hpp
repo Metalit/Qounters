@@ -1,8 +1,7 @@
 #pragma once
 
 #include "beatsaber-hook/shared/utils/hooking.hpp"
-
-Logger& getLogger();
+#include "logger.hpp"
 
 #define IMAGE_DIRECTORY "/sdcard/ModData/com.beatgames.beatsaber/Mods/" MOD_ID "/"
 #define SPEED_SAMPLES_PER_SEC 4

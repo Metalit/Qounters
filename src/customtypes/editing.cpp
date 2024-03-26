@@ -235,13 +235,13 @@ custom_types::Helpers::Coroutine TextOutlineSizer::SetLayout() {
 
     auto outline = GetOutline();
 
-    auto bounds = text->get_bounds();
+    auto bounds = text->get_textBounds();
 
     if (text->get_text() == "")
         bounds = Bounds({}, {});
 
     outline->get_rectTransform()->set_anchoredPosition({bounds.m_Center.x, bounds.m_Center.y});
-    outline->SetBaseSize({bounds.m_Extents.x * 2, bounds.m_Extents.y * 2});
+    outline->SetBaseSize({bounds.m_Extents.x, bounds.m_Extents.y});
 
     co_return;
 }

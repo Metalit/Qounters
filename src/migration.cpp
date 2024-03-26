@@ -45,24 +45,24 @@ namespace Qounters::Migration {
         static const std::string oldConfigPath = "/sdcard/ModData/com.beatgames.beatsaber/Configs/Qounters-.json";
 
         if (!fileexists(oldConfigPath)) {
-            getLogger().info("No qounters- config found");
+            QountersLogger::Logger.info("No qounters- config found");
             return;
         }
 
         auto presets = getConfig().Presets.GetValue();
         std::string newPresetName = "Migrated";
         if (presets.contains(newPresetName)) {
-            getLogger().info("Migrated preset found, skipping migration");
+            QountersLogger::Logger.info("Migrated preset found, skipping migration");
             return;
         }
 
-        getLogger().info("Migrating qounters- config");
+        QountersLogger::Logger.info("Migrating qounters- config");
 
         OldConfig config;
         try {
             ReadFromFile(oldConfigPath, config);
         } catch (std::exception const& exc) {
-            getLogger().error("Failed to read old config: %s", exc.what());
+            QountersLogger::Logger.error("Failed to read old config: {}", exc.what());
             return;
         }
 
@@ -178,6 +178,6 @@ namespace Qounters::Migration {
         getConfig().Presets.SetValue(presets);
         getConfig().Preset.SetValue(newPresetName);
 
-        getLogger().info("Done migrating");
+        QountersLogger::Logger.info("Done migrating");
     }
 }

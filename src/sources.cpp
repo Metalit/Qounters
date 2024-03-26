@@ -234,7 +234,7 @@ namespace Qounters::TextSource {
             notes = Game::GetTotalNotes(opts.Saber) - notes;
 
         if (opts.Display == (int) Notes::Displays::Ratio) {
-            return string_format("%i / %i", notes, Game::GetTotalNotes(opts.Saber));
+            return fmt::format("{} / {}", notes, Game::GetTotalNotes(opts.Saber));
         } else if (opts.Display == (int) Notes::Displays::Percent) {
             float ratio = notes / (float) Game::GetTotalNotes(opts.Saber);
             ratio *= 100;

@@ -111,9 +111,9 @@ int GetHighScore(PlayerDataModel* data, GameplayCoreInstaller* installer) {
     return 0;
     if (!data || !installer || !installer->_sceneSetupData)
         return 0;
-    auto [id, characteristic, difficulty] = Utils::GetBeatmapDetails(installer->_sceneSetupData->difficultyBeatmap);
+    auto [id, characteristic, difficulty] = Utils::GetBeatmapDetails(installer->_sceneSetupData->beatmapKey);
     for (auto& stats : ListW<PlayerLevelStatsData*>(data->playerData->levelsStatsData)) {
-        getLogger().info("ptr %p", stats);
+        QountersLogger::Logger.info("ptr {}", fmt::ptr(stats));
         if(stats != nullptr) {
             if (stats->_levelID == id && stats->beatmapCharacteristic->serializedName == characteristic && stats->difficulty.value__ == difficulty)
                 return stats->get_highScore();
@@ -200,7 +200,7 @@ void Qounters::Initialize() {
 
     std::string beatmap = "Unknown";
     if (gameplayCoreInstaller && gameplayCoreInstaller->_sceneSetupData)
-        beatmap = Utils::GetBeatmapIdentifier(gameplayCoreInstaller->_sceneSetupData->difficultyBeatmap);
+        beatmap = Utils::GetBeatmapIdentifier(gameplayCoreInstaller->_sceneSetupData->beatmapKey);
 
     leftScore = 0;
     rightScore = 0;
@@ -242,7 +242,7 @@ void Qounters::Initialize() {
     personalBest = GetHighScore(playerDataModel, gameplayCoreInstaller);
     fails = GetFailCount(playerDataModel);
 
-    getLogger().debug("modifiers %.2f -%.2f", positiveMods, negativeMods);
+    QountersLogger::Logger.debug("modifiers %.2f -%.2f", positiveMods, negativeMods);
 
     if (beatmap != lastBeatmap)
         restarts = 0;

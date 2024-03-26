@@ -114,7 +114,7 @@ double scoresaberMult = 42.117208413;
 
 using namespace GlobalNamespace;
 
-IDifficultyBeatmap* latestRequest;
+BeatmapKey latestRequest;
 bool blSongValid = false;
 BLSongDiff latestBeatleaderSong;
 bool ssSongValid = false;
@@ -176,19 +176,19 @@ float Qounters::PP::CalculateSS(float percentage, bool failed) {
     return multiplier * latestScoresaberSong * scoresaberMult;
 }
 
-#include "GlobalNamespace/IDifficultyBeatmapSet.hpp"
+#include "GlobalNamespace/BeatmapKey.hpp"
 #include "GlobalNamespace/BeatmapCharacteristicSO.hpp"
 #include "GlobalNamespace/BeatmapDifficulty.hpp"
 #include "GlobalNamespace/BeatmapDifficultySerializedMethods.hpp"
 
-void ProcessResponseBL(BLSong song, IDifficultyBeatmap* map) {
-    getLogger().debug("processing bl respose");
-    std::string characteristic = map->get_parentDifficultyBeatmapSet()->get_beatmapCharacteristic()->serializedName;
-    std::string difficulty = BeatmapDifficultySerializedMethods::SerializedName(map->get_difficulty());
+void ProcessResponseBL(BLSong song, BeatmapKey map) {
+    QountersLogger::Logger.debug("processing bl respose");
+    std::string characteristic = map.beatmapCharacteristic->serializedName;
+    std::string difficulty = BeatmapDifficultySerializedMethods::SerializedName(map.difficulty);
 
     for (auto& diff : song.Difficulties) {
         if (diff.Characteristic == characteristic && diff.Difficulty == difficulty) {
-            getLogger().debug("found correct difficulty, %.2f stars", diff.Stars);
+            QountersLogger::Logger.debug("found correct difficulty, %.2f stars", diff.Stars);
             latestBeatleaderSong = diff;
             blSongValid = true;
             Qounters::BroadcastEvent((int) Qounters::Events::PPInfo);
@@ -197,7 +197,7 @@ void ProcessResponseBL(BLSong song, IDifficultyBeatmap* map) {
     }
 }
 
-#include "GlobalNamespace/IBeatmapLevel.hpp"
+#include "GlobalNamespace/BeatmapLevel.hpp"
 #include "UnityEngine/Networking/UnityWebRequest.hpp"
 #include "UnityEngine/Networking/UnityWebRequestAsyncOperation.hpp"
 #include "UnityEngine/Networking/DownloadHandler.hpp"
@@ -207,16 +207,16 @@ void ProcessResponseBL(BLSong song, IDifficultyBeatmap* map) {
 
 using DownloadCompleteDelegate = System::Action_1<UnityEngine::AsyncOperation*>*;
 
-void GetMapInfoBL(IDifficultyBeatmap* map, std::string hash) {
+void GetMapInfoBL(BeatmapKey map, std::string hash) {
     auto request = UnityEngine::Networking::UnityWebRequest::Get("api.beatleader.xyz/map/hash/" + hash);
-    getLogger().debug("bl url: api.beatleader.xyz/map/hash/%s", hash.c_str());
+    QountersLogger::Logger.debug("bl url: api.beatleader.xyz/map/hash/{}", hash.c_str());
 
     static auto s_UnityWebRequest_InternalSetRequestHeader = il2cpp_utils::resolve_icall<UnityEngine::Networking::UnityWebRequest::UnityWebRequestError, UnityEngine::Networking::UnityWebRequest*, StringW, StringW>("UnityEngine.Networking.UnityWebRequest::InternalSetRequestHeader");
     s_UnityWebRequest_InternalSetRequestHeader(request, "User-Agent", MOD_ID " " VERSION);
 
     auto completed = custom_types::MakeDelegate<DownloadCompleteDelegate>((std::function<void (UnityEngine::AsyncOperation*)>) [map, request](UnityEngine::AsyncOperation* op) {
-        getLogger().debug("got bl respose");
-        if (map != latestRequest)
+        QountersLogger::Logger.debug("got bl respose");
+        if (BeatmapKey::op_Inequality(map, latestRequest))
             return;
         std::string responseString = request->get_downloadHandler()->GetText();
         BLSong response;
@@ -224,8 +224,8 @@ void GetMapInfoBL(IDifficultyBeatmap* map, std::string hash) {
             ReadFromString(responseString, response);
             ProcessResponseBL(response, map);
         } catch (std::exception const& e) {
-            getLogger().error("failed to parse beatleader response: %s", e.what());
-            getLogger().error("%s", responseString.c_str());
+            QountersLogger::Logger.error("failed to parse beatleader response: {}", e.what());
+            QountersLogger::Logger.error("{}", responseString.c_str());
         }
     });
     request->SendWebRequest()->add_completed(completed);
@@ -241,7 +241,7 @@ void GetSongDetails(auto&& callback) {
         return;
     }
 
-    getLogger().debug("initializing song details");
+    QountersLogger::Logger.debug("initializing song details");
 
     std::thread([callback]() mutable {
         songDetailsInstance = SongDetailsCache::SongDetails::Init().get();
@@ -251,20 +251,20 @@ void GetSongDetails(auto&& callback) {
 
 #include "bsml/shared/BSML/MainThreadScheduler.hpp"
 
-void GetMapInfoSS(IDifficultyBeatmap* map, std::string hash) {
-    std::string characteristic = map->get_parentDifficultyBeatmapSet()->get_beatmapCharacteristic()->serializedName;
-    int difficulty = map->get_difficulty().value__;
+void GetMapInfoSS(BeatmapKey map, std::string hash) {
+    std::string characteristic = map.beatmapCharacteristic->serializedName;
+    int difficulty = map.difficulty.value__;
 
     GetSongDetails([hash, characteristic, difficulty](auto details) {
-        getLogger().debug("got song details");
+        QountersLogger::Logger.debug("got song details");
         auto& song = details->songs.FindByHash(hash);
         if (song == SongDetailsCache::Song::none)
             return;
-        getLogger().debug("processing song details");
+        QountersLogger::Logger.debug("processing song details");
         auto& diff = song.GetDifficulty((SongDetailsCache::MapDifficulty) difficulty, characteristic);
         if (diff == SongDetailsCache::SongDifficulty::none)
             return;
-        getLogger().debug("found correct difficulty, %.2f stars", diff.starsSS);
+        QountersLogger::Logger.debug("found correct difficulty, %.2f stars", diff.starsSS);
 
         BSML::MainThreadScheduler::Schedule([&diff]() {
             latestScoresaberSong = diff.starsSS;
@@ -274,18 +274,18 @@ void GetMapInfoSS(IDifficultyBeatmap* map, std::string hash) {
     });
 }
 
-void Qounters::PP::GetMapInfo(IDifficultyBeatmap* map) {
+void Qounters::PP::GetMapInfo(BeatmapKey map) {
     blSongValid = false;
     ssSongValid = false;
     latestRequest = map;
 
-    std::string id = map->get_level()->i___GlobalNamespace__IPreviewBeatmapLevel()->get_levelID();
+    std::string id = map.levelId;
     static const std::string prefix = "custom_level_";
     if (id.ends_with(" WIP") || !id.starts_with(prefix))
         return;
     std::string hash = id.substr(prefix.size());
 
-    getLogger().info("Requesting PP info for %s", hash.c_str());
+    QountersLogger::Logger.info("Requesting PP info for {}", hash.c_str());
 
     GetMapInfoBL(map, hash);
     GetMapInfoSS(map, hash);

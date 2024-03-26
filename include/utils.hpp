@@ -1,6 +1,5 @@
 #pragma once
 
-#include "GlobalNamespace/IDifficultyBeatmap.hpp"
 #include "UnityEngine/Transform.hpp"
 #include "UnityEngine/GameObject.hpp"
 #include "UnityEngine/UI/Toggle.hpp"
@@ -10,11 +9,14 @@
 #include "bsml/shared/BSML/Components/Settings/IncrementSetting.hpp"
 #include "bsml/shared/BSML/Components/Settings/SliderSetting.hpp"
 
+#include "GlobalNamespace/BeatmapKey.hpp"
+#include "GlobalNamespace/BeatmapLevel.hpp"
+
 namespace Qounters::Utils {
     std::string FormatDecimals(double num, int decimals);
     std::string SecondsToString(int seconds);
-    std::tuple<std::string, std::string, int> GetBeatmapDetails(GlobalNamespace::IDifficultyBeatmap* beatmap);
-    std::string GetBeatmapIdentifier(GlobalNamespace::IDifficultyBeatmap* beatmap);
+    std::tuple<std::string, std::string, int> GetBeatmapDetails( GlobalNamespace::BeatmapKey key);
+    std::string GetBeatmapIdentifier(GlobalNamespace::BeatmapKey key);
     void DisableAllBut(UnityEngine::Transform* parent, std::set<std::string> enabled, std::set<std::string> disabled = {});
     UnityEngine::Transform* FindRecursive(UnityEngine::Transform* parent, std::string name);
     std::string GetTransformPath(UnityEngine::Transform* parent, UnityEngine::Transform* child);

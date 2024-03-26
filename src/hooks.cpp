@@ -217,7 +217,7 @@ MAKE_HOOK_MATCH(AudioTimeSyncController_Update, &AudioTimeSyncController::Update
 
 MAKE_HOOK_MATCH(CoreGameHUDController_Initialize, &CoreGameHUDController::Initialize, void, CoreGameHUDController* self, CoreGameHUDController::InitData* initData) {
 
-    getLogger().info("Qounters start");
+    QountersLogger::Logger.info("Qounters start");
     initData->advancedHUD = true;
     saberManager = UnityEngine::Object::FindObjectOfType<SaberManager*>();
 
@@ -232,13 +232,13 @@ MAKE_HOOK_MATCH(CoreGameHUDController_Initialize, &CoreGameHUDController::Initia
 
 #include "GlobalNamespace/StandardLevelDetailView.hpp"
 
-MAKE_HOOK_MATCH(StandardLevelDetailView_SetContentForBeatmapDataAsync, &StandardLevelDetailView::SetContentForBeatmapDataAsync,
-        void, StandardLevelDetailView* self, IDifficultyBeatmap* selectedDifficultyBeatmap) {
+MAKE_HOOK_MATCH(StandardLevelDetailView_RefreshContent, &StandardLevelDetailView::RefreshContent,
+        void, StandardLevelDetailView* self) {
 
     //if (selectedDifficultyBeatmap)
     //    PP::GetMapInfo(selectedDifficultyBeatmap);
 
-    StandardLevelDetailView_SetContentForBeatmapDataAsync(self, selectedDifficultyBeatmap);
+    StandardLevelDetailView_RefreshContent(self);
 }
 
 #include "GlobalNamespace/StandardLevelScenesTransitionSetupDataSO.hpp"
@@ -341,14 +341,14 @@ MAKE_HOOK_MATCH(UIKeyboardManager_HandleKeyboardOkButton, &UIKeyboardManager::Ha
 }
 
 MAKE_HOOK(abort_hook, nullptr, void) {
-    getLogger().info("abort called");
-    getLogger().Backtrace(40);
+    QountersLogger::Logger.info("abort called");
+    QountersLogger::Logger.Backtrace(40);
 
     abort_hook();
 }
 
 void Qounters::InstallHooks() {
-    auto logger = getLogger().WithContext("Hooks");
+    auto logger = QountersLogger::Logger;
     INSTALL_HOOK(logger, ScoreController_DespawnScoringElement);
     INSTALL_HOOK(logger, BeatmapObjectManager_HandleNoteControllerNoteWasCut);
     INSTALL_HOOK(logger, BeatmapObjectManager_HandleNoteControllerNoteWasMissed);
@@ -357,7 +357,7 @@ void Qounters::InstallHooks() {
     INSTALL_HOOK(logger, GameEnergyCounter_ProcessEnergyChange);
     INSTALL_HOOK(logger, AudioTimeSyncController_Update);
     INSTALL_HOOK(logger, CoreGameHUDController_Initialize);
-    INSTALL_HOOK(logger, StandardLevelDetailView_SetContentForBeatmapDataAsync);
+    INSTALL_HOOK(logger, StandardLevelDetailView_RefreshContent);
     INSTALL_HOOK(logger, StandardLevelScenesTransitionSetupDataSO_Finish);
     INSTALL_HOOK(logger, PauseController_Pause);
     INSTALL_HOOK(logger, MultiplayerLocalActivePlayerInGameMenuViewController_ShowMenu);
@@ -372,5 +372,5 @@ void Qounters::InstallHooks() {
     auto libc = dlopen("libc.so", RTLD_NOW);
     auto abort = dlsym(libc, "abort");
 
-    INSTALL_HOOK_DIRECT(getLogger(), abort_hook, abort)
+    INSTALL_HOOK_DIRECT(QountersLogger::Logger, abort_hook, abort)
 }

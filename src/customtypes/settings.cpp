@@ -178,11 +178,11 @@ void Qounters::SettingsFlowCoordinator::MakeNewPreset(std::string name, bool rem
 #include "GlobalNamespace/EnvironmentInfoSO.hpp"
 #include "GlobalNamespace/PlayerDataModel.hpp"
 #include "GlobalNamespace/PlayerDataFileManagerSO.hpp"
-#include "GlobalNamespace/EnvironmentsListSO.hpp"
+#include "GlobalNamespace/EnvironmentsListModel.hpp"
 
 void LogTransform(Transform* trans, int depth = 1)
 {
-    getLogger().info("%s %s", std::string(depth, '-').c_str(), static_cast<std::string>(trans->get_name()).c_str());
+    QountersLogger::Logger.info("{} {}", std::string(depth, '-').c_str(), static_cast<std::string>(trans->get_name()).c_str());
     for (int i = 0; i < trans->get_childCount(); ++i) {
         LogTransform(trans->GetChild(i), depth + 1);
     }
@@ -195,9 +195,9 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
     }
 
     std::vector<std::string> dropdownStrings = {};
-    auto manager = Helpers::GetMainFlowCoordinator()->_playerDataModel->_playerDataFileManager;
+    auto manager = Helpers::GetMainFlowCoordinator()->_playerDataModel->_playerDataFileModel;
 
-    for (auto& env : ListW<EnvironmentInfoSO*>(manager->_allEnvironmentInfos->GetAllEnvironmentInfosWithType(manager->_normalEnvironmentType)))
+    /*for (auto& env : ListW<EnvironmentInfoSO*>(manager->_allEnvironmentInfos->GetAllEnvironmentInfosWithType(manager->_normalEnvironmentType)))
         dropdownStrings.push_back(static_cast<std::string>(env->environmentName));
 
     for (auto& env : ListW<EnvironmentInfoSO*>(manager->_allEnvironmentInfos->GetAllEnvironmentInfosWithType(manager->_a360DegreesEnvironmentType)))
@@ -214,7 +214,8 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
         }
         if (add)
             dropdownStrings.emplace_back(str);
-    }
+    }*/
+    dropdownStrings.emplace_back("balls");
 
     //bsml requires string views for dropdowns. Needs a seperate vector to keep original strings from leaving scope until the dropdown is created.
     auto dropdownStringViews = std::vector<std::string_view>(dropdownStrings.size());
@@ -383,20 +384,21 @@ void TemplatesViewController::DidActivate(bool firstActivation, bool addedToHier
     if (!firstActivation)
         return;
 
-    list = Lite::CreateScrollableList(get_transform(), {50, 80}, [this](int idx) {
+    list = Lite::CreateScrollableList(get_transform(), {0, 0}, {50, 80}, [this](int idx) {
         list->tableView->ClearSelection();
         ShowTemplateModal(idx);
     });
 
     list->set_listStyle(CustomListTableData::ListStyle::Simple);
 
+    list->data->Clear();
     for (auto templateName : Utils::GetKeys(templates))
         list->data.push_back(CustomCellInfo::construct(templateName));
 
     list->tableView->ReloadData();
     list->simpleTextTableCell = nullptr;
 
-    /*auto listParent = list->transform->parent;
+    auto listParent = list->transform->parent;
 
     auto layout = listParent->get_gameObject()->AddComponent<UnityEngine::UI::LayoutElement*>();
     listParent->GetComponent<UI::VerticalLayoutGroup*>()->set_childForceExpandHeight(false);
@@ -428,7 +430,7 @@ void TemplatesViewController::DidActivate(bool firstActivation, bool addedToHier
 
     LogTransform(transform);
 
-    uiInitialized = true;*/
+    uiInitialized = true;
 }
 
 #include "custom-types/shared/coroutine.hpp"

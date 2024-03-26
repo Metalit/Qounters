@@ -29,24 +29,23 @@ std::string Qounters::Utils::SecondsToString(int value) {
     return minutesString + ":" + secondsString;
 }
 
-#include "GlobalNamespace/IBeatmapLevel.hpp"
-#include "GlobalNamespace/IDifficultyBeatmapSet.hpp"
+#include "GlobalNamespace/BeatmapLevel.hpp"
+#include "GlobalNamespace/BeatmapKey.hpp"
 #include "GlobalNamespace/BeatmapCharacteristicSO.hpp"
 #include "GlobalNamespace/BeatmapDifficulty.hpp"
-#include "GlobalNamespace/IPreviewBeatmapLevel.hpp"
 
-std::tuple<std::string, std::string, int> Qounters::Utils::GetBeatmapDetails(IDifficultyBeatmap* beatmap) {
-    std::string id = beatmap->get_level()->i___GlobalNamespace__IPreviewBeatmapLevel()->get_levelID();
-    std::string characteristic = beatmap->get_parentDifficultyBeatmapSet()->get_beatmapCharacteristic()->serializedName;
-    int difficulty = beatmap->get_difficulty().value__;
+std::tuple<std::string, std::string, int> Qounters::Utils::GetBeatmapDetails(BeatmapKey key) {
+    std::string id = key.levelId;
+    std::string characteristic = key.beatmapCharacteristic->serializedName;
+    int difficulty = key.difficulty.value__;
     return {id, characteristic, difficulty};
 }
 
-std::string Qounters::Utils::GetBeatmapIdentifier(IDifficultyBeatmap* beatmap) {
-    if (!beatmap)
+std::string Qounters::Utils::GetBeatmapIdentifier(BeatmapKey key) {
+    if (!key.levelId)
         return "Unknown";
-    auto [id, characteristic, difficulty] = GetBeatmapDetails(beatmap);
-    return string_format("%s_%s_%i", id.c_str(), characteristic.c_str(), difficulty);
+    auto [id, characteristic, difficulty] = GetBeatmapDetails(key);
+    return fmt::format("{}_{}_{}", id.c_str(), characteristic.c_str(), difficulty);
 }
 
 #include "UnityEngine/GameObject.hpp"
