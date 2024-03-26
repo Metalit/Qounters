@@ -538,6 +538,15 @@ void Qounters::OptionsViewController::DidActivate(bool firstActivation, bool add
     });
     gRotSliderZ->GetComponent<RectTransform*>()->set_sizeDelta({0, 8});
 
+    auto GroupAnchorStringViews = std::vector<std::string_view>({ "Left", "Right", "Top", "Bottom" });
+
+    gAnchorDropdown = Utils::CreateDropdownEnum(groupParent, "Anchor", 0, GroupAnchorStringViews, [this](int val) {
+        static int id = Editor::GetActionId();
+        Editor::GetSelectedGroup(id).Anchor = val;
+        Editor::UpdatePosition();
+        Editor::FinalizeAction();
+    });
+
     auto gButtonsParent1 = Lite::CreateHorizontalLayoutGroup(groupParent);
     gButtonsParent1->set_spacing(3);
 
@@ -716,12 +725,14 @@ void Qounters::OptionsViewController::UpdateSimpleUI() {
             gPosIncrementY->currentValue = state.Position.y;
             gPosIncrementY->UpdateState();
             gRotSlider->set_Value(state.Rotation);
+            gAnchorDropdown->SelectCellWithIdx(state.Anchor);
         }
         gPosIncrementZ->get_gameObject()->SetActive(state.Detached);
         gRotSlider->get_gameObject()->SetActive(!state.Detached);
         gRotSliderX->get_gameObject()->SetActive(state.Detached);
         gRotSliderY->get_gameObject()->SetActive(state.Detached);
         gRotSliderZ->get_gameObject()->SetActive(state.Detached);
+        gAnchorDropdown->get_gameObject()->SetActive(!state.Detached);
         Lite::SetButtonText(gDetachButton, state.Detached ? "Attach" : "Detach");
     } else if (component) {
         auto& state = Editor::GetSelectedComponent(-1);

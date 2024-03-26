@@ -139,6 +139,7 @@ DECLARE_CLASS_CODEGEN(Qounters, OptionsViewController, HMUI::ViewController,
     DECLARE_INSTANCE_FIELD(BSML::SliderSetting*, gRotSliderX);
     DECLARE_INSTANCE_FIELD(BSML::SliderSetting*, gRotSliderY);
     DECLARE_INSTANCE_FIELD(BSML::SliderSetting*, gRotSliderZ);
+    DECLARE_INSTANCE_FIELD(HMUI::SimpleTextDropdown*, gAnchorDropdown);
     DECLARE_INSTANCE_FIELD(UnityEngine::UI::Button*, gComponentButton);
     DECLARE_INSTANCE_FIELD(UnityEngine::UI::Button*, gDetachButton);
     DECLARE_INSTANCE_FIELD(UnityEngine::UI::Button*, gDeleteButton);
