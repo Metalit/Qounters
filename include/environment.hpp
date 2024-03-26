@@ -2,6 +2,7 @@
 
 #include "main.hpp"
 
+#include "GlobalNamespace/EnvironmentInfoSO.hpp"
 namespace Qounters {
     void PresentSettingsEnvironment();
     void DismissSettingsEnvironment();
@@ -9,6 +10,6 @@ namespace Qounters {
     bool InSettingsEnvironment();
     std::string CurrentSettingsEnvironment();
 
-    void OnSceneStart();
+    void OnSceneStart(GlobalNamespace::EnvironmentInfoSO* environment);
     void OnSceneEnd();
 }

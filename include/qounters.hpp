@@ -9,6 +9,9 @@
 namespace Qounters {
     enum class HUDType {
         Basic,
+        Narrow,
+        Lattice,
+        Rock,
         Rotational,
         Multiplayer,
         Unsupported,

@@ -293,10 +293,10 @@ void Qounters::SetDefaultOptions(Component& component) {
 
 const std::map<std::string, HUDType> supportedHUDs = {
     {"BasicGameHUD", HUDType::Basic},
-    {"NarrowGameHUD", HUDType::Basic},
-    {"NarrowGameHUDVariant", HUDType::Basic},
-    {"LatticeHUD", HUDType::Basic},
-    {"RockGameHUD", HUDType::Basic},
+    {"NarrowGameHUD", HUDType::Narrow},
+    {"NarrowGameHUDVariant", HUDType::Narrow},
+    {"LatticeHUD", HUDType::Lattice},
+    {"RockGameHUD", HUDType::Rock},
     {"FlyingGameHUD/Container", HUDType::Rotational},
     {"MultiplayerLocalActivePlayerController(Clone)/IsActiveObjects/HUD", HUDType::Multiplayer},
     {"MultiplayerDuelLocalActivePlayerController(Clone)/IsActiveObjects/HUD", HUDType::Multiplayer},
@@ -304,10 +304,28 @@ const std::map<std::string, HUDType> supportedHUDs = {
 
 const std::map<HUDType, std::map<Group::Anchors, std::tuple<std::string, Vector3, Vector2, Vector2>>> hudPanels = {
     {HUDType::Basic, {
-        {Group::Anchors::Left, {"LeftPanel", {-3, 0.4, 7}, {50, 125}, {0, 0.75}}},
-        {Group::Anchors::Right, {"RightPanel", {3, 0.4, 7}, {50, 125}, {0, 0.75}}},
+        {Group::Anchors::Left, {"LeftPanel", {-3.2f, 0.4, 7}, {50, 125}, {0, 0.75}}},
+        {Group::Anchors::Right, {"RightPanel", {3.2f, 0.4, 7}, {50, 125}, {0, 0.75}}},
         {Group::Anchors::Bottom, {"EnergyPanel", {0, -0.64, 7}, {-25, 25}, {0, -10}}},
         {Group::Anchors::Top, {"QountersTopPanel", {0, 3, 7}, {125, 50}, {}}},
+    }},
+    {HUDType::Narrow, {
+        {Group::Anchors::Left, {"LeftPanel", {-2, 0.4, 7}, {50, 125}, {0, 0.75}}},
+        {Group::Anchors::Right, {"RightPanel", {2, 0.4, 7}, {50, 125}, {0, 0.75}}},
+        {Group::Anchors::Bottom, {"EnergyPanel", {0, 0.4, 7}, {-25, 25}, {0, -10}}},
+        {Group::Anchors::Top, {"QountersTopPanel", {0, 3, 7}, {125, 50}, {}}},
+    }},
+    {HUDType::Lattice, {
+        {Group::Anchors::Left, {"LeftPanel", {-3.2f, 0.4, 7}, {50, 125}, {0, 0.75}}},
+        {Group::Anchors::Right, {"RightPanel", {3.2f, 0.4, 7}, {50, 125}, {0, 0.75}}},
+        {Group::Anchors::Bottom, {"EnergyPanel", {0, -0.64, 7}, {-25, 25}, {0, -10}}},
+        {Group::Anchors::Top, {"QountersTopPanel", {0, 3, 7}, {125, 50}, {}}},
+    }},
+    {HUDType::Rock, {
+        {Group::Anchors::Left, {"LeftPanel", {-3.02f, -0.67f, 5.63f}, {50, 125}, {0, 0.75}}},
+        {Group::Anchors::Right, {"RightPanel", {3.02f, -0.67f, 5.63f}, {50, 125}, {0, 0.75}}},
+        {Group::Anchors::Bottom, {"EnergyPanel", {0, -0.14, 5.63f}, {-25, 25}, {0, -10}}},
+        {Group::Anchors::Top, {"QountersTopPanel", {0, 3, 5.63f}, {125, 50}, {}}},
     }},
     {HUDType::Rotational, {
         {Group::Anchors::Left, {"ComboPanel", {-80, 0, 0}, {10, 10}, {}}},

@@ -37,9 +37,9 @@ SimpleLevelStarter* GetLevelStarter() {
 #include "Zenject/DiContainer.hpp"
 #include "custom-types/shared/delegate.hpp"
 
-void Present(SimpleLevelStarter* levelStarter, bool refresh, ScenesTransitionSetupDataSO* setupData) {
-    auto startDelegate = custom_types::MakeDelegate<System::Action_1<Zenject::DiContainer*>*>((std::function<void (Zenject::DiContainer*)>) [](Zenject::DiContainer*) {
-        Qounters::OnSceneStart();
+void Present(SimpleLevelStarter* levelStarter, bool refresh, ScenesTransitionSetupDataSO* setupData, EnvironmentInfoSO* environment = nullptr) {
+    auto startDelegate = custom_types::MakeDelegate<System::Action_1<Zenject::DiContainer*>*>((std::function<void (Zenject::DiContainer*)>) [environment](Zenject::DiContainer*) {
+        Qounters::OnSceneStart(environment);
     });
 
     if (refresh)
@@ -89,6 +89,18 @@ void PresentMultiplayer(SimpleLevelStarter* levelStarter, bool refresh, BeatmapL
 #include "GlobalNamespace/LevelCompletionResults.hpp"
 #include "GlobalNamespace/EnvironmentsListModel.hpp"
 #include "GlobalNamespace/PlayerDataFileModel.hpp"
+#include "GlobalNamespace/BpmTimeProcessor.hpp"
+#include "GlobalNamespace/EnvironmentKeywords.hpp"
+#include "GlobalNamespace/ISortedList_1.hpp"
+#include "GlobalNamespace/BeatmapDataSortedListForTypeAndIds_1.hpp"
+#include "UnityEngine/TextAsset.hpp"
+#include "UnityEngine/JsonUtility.hpp"
+#include "System/Collections/Generic/Dictionary_2.hpp"
+#include "System/Collections/Generic/LinkedList_1.hpp"
+#include "System/Collections/Generic/LinkedListNode_1.hpp"
+#include "BeatmapSaveDataVersion4/LightshowSaveData.hpp"
+#include "BeatmapSaveDataVersion3/BpmChangeEventData.hpp"
+#include "BeatmapDataLoaderVersion4/BeatmapDataLoader.hpp"
 
 void PresentSingleplayer(SimpleLevelStarter* levelStarter, bool refresh, BeatmapLevel* level, BeatmapKey diff, ColorScheme* colors) {
     auto env = OverrideEnvironmentSettings::New_ctor();
@@ -115,7 +127,7 @@ void PresentSingleplayer(SimpleLevelStarter* levelStarter, bool refresh, Beatmap
     auto setupData = levelStarter->_menuTransitionsHelper->_standardLevelScenesTransitionSetupData;
     setupData->Init("Settings", diff, level, env, colors, nullptr, levelStarter->_gameplayModifiers, levelStarter->_playerDataModel->playerData->playerSpecificSettings, nullptr, levelStarter->_environmentsListModel, levelStarter->_menuTransitionsHelper->_audioClipAsyncLoader, levelStarter->_menuTransitionsHelper->_beatmapDataLoader, "", levelStarter->_menuTransitionsHelper->_beatmapLevelsModel, false, false, System::Nullable_1<RecordingToolManager::SetupData>());
 
-    Present(levelStarter, refresh, setupData);
+    Present(levelStarter, refresh, setupData, environment);
 }
 
 #include "GlobalNamespace/BeatmapLevelSO.hpp"
@@ -254,7 +266,7 @@ void OnMultiplayerSceneStart(MultiplayerController* multiplayerController) {
 #include "GlobalNamespace/LightColorGroup.hpp"
 #include "GlobalNamespace/LightGroup.hpp"
 
-void Qounters::OnSceneStart() {
+void Qounters::OnSceneStart(EnvironmentInfoSO* environment) {
     QountersLogger::Logger.info("Settings scene start");
 
     if (auto multiplayerController = Object::FindObjectOfType<MultiplayerController*>())
@@ -288,6 +300,42 @@ void Qounters::OnSceneStart() {
     auto env = GameObject::Find("Environment");
     env->SetActive(false);
     env->SetActive(true);
+    
+    std::vector<BeatmapEventData*> eventData = std::vector<BeatmapEventData*>();
+    if (environment) {
+        if (environment->defaultLightshowAsset) {
+            QountersLogger::Logger.debug("Loading v3 lightshow data");
+            //Should we convert the save data ourselves? This is insane
+            auto envKeywords = EnvironmentKeywords::New_ctor(environment->environmentKeywords);
+            auto envLightGroups = environment->environmentLightGroups;
+            auto lightShowJSON = environment->defaultLightshowAsset->text;
+            auto lightShowSaveData = JsonUtility::FromJson<BeatmapSaveDataVersion4::LightshowSaveData*>(lightShowJSON);
+            auto bpmTimeProcessor = BpmTimeProcessor::New_ctor(69.420f, ListW<BeatmapSaveDataVersion3::BpmChangeEventData*>::New()->i___System__Collections__Generic__IReadOnlyList_1_T_());
+
+            auto lightShowBeatmapData = BeatmapData::New_ctor(4);
+            lightShowBeatmapData->set_updateAllBeatmapDataOnInsert(true);
+
+            BeatmapDataLoaderVersion4::BeatmapDataLoader::LoadLightshow(lightShowBeatmapData, lightShowSaveData, bpmTimeProcessor, envKeywords, envLightGroups);
+            
+            auto events = lightShowBeatmapData->_allBeatmapData;
+            auto eventsLinkedList = events->items;
+            auto currentEvent = eventsLinkedList->First;
+            for (size_t i = 0; i < events->count; i++)
+            {
+                auto event = il2cpp_utils::try_cast<BeatmapEventData>(currentEvent->Value);
+                if (event) {
+                    auto eventDataObject = event.value();
+                    eventData.push_back(eventDataObject);
+                }
+                if (currentEvent != eventsLinkedList->Last) 
+                    currentEvent = currentEvent->Next;
+                else
+                    break;
+            }
+
+            QountersLogger::Logger.debug("Loaded defaults");
+        }
+    }
 
     if (auto bcu = Object::FindObjectOfType<BeatmapCallbacksUpdater*>()) {
         auto bcc = bcu->_beatmapCallbacksController;
@@ -300,18 +348,12 @@ void Qounters::OnSceneStart() {
         bcc->TriggerBeatmapEvent(BasicBeatmapEventData::New_ctor(0, BasicBeatmapEventType::Event4, 1, 1));
 
         //V3
-        auto manager = Resources::FindObjectsOfTypeAll<LightColorGroupEffectManager*>()->FirstOrDefault();
-        if(manager) {
-            auto groups = manager->_lightGroups;
-            int i = 0;
-            for (size_t g = 0; g < groups.size(); g++)
+        if (eventData.size() > 0) {
+            for (size_t i = 0; i < eventData.size(); i++)
             {
-                auto lightGroup = groups[g];
-                for (size_t e = 0; e < lightGroup->get_numberOfElements(); e++)
-                {
-                    i++;
-                    auto color = (i % 2) == 0 ? EnvironmentColorType::Color0 : EnvironmentColorType::Color1;
-                    bcc->TriggerBeatmapEvent(LightColorBeatmapEventData::New_ctor(0, g, e, false, EaseType::Linear, color, 1.0f, 0, 0.0f, false));
+                auto event = eventData[i];
+                if(event) {
+                    bcc->TriggerBeatmapEvent(event);
                 }
             }
         }
