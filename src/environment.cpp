@@ -28,7 +28,7 @@ std::string currentEnvironment = "";
 #include "GlobalNamespace/SimpleLevelStarter.hpp"
 
 SimpleLevelStarter* GetLevelStarter() {
-    return Resources::FindObjectsOfTypeAll<SimpleLevelStarter*>()->First();
+    return Resources::FindObjectsOfTypeAll<SimpleLevelStarter*>()->Last();
 }
 
 #include "GlobalNamespace/GameScenesManager.hpp"
@@ -119,6 +119,7 @@ void PresentSingleplayer(SimpleLevelStarter* levelStarter, bool refresh, Beatmap
 }
 
 #include "GlobalNamespace/BeatmapLevelSO.hpp"
+#include "GlobalNamespace/BeatmapCharacteristicSO.hpp"
 #include "GlobalNamespace/ColorSchemesSettings.hpp"
 #include "GlobalNamespace/BeatmapLevelExtensions.hpp"
 #include "UnityEngine/AddressableAssets/AssetReferenceT_1.hpp"
@@ -127,6 +128,10 @@ void PresentScene(SimpleLevelStarter* levelStarter, bool refresh) {
     auto level = BeatmapLevelExtensions::ToRuntime(levelStarter->_beatmapLevel->LoadAssetAsync().WaitForCompletion().ptr()); // This is GROSS and I DO NOT care, maybe we can just make this ourselves instead of relying on the game. -Future
     auto diff = BeatmapKey(levelStarter->_beatmapCharacteristic, levelStarter->_beatmapDifficulty, level->levelID);
     auto colors = levelStarter->_playerDataModel->playerData->colorSchemesSettings->GetOverrideColorScheme();
+
+    QountersLogger::Logger.debug("Presenting scene");
+    QountersLogger::Logger.debug("level {}", fmt::ptr(level));
+    QountersLogger::Logger.debug("level info {} {} {}", level->levelID, diff.difficulty.value__, diff.beatmapCharacteristic->serializedName);
 
     currentEnvironment = getConfig().Environment.GetValue();
     if (currentEnvironment == "Multiplayer")
