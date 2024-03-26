@@ -188,6 +188,8 @@ void LogTransform(Transform* trans, int depth = 1)
     }
 }
 
+#include "GlobalNamespace/PlayerDataFileModel.hpp"
+
 void SettingsViewController::DidActivate(bool firstActivation, bool addedToHierarchy, bool screenSystemEnabling) {
     if (!firstActivation) {
         UpdateUI();
@@ -195,27 +197,12 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
     }
 
     std::vector<std::string> dropdownStrings = {};
-    auto manager = Helpers::GetMainFlowCoordinator()->_playerDataModel->_playerDataFileModel;
+    auto fileModel = Helpers::GetMainFlowCoordinator()->_playerDataModel->_playerDataFileModel;
+    auto listModel = fileModel->_environmentsListModel;
 
-    /*for (auto& env : ListW<EnvironmentInfoSO*>(manager->_allEnvironmentInfos->GetAllEnvironmentInfosWithType(manager->_normalEnvironmentType)))
-        dropdownStrings.push_back(static_cast<std::string>(env->environmentName));
-
-    for (auto& env : ListW<EnvironmentInfoSO*>(manager->_allEnvironmentInfos->GetAllEnvironmentInfosWithType(manager->_a360DegreesEnvironmentType)))
-        dropdownStrings.push_back(static_cast<std::string>(env->environmentName));
-
-    for (auto& env : manager->_allEnvironmentInfos->environmentInfos) {
-        std::string str = env->environmentName;
-        bool add = true;
-        for (auto& added : dropdownStrings) {
-            if (added == str) {
-                add = false;
-                break;
-            }
-        }
-        if (add)
-            dropdownStrings.emplace_back(str);
-    }*/
-    dropdownStrings.emplace_back("balls");
+    for (auto& info : listModel->_envInfos) {
+        dropdownStrings.push_back(info->get_environmentName());
+    }
 
     //bsml requires string views for dropdowns. Needs a seperate vector to keep original strings from leaving scope until the dropdown is created.
     auto dropdownStringViews = std::vector<std::string_view>(dropdownStrings.size());
