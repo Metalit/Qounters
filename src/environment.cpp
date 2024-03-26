@@ -126,7 +126,7 @@ void PresentSingleplayer(SimpleLevelStarter* levelStarter, bool refresh, Beatmap
 
 void PresentScene(SimpleLevelStarter* levelStarter, bool refresh) {
     auto levelSO = !levelStarter->_beatmapLevel->IsValid() ? levelStarter->_beatmapLevel->LoadAssetAsync().WaitForCompletion().ptr() : reinterpret_cast<BeatmapLevelSO*>(levelStarter->_beatmapLevel->Asset.ptr()); // This is GROSS and I DO NOT care, maybe we can just make this ourselves instead of relying on the game. -Future
-    auto level = BeatmapLevelExtensions::ToRuntime(levelSO); // This is GROSS and I DO NOT care, maybe we can just make this ourselves instead of relying on the game. -Future
+    auto level = BeatmapLevelExtensions::ToRuntime(levelSO);
     auto diff = BeatmapKey(levelStarter->_beatmapCharacteristic, levelStarter->_beatmapDifficulty, level->levelID);
     auto colors = levelStarter->_playerDataModel->playerData->colorSchemesSettings->GetOverrideColorScheme();
 
