@@ -1,5 +1,6 @@
 #include "customtypes/editing.hpp"
 
+#include "UnityEngine/zzzz__RectTransform_def.hpp"
 #include "config.hpp"
 #include "customtypes/settings.hpp"
 #include "editor.hpp"
@@ -334,7 +335,9 @@ void EditingBase::OnInitializePotentialDrag(EventSystems::PointerEventData* even
 }
 
 UnityEngine::Vector2 EditingBase::GetPointerPos(EventSystems::PointerEventData* eventData) {
-    auto pos = rectTransform->get_parent()->InverseTransformPoint(eventData->pointerCurrentRaycast.worldPosition);
+    auto parent = rectTransform->get_parent();
+    if(parent->get_name() == "BSMLImage") parent = parent->get_parent();
+    auto pos = parent->InverseTransformPoint(eventData->pointerCurrentRaycast.worldPosition);
     return {pos.x, pos.y};
 }
 
@@ -532,7 +535,6 @@ void EditingComponent::OnDrag(EventSystems::PointerEventData* eventData) {
         dragStart = Time::get_time();
     }
     dragging = true;
-
     component.Position = Vector2::op_Addition(position, grabOffset);
     Editor::UpdatePosition();
     OptionsViewController::GetInstance()->UpdateSimpleUI();

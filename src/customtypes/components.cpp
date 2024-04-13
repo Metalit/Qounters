@@ -383,6 +383,8 @@ Sprite* ImageSpriteCache::GetSprite(std::string name) {
     }
     inst->spritePaths.emplace_back(name);
     auto ret = Lite::FileToSprite(IMAGE_DIRECTORY + name);
+    if(!ret)
+        return nullptr;
     inst->sprites->Add(ret);
     return ret;
 }
