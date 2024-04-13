@@ -74,9 +74,9 @@ void PresentMultiplayer(SimpleLevelStarter* levelStarter, bool refresh, BeatmapL
     auto levelLoader = levelStarter->_menuTransitionsHelper->_beatmapLevelsModel->levelLoader;
     //TODO: In the future, make a custom type inheriting IBeatmapLevelData and return hardcoded beatmaps, this sucks -Future
     auto levelData = levelLoader->LoadBeatmapLevelDataAsync(level, System::Threading::CancellationToken::get_None()); // FUCK
-    BSML::MainThreadScheduler::ScheduleUntil(std::function<bool ()>([levelData](){
+    BSML::MainThreadScheduler::ScheduleUntil(std::function<bool ()>([&](){
         return levelData->GetAwaiter().IsCompleted;
-    }), [levelData](){
+    }), [&](){
         auto beatmapLevelData = levelData->Result.beatmapLevelData;
         setupData->Init("Settings", diff, level, beatmapLevelData, colors, levelStarter->_gameplayModifiers, levelStarter->_playerDataModel->playerData->playerSpecificSettings, nullptr, levelStarter->_menuTransitionsHelper->_audioClipAsyncLoader, levelStarter->_menuTransitionsHelper->_beatmapDataLoader, false);
         localFakeConnectedPlayer = nullptr;
