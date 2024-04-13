@@ -4,6 +4,7 @@
 #include "editor.hpp"
 #include "environment.hpp"
 #include "config.hpp"
+#include "logger.hpp"
 #include "main.hpp"
 #include "sources.hpp"
 #include "sourceui.hpp"
@@ -15,6 +16,7 @@
 #include "bsml/shared/Helpers/getters.hpp"
 
 #include "UnityEngine/UI/ContentSizeFitter.hpp"
+#include <vector>
 
 DEFINE_TYPE(Qounters, SettingsFlowCoordinator);
 DEFINE_TYPE(Qounters, SettingsViewController);
@@ -82,7 +84,7 @@ void Qounters::SettingsFlowCoordinator::DismissScene() {
 }
 
 void Qounters::SettingsFlowCoordinator::RefreshScene() {
-    if (CurrentSettingsEnvironment() != getConfig().Environment.GetValue())
+    if (CurrentSettingsEnvironment() != getConfig().Environment.GetValue() || CurrentColorScheme() != getConfig().ColorScheme.GetValue())
         ConfirmAction(RefreshSettingsEnvironment);
 }
 
@@ -179,15 +181,8 @@ void Qounters::SettingsFlowCoordinator::MakeNewPreset(std::string name, bool rem
 #include "GlobalNamespace/PlayerDataModel.hpp"
 #include "GlobalNamespace/PlayerDataFileManagerSO.hpp"
 #include "GlobalNamespace/EnvironmentsListModel.hpp"
-
-void LogTransform(Transform* trans, int depth = 1)
-{
-    QountersLogger::Logger.info("{} {}", std::string(depth, '-').c_str(), static_cast<std::string>(trans->get_name()).c_str());
-    for (int i = 0; i < trans->get_childCount(); ++i) {
-        LogTransform(trans->GetChild(i), depth + 1);
-    }
-}
-
+#include "GlobalNamespace/ColorScheme.hpp"
+#include "GlobalNamespace/ColorSchemesSettings.hpp"
 #include "GlobalNamespace/PlayerDataFileModel.hpp"
 
 void SettingsViewController::DidActivate(bool firstActivation, bool addedToHierarchy, bool screenSystemEnabling) {
@@ -196,19 +191,26 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
         return;
     }
 
-    std::vector<std::string> dropdownStrings = {};
     auto fileModel = Helpers::GetMainFlowCoordinator()->_playerDataModel->_playerDataFileModel;
     auto listModel = fileModel->_environmentsListModel;
-
-    for (auto& info : listModel->_envInfos) {
-        dropdownStrings.push_back(info->get_environmentName());
-    }
+    auto colorSchemeSettings = fileModel->_colorSchemesSettings;
 
     //bsml requires string views for dropdowns. Needs a seperate vector to keep original strings from leaving scope until the dropdown is created.
-    auto dropdownStringViews = std::vector<std::string_view>(dropdownStrings.size());
-    for (int i = 0; i < dropdownStrings.size(); ++i)
-        dropdownStringViews[i] = dropdownStrings[i];
-    
+    std::vector<std::string> environmentStrings = {};
+    std::vector<std::string_view> environmentStringViews = {};
+    for (auto& info : listModel->_envInfos) 
+        environmentStrings.push_back(static_cast<std::string>(info->_environmentName));
+    for (const auto& string : environmentStrings)
+        environmentStringViews.push_back(string);
+
+    std::vector<std::string> colorSchemeStrings = {};
+    std::vector<std::string_view> colorSchemeStringViews = {};
+    colorSchemeStrings.push_back("User Override / Environment");
+    colorSchemeStrings.push_back("Environment Default");
+    for (int i = 0; i < colorSchemeSettings->GetNumberOfColorSchemes(); i++)
+        colorSchemeStrings.push_back(static_cast<std::string>(colorSchemeSettings->GetColorSchemeForIdx(i)->_colorSchemeId));
+    for (const auto& string : colorSchemeStrings)
+        colorSchemeStringViews.push_back(string);
 
     auto vertical = Lite::CreateVerticalLayoutGroup(this);
     vertical->set_childControlHeight(false);
@@ -232,15 +234,21 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
 
     auto environment = Lite::CreateHorizontalLayoutGroup(vertical);
     environment->set_spacing(3);
-    auto dropdown = AddConfigValueDropdownString(environment, getConfig().Environment, dropdownStringViews);
+    auto dropdown = AddConfigValueDropdownString(environment, getConfig().Environment, environmentStringViews);
     dropdown->GetComponentsInParent<UI::LayoutElement*>(true)->First()->set_preferredWidth(65);
     auto apply = Lite::CreateUIButton(environment, "Apply", Qounters::SettingsFlowCoordinator::RefreshScene);
 
+    auto colorScheme = Lite::CreateHorizontalLayoutGroup(vertical);
+    environment->set_spacing(3);
+    auto colorSchemeDropdown = AddConfigValueDropdownString(colorScheme, getConfig().ColorScheme, colorSchemeStringViews);
+    colorSchemeDropdown->GetComponentsInParent<UI::LayoutElement*>(true)->First()->set_preferredWidth(65);
+    auto colorSchemeApply = Lite::CreateUIButton(colorScheme, "Apply", Qounters::SettingsFlowCoordinator::RefreshScene);
+
     Lite::CreateText(vertical, "Changes to the preset list are always saved!")->set_alignment(TMPro::TextAlignmentOptions::Center);
 
-    std::string_view hi = ":p";
-    std::vector<std::string_view> dropdownStrings2 = { hi };
-    presetDropdown = Lite::CreateDropdown(vertical, "Current Preset", ":p", dropdownStrings2, Qounters::SettingsFlowCoordinator::SelectPreset)->dropdown;
+    std::string_view empty = "";
+    std::vector<std::string_view> dropdownStrings2 = { empty };
+    presetDropdown = Lite::CreateDropdown(vertical, "Current Preset", "", dropdownStrings2, Qounters::SettingsFlowCoordinator::SelectPreset)->dropdown;
 
     auto buttons3 = Lite::CreateHorizontalLayoutGroup(vertical);
     buttons3->GetComponent<UI::LayoutElement*>()->set_preferredHeight(9);
@@ -414,8 +422,6 @@ void TemplatesViewController::DidActivate(bool firstActivation, bool addedToHier
     auto fitter = modalLayout->GetComponent<UI::ContentSizeFitter*>();
     fitter->set_verticalFit(UI::ContentSizeFitter::FitMode::PreferredSize);
     fitter->set_horizontalFit(UI::ContentSizeFitter::FitMode::PreferredSize);
-
-    LogTransform(transform);
 
     uiInitialized = true;
 }

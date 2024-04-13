@@ -24,6 +24,7 @@ UIKeyboardManager* keyboardManager;
 GameObject* menuEnv;
 bool inSettings = false;
 std::string currentEnvironment = "";
+std::string currentColors = "";
 
 #include "GlobalNamespace/SimpleLevelStarter.hpp"
 
@@ -93,6 +94,7 @@ void PresentMultiplayer(SimpleLevelStarter* levelStarter, bool refresh, BeatmapL
 #include "GlobalNamespace/EnvironmentKeywords.hpp"
 #include "GlobalNamespace/ISortedList_1.hpp"
 #include "GlobalNamespace/BeatmapDataSortedListForTypeAndIds_1.hpp"
+#include "GlobalNamespace/ColorSchemeSO.hpp"
 #include "UnityEngine/TextAsset.hpp"
 #include "UnityEngine/JsonUtility.hpp"
 #include "System/Collections/Generic/Dictionary_2.hpp"
@@ -112,6 +114,7 @@ void PresentSingleplayer(SimpleLevelStarter* levelStarter, bool refresh, Beatmap
     EnvironmentInfoSO* environment = nullptr;
     ListW<UnityW<EnvironmentInfoSO>> environments = ListW<UnityW<EnvironmentInfoSO>>::New();
     environments->AddRange(listModel->GetAllEnvironmentInfosWithType(GlobalNamespace::EnvironmentType::Normal)->i___System__Collections__Generic__IEnumerable_1_T_());
+    environments->AddRange(listModel->GetAllEnvironmentInfosWithType(GlobalNamespace::EnvironmentType::Circle)->i___System__Collections__Generic__IEnumerable_1_T_());
     for (auto& info : environments) {
         if (info->environmentName == getConfig().Environment.GetValue()) {
             environment = info;
@@ -122,7 +125,11 @@ void PresentSingleplayer(SimpleLevelStarter* levelStarter, bool refresh, Beatmap
         environment = listModel->GetFirstEnvironmentInfoWithType(GlobalNamespace::EnvironmentType::Normal);
         getConfig().Environment.SetValue(environment->environmentName);
     }
-    env->SetEnvironmentInfoForType(GlobalNamespace::EnvironmentType::Normal, environment);
+    env->SetEnvironmentInfoForType(environment->environmentType, environment);
+
+    if (colors == nullptr) {
+        colors = environment->colorScheme->colorScheme;
+    }
 
     auto setupData = levelStarter->_menuTransitionsHelper->_standardLevelScenesTransitionSetupData;
     setupData->Init("Settings", diff, level, env, colors, nullptr, levelStarter->_gameplayModifiers, levelStarter->_playerDataModel->playerData->playerSpecificSettings, nullptr, levelStarter->_environmentsListModel, levelStarter->_menuTransitionsHelper->_audioClipAsyncLoader, levelStarter->_menuTransitionsHelper->_beatmapDataLoader, "", levelStarter->_menuTransitionsHelper->_beatmapLevelsModel, false, false, System::Nullable_1<RecordingToolManager::SetupData>());
@@ -140,7 +147,16 @@ void PresentScene(SimpleLevelStarter* levelStarter, bool refresh) {
     auto levelSO = !levelStarter->_beatmapLevel->IsValid() ? levelStarter->_beatmapLevel->LoadAssetAsync().WaitForCompletion().ptr() : reinterpret_cast<BeatmapLevelSO*>(levelStarter->_beatmapLevel->Asset.ptr()); // This is GROSS and I DO NOT care, maybe we can just make this ourselves instead of relying on the game. -Future
     auto level = BeatmapLevelExtensions::ToRuntime(levelSO);
     auto diff = BeatmapKey(levelStarter->_beatmapCharacteristic, levelStarter->_beatmapDifficulty, level->levelID);
-    auto colors = levelStarter->_playerDataModel->playerData->colorSchemesSettings->GetOverrideColorScheme();
+
+    ColorScheme* colors = nullptr;
+    currentColors = getConfig().ColorScheme.GetValue();
+    auto colorSchemeSettings = levelStarter->_playerDataModel->playerData->colorSchemesSettings;
+    if(currentColors == "User Override / Environment" || !colorSchemeSettings->_colorSchemesDict->ContainsKey(currentColors)) {
+        auto isOverride = colorSchemeSettings->overrideDefaultColors;
+        colors = isOverride ? colorSchemeSettings->GetOverrideColorScheme() : nullptr;
+    }
+    else if (currentColors != "Environment Default")
+        colors = colorSchemeSettings->GetColorSchemeForId(currentColors);
 
     QountersLogger::Logger.debug("Presenting scene");
     QountersLogger::Logger.debug("level {}", fmt::ptr(level));
@@ -219,6 +235,10 @@ bool Qounters::InSettingsEnvironment() {
 
 std::string Qounters::CurrentSettingsEnvironment() {
     return currentEnvironment;
+}
+
+std::string Qounters::CurrentColorScheme() {
+    return currentColors;
 }
 
 #include "GlobalNamespace/MultiplayerController.hpp"
