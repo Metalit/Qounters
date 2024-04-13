@@ -93,7 +93,7 @@ namespace Qounters {
         sourceDropdown = Utils::CreateDropdown(parent, "Text Source", options.TextSource, textSourceStringViews, [parent](std::string val) {
             static int id = Editor::GetActionId();
             auto opts = Editor::GetOptions<TextOptions>(id);
-            if (val != opts.TextSource)
+            if (val == opts.TextSource)
                 return;
             sourceDropdown->Hide(false);
             opts.TextSource = val;
