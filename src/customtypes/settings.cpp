@@ -1,4 +1,5 @@
 #include "customtypes/settings.hpp"
+#include "UnityEngine/zzzz__GameObject_def.hpp"
 #include "customtypes/components.hpp"
 #include "customtypes/editing.hpp"
 #include "editor.hpp"
@@ -6,6 +7,7 @@
 #include "config.hpp"
 #include "logger.hpp"
 #include "main.hpp"
+#include "playtest.hpp"
 #include "sources.hpp"
 #include "sourceui.hpp"
 #include "templates.hpp"
@@ -205,7 +207,6 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
 
     std::vector<std::string> colorSchemeStrings = {};
     std::vector<std::string_view> colorSchemeStringViews = {};
-    colorSchemeStrings.push_back("User Override / Environment");
     colorSchemeStrings.push_back("Environment Default");
     for (int i = 0; i < colorSchemeSettings->GetNumberOfColorSchemes(); i++)
         colorSchemeStrings.push_back(static_cast<std::string>(colorSchemeSettings->GetColorSchemeForIdx(i)->_colorSchemeId));
@@ -244,6 +245,8 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
     colorSchemeDropdown->GetComponentsInParent<UI::LayoutElement*>(true)->First()->set_preferredWidth(65);
     auto colorSchemeApply = Lite::CreateUIButton(colorScheme, "Apply", Qounters::SettingsFlowCoordinator::RefreshScene);
 
+    GameObject::New_ctor("")->transform->SetParent(vertical->transform);
+
     Lite::CreateText(vertical, "Changes to the preset list are always saved!")->set_alignment(TMPro::TextAlignmentOptions::Center);
 
     std::string_view empty = "";
@@ -279,7 +282,14 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
     snapToggle->SetParent(snapIncrement->GetParent(), false);
     UnityEngine::Object::Destroy(oldParent);
 
-    previewToggle = Lite::CreateToggle(vertical, "Preview Mode", false, Editor::SetPreviewMode)->toggle;
+    auto preview = Lite::CreateHorizontalLayoutGroup(vertical);
+    preview->set_spacing(3);
+    previewToggle = Lite::CreateToggle(preview, "Preview Mode", false, Editor::SetPreviewMode)->toggle;
+    previewToggle->GetComponentsInParent<UI::LayoutElement*>(true)->First()->set_preferredWidth(65);
+    playtestButton = Lite::CreateUIButton(preview, "Playtest", []() {
+        Qounters::PlayTest::SpawnSequence();
+    });
+    playtestButton->interactable = Editor::GetPreviewMode();
 
     confirmModal = Lite::CreateModal(this, Vector2(95, 25), []() { Qounters::SettingsFlowCoordinator::OnModalCancel(); });
     auto modalLayout1 = Lite::CreateVerticalLayoutGroup(confirmModal);

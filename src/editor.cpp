@@ -166,6 +166,7 @@ namespace Qounters::Editor {
 
     void SetPreviewMode(bool preview) {
         previewMode = preview;
+        SettingsViewController::GetInstance()->playtestButton->interactable = preview;
         for (auto& [_, obj] : editing)
             obj->outline->set_enabled(!preview);
         Deselect();

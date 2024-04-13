@@ -77,6 +77,7 @@ DECLARE_CLASS_CODEGEN(Qounters, SettingsViewController, HMUI::ViewController,
     DECLARE_INSTANCE_FIELD(HMUI::SimpleTextDropdown*, presetDropdown);
     DECLARE_INSTANCE_FIELD(UnityEngine::UI::Button*, deleteButton);
     DECLARE_INSTANCE_FIELD(UnityEngine::UI::Toggle*, previewToggle);
+    DECLARE_INSTANCE_FIELD(UnityEngine::UI::Button*, playtestButton);
     DECLARE_INSTANCE_FIELD(HMUI::ModalView*, confirmModal);
     DECLARE_INSTANCE_FIELD(HMUI::ModalView*, nameModal);
 

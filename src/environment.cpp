@@ -1,7 +1,9 @@
 #include "config.hpp"
 #include "environment.hpp"
+#include "events.hpp"
 #include "internals.hpp"
 #include "main.hpp"
+#include "playtest.hpp"
 #include "qounters.hpp"
 #include "utils.hpp"
 #include "customtypes/settings.hpp"
@@ -72,9 +74,9 @@ void PresentMultiplayer(SimpleLevelStarter* levelStarter, bool refresh, BeatmapL
     auto levelLoader = levelStarter->_menuTransitionsHelper->_beatmapLevelsModel->levelLoader;
     //TODO: In the future, make a custom type inheriting IBeatmapLevelData and return hardcoded beatmaps, this sucks -Future
     auto levelData = levelLoader->LoadBeatmapLevelDataAsync(level, System::Threading::CancellationToken::get_None()); // FUCK
-    BSML::MainThreadScheduler::ScheduleUntil(std::function<bool ()>([&](){
+    BSML::MainThreadScheduler::ScheduleUntil(std::function<bool ()>([levelData](){
         return levelData->GetAwaiter().IsCompleted;
-    }), [&](){
+    }), [levelData](){
         auto beatmapLevelData = levelData->Result.beatmapLevelData;
         setupData->Init("Settings", diff, level, beatmapLevelData, colors, levelStarter->_gameplayModifiers, levelStarter->_playerDataModel->playerData->playerSpecificSettings, nullptr, levelStarter->_menuTransitionsHelper->_audioClipAsyncLoader, levelStarter->_menuTransitionsHelper->_beatmapDataLoader, false);
         localFakeConnectedPlayer = nullptr;
@@ -151,11 +153,7 @@ void PresentScene(SimpleLevelStarter* levelStarter, bool refresh) {
     ColorScheme* colors = nullptr;
     currentColors = getConfig().ColorScheme.GetValue();
     auto colorSchemeSettings = levelStarter->_playerDataModel->playerData->colorSchemesSettings;
-    if(currentColors == "User Override / Environment" || !colorSchemeSettings->_colorSchemesDict->ContainsKey(currentColors)) {
-        auto isOverride = colorSchemeSettings->overrideDefaultColors;
-        colors = isOverride ? colorSchemeSettings->GetOverrideColorScheme() : nullptr;
-    }
-    else if (currentColors != "Environment Default")
+    if (currentColors != "Environment Default")
         colors = colorSchemeSettings->GetColorSchemeForId(currentColors);
 
     QountersLogger::Logger.debug("Presenting scene");
@@ -286,6 +284,10 @@ void OnMultiplayerSceneStart(MultiplayerController* multiplayerController) {
 #include "GlobalNamespace/LightColorGroup.hpp"
 #include "GlobalNamespace/LightGroup.hpp"
 
+#include "GlobalNamespace/BeatmapObjectSpawnController.hpp"
+#include "GlobalNamespace/NoteData.hpp"
+
+
 void Qounters::OnSceneStart(EnvironmentInfoSO* environment) {
     QountersLogger::Logger.info("Settings scene start");
 
@@ -385,13 +387,15 @@ void Qounters::OnSceneStart(EnvironmentInfoSO* environment) {
 
     QountersLogger::Logger.debug("Disabling objects");
 
-    if (auto gameplay = GameObject::Find("StandardGameplay"))
-        Utils::DisableAllBut(gameplay->get_transform(), {"EventSystem", "ControllerLeft", "ControllerRight"});
+    if (auto gameplay = GameObject::Find("BeatmapCallbacksUpdater"))
+        gameplay->SetActive(false);
 
     GameObject::Find("DisableGCWhileEnabled")->SetActive(false);
 
     if (auto bts = GameObject::Find("BTSEnvironmentCharacterSpawner"))
         bts->SetActive(false); // the game literally just freezes
+
+    Qounters::PlayTest::Setup();
 }
 
 #include "GlobalNamespace/FadeInOutController.hpp"
