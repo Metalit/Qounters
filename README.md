@@ -28,4 +28,5 @@ Events can be used for another type of integration with `internals.hpp`. The var
 
 ## Credits
 
-* [danrouse](https://github.com/danrouse) for the original port to quest, Qounters-
+- [danrouse](https://github.com/danrouse) for the original port to quest, Qounters-
+- [FutureMapper](https://github.com/Futuremappermydud) for a bunch of help and general encouragement around the Unity update
