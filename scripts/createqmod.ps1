@@ -34,10 +34,22 @@ if ((-not ($cover -eq "./")) -and (Test-Path $cover)) {
     $filelist += ,$cover
 }
 
-foreach ($modFile in $modJson.modFiles) {
-    $path = "./build/" + $modFile
+foreach ($mod in $modJson.modFiles) {
+    $path = "./build/" + $mod
     if (-not (Test-Path $path)) {
-        $path = "./extern/libs/" + $modFile
+        $path = "./extern/libs/" + $mod
+    }
+    if (-not (Test-Path $path)) {
+        Write-Output "Error: could not find dependency: $path"
+        exit 1
+    }
+    $filelist += $path
+}
+
+foreach ($mod in $modJson.lateModFiles) {
+    $path = "./build/" + $mod
+    if (-not (Test-Path $path)) {
+        $path = "./extern/libs/" + $mod
     }
     if (-not (Test-Path $path)) {
         Write-Output "Error: could not find dependency: $path"
@@ -58,18 +70,9 @@ foreach ($lib in $modJson.libraryFiles) {
     $filelist += $path
 }
 
-$destinationPath = "/sdcard/ModData/" + $modJson.packageId + "/Mods/" + $modJson.id
-
-Get-ChildItem "./images/" | ForEach-Object {
-    $name = $_.NameString
-    $filelist += "./images/" + $name
-    $modJson.fileCopies += (ConvertFrom-Json -InputObject "{
-        `"name`": `"$name`",
-        `"destination`": `"$destinationPath/$name`"
-    }")
+foreach ($img in $modJson.fileCopies) {
+    $filelist += "./images/" + $img.name
 }
-
-ConvertTo-Json -InputObject $modJson -Depth 32 | Set-Content $mod
 
 $zip = $qmodName + ".zip"
 $qmod = $qmodName + ".qmod"

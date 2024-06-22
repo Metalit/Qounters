@@ -1,26 +1,25 @@
 #include "main.hpp"
+
+#include "bsml/shared/BSML.hpp"
+#include "config.hpp"
 #include "environment.hpp"
 #include "hooks.hpp"
-#include "config.hpp"
 #include "migration.hpp"
+#include "scotland2/shared/modloader.h"
 
-#include <filesystem>
+static modloader::ModInfo modInfo = {MOD_ID, VERSION, 0};
 
 bool hasCJD = false;
 GlobalNamespace::IConnectedPlayer* localFakeConnectedPlayer = nullptr;
 bool blockOtherRaycasts = false;
 std::unordered_set<UnityEngine::Canvas*> raycastCanvases = {};
 
-Logger& getLogger() {
-    static auto logger = new Logger(ModInfo{MOD_ID, VERSION}, LoggerOptions{false, true});
-    return *logger;
-}
+extern "C" void setup(CModInfo* info) {
+    Paper::Logger::RegisterFileContextId(MOD_ID);
 
-extern "C" void setup(ModInfo& info) {
-    info.id = MOD_ID;
-    info.version = VERSION;
+    *info = modInfo.to_c();
 
-    getConfig().Init(info);
+    getConfig().Init(modInfo);
 
     auto presets = getConfig().Presets.GetValue();
     auto defaultPreset = getConfig().Preset.GetDefaultValue();
@@ -37,18 +36,14 @@ extern "C" void setup(ModInfo& info) {
     std::filesystem::create_directories(IMAGE_DIRECTORY);
 }
 
-#include "questui/shared/QuestUI.hpp"
-#include "bsml/shared/BSML.hpp"
-
-extern "C" void load() {
+extern "C" void late_load() {
     il2cpp_functions::Init();
-    QuestUI::Init();
     BSML::Init();
 
     BSML::Register::RegisterMenuButton("Qounters++", "Qounters++ Settings", Qounters::PresentSettingsEnvironment);
 
-    hasCJD = Modloader::requireMod("CustomJSONData");
+    // hasCJD = Modloader::requireMod("CustomJSONData");
 
-    getLogger().debug("Installing hooks");
+    logger.info("Installing hooks");
     Qounters::InstallHooks();
 }

@@ -1,4 +1,14 @@
 #include "editor.hpp"
+
+#include "GlobalNamespace/VRController.hpp"
+#include "System/Single.hpp"
+#include "UnityEngine/Ray.hpp"
+#include "UnityEngine/Rect.hpp"
+#include "UnityEngine/Resources.hpp"
+#include "VRUIControls/VRGraphicRaycaster.hpp"
+#include "VRUIControls/VRInputModule.hpp"
+#include "VRUIControls/VRPointer.hpp"
+#include "bsml/shared/BSML-Lite.hpp"
 #include "config.hpp"
 #include "customtypes/editing.hpp"
 #include "customtypes/settings.hpp"
@@ -6,16 +16,6 @@
 #include "qounters.hpp"
 #include "sources.hpp"
 #include "utils.hpp"
-
-#include "questui/shared/BeatSaberUI.hpp"
-
-#include "VRUIControls/VRInputModule.hpp"
-#include "VRUIControls/VRPointer.hpp"
-#include "GlobalNamespace/VRController.hpp"
-#include "VRUIControls/VRGraphicRaycaster.hpp"
-#include "UnityEngine/Rect.hpp"
-
-using namespace QuestUI;
 
 namespace Qounters::Editor {
     constexpr int anchorCount = (int) Group::Anchors::AnchorMax + 1;
@@ -30,7 +30,7 @@ namespace Qounters::Editor {
     EditingBase* selected;
     int selectedGroupIdx, selectedComponentIdx;
 
-    std::vector<std::tuple<int, int, std::function<void ()>>> undos;
+    std::vector<std::tuple<int, int, std::function<void()>>> undos;
 
     bool addDirectToPreset = false;
 
@@ -43,8 +43,8 @@ namespace Qounters::Editor {
 
     VRUIControls::VRInputModule* vrInput;
 
-    const UnityEngine::Color normalColor = {1, 1, 1, 0.2};
-    const UnityEngine::Color highlightColor = {0, 0.7, 0.8, 0.2};
+    UnityEngine::Color const normalColor = {1, 1, 1, 0.2};
+    UnityEngine::Color const highlightColor = {0, 0.7, 0.8, 0.2};
 
     Group nextUndoGroup;
     Component nextUndoComponent;
@@ -92,22 +92,22 @@ namespace Qounters::Editor {
                 continue;
             }
             anchors[i] = Utils::GetOrAddComponent<CanvasHighlight*>(anchor);
-            anchors[i]->set_color({1, 1, 1, 0.2});
-            anchors[i]->set_raycastTarget(false);
+            anchors[i]->color = {1, 1, 1, 0.2};
+            anchors[i]->raycastTarget = false;
         }
     }
 
     UnityEngine::GameObject* CreateDragCanvas(std::string name, UnityEngine::Transform* parent) {
-        auto canvas = BeatSaberUI::CreateCanvas();
-        canvas->set_name(name);
+        auto canvas = BSML::Lite::CreateCanvas();
+        canvas->name = name;
 
         if (parent)
-            canvas->get_transform()->SetParent(parent, false);
-        canvas->get_transform()->set_localScale({1, 1, 1});
+            canvas->transform->SetParent(parent, false);
+        canvas->transform->localScale = {1, 1, 1};
         // might be nice to have a constrained area later
-        canvas->GetComponent<UnityEngine::RectTransform*>()->set_sizeDelta({1000, 1000});
-        canvas->AddComponent<CanvasHighlight*>()->set_raycastTarget(true);
-        canvas->SetActive(false);
+        canvas->GetComponent<UnityEngine::RectTransform*>()->sizeDelta = {1000, 1000};
+        canvas->AddComponent<CanvasHighlight*>()->raycastTarget = true;
+        canvas->active = false;
         return canvas;
     }
 
@@ -117,7 +117,7 @@ namespace Qounters::Editor {
                 dragCanvases[i] = nullptr;
                 continue;
             }
-            auto parent = anchors[i]->get_transform();
+            auto parent = anchors[i]->transform;
             dragCanvases[i] = CreateDragCanvas("QountersDragCanvas" + std::to_string(i), parent);
         }
         detachedDragCanvas = CreateDragCanvas("QountersDetachedDragCanvas", nullptr);
@@ -138,7 +138,7 @@ namespace Qounters::Editor {
         disableActions = false;
         previewMode = false;
         if (newEnvironment) {
-            vrInput = UnityEngine::Resources::FindObjectsOfTypeAll<VRUIControls::VRInputModule*>().First();
+            vrInput = UnityEngine::Resources::FindObjectsOfTypeAll<VRUIControls::VRInputModule*>()->Last();
             SetupAnchors();
             CreateDragCanvases();
         }
@@ -155,7 +155,7 @@ namespace Qounters::Editor {
         for (auto& [idxs, obj] : editing) {
             auto& [groupIdx, componentIdx] = idxs;
             if (componentIdx == -1)
-                UnityEngine::Object::Destroy(obj->get_gameObject());
+                UnityEngine::Object::Destroy(obj->gameObject);
         }
         Reset();
         InitializeInternal(preset, false);
@@ -165,7 +165,7 @@ namespace Qounters::Editor {
     void SetPreviewMode(bool preview) {
         previewMode = preview;
         for (auto& [_, obj] : editing)
-            obj->outline->set_enabled(!preview);
+            obj->outline->enabled = !preview;
         Deselect();
         UpdateAllEnables();
     }
@@ -248,7 +248,7 @@ namespace Qounters::Editor {
     }
 
     void SelectEditing(EditingBase* object) {
-        getLogger().debug("selected %p -> %p", selected, object);
+        logger.debug("selected {} -> {}", fmt::ptr(selected), fmt::ptr(object));
         if (runningUndo || object == selected)
             return;
         if (selected)
@@ -257,13 +257,11 @@ namespace Qounters::Editor {
 
         auto options = OptionsViewController::GetInstance();
 
-        if (auto opt = il2cpp_utils::try_cast<EditingGroup>(object)) {
-            auto group = *opt;
+        if (auto group = il2cpp_utils::try_cast<EditingGroup>(object).value_or(nullptr)) {
             selectedGroupIdx = group->GetGroupIdx();
             selectedComponentIdx = -1;
             options->GroupSelected();
-        } else if (auto opt = il2cpp_utils::try_cast<EditingComponent>(object)) {
-            auto component = *opt;
+        } else if (auto component = il2cpp_utils::try_cast<EditingComponent>(object).value_or(nullptr)) {
             selectedGroupIdx = component->GetEditingGroup()->GetGroupIdx();
             selectedComponentIdx = component->GetComponentIdx();
             options->ComponentSelected();
@@ -287,10 +285,10 @@ namespace Qounters::Editor {
         raycastCanvases.clear();
         blockOtherRaycasts = true;
         for (int i = 0; i < anchorCount; i++) {
-            anchors[i]->set_raycastTarget(group);
+            anchors[i]->raycastTarget = group;
             anchors[i]->SetHighlighted(i != anchor && group);
-            anchors[i]->set_color(normalColor);
-            dragCanvases[i]->SetActive(i == anchor);
+            anchors[i]->color = normalColor;
+            dragCanvases[i]->active = i == anchor;
             raycastCanvases.emplace(anchors[i]->GetComponent<UnityEngine::Canvas*>());
             raycastCanvases.emplace(dragCanvases[i]->GetComponent<UnityEngine::Canvas*>());
         }
@@ -299,27 +297,27 @@ namespace Qounters::Editor {
     bool UpdateDrag(EditingGroup* dragged) {
         using RaycastResult = VRUIControls::VRGraphicRaycaster::VRGraphicRaycastResult;
 
-        auto controller = vrInput->vrPointer->vrController;
-        auto ray = UnityEngine::Ray(controller->get_position(), controller->get_forward());
+        auto controller = vrInput->_vrPointer->_lastSelectedVrController;
+        auto ray = UnityEngine::Ray(controller->position, controller->forward);
 
-        auto results = List<RaycastResult>::New_ctor();
+        auto results = ListW<RaycastResult>::New();
         for (int i = 0; i < anchorCount; i++) {
             if (i == currentAnchor)
                 continue;
 
             auto raycaster = anchors[i]->GetComponent<VRUIControls::VRGraphicRaycaster*>();
-            raycaster->RaycastCanvas(raycaster->canvas, ray, System::Single::MaxValue, 0, results);
+            raycaster->RaycastCanvas(raycaster->_canvas, ray, System::Single::MaxValue, 0, results);
 
             RaycastResult* hit = nullptr;
-            for (int j = 0; !hit && j < results->get_Count(); j++) {
-                if (results->items->values[j].graphic == anchors[i])
-                    hit = &results->items->values[j];
+            for (int j = 0; !hit && j < results.size(); j++) {
+                if (results[j].graphic == anchors[i])
+                    hit = &results[j];
             }
             if (hit) {
                 BeginDrag(i, true);
                 anchors[i]->SetHighlighted(true);
-                anchors[i]->set_color(highlightColor);
-                auto hitPoint = anchors[i]->get_rectTransform()->InverseTransformPoint(hit->position);
+                anchors[i]->color = highlightColor;
+                auto hitPoint = anchors[i]->rectTransform->InverseTransformPoint(hit->position);
                 GetSelectedGroup(lastActionId).Position = UnityEngine::Vector2(hitPoint.x, hitPoint.y);
                 dragged->UpdateDragAnchor(i);
                 return true;
@@ -331,18 +329,18 @@ namespace Qounters::Editor {
         raycastCanvases.clear();
         blockOtherRaycasts = false;
         for (int i = 0; i < anchorCount; i++) {
-            anchors[i]->set_raycastTarget(false);
+            anchors[i]->raycastTarget = false;
             anchors[i]->SetHighlighted(false);
-            dragCanvases[i]->SetActive(false);
+            dragCanvases[i]->active = false;
         }
     }
     void EnableDetachedCanvas(bool enabled) {
-        detachedDragCanvas->SetActive(enabled);
+        detachedDragCanvas->active = enabled;
         raycastCanvases.clear();
         blockOtherRaycasts = enabled;
         if (enabled) {
             auto group = editing[{selectedGroupIdx, -1}];
-            detachedDragCanvas->get_transform()->SetParent(group->rectTransform, false);
+            detachedDragCanvas->transform->SetParent(group->rectTransform, false);
             raycastCanvases.emplace(detachedDragCanvas->GetComponent<UnityEngine::Canvas*>());
         }
     }
@@ -359,7 +357,7 @@ namespace Qounters::Editor {
         opts.SourceOptions = text;
         newComponent.Options = opts;
 
-        CreateQounterComponent(newComponent, newIdx, selected->get_transform(), true);
+        CreateQounterComponent(newComponent, newIdx, selected->transform, true);
         auto created = editing[{selectedGroupIdx, newIdx}];
         if (!runningUndo)
             created->Select();
@@ -383,8 +381,8 @@ namespace Qounters::Editor {
         });
 
         group.Detached = !group.Detached;
-        group.DetachedPosition = selected->rectTransform->get_position();
-        group.DetachedRotation = selected->rectTransform->get_rotation().get_eulerAngles();
+        group.DetachedPosition = selected->rectTransform->position;
+        group.DetachedRotation = selected->rectTransform->rotation.eulerAngles;
         UpdateGroupPosition(selected->rectTransform, group);
 
         if (!runningUndo)
@@ -411,7 +409,7 @@ namespace Qounters::Editor {
             }
         }
         UnregisterEditing(remove);
-        UnityEngine::Object::Destroy(remove->get_gameObject());
+        UnityEngine::Object::Destroy(remove->gameObject);
         if (remove == selected)
             selected = nullptr;
         if (remove == prevSelected)
@@ -424,7 +422,7 @@ namespace Qounters::Editor {
 
         if (selectedComponentIdx != -1) {
             AddUndo([state = GetSelectedComponent(-1, false)]() {
-                CreateQounterComponent(state, selectedComponentIdx, editing[{selectedGroupIdx, -1}]->get_transform(), true);
+                CreateQounterComponent(state, selectedComponentIdx, editing[{selectedGroupIdx, -1}]->transform, true);
             });
         } else {
             AddUndo([state = GetSelectedGroup(-1, false)]() {
@@ -484,7 +482,7 @@ namespace Qounters::Editor {
         RemoveWithoutDeselect(selectedGroupIdx, selectedComponentIdx);
         if (!runningUndo)
             SetDefaultOptions(component);
-        CreateQounterComponent(component, selectedComponentIdx, editing[{selectedGroupIdx, -1}]->get_transform(), true);
+        CreateQounterComponent(component, selectedComponentIdx, editing[{selectedGroupIdx, -1}]->transform, true);
 
         if (!runningUndo) {
             selected = editing[{selectedGroupIdx, selectedComponentIdx}];
@@ -521,7 +519,9 @@ namespace Qounters::Editor {
         } else {
             auto& component = GetSelectedComponent(-1);
             auto editingComponent = (EditingComponent*) selected;
-            UpdateComponentEnabled(editingComponent->typeComponent->get_gameObject(), component.EnableSource, component.EnableOptions, component.InvertEnable);
+            UpdateComponentEnabled(
+                editingComponent->typeComponent->gameObject, component.EnableSource, component.EnableOptions, component.InvertEnable
+            );
         }
     }
 
@@ -533,15 +533,13 @@ namespace Qounters::Editor {
 
         auto& component = GetSelectedComponent(lastActionId);
         auto editingComponent = (EditingComponent*) selected;
-        UpdateComponentEnabled(editingComponent->typeComponent->get_gameObject(), component.EnableSource, component.EnableOptions, component.InvertEnable);
+        UpdateComponentEnabled(editingComponent->typeComponent->gameObject, component.EnableSource, component.EnableOptions, component.InvertEnable);
     }
 
     void SetOptions(int actionId, Component::OptionsTypes options) {
         auto& component = GetSelectedComponent(actionId);
 
-        AddUndo([state = nextUndoComponent]() {
-            SetOptions(-1, state.Options);
-        });
+        AddUndo([state = nextUndoComponent]() { SetOptions(-1, state.Options); });
 
         component.Options = options;
         auto editingComponent = (EditingComponent*) selected;
@@ -551,9 +549,7 @@ namespace Qounters::Editor {
     void SetSourceOptions(int actionId, UnparsedJSON options) {
         auto& component = GetSelectedComponent(actionId);
 
-        AddUndo([state = nextUndoComponent]() {
-            SetOptions(-1, state.Options);
-        });
+        AddUndo([state = nextUndoComponent]() { SetOptions(-1, state.Options); });
 
         SetSourceOptions(component, options);
         auto editingComponent = (EditingComponent*) selected;
@@ -563,9 +559,7 @@ namespace Qounters::Editor {
     void SetColorOptions(int actionId, UnparsedJSON options) {
         auto& component = GetSelectedComponent(actionId);
 
-        AddUndo([state = nextUndoComponent]() {
-            SetColorOptions(-1, state.ColorOptions);
-        });
+        AddUndo([state = nextUndoComponent]() { SetColorOptions(-1, state.ColorOptions); });
 
         component.ColorOptions = options;
         auto editingComponent = (EditingComponent*) selected;
@@ -575,13 +569,11 @@ namespace Qounters::Editor {
     void SetEnableOptions(int actionId, UnparsedJSON options) {
         auto& component = GetSelectedComponent(actionId);
 
-        AddUndo([state = nextUndoComponent]() {
-            SetEnableOptions(-1, state.EnableOptions);
-        });
+        AddUndo([state = nextUndoComponent]() { SetEnableOptions(-1, state.EnableOptions); });
 
         component.EnableOptions = options;
         auto editingComponent = (EditingComponent*) selected;
-        UpdateComponentEnabled(editingComponent->typeComponent->get_gameObject(), component.EnableSource, component.EnableOptions, component.InvertEnable);
+        UpdateComponentEnabled(editingComponent->typeComponent->gameObject, component.EnableSource, component.EnableOptions, component.InvertEnable);
     }
 
     void Undo() {

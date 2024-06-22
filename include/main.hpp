@@ -1,8 +1,8 @@
 #pragma once
 
-#include "beatsaber-hook/shared/utils/hooking.hpp"
+#include "beatsaber-hook/shared/utils/logging.hpp"
 
-Logger& getLogger();
+static constexpr auto logger = Paper::ConstLoggerContext(MOD_ID);
 
 #define IMAGE_DIRECTORY "/sdcard/ModData/com.beatgames.beatsaber/Mods/" MOD_ID "/"
 #define SPEED_SAMPLES_PER_SEC 4

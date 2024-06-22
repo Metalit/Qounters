@@ -1,20 +1,35 @@
 #include "internals.hpp"
+
+#include "GlobalNamespace/AudioTimeSyncController.hpp"
+#include "GlobalNamespace/BeatmapCallbacksController.hpp"
+#include "GlobalNamespace/BeatmapCallbacksUpdater.hpp"
+#include "GlobalNamespace/BeatmapCharacteristicSO.hpp"
+#include "GlobalNamespace/BeatmapData.hpp"
+#include "GlobalNamespace/BeatmapDataSortedListForTypeAndIds_1.hpp"
+#include "GlobalNamespace/GameplayCoreInstaller.hpp"
+#include "GlobalNamespace/GameplayCoreSceneSetupData.hpp"
+#include "GlobalNamespace/GameplayModifierParamsSO.hpp"
+#include "GlobalNamespace/GameplayModifiersModelSO.hpp"
+#include "GlobalNamespace/IGameEnergyCounter.hpp"
+#include "GlobalNamespace/ISortedList_1.hpp"
+#include "GlobalNamespace/PlayerAllOverallStatsData.hpp"
+#include "GlobalNamespace/PlayerData.hpp"
+#include "GlobalNamespace/PlayerDataModel.hpp"
+#include "GlobalNamespace/PlayerLevelStatsData.hpp"
+#include "GlobalNamespace/ScoreController.hpp"
+#include "GlobalNamespace/ScoreModel.hpp"
+#include "System/Collections/Generic/LinkedList_1.hpp"
+#include "System/Collections/Generic/Dictionary_2.hpp"
+#include "System/Collections/IEnumerator.hpp"
+#include "UnityEngine/AudioClip.hpp"
+#include "UnityEngine/Resources.hpp"
+#include "beatsaber-hook/shared/utils/il2cpp-utils-classes.hpp"
 #include "main.hpp"
 #include "utils.hpp"
 
 using namespace Qounters;
 
 std::string lastBeatmap;
-
-#include "GlobalNamespace/BeatmapCallbacksUpdater.hpp"
-#include "GlobalNamespace/BeatmapCallbacksController.hpp"
-
-#include "GlobalNamespace/BeatmapData.hpp"
-#include "GlobalNamespace/BeatmapDataSortedListForTypeAndIds_1.hpp"
-#include "GlobalNamespace/ISortedList_1.hpp"
-
-#include "System/Collections/IEnumerator.hpp"
-#include "System/Collections/Generic/LinkedList_1.hpp"
 
 using namespace GlobalNamespace;
 
@@ -23,40 +38,37 @@ int GetNoteCount(BeatmapCallbacksUpdater* updater) {
         return 0;
     using LinkedList = System::Collections::Generic::LinkedList_1<NoteData*>;
     int noteCount = 0;
-    auto bcc = updater->beatmapCallbacksController;
-    auto songTime = bcc->startFilterTime;
-    auto noteDataItemsList = (LinkedList*) ((BeatmapData*) bcc->beatmapData)->beatmapDataItemsPerTypeAndId->GetList(csTypeOf(NoteData*), 0)->get_items();
-    auto enumerator = (LinkedList::Enumerator*) noteDataItemsList->System_Collections_IEnumerable_GetEnumerator();
-    while(enumerator->MoveNext()) {
-        auto noteData = (NoteData*) enumerator->System_Collections_IEnumerator_get_Current();
-        if(ShouldProcessNote(noteData) && noteData->get_time() > songTime)
+    auto bcc = updater->_beatmapCallbacksController;
+    auto songTime = bcc->_startFilterTime;
+    auto data = il2cpp_utils::try_cast<BeatmapData>(bcc->_beatmapData).value_or(nullptr);
+    if (!data) {
+        logger.warn("IReadonlyBeatmapData was {} not BeatmapData", il2cpp_functions::class_get_name(((Il2CppObject*) bcc->_beatmapData)->klass));
+        return 0;
+    }
+    auto noteDataItemsList = (LinkedList*) data->_beatmapDataItemsPerTypeAndId->GetList(csTypeOf(NoteData*), 0)->items;
+    logger.debug("ver {}", noteDataItemsList->version);
+    auto enumerator = noteDataItemsList->GetEnumerator();
+    logger.debug("ver {}", noteDataItemsList->version);
+    logger.debug("enum ver {}", enumerator._version);
+    while (enumerator.MoveNext()) {
+        auto noteData = (NoteData*) enumerator.Current;
+        if (ShouldProcessNote(noteData) && noteData->time > songTime)
             noteCount++;
     }
     return noteCount;
 }
 
-#include "GlobalNamespace/ScoreModel.hpp"
-
 int GetMaxScore(BeatmapCallbacksUpdater* updater) {
     if (!updater)
         return 0;
-    return ScoreModel::ComputeMaxMultipliedScoreForBeatmap(updater->beatmapCallbacksController->beatmapData);
+    return ScoreModel::ComputeMaxMultipliedScoreForBeatmap(updater->_beatmapCallbacksController->_beatmapData);
 }
-
-#include "GlobalNamespace/ScoreController.hpp"
-#include "GlobalNamespace/AudioTimeSyncController_InitData.hpp"
-#include "UnityEngine/AudioClip.hpp"
 
 float GetSongLength(ScoreController* controller) {
     if (!controller)
         return 0;
-    return controller->audioTimeSyncController->initData->audioClip->get_length();
+    return controller->_audioTimeSyncController->_initData->audioClip->length;
 }
-
-#include "GlobalNamespace/PlayerDataModel.hpp"
-#include "GlobalNamespace/PlayerData.hpp"
-#include "GlobalNamespace/PlayerAllOverallStatsData.hpp"
-#include "GlobalNamespace/PlayerAllOverallStatsData_PlayerOverallStatsData.hpp"
 
 int GetFailCount(PlayerDataModel* data) {
     if (!data)
@@ -64,14 +76,11 @@ int GetFailCount(PlayerDataModel* data) {
     return data->playerData->playerAllOverallStatsData->get_allOverallStatsData()->failedLevelsCount;
 }
 
-#include "GlobalNamespace/GameplayModifierParamsSO.hpp"
-#include "beatsaber-hook/shared/utils/typedefs-list.hpp"
-
 float GetPositiveMods(ScoreController* controller) {
-    if (!controller || !controller->gameplayModifierParams)
+    if (!controller || !controller->_gameplayModifierParams)
         return 0;
     float ret = 0;
-    auto mods = ListW<GameplayModifierParamsSO*>(controller->gameplayModifierParams);
+    auto mods = ListW<GameplayModifierParamsSO*>(controller->_gameplayModifierParams);
     for (auto& mod : mods) {
         float mult = mod->multiplier;
         if (mult > 0)
@@ -80,15 +89,13 @@ float GetPositiveMods(ScoreController* controller) {
     return ret;
 }
 
-#include "GlobalNamespace/GameplayModifiersModelSO.hpp"
-
 float GetNegativeMods(ScoreController* controller) {
-    if (!controller || !controller->gameplayModifierParams)
+    if (!controller || !controller->_gameplayModifierParams)
         return 0;
     float ret = 0;
-    auto mods = ListW<GameplayModifierParamsSO*>(controller->gameplayModifierParams);
+    auto mods = ListW<GameplayModifierParamsSO*>(controller->_gameplayModifierParams);
     for (auto& mod : mods) {
-        if (mod == controller->gameplayModifiersModel->noFailOn0Energy) {
+        if (mod == controller->_gameplayModifiersModel->_noFailOn0Energy.ptr()) {
             noFail = true;
             continue;
         }
@@ -99,28 +106,19 @@ float GetNegativeMods(ScoreController* controller) {
     return ret;
 }
 
-#include "GlobalNamespace/GameplayCoreInstaller.hpp"
-#include "GlobalNamespace/GameplayCoreSceneSetupData.hpp"
-#include "GlobalNamespace/PlayerLevelStatsData.hpp"
-#include "GlobalNamespace/BeatmapCharacteristicSO.hpp"
-
 int GetHighScore(PlayerDataModel* data, GameplayCoreInstaller* installer) {
-    if (!data || !installer || !installer->sceneSetupData)
+    if (!data || !installer || !installer->_sceneSetupData)
         return 0;
-    auto [id, characteristic, difficulty] = Utils::GetBeatmapDetails(installer->sceneSetupData->difficultyBeatmap);
-    for (auto& stats : ListW<PlayerLevelStatsData*>(data->playerData->levelsStatsData)) {
-        if (stats->levelID == id && stats->beatmapCharacteristic->serializedName == characteristic && stats->difficulty == difficulty)
-            return stats->highScore;
-    }
-    return -1;
+    auto beatmap = installer->_sceneSetupData->beatmapKey;
+    if (!data->playerData->levelsStatsData->ContainsKey(beatmap))
+        return -1;
+    return data->playerData->levelsStatsData->get_Item(beatmap)->highScore;
 }
-
-#include "GlobalNamespace/GameEnergyCounter.hpp"
 
 float GetHealth(ScoreController* controller) {
     if (!controller)
         return 1;
-    return controller->gameEnergyCounter->get_energy();
+    return controller->_gameEnergyCounter->energy;
 }
 
 namespace Qounters {
@@ -171,8 +169,6 @@ namespace Qounters {
     int rightMissedFixedScore;
 }
 
-#include "UnityEngine/Resources.hpp"
-
 void Qounters::Initialize() {
     auto beatmapCallbacksUpdater = UnityEngine::Object::FindObjectOfType<BeatmapCallbacksUpdater*>();
     auto scoreController = UnityEngine::Object::FindObjectOfType<ScoreController*>();
@@ -181,17 +177,17 @@ void Qounters::Initialize() {
     auto gameplayCoreInstallers = UnityEngine::Resources::FindObjectsOfTypeAll<GameplayCoreInstaller*>();
     GameplayCoreInstaller* gameplayCoreInstaller;
     for (auto& installer : gameplayCoreInstallers) {
-        if (installer->get_isActiveAndEnabled() && installer->sceneSetupData != nullptr) {
+        if (installer->get_isActiveAndEnabled() && installer->_sceneSetupData != nullptr) {
             gameplayCoreInstaller = installer;
             break;
         }
     }
-    if (!gameplayCoreInstaller) gameplayCoreInstaller = gameplayCoreInstallers[0];
-
+    if (!gameplayCoreInstaller)
+        gameplayCoreInstaller = gameplayCoreInstallers[0];
 
     std::string beatmap = "Unknown";
-    if (gameplayCoreInstaller && gameplayCoreInstaller->sceneSetupData)
-        beatmap = Utils::GetBeatmapIdentifier(gameplayCoreInstaller->sceneSetupData->difficultyBeatmap);
+    if (gameplayCoreInstaller && gameplayCoreInstaller->_sceneSetupData)
+        beatmap = Utils::GetBeatmapIdentifier(gameplayCoreInstaller->_sceneSetupData->beatmapKey);
 
     leftScore = 0;
     rightScore = 0;
@@ -233,14 +229,14 @@ void Qounters::Initialize() {
     personalBest = GetHighScore(playerDataModel, gameplayCoreInstaller);
     fails = GetFailCount(playerDataModel);
 
-    getLogger().debug("modifiers %.2f -%.2f", positiveMods, negativeMods);
+    logger.debug("modifiers {} -{}", positiveMods, negativeMods);
 
     if (beatmap != lastBeatmap)
         restarts = 0;
     lastBeatmap = beatmap;
 
-    colors = gameplayCoreInstaller && gameplayCoreInstaller->sceneSetupData ? gameplayCoreInstaller->sceneSetupData->colorScheme : nullptr;
-    beatmapData = beatmapCallbacksUpdater ? (BeatmapData*) beatmapCallbacksUpdater->beatmapCallbacksController->beatmapData : nullptr;
+    colors = gameplayCoreInstaller && gameplayCoreInstaller->_sceneSetupData ? gameplayCoreInstaller->_sceneSetupData->colorScheme : nullptr;
+    beatmapData = beatmapCallbacksUpdater ? (BeatmapData*) beatmapCallbacksUpdater->_beatmapCallbacksController->_beatmapData : nullptr;
 
     leftMissedMaxScore = 0;
     rightMissedMaxScore = 0;
@@ -262,5 +258,5 @@ bool Qounters::ShouldProcessNote(NoteData* data) {
     }
     if (!hasCJD)
         return shouldProcess;
-    return shouldProcess; // TODO
+    return shouldProcess;  // TODO
 }

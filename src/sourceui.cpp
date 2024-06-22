@@ -1,26 +1,23 @@
 #include "sourceui.hpp"
+
+#include "bsml/shared/BSML-Lite.hpp"
 #include "editor.hpp"
 #include "sources.hpp"
-
-#include "questui/shared/BeatSaberUI.hpp"
 #include "utils.hpp"
 
 using namespace UnityEngine;
-using namespace QuestUI;
 
 namespace Qounters::TextSource {
     void StaticUI(GameObject* parent, UnparsedJSON unparsed) {
         static Static opts;
         opts = unparsed.Parse<Static>();
 
-        auto input = BeatSaberUI::CreateStringSetting(parent, "Text", opts.Input, [](StringW val) {
+        auto input = BSML::Lite::CreateStringSetting(parent, "Text", opts.Input, [](StringW val) {
             static int id = Editor::GetActionId();
             opts.Input = (std::string) val;
             Editor::SetSourceOptions(id, opts);
         });
-        Utils::AddStringSettingOnClose(input, [](std::string _) {
-            Editor::FinalizeAction();
-        });
+        Utils::AddStringSettingOnClose(input, [](std::string _) { Editor::FinalizeAction(); });
     }
     void ScoreUI(GameObject* parent, UnparsedJSON unparsed) {
         static Score opts;
@@ -33,7 +30,7 @@ namespace Qounters::TextSource {
             Editor::FinalizeAction();
         });
 
-        auto inc = BeatSaberUI::CreateIncrementSetting(parent, "Decimals", 0, 1, opts.Decimals, 0, 10, [](float val) {
+        auto inc = BSML::Lite::CreateIncrementSetting(parent, "Decimals", 0, 1, opts.Decimals, 0, 10, [](float val) {
             static int id = Editor::GetActionId();
             opts.Decimals = val;
             Editor::SetSourceOptions(id, opts);
@@ -41,7 +38,7 @@ namespace Qounters::TextSource {
         });
         SetButtons(inc);
 
-        BeatSaberUI::CreateToggle(parent, "Percentage", opts.Percentage, [](bool val) {
+        BSML::Lite::CreateToggle(parent, "Percentage", opts.Percentage, [](bool val) {
             static int id = Editor::GetActionId();
             opts.Percentage = val;
             Editor::SetSourceOptions(id, opts);
@@ -59,14 +56,14 @@ namespace Qounters::TextSource {
             Editor::FinalizeAction();
         });
 
-        BeatSaberUI::CreateToggle(parent, "Positive Modifiers", opts.PositiveModifiers, [](bool val) {
+        BSML::Lite::CreateToggle(parent, "Positive Modifiers", opts.PositiveModifiers, [](bool val) {
             static int id = Editor::GetActionId();
             opts.PositiveModifiers = val;
             Editor::SetSourceOptions(id, opts);
             Editor::FinalizeAction();
         });
 
-        BeatSaberUI::CreateToggle(parent, "Negative Modifiers", opts.NegativeModifiers, [](bool val) {
+        BSML::Lite::CreateToggle(parent, "Negative Modifiers", opts.NegativeModifiers, [](bool val) {
             static int id = Editor::GetActionId();
             opts.NegativeModifiers = val;
             Editor::SetSourceOptions(id, opts);
@@ -77,7 +74,7 @@ namespace Qounters::TextSource {
         static PersonalBest opts;
         opts = unparsed.Parse<PersonalBest>();
 
-        auto inc = BeatSaberUI::CreateIncrementSetting(parent, "Decimals", 0, 1, opts.Decimals, 0, 10, [](float val) {
+        auto inc = BSML::Lite::CreateIncrementSetting(parent, "Decimals", 0, 1, opts.Decimals, 0, 10, [](float val) {
             static int id = Editor::GetActionId();
             opts.Decimals = val;
             Editor::SetSourceOptions(id, opts);
@@ -85,21 +82,21 @@ namespace Qounters::TextSource {
         });
         SetButtons(inc);
 
-        BeatSaberUI::CreateToggle(parent, "Percentage", opts.Percentage, [](bool val) {
+        BSML::Lite::CreateToggle(parent, "Percentage", opts.Percentage, [](bool val) {
             static int id = Editor::GetActionId();
             opts.Percentage = val;
             Editor::SetSourceOptions(id, opts);
             Editor::FinalizeAction();
         });
 
-        BeatSaberUI::CreateToggle(parent, "Hide On First Score", opts.HideFirstScore, [](bool val) {
+        BSML::Lite::CreateToggle(parent, "Hide On First Score", opts.HideFirstScore, [](bool val) {
             static int id = Editor::GetActionId();
             opts.HideFirstScore = val;
             Editor::SetSourceOptions(id, opts);
             Editor::FinalizeAction();
         });
 
-        BeatSaberUI::CreateToggle(parent, "Label Text", opts.Label, [](bool val) {
+        BSML::Lite::CreateToggle(parent, "Label Text", opts.Label, [](bool val) {
             static int id = Editor::GetActionId();
             opts.Label = val;
             Editor::SetSourceOptions(id, opts);
@@ -125,7 +122,7 @@ namespace Qounters::TextSource {
         static Health opts;
         opts = unparsed.Parse<Health>();
 
-        auto inc = BeatSaberUI::CreateIncrementSetting(parent, "Decimals", 0, 1, opts.Decimals, 0, 10, [](float val) {
+        auto inc = BSML::Lite::CreateIncrementSetting(parent, "Decimals", 0, 1, opts.Decimals, 0, 10, [](float val) {
             static int id = Editor::GetActionId();
             opts.Decimals = val;
             Editor::SetSourceOptions(id, opts);
@@ -133,7 +130,7 @@ namespace Qounters::TextSource {
         });
         SetButtons(inc);
 
-        BeatSaberUI::CreateToggle(parent, "Percentage", opts.Percentage, [](bool val) {
+        BSML::Lite::CreateToggle(parent, "Percentage", opts.Percentage, [](bool val) {
             static int id = Editor::GetActionId();
             opts.Percentage = val;
             Editor::SetSourceOptions(id, opts);
@@ -144,14 +141,14 @@ namespace Qounters::TextSource {
         static Time opts;
         opts = unparsed.Parse<Time>();
 
-        BeatSaberUI::CreateToggle(parent, "Remaining", opts.Remaining, [](bool val) {
+        BSML::Lite::CreateToggle(parent, "Remaining", opts.Remaining, [](bool val) {
             static int id = Editor::GetActionId();
             opts.Remaining = val;
             Editor::SetSourceOptions(id, opts);
             Editor::FinalizeAction();
         });
 
-        BeatSaberUI::CreateToggle(parent, "Percentage", opts.Percentage, [](bool val) {
+        BSML::Lite::CreateToggle(parent, "Percentage", opts.Percentage, [](bool val) {
             static int id = Editor::GetActionId();
             opts.Percentage = val;
             Editor::SetSourceOptions(id, opts);
@@ -169,7 +166,7 @@ namespace Qounters::TextSource {
             Editor::FinalizeAction();
         });
 
-        auto inc = BeatSaberUI::CreateIncrementSetting(parent, "Decimals", 0, 1, opts.Decimals, 0, 10, [](float val) {
+        auto inc = BSML::Lite::CreateIncrementSetting(parent, "Decimals", 0, 1, opts.Decimals, 0, 10, [](float val) {
             static int id = Editor::GetActionId();
             opts.Decimals = val;
             Editor::SetSourceOptions(id, opts);
@@ -195,7 +192,7 @@ namespace Qounters::TextSource {
             Editor::FinalizeAction();
         });
 
-        auto inc = BeatSaberUI::CreateIncrementSetting(parent, "Decimals", 0, 1, opts.Decimals, 0, 10, [](float val) {
+        auto inc = BSML::Lite::CreateIncrementSetting(parent, "Decimals", 0, 1, opts.Decimals, 0, 10, [](float val) {
             static int id = Editor::GetActionId();
             opts.Decimals = val;
             Editor::SetSourceOptions(id, opts);
@@ -203,7 +200,7 @@ namespace Qounters::TextSource {
         });
         SetButtons(inc);
 
-        auto inc2 = BeatSaberUI::CreateIncrementSetting(parent, "Decimal Offset", 0, 1, opts.DecimalOffset, 0, 10, [](float val) {
+        auto inc2 = BSML::Lite::CreateIncrementSetting(parent, "Decimal Offset", 0, 1, opts.DecimalOffset, 0, 10, [](float val) {
             static int id = Editor::GetActionId();
             opts.DecimalOffset = val;
             Editor::SetSourceOptions(id, opts);
@@ -215,7 +212,7 @@ namespace Qounters::TextSource {
         static Fails opts;
         opts = unparsed.Parse<Fails>();
 
-        BeatSaberUI::CreateToggle(parent, "Restarts", opts.Restarts, [](bool val) {
+        BSML::Lite::CreateToggle(parent, "Restarts", opts.Restarts, [](bool val) {
             static int id = Editor::GetActionId();
             opts.Restarts = val;
             Editor::SetSourceOptions(id, opts);
@@ -233,28 +230,28 @@ namespace Qounters::TextSource {
             Editor::FinalizeAction();
         });
 
-        BeatSaberUI::CreateToggle(parent, "Misses", opts.Misses, [](bool val) {
+        BSML::Lite::CreateToggle(parent, "Misses", opts.Misses, [](bool val) {
             static int id = Editor::GetActionId();
             opts.Misses = val;
             Editor::SetSourceOptions(id, opts);
             Editor::FinalizeAction();
         });
 
-        BeatSaberUI::CreateToggle(parent, "Bad Cuts", opts.BadCuts, [](bool val) {
+        BSML::Lite::CreateToggle(parent, "Bad Cuts", opts.BadCuts, [](bool val) {
             static int id = Editor::GetActionId();
             opts.BadCuts = val;
             Editor::SetSourceOptions(id, opts);
             Editor::FinalizeAction();
         });
 
-        BeatSaberUI::CreateToggle(parent, "Bombs", opts.Bombs, [](bool val) {
+        BSML::Lite::CreateToggle(parent, "Bombs", opts.Bombs, [](bool val) {
             static int id = Editor::GetActionId();
             opts.Bombs = val;
             Editor::SetSourceOptions(id, opts);
             Editor::FinalizeAction();
         });
 
-        BeatSaberUI::CreateToggle(parent, "Walls", opts.Walls, [](bool val) {
+        BSML::Lite::CreateToggle(parent, "Walls", opts.Walls, [](bool val) {
             static int id = Editor::GetActionId();
             opts.Walls = val;
             Editor::SetSourceOptions(id, opts);
@@ -290,7 +287,7 @@ namespace Qounters::TextSource {
             Editor::FinalizeAction();
         });
 
-        auto inc = BeatSaberUI::CreateIncrementSetting(parent, "Decimals", 0, 1, opts.Decimals, 0, 10, [](float val) {
+        auto inc = BSML::Lite::CreateIncrementSetting(parent, "Decimals", 0, 1, opts.Decimals, 0, 10, [](float val) {
             static int id = Editor::GetActionId();
             opts.Decimals = val;
             Editor::SetSourceOptions(id, opts);
@@ -309,7 +306,7 @@ namespace Qounters::TextSource {
             Editor::FinalizeAction();
         });
 
-        auto inc = BeatSaberUI::CreateIncrementSetting(parent, "Decimals", 0, 1, opts.Decimals, 0, 10, [](float val) {
+        auto inc = BSML::Lite::CreateIncrementSetting(parent, "Decimals", 0, 1, opts.Decimals, 0, 10, [](float val) {
             static int id = Editor::GetActionId();
             opts.Decimals = val;
             Editor::SetSourceOptions(id, opts);
@@ -353,7 +350,7 @@ namespace Qounters::TextSource {
             Editor::FinalizeAction();
         });
 
-        auto inc = BeatSaberUI::CreateIncrementSetting(parent, "Decimals", 0, 1, opts.Decimals, 0, 10, [](float val) {
+        auto inc = BSML::Lite::CreateIncrementSetting(parent, "Decimals", 0, 1, opts.Decimals, 0, 10, [](float val) {
             static int id = Editor::GetActionId();
             opts.Decimals = val;
             Editor::SetSourceOptions(id, opts);
@@ -363,9 +360,9 @@ namespace Qounters::TextSource {
     }
 
     void CreateUI(UnityEngine::GameObject* parent, std::string source, UnparsedJSON options) {
-        auto trans = parent->get_transform();
+        auto trans = parent->transform;
         while (trans->GetChildCount() > 0)
-            UnityEngine::Object::DestroyImmediate(trans->GetChild(0)->get_gameObject());
+            UnityEngine::Object::DestroyImmediate(trans->GetChild(0)->gameObject);
 
         auto fn = GetSource(textSources, source).second;
         fn(parent, options);
@@ -377,16 +374,13 @@ namespace Qounters::ShapeSource {
         static Static opts;
         opts = unparsed.Parse<Static>();
 
-        auto slider = BeatSaberUI::CreateSliderSetting(parent, "Fill", 0.01, opts.Input, 0, 1, 0, [](float val) {
+        auto slider = BSML::Lite::CreateSliderSetting(parent, "Fill", 0.01, opts.Input, 0, 1, 0, true, {0, 0}, [](float val) {
             static int id = Editor::GetActionId();
             opts.Input = val;
             Editor::SetSourceOptions(id, opts);
         });
-        Utils::AddSliderEndDrag(slider, [](float _) {
-            Editor::FinalizeAction();
-        });
-        slider->GetComponent<RectTransform*>()->set_sizeDelta({0, 8});
-        AddSliderIncrement(slider, 0.01);
+        Utils::AddSliderEndDrag(slider, [](float _) { Editor::FinalizeAction(); });
+        slider->GetComponent<RectTransform*>()->sizeDelta = {0, 8};
     }
     void ScoreUI(GameObject* parent, UnparsedJSON unparsed) {
         static Score opts;
@@ -403,7 +397,7 @@ namespace Qounters::ShapeSource {
         static Multiplier opts;
         opts = unparsed.Parse<Multiplier>();
 
-        BeatSaberUI::CreateToggle(parent, "Absolute", opts.Absolute, [](bool val) {
+        BSML::Lite::CreateToggle(parent, "Absolute", opts.Absolute, [](bool val) {
             static int id = Editor::GetActionId();
             opts.Absolute = val;
             Editor::SetSourceOptions(id, opts);
@@ -449,9 +443,9 @@ namespace Qounters::ShapeSource {
     }
 
     void CreateUI(UnityEngine::GameObject* parent, std::string source, UnparsedJSON options) {
-        auto trans = parent->get_transform();
+        auto trans = parent->transform;
         while (trans->GetChildCount() > 0)
-            UnityEngine::Object::DestroyImmediate(trans->GetChild(0)->get_gameObject());
+            UnityEngine::Object::DestroyImmediate(trans->GetChild(0)->gameObject);
 
         auto fn = GetSource(shapeSources, source).second;
         fn(parent, options);
@@ -459,7 +453,7 @@ namespace Qounters::ShapeSource {
 }
 
 namespace Qounters::ColorSource {
-    const std::vector<std::string> ColorSettingsStrings = {
+    std::vector<std::string_view> const ColorSettingsStrings = {
         "Left Saber",
         "Right Saber",
         "Lights 1",
@@ -473,13 +467,17 @@ namespace Qounters::ColorSource {
         static Static opts;
         opts = unparsed.Parse<Static>();
 
-        Utils::CreateColorPicker(parent, "Color", opts.Input, [](Color val) {
-            static int id = Editor::GetActionId();
-            opts.Input = val;
-            Editor::SetColorOptions(id, opts);
-        }, []() {
-            Editor::FinalizeAction();
-        });
+        Utils::CreateColorPicker(
+            parent,
+            "Color",
+            opts.Input,
+            [](Color val) {
+                static int id = Editor::GetActionId();
+                opts.Input = val;
+                Editor::SetColorOptions(id, opts);
+            },
+            []() { Editor::FinalizeAction(); }
+        );
     }
     void PlayerUI(GameObject* parent, UnparsedJSON unparsed) {
         static Player opts;
@@ -503,95 +501,131 @@ namespace Qounters::ColorSource {
             Editor::FinalizeAction();
         });
 
-        BeatSaberUI::CreateToggle(parent, "Positive Modifiers", opts.PositiveModifiers, [](bool val) {
+        BSML::Lite::CreateToggle(parent, "Positive Modifiers", opts.PositiveModifiers, [](bool val) {
             static int id = Editor::GetActionId();
             opts.PositiveModifiers = val;
             Editor::SetColorOptions(id, opts);
             Editor::FinalizeAction();
         });
 
-        BeatSaberUI::CreateToggle(parent, "Negative Modifiers", opts.NegativeModifiers, [](bool val) {
+        BSML::Lite::CreateToggle(parent, "Negative Modifiers", opts.NegativeModifiers, [](bool val) {
             static int id = Editor::GetActionId();
             opts.NegativeModifiers = val;
             Editor::SetColorOptions(id, opts);
             Editor::FinalizeAction();
         });
 
-        Utils::CreateColorPicker(parent, "SS Color", opts.SS, [](Color val) {
-            static int id = Editor::GetActionId();
-            opts.SS = val;
-            Editor::SetColorOptions(id, opts);
-        }, []() {
-            Editor::FinalizeAction();
-        });
+        Utils::CreateColorPicker(
+            parent,
+            "SS Color",
+            opts.SS,
+            [](Color val) {
+                static int id = Editor::GetActionId();
+                opts.SS = val;
+                Editor::SetColorOptions(id, opts);
+            },
+            []() { Editor::FinalizeAction(); }
+        );
 
-        Utils::CreateColorPicker(parent, "S Color", opts.S, [](Color val) {
-            static int id = Editor::GetActionId();
-            opts.S = val;
-            Editor::SetColorOptions(id, opts);
-        }, []() {
-            Editor::FinalizeAction();
-        });
+        Utils::CreateColorPicker(
+            parent,
+            "S Color",
+            opts.S,
+            [](Color val) {
+                static int id = Editor::GetActionId();
+                opts.S = val;
+                Editor::SetColorOptions(id, opts);
+            },
+            []() { Editor::FinalizeAction(); }
+        );
 
-        Utils::CreateColorPicker(parent, "A Color", opts.A, [](Color val) {
-            static int id = Editor::GetActionId();
-            opts.A = val;
-            Editor::SetColorOptions(id, opts);
-        }, []() {
-            Editor::FinalizeAction();
-        });
+        Utils::CreateColorPicker(
+            parent,
+            "A Color",
+            opts.A,
+            [](Color val) {
+                static int id = Editor::GetActionId();
+                opts.A = val;
+                Editor::SetColorOptions(id, opts);
+            },
+            []() { Editor::FinalizeAction(); }
+        );
 
-        Utils::CreateColorPicker(parent, "B Color", opts.B, [](Color val) {
-            static int id = Editor::GetActionId();
-            opts.B = val;
-            Editor::SetColorOptions(id, opts);
-        }, []() {
-            Editor::FinalizeAction();
-        });
+        Utils::CreateColorPicker(
+            parent,
+            "B Color",
+            opts.B,
+            [](Color val) {
+                static int id = Editor::GetActionId();
+                opts.B = val;
+                Editor::SetColorOptions(id, opts);
+            },
+            []() { Editor::FinalizeAction(); }
+        );
 
-        Utils::CreateColorPicker(parent, "C Color", opts.C, [](Color val) {
-            static int id = Editor::GetActionId();
-            opts.C = val;
-            Editor::SetColorOptions(id, opts);
-        }, []() {
-            Editor::FinalizeAction();
-        });
+        Utils::CreateColorPicker(
+            parent,
+            "C Color",
+            opts.C,
+            [](Color val) {
+                static int id = Editor::GetActionId();
+                opts.C = val;
+                Editor::SetColorOptions(id, opts);
+            },
+            []() { Editor::FinalizeAction(); }
+        );
 
-        Utils::CreateColorPicker(parent, "D Color", opts.D, [](Color val) {
-            static int id = Editor::GetActionId();
-            opts.D = val;
-            Editor::SetColorOptions(id, opts);
-        }, []() {
-            Editor::FinalizeAction();
-        });
+        Utils::CreateColorPicker(
+            parent,
+            "D Color",
+            opts.D,
+            [](Color val) {
+                static int id = Editor::GetActionId();
+                opts.D = val;
+                Editor::SetColorOptions(id, opts);
+            },
+            []() { Editor::FinalizeAction(); }
+        );
 
-        Utils::CreateColorPicker(parent, "E Color", opts.E, [](Color val) {
-            static int id = Editor::GetActionId();
-            opts.E = val;
-            Editor::SetColorOptions(id, opts);
-        }, []() {
-            Editor::FinalizeAction();
-        });
+        Utils::CreateColorPicker(
+            parent,
+            "E Color",
+            opts.E,
+            [](Color val) {
+                static int id = Editor::GetActionId();
+                opts.E = val;
+                Editor::SetColorOptions(id, opts);
+            },
+            []() { Editor::FinalizeAction(); }
+        );
     }
     void PersonalBestUI(GameObject* parent, UnparsedJSON unparsed) {
         static PersonalBest opts;
         opts = unparsed.Parse<PersonalBest>();
 
-        Utils::CreateColorPicker(parent, "Better Color", opts.Better, [](Color val) {
-            static int id = Editor::GetActionId();
-            opts.Better = val;
-            Editor::SetColorOptions(id, opts);
-        }, []() {
-            Editor::FinalizeAction();
-        });
+        Utils::CreateColorPicker(
+            parent,
+            "Better Color",
+            opts.Better,
+            [](Color val) {
+                static int id = Editor::GetActionId();
+                opts.Better = val;
+                Editor::SetColorOptions(id, opts);
+            },
+            []() { Editor::FinalizeAction(); }
+        );
 
-        Utils::CreateColorPicker(parent, "Worse Color", opts.Worse, [](Color val) {
-            static int id = Editor::GetActionId();
-            opts.Worse = val;
-            Editor::SetColorOptions(id, opts);
-        }, []() {
-            Editor::FinalizeAction();
-        });
+        Utils::CreateColorPicker(
+            parent,
+            "Worse Color",
+            opts.Worse,
+            [](Color val) {
+                static int id = Editor::GetActionId();
+                opts.Worse = val;
+                Editor::SetColorOptions(id, opts);
+            },
+            []() { Editor::FinalizeAction(); }
+        );
     }
     void ComboUI(GameObject* parent, UnparsedJSON unparsed) {
         static Combo opts;
@@ -604,91 +638,127 @@ namespace Qounters::ColorSource {
             Editor::FinalizeAction();
         });
 
-        Utils::CreateColorPicker(parent, "FC Color", opts.Full, [](Color val) {
-            static int id = Editor::GetActionId();
-            opts.Full = val;
-            Editor::SetColorOptions(id, opts);
-        }, []() {
-            Editor::FinalizeAction();
-        });
+        Utils::CreateColorPicker(
+            parent,
+            "FC Color",
+            opts.Full,
+            [](Color val) {
+                static int id = Editor::GetActionId();
+                opts.Full = val;
+                Editor::SetColorOptions(id, opts);
+            },
+            []() { Editor::FinalizeAction(); }
+        );
 
-        Utils::CreateColorPicker(parent, "Non FC Color", opts.NonFull, [](Color val) {
-            static int id = Editor::GetActionId();
-            opts.NonFull = val;
-            Editor::SetColorOptions(id, opts);
-        }, []() {
-            Editor::FinalizeAction();
-        });
+        Utils::CreateColorPicker(
+            parent,
+            "Non FC Color",
+            opts.NonFull,
+            [](Color val) {
+                static int id = Editor::GetActionId();
+                opts.NonFull = val;
+                Editor::SetColorOptions(id, opts);
+            },
+            []() { Editor::FinalizeAction(); }
+        );
     }
     void MultiplierUI(GameObject* parent, UnparsedJSON unparsed) {
         static Multiplier opts;
         opts = unparsed.Parse<Multiplier>();
 
-        Utils::CreateColorPicker(parent, "One", opts.One, [](Color val) {
-            static int id = Editor::GetActionId();
-            opts.One = val;
-            Editor::SetColorOptions(id, opts);
-        }, []() {
-            Editor::FinalizeAction();
-        });
+        Utils::CreateColorPicker(
+            parent,
+            "One",
+            opts.One,
+            [](Color val) {
+                static int id = Editor::GetActionId();
+                opts.One = val;
+                Editor::SetColorOptions(id, opts);
+            },
+            []() { Editor::FinalizeAction(); }
+        );
 
-        Utils::CreateColorPicker(parent, "Two", opts.Two, [](Color val) {
-            static int id = Editor::GetActionId();
-            opts.Two = val;
-            Editor::SetColorOptions(id, opts);
-        }, []() {
-            Editor::FinalizeAction();
-        });
+        Utils::CreateColorPicker(
+            parent,
+            "Two",
+            opts.Two,
+            [](Color val) {
+                static int id = Editor::GetActionId();
+                opts.Two = val;
+                Editor::SetColorOptions(id, opts);
+            },
+            []() { Editor::FinalizeAction(); }
+        );
 
-        Utils::CreateColorPicker(parent, "Four", opts.Four, [](Color val) {
-            static int id = Editor::GetActionId();
-            opts.Four = val;
-            Editor::SetColorOptions(id, opts);
-        }, []() {
-            Editor::FinalizeAction();
-        });
+        Utils::CreateColorPicker(
+            parent,
+            "Four",
+            opts.Four,
+            [](Color val) {
+                static int id = Editor::GetActionId();
+                opts.Four = val;
+                Editor::SetColorOptions(id, opts);
+            },
+            []() { Editor::FinalizeAction(); }
+        );
 
-        Utils::CreateColorPicker(parent, "Eight", opts.Eight, [](Color val) {
-            static int id = Editor::GetActionId();
-            opts.Eight = val;
-            Editor::SetColorOptions(id, opts);
-        }, []() {
-            Editor::FinalizeAction();
-        });
+        Utils::CreateColorPicker(
+            parent,
+            "Eight",
+            opts.Eight,
+            [](Color val) {
+                static int id = Editor::GetActionId();
+                opts.Eight = val;
+                Editor::SetColorOptions(id, opts);
+            },
+            []() { Editor::FinalizeAction(); }
+        );
     }
     void HealthUI(GameObject* parent, UnparsedJSON unparsed) {
         static Health opts;
         opts = unparsed.Parse<Health>();
 
-        Utils::CreateColorPicker(parent, "Full", opts.Full, [](Color val) {
-            static int id = Editor::GetActionId();
-            opts.Full = val;
-            Editor::SetColorOptions(id, opts);
-        }, []() {
-            Editor::FinalizeAction();
-        });
+        Utils::CreateColorPicker(
+            parent,
+            "Full",
+            opts.Full,
+            [](Color val) {
+                static int id = Editor::GetActionId();
+                opts.Full = val;
+                Editor::SetColorOptions(id, opts);
+            },
+            []() { Editor::FinalizeAction(); }
+        );
 
-        Utils::CreateColorPicker(parent, "Above Half", opts.AboveHalf, [](Color val) {
-            static int id = Editor::GetActionId();
-            opts.AboveHalf = val;
-            Editor::SetColorOptions(id, opts);
-        }, []() {
-            Editor::FinalizeAction();
-        });
+        Utils::CreateColorPicker(
+            parent,
+            "Above Half",
+            opts.AboveHalf,
+            [](Color val) {
+                static int id = Editor::GetActionId();
+                opts.AboveHalf = val;
+                Editor::SetColorOptions(id, opts);
+            },
+            []() { Editor::FinalizeAction(); }
+        );
 
-        Utils::CreateColorPicker(parent, "Below Half", opts.BelowHalf, [](Color val) {
-            static int id = Editor::GetActionId();
-            opts.BelowHalf = val;
-            Editor::SetColorOptions(id, opts);
-        }, []() {
-            Editor::FinalizeAction();
-        });
+        Utils::CreateColorPicker(
+            parent,
+            "Below Half",
+            opts.BelowHalf,
+            [](Color val) {
+                static int id = Editor::GetActionId();
+                opts.BelowHalf = val;
+                Editor::SetColorOptions(id, opts);
+            },
+            []() { Editor::FinalizeAction(); }
+        );
     }
 
     void CreateUI(UnityEngine::GameObject* parent, std::string source, UnparsedJSON options) {
-        auto trans = parent->get_transform();
+        auto trans = parent->transform;
         while (trans->GetChildCount() > 0)
-            UnityEngine::Object::DestroyImmediate(trans->GetChild(0)->get_gameObject());
+            UnityEngine::Object::DestroyImmediate(trans->GetChild(0)->gameObject);
 
         auto fn = GetSource(colorSources, source).second;
         fn(parent, options);
@@ -726,16 +796,13 @@ namespace Qounters::EnableSource {
         static Percentage opts;
         opts = unparsed.Parse<Percentage>();
 
-        auto slider = BeatSaberUI::CreateSliderSetting(parent, "Percentage", 1, opts.Percent, 0, 100, 0, [](float val) {
+        auto slider = BSML::Lite::CreateSliderSetting(parent, "Percentage", 1, opts.Percent, 0, 100, 0, true, {0, 0}, [](float val) {
             static int id = Editor::GetActionId();
             opts.Percent = val;
             Editor::SetSourceOptions(id, opts);
         });
-        Utils::AddSliderEndDrag(slider, [](float _) {
-            Editor::FinalizeAction();
-        });
-        slider->GetComponent<RectTransform*>()->set_sizeDelta({0, 8});
-        AddSliderIncrement(slider, 1);
+        Utils::AddSliderEndDrag(slider, [](float _) { Editor::FinalizeAction(); });
+        slider->GetComponent<RectTransform*>()->sizeDelta = {0, 8};
 
         Utils::CreateDropdownEnum(parent, "Saber", opts.Saber, SaberStrings, [](int val) {
             static int id = Editor::GetActionId();
@@ -750,9 +817,9 @@ namespace Qounters::EnableSource {
     }
 
     void CreateUI(UnityEngine::GameObject* parent, std::string source, UnparsedJSON options) {
-        auto trans = parent->get_transform();
+        auto trans = parent->transform;
         while (trans->GetChildCount() > 0)
-            UnityEngine::Object::DestroyImmediate(trans->GetChild(0)->get_gameObject());
+            UnityEngine::Object::DestroyImmediate(trans->GetChild(0)->gameObject);
 
         auto fn = GetSource(enableSources, source).second;
         fn(parent, options);

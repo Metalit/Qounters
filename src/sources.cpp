@@ -1,9 +1,10 @@
 #include "sources.hpp"
-#include "sourceui.hpp"
-#include "game.hpp"
-#include "utils.hpp"
-#include "pp.hpp"
+
 #include "environment.hpp"
+#include "game.hpp"
+#include "pp.hpp"
+#include "sourceui.hpp"
+#include "utils.hpp"
 
 using namespace Qounters;
 
@@ -55,31 +56,31 @@ std::vector<std::pair<std::string, std::pair<SourceFn<bool>, SourceUIFn>>> Qount
     {EnableSource::FailedName, {EnableSource::GetFailed, EnableSource::FailedUI}},
 };
 
-const std::vector<std::string> Qounters::AverageCutPartStrings = {
+std::vector<std::string_view> const Qounters::AverageCutPartStrings = {
     "Preswing",
     "Postswing",
     "Accuracy",
     "All",
 };
-const std::vector<std::string> Qounters::NotesDisplayStrings = {
+std::vector<std::string_view> const Qounters::NotesDisplayStrings = {
     "Cut",
     "Remaining",
     "Cut Ratio",
     "Cut Percent",
 };
-const std::vector<std::string> Qounters::PPLeaderboardStrings = {
+std::vector<std::string_view> const Qounters::PPLeaderboardStrings = {
     "ScoreSaber",
     "BeatLeader",
 };
-const std::vector<std::string> Qounters::SaberSpeedModeStrings = {
+std::vector<std::string_view> const Qounters::SaberSpeedModeStrings = {
     "Average",
     "5 Second Highest",
 };
-const std::vector<std::string> Qounters::SpinometerModeStrings = {
+std::vector<std::string_view> const Qounters::SpinometerModeStrings = {
     "Average",
     "Highest",
 };
-const std::vector<std::string> Qounters::RankedStatusLeaderboardStrings = {
+std::vector<std::string_view> const Qounters::RankedStatusLeaderboardStrings = {
     "ScoreSaber",
     "BeatLeader",
     "Either",
@@ -234,7 +235,7 @@ namespace Qounters::TextSource {
             notes = Game::GetTotalNotes(opts.Saber) - notes;
 
         if (opts.Display == (int) Notes::Displays::Ratio) {
-            return string_format("%i / %i", notes, Game::GetTotalNotes(opts.Saber));
+            return fmt::format("{} / {}", notes, Game::GetTotalNotes(opts.Saber));
         } else if (opts.Display == (int) Notes::Displays::Percent) {
             float ratio = notes / (float) Game::GetTotalNotes(opts.Saber);
             ratio *= 100;
@@ -403,10 +404,14 @@ namespace Qounters::ColorSource {
         auto opts = unparsed.Parse<Multiplier>();
 
         switch (Game::GetMultiplier()) {
-            case 1: return opts.One;
-            case 2: return opts.Two;
-            case 4: return opts.Four;
-            default: return opts.Eight;
+            case 1:
+                return opts.One;
+            case 2:
+                return opts.Two;
+            case 4:
+                return opts.Four;
+            default:
+                return opts.Eight;
         }
     }
     UnityEngine::Color GetHealth(UnparsedJSON unparsed) {

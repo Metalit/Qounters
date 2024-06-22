@@ -1,13 +1,14 @@
 #include "templates.hpp"
+
+#include "bsml/shared/BSML-Lite.hpp"
 #include "config.hpp"
+#include "customtypes/settings.hpp"
 #include "editor.hpp"
 #include "main.hpp"
 #include "sources.hpp"
 #include "utils.hpp"
-#include "customtypes/settings.hpp"
 
 using namespace Qounters;
-using namespace QuestUI;
 
 std::vector<std::pair<std::string, TemplateUIFn>> Qounters::templates = {
     {"Blank", Templates::EmptyUI},
@@ -25,14 +26,14 @@ std::vector<std::pair<std::string, TemplateUIFn>> Qounters::templates = {
     {"FC Percentage", Templates::FCPercentUI},
 };
 
-const std::vector<std::string> NotesDisplayStrings = {
+std::vector<std::string_view> const NotesDisplayStrings = {
     "Cut",
     "Remaining",
     "Cut Ratio",
     "Cut Percent",
 };
 
-const std::vector<std::string> SongTimeDisplayStrings = {
+std::vector<std::string_view> const SongTimeDisplayStrings = {
     "Base Game",
     "Ring",
     "Percentage",
@@ -50,17 +51,18 @@ namespace Qounters::Templates {
         return group;
     }
 
-    void CreateButtons(UnityEngine::GameObject* parent, std::function<void ()> createFn) {
-        auto buttons = BeatSaberUI::CreateHorizontalLayoutGroup(parent);
-        buttons->set_spacing(3);
-        BeatSaberUI::CreateUIButton(buttons, "Cancel", CloseModal);
-        BeatSaberUI::CreateUIButton(buttons, "Create", "ActionButton", [createFn]() {
+    void CreateButtons(UnityEngine::GameObject* parent, std::function<void()> createFn) {
+        auto buttons = BSML::Lite::CreateHorizontalLayoutGroup(parent);
+        buttons->spacing = 3;
+        BSML::Lite::CreateUIButton(buttons, "Cancel", CloseModal);
+        BSML::Lite::CreateUIButton(buttons, "Create", "ActionButton", [createFn]() {
             createFn();
             CloseModal();
         });
     }
 
-    Component& AddText(Group& group, std::string source, UnparsedJSON sourceOpts, float size = 15, TextOptions::Aligns align = TextOptions::Aligns::Center) {
+    Component&
+    AddText(Group& group, std::string source, UnparsedJSON sourceOpts, float size = 15, TextOptions::Aligns align = TextOptions::Aligns::Center) {
         auto& ret = group.Components.emplace_back();
         ret.Type = (int) Component::Types::Text;
         TextOptions opts;
@@ -197,7 +199,7 @@ namespace Qounters::Templates {
     void AddSongTime(int anchor, UnityEngine::Vector2 pos, int display, bool timeLeft) {
         auto group = MakeGroup(anchor, pos);
         switch (display) {
-            case 0: { // Base Game
+            case 0: {  // Base Game
                 auto& comp = group.Components.emplace_back();
                 comp.Type = (int) Component::Types::BaseGame;
                 BaseGameOptions opts;
@@ -205,7 +207,7 @@ namespace Qounters::Templates {
                 comp.Options = opts;
                 break;
             }
-            case 1: { // Ring
+            case 1: {  // Ring
                 TextSource::Time timeOpts;
                 timeOpts.Remaining = timeLeft;
                 AddText(group, TextSource::TimeName, timeOpts);
@@ -220,7 +222,7 @@ namespace Qounters::Templates {
                 comp.Scale = ConfigUtils::Vector2(1.5, 1.5);
                 break;
             }
-            default: { // Percentage
+            default: {  // Percentage
                 TextSource::Time timeOpts;
                 timeOpts.Percentage = true;
                 timeOpts.Remaining = timeLeft;
@@ -354,7 +356,7 @@ namespace Qounters::Templates {
         static int anchor = 0;
 
         Utils::CreateDropdownEnum(parent, "Starting Anchor", anchor, AnchorStrings, [](int val) { anchor = val; });
-        CreateButtons(parent, []() { AddEmpty(anchor, {}); });
+        CreateButtons(parent, []() { AddEmpty(anchor, {0, 0}); });
     }
     void ScoreUI(UnityEngine::GameObject* parent) {
         static int anchor = 0;
@@ -365,12 +367,12 @@ namespace Qounters::Templates {
         static bool rankColors = true;
 
         Utils::CreateDropdownEnum(parent, "Starting Anchor", anchor, AnchorStrings, [](int val) { anchor = val; });
-        BeatSaberUI::CreateToggle(parent, "Show Numeric Score", score, [](bool val) { score = val; });
-        BeatSaberUI::CreateToggle(parent, "Show Percentage", percent, [](bool val) { percent = val; });
-        BeatSaberUI::CreateToggle(parent, "Show Rank", rank, [](bool val) { rank = val; });
-        BeatSaberUI::CreateIncrementSetting(parent, "Percentage Decimals", 0, 1, decimals, [](float val) { decimals = val; });
-        BeatSaberUI::CreateToggle(parent, "Color Rank Text", rankColors, [](bool val) { rankColors = val; });
-        CreateButtons(parent, []() { AddScore(anchor, {}, score, percent, rank, decimals, rankColors); });
+        BSML::Lite::CreateToggle(parent, "Show Numeric Score", score, [](bool val) { score = val; });
+        BSML::Lite::CreateToggle(parent, "Show Percentage", percent, [](bool val) { percent = val; });
+        BSML::Lite::CreateToggle(parent, "Show Rank", rank, [](bool val) { rank = val; });
+        BSML::Lite::CreateIncrementSetting(parent, "Percentage Decimals", 0, 1, decimals, [](float val) { decimals = val; });
+        BSML::Lite::CreateToggle(parent, "Color Rank Text", rankColors, [](bool val) { rankColors = val; });
+        CreateButtons(parent, []() { AddScore(anchor, {0, 0}, score, percent, rank, decimals, rankColors); });
     }
     void PersonalBestUI(UnityEngine::GameObject* parent) {
         static int anchor = 0;
@@ -379,10 +381,10 @@ namespace Qounters::Templates {
         static int decimals = 2;
 
         Utils::CreateDropdownEnum(parent, "Starting Anchor", anchor, AnchorStrings, [](int val) { anchor = val; });
-        BeatSaberUI::CreateToggle(parent, "Absolute Score", absolute, [](bool val) { absolute = val; });
-        BeatSaberUI::CreateToggle(parent, "Hide On First Score", hideFirst, [](bool val) { hideFirst = val; });
-        BeatSaberUI::CreateIncrementSetting(parent, "Decimals", 0, 1, decimals, [](float val) { decimals = val; });
-        CreateButtons(parent, []() { AddPersonalBest(anchor, {}, absolute, hideFirst, decimals); });
+        BSML::Lite::CreateToggle(parent, "Absolute Score", absolute, [](bool val) { absolute = val; });
+        BSML::Lite::CreateToggle(parent, "Hide On First Score", hideFirst, [](bool val) { hideFirst = val; });
+        BSML::Lite::CreateIncrementSetting(parent, "Decimals", 0, 1, decimals, [](float val) { decimals = val; });
+        CreateButtons(parent, []() { AddPersonalBest(anchor, {0, 0}, absolute, hideFirst, decimals); });
     }
     void AverageCutUI(UnityEngine::GameObject* parent) {
         static int anchor = 0;
@@ -391,10 +393,10 @@ namespace Qounters::Templates {
         static int decimals = 2;
 
         Utils::CreateDropdownEnum(parent, "Starting Anchor", anchor, AnchorStrings, [](int val) { anchor = val; });
-        BeatSaberUI::CreateToggle(parent, "Split Sabers", splitSaber, [](bool val) { splitSaber = val; });
-        BeatSaberUI::CreateToggle(parent, "Split Cut Parts", splitCut, [](bool val) { splitCut = val; });
-        BeatSaberUI::CreateIncrementSetting(parent, "Decimals", 0, 1, decimals, [](float val) { decimals = val; });
-        CreateButtons(parent, []() { AddAverageCut(anchor, {}, splitSaber, splitCut, decimals); });
+        BSML::Lite::CreateToggle(parent, "Split Sabers", splitSaber, [](bool val) { splitSaber = val; });
+        BSML::Lite::CreateToggle(parent, "Split Cut Parts", splitCut, [](bool val) { splitCut = val; });
+        BSML::Lite::CreateIncrementSetting(parent, "Decimals", 0, 1, decimals, [](float val) { decimals = val; });
+        CreateButtons(parent, []() { AddAverageCut(anchor, {0, 0}, splitSaber, splitCut, decimals); });
     }
     void TimeDependenceUI(UnityEngine::GameObject* parent) {
         static int anchor = 0;
@@ -403,10 +405,10 @@ namespace Qounters::Templates {
         static int decimalOffset = 0;
 
         Utils::CreateDropdownEnum(parent, "Starting Anchor", anchor, AnchorStrings, [](int val) { anchor = val; });
-        BeatSaberUI::CreateToggle(parent, "Split Sabers", splitSaber, [](bool val) { splitSaber = val; });
-        BeatSaberUI::CreateIncrementSetting(parent, "Decimals", 0, 1, decimals, [](float val) { decimals = val; });
-        BeatSaberUI::CreateIncrementSetting(parent, "Decimal Offset", 0, 1, decimalOffset, [](float val) { decimalOffset = val; });
-        CreateButtons(parent, []() { AddTimeDependence(anchor, {}, splitSaber, decimals, decimalOffset); });
+        BSML::Lite::CreateToggle(parent, "Split Sabers", splitSaber, [](bool val) { splitSaber = val; });
+        BSML::Lite::CreateIncrementSetting(parent, "Decimals", 0, 1, decimals, [](float val) { decimals = val; });
+        BSML::Lite::CreateIncrementSetting(parent, "Decimal Offset", 0, 1, decimalOffset, [](float val) { decimalOffset = val; });
+        CreateButtons(parent, []() { AddTimeDependence(anchor, {0, 0}, splitSaber, decimals, decimalOffset); });
     }
     void NotesUI(UnityEngine::GameObject* parent) {
         static int anchor = 0;
@@ -415,8 +417,8 @@ namespace Qounters::Templates {
 
         Utils::CreateDropdownEnum(parent, "Starting Anchor", anchor, AnchorStrings, [](int val) { anchor = val; });
         Utils::CreateDropdownEnum(parent, "Display Type", display, NotesDisplayStrings, [](int val) { display = val; });
-        BeatSaberUI::CreateIncrementSetting(parent, "Percentage Decimals", 0, 1, decimals, [](float val) { decimals = val; });
-        CreateButtons(parent, []() { AddNotes(anchor, {}, display, decimals); });
+        BSML::Lite::CreateIncrementSetting(parent, "Percentage Decimals", 0, 1, decimals, [](float val) { decimals = val; });
+        CreateButtons(parent, []() { AddNotes(anchor, {0, 0}, display, decimals); });
     }
     void MistakesUI(UnityEngine::GameObject* parent) {
         static int anchor = 0;
@@ -425,18 +427,18 @@ namespace Qounters::Templates {
         static bool walls = false;
 
         Utils::CreateDropdownEnum(parent, "Starting Anchor", anchor, AnchorStrings, [](int val) { anchor = val; });
-        BeatSaberUI::CreateToggle(parent, "Count Bad Cuts", badCuts, [](bool val) { badCuts = val; });
-        BeatSaberUI::CreateToggle(parent, "Count Bombs", bombs, [](bool val) { bombs = val; });
-        BeatSaberUI::CreateToggle(parent, "Count Walls", walls, [](bool val) { walls = val; });
-        CreateButtons(parent, []() { AddMistakes(anchor, {}, badCuts, bombs, walls); });
+        BSML::Lite::CreateToggle(parent, "Count Bad Cuts", badCuts, [](bool val) { badCuts = val; });
+        BSML::Lite::CreateToggle(parent, "Count Bombs", bombs, [](bool val) { bombs = val; });
+        BSML::Lite::CreateToggle(parent, "Count Walls", walls, [](bool val) { walls = val; });
+        CreateButtons(parent, []() { AddMistakes(anchor, {0, 0}, badCuts, bombs, walls); });
     }
     void FailsUI(UnityEngine::GameObject* parent) {
         static int anchor = 0;
         static bool restarts = false;
 
         Utils::CreateDropdownEnum(parent, "Starting Anchor", anchor, AnchorStrings, [](int val) { anchor = val; });
-        BeatSaberUI::CreateToggle(parent, "Count Restarts Instead", restarts, [](bool val) { restarts = val; });
-        CreateButtons(parent, []() { AddFails(anchor, {}, restarts); });
+        BSML::Lite::CreateToggle(parent, "Count Restarts Instead", restarts, [](bool val) { restarts = val; });
+        CreateButtons(parent, []() { AddFails(anchor, {0, 0}, restarts); });
     }
     void SongTimeUI(UnityEngine::GameObject* parent) {
         static int anchor = 0;
@@ -445,8 +447,8 @@ namespace Qounters::Templates {
 
         Utils::CreateDropdownEnum(parent, "Starting Anchor", anchor, AnchorStrings, [](int val) { anchor = val; });
         Utils::CreateDropdownEnum(parent, "Display Type", display, SongTimeDisplayStrings, [](int val) { display = val; });
-        BeatSaberUI::CreateToggle(parent, "Time Remaining", timeLeft, [](bool val) { timeLeft = val; });
-        CreateButtons(parent, []() { AddSongTime(anchor, {}, display, timeLeft); });
+        BSML::Lite::CreateToggle(parent, "Time Remaining", timeLeft, [](bool val) { timeLeft = val; });
+        CreateButtons(parent, []() { AddSongTime(anchor, {0, 0}, display, timeLeft); });
     }
     void PPUI(UnityEngine::GameObject* parent) {
         static int anchor = 0;
@@ -456,11 +458,11 @@ namespace Qounters::Templates {
         static int decimals = 2;
 
         Utils::CreateDropdownEnum(parent, "Starting Anchor", anchor, AnchorStrings, [](int val) { anchor = val; });
-        BeatSaberUI::CreateToggle(parent, "Show ScoreSaber", scoresaber, [](bool val) { scoresaber = val; });
-        BeatSaberUI::CreateToggle(parent, "Show BeatLeader", beatleader, [](bool val) { beatleader = val; });
-        BeatSaberUI::CreateToggle(parent, "Hide When Unranked", hideUnranked, [](bool val) { hideUnranked = val; });
-        BeatSaberUI::CreateIncrementSetting(parent, "Decimals", 0, 1, decimals, [](float val) { decimals = val; });
-        CreateButtons(parent, []() { AddPP(anchor, {}, beatleader, scoresaber, hideUnranked, decimals); });
+        BSML::Lite::CreateToggle(parent, "Show ScoreSaber", scoresaber, [](bool val) { scoresaber = val; });
+        BSML::Lite::CreateToggle(parent, "Show BeatLeader", beatleader, [](bool val) { beatleader = val; });
+        BSML::Lite::CreateToggle(parent, "Hide When Unranked", hideUnranked, [](bool val) { hideUnranked = val; });
+        BSML::Lite::CreateIncrementSetting(parent, "Decimals", 0, 1, decimals, [](float val) { decimals = val; });
+        CreateButtons(parent, []() { AddPP(anchor, {0, 0}, beatleader, scoresaber, hideUnranked, decimals); });
     }
     void SaberSpeedUI(UnityEngine::GameObject* parent) {
         static int anchor = 0;
@@ -469,10 +471,10 @@ namespace Qounters::Templates {
         static int decimals = 2;
 
         Utils::CreateDropdownEnum(parent, "Starting Anchor", anchor, AnchorStrings, [](int val) { anchor = val; });
-        BeatSaberUI::CreateToggle(parent, "Split Sabers", split, [](bool val) { split = val; });
-        BeatSaberUI::CreateToggle(parent, "Last 5 Seconds Only", last5Secs, [](bool val) { last5Secs = val; });
-        BeatSaberUI::CreateIncrementSetting(parent, "Decimals", 0, 1, decimals, [](float val) { decimals = val; });
-        CreateButtons(parent, []() { AddSaberSpeed(anchor, {}, split, last5Secs, decimals); });
+        BSML::Lite::CreateToggle(parent, "Split Sabers", split, [](bool val) { split = val; });
+        BSML::Lite::CreateToggle(parent, "Last 5 Seconds Only", last5Secs, [](bool val) { last5Secs = val; });
+        BSML::Lite::CreateIncrementSetting(parent, "Decimals", 0, 1, decimals, [](float val) { decimals = val; });
+        CreateButtons(parent, []() { AddSaberSpeed(anchor, {0, 0}, split, last5Secs, decimals); });
     }
     void SpinometerUI(UnityEngine::GameObject* parent) {
         static int anchor = 0;
@@ -480,9 +482,9 @@ namespace Qounters::Templates {
         static bool highest = false;
 
         Utils::CreateDropdownEnum(parent, "Starting Anchor", anchor, AnchorStrings, [](int val) { anchor = val; });
-        BeatSaberUI::CreateToggle(parent, "Split Sabers", split, [](bool val) { split = val; });
-        BeatSaberUI::CreateToggle(parent, "Use Highest", highest, [](bool val) { highest = val; });
-        CreateButtons(parent, []() { AddSpinometer(anchor, {}, split, highest); });
+        BSML::Lite::CreateToggle(parent, "Split Sabers", split, [](bool val) { split = val; });
+        BSML::Lite::CreateToggle(parent, "Use Highest", highest, [](bool val) { highest = val; });
+        CreateButtons(parent, []() { AddSpinometer(anchor, {0, 0}, split, highest); });
     }
     void FCPercentUI(UnityEngine::GameObject* parent) {
         static int anchor = 0;
@@ -492,10 +494,10 @@ namespace Qounters::Templates {
         static int decimals = 2;
 
         Utils::CreateDropdownEnum(parent, "Starting Anchor", anchor, AnchorStrings, [](int val) { anchor = val; });
-        BeatSaberUI::CreateToggle(parent, "Split Sabers", split, [](bool val) { split = val; });
-        BeatSaberUI::CreateToggle(parent, "Use Saber Colors", saberColors, [](bool val) { saberColors = val; });
-        BeatSaberUI::CreateToggle(parent, "Hide With FC", hideInFC, [](bool val) { hideInFC = val; });
-        BeatSaberUI::CreateIncrementSetting(parent, "Decimals", 0, 1, decimals, [](float val) { decimals = val; });
-        CreateButtons(parent, []() { AddFCPercent(anchor, {}, split, saberColors, hideInFC, decimals); });
+        BSML::Lite::CreateToggle(parent, "Split Sabers", split, [](bool val) { split = val; });
+        BSML::Lite::CreateToggle(parent, "Use Saber Colors", saberColors, [](bool val) { saberColors = val; });
+        BSML::Lite::CreateToggle(parent, "Hide With FC", hideInFC, [](bool val) { hideInFC = val; });
+        BSML::Lite::CreateIncrementSetting(parent, "Decimals", 0, 1, decimals, [](float val) { decimals = val; });
+        CreateButtons(parent, []() { AddFCPercent(anchor, {0, 0}, split, saberColors, hideInFC, decimals); });
     }
 }

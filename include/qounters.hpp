@@ -1,7 +1,7 @@
 #pragma once
 
-#include "sources.hpp"
 #include "config.hpp"
+#include "sources.hpp"
 
 namespace Qounters {
     enum class HUDType {

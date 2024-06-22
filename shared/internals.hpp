@@ -1,8 +1,8 @@
 #pragma once
 
+#include "GlobalNamespace/BeatmapData.hpp"
 #include "GlobalNamespace/ColorScheme.hpp"
 #include "GlobalNamespace/NoteData.hpp"
-#include "GlobalNamespace/BeatmapData.hpp"
 #include "types.hpp"
 
 namespace Qounters {

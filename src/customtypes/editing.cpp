@@ -1,4 +1,14 @@
 #include "customtypes/editing.hpp"
+
+#include "GlobalNamespace/VRController.hpp"
+#include "UnityEngine/Bounds.hpp"
+#include "UnityEngine/DrivenTransformProperties.hpp"
+#include "UnityEngine/Material.hpp"
+#include "UnityEngine/Rect.hpp"
+#include "UnityEngine/Resources.hpp"
+#include "UnityEngine/Time.hpp"
+#include "UnityEngine/UI/LayoutRebuilder.hpp"
+#include "VRUIControls/VRPointer.hpp"
 #include "config.hpp"
 #include "customtypes/settings.hpp"
 #include "editor.hpp"
@@ -16,9 +26,9 @@ DEFINE_TYPE(Qounters, EditingComponent);
 using namespace Qounters;
 using namespace UnityEngine;
 
-const Color offColor = {0.7, 0.7, 0.7, 1};
-const Color highlightColor = {0, 0.7, 0.8, 1};
-const Color selectColor = {0.2, 0.5, 0.6, 1};
+Color const offColor = {0.7, 0.7, 0.7, 1};
+Color const highlightColor = {0, 0.7, 0.8, 1};
+Color const selectColor = {0.2, 0.5, 0.6, 1};
 
 Material* Outline::material = nullptr;
 int Outline::count = 0;
@@ -26,7 +36,7 @@ int Outline::count = 0;
 void Outline::Awake() {
     count++;
     if (!material)
-        material = Resources::FindObjectsOfTypeAll<Material*>().First([](auto x) { return x->get_name() == "UINoGlow"; });
+        material = Resources::FindObjectsOfTypeAll<Material*>()->First([](auto x) { return x->name == StringW("UINoGlow"); });
     set_material(material);
 }
 
@@ -40,9 +50,8 @@ void Outline::OnEnable() {
     static auto base = il2cpp_utils::FindMethodUnsafe(classof(UI::Graphic*), "OnEnable", 0);
     il2cpp_utils::RunMethod(this, base);
 
-    auto rectTransform = get_rectTransform();
-    rectTransform->set_anchorMin({0, 0});
-    rectTransform->set_anchorMax({1, 1});
+    rectTransform->anchorMin = {0, 0};
+    rectTransform->anchorMax = {1, 1};
     UpdateSizeDelta();
 }
 
@@ -62,54 +71,51 @@ void Outline::SetBorderGap(float value) {
 }
 
 void Outline::UpdateSizeDelta() {
-    auto scale = get_transform()->get_lossyScale();
+    auto scale = transform->lossyScale;
     auto pad = 2 * (borderGap + borderWidth);
-    get_rectTransform()->set_sizeDelta({baseSize.x + (pad * 0.02f / scale.x), baseSize.y + (pad * 0.02f / scale.y)});
+    rectTransform->sizeDelta = {baseSize.x + (pad * 0.02f / scale.x), baseSize.y + (pad * 0.02f / scale.y)};
 }
 
-#include "UnityEngine/Rect.hpp"
-
-void Outline::OnPopulateMesh(UI::VertexHelper *vh) {
+void Outline::OnPopulateMesh(UI::VertexHelper* vh) {
     if (borderWidth <= 0)
         return;
 
-    auto scale = get_transform()->get_lossyScale();
+    auto scale = transform->lossyScale;
 
     float borderX = borderWidth * 0.02 / scale.x;
     float borderY = borderWidth * 0.02 / scale.y;
 
     auto rect = GetPixelAdjustedRect();
-    float width = rect.get_width();
-    float height = rect.get_height();
-    float xMin = rect.get_xMin();
-    float yMin = rect.get_yMin();
-    float xMax = rect.get_xMax();
-    float yMax = rect.get_yMax();
+    float width = rect.width;
+    float height = rect.height;
+    float xMin = rect.xMin;
+    float yMin = rect.yMin;
+    float xMax = rect.xMax;
+    float yMax = rect.yMax;
 
     float perimeter = width * 2 + height * 2;
 
-    auto color = get_color();
-    auto color32 = Color32(color.r * 255, color.g * 255, color.b * 255, color.a * 255);
+    auto color32 = Color32::op_Implicit___UnityEngine__Color32(color);
 
     vh->Clear();
 
     float uv = height / perimeter;
-    vh->AddVert({xMin, yMin, 0}, color32, {0, 0});
-    vh->AddVert({xMin, yMax, 0}, color32, {uv, 0});
-    vh->AddVert({xMin + borderX, yMax - borderY, 0}, color32, {uv, 1});
-    vh->AddVert({xMin + borderX, yMin + borderY, 0}, color32, {0, 1});
+    vh->AddVert({xMin, yMin, 0}, color32, {0, 0, 0, 0});
+    vh->AddVert({xMin, yMax, 0}, color32, {uv, 0, 0, 0});
+    vh->AddVert({xMin + borderX, yMax - borderY, 0}, color32, {uv, 1, 0, 0});
+    vh->AddVert({xMin + borderX, yMin + borderY, 0}, color32, {0, 1, 0, 0});
     vh->AddTriangle(0, 1, 2);
     vh->AddTriangle(2, 3, 0);
 
     uv = (height + width) / perimeter;
-    vh->AddVert({xMax, yMax, 0}, color32, {uv, 0});
-    vh->AddVert({xMax - borderX, yMax - borderY, 0}, color32, {uv, 1});
+    vh->AddVert({xMax, yMax, 0}, color32, {uv, 0, 0, 0});
+    vh->AddVert({xMax - borderX, yMax - borderY, 0}, color32, {uv, 1, 0, 0});
     vh->AddTriangle(1, 4, 5);
     vh->AddTriangle(5, 2, 1);
 
     uv = (height + width + height) / perimeter;
-    vh->AddVert({xMax, yMin, 0}, color32, {uv, 0});
-    vh->AddVert({xMax - borderX, yMin + borderY, 0}, color32, {uv, 1});
+    vh->AddVert({xMax, yMin, 0}, color32, {uv, 0, 0, 0});
+    vh->AddVert({xMax - borderX, yMin + borderY, 0}, color32, {uv, 1, 0, 0});
     vh->AddTriangle(4, 6, 7);
     vh->AddTriangle(7, 5, 4);
     vh->AddTriangle(6, 0, 3);
@@ -117,27 +123,26 @@ void Outline::OnPopulateMesh(UI::VertexHelper *vh) {
 }
 
 void Outline::OnRectTransformDimensionsChange() {
-    UpdateSizeDelta(); // TODO: doesn't seem to update consistently with scale changes
+    UpdateSizeDelta();  // TODO: doesn't seem to update consistently with scale changes
     SetVerticesDirty();
 }
 
 Outline* Outline::Create(Component* obj) {
     auto child = GameObject::New_ctor("QountersOutline");
-    child->get_transform()->SetParent(obj->get_transform(), false);
+    child->transform->SetParent(obj->transform, false);
     return child->AddComponent<Outline*>();
 }
-
 
 void CanvasHighlight::OnEnable() {
     static auto base = il2cpp_utils::FindMethodUnsafe(classof(UI::Graphic*), "OnEnable", 0);
     il2cpp_utils::RunMethod(this, base);
 
-    auto mat = Resources::FindObjectsOfTypeAll<Material*>().First([](auto x) { return x->get_name() == "UINoGlow"; }); // TODO: cache
-    set_material(mat);
+    auto mat = Resources::FindObjectsOfTypeAll<Material*>()->First([](auto x) { return x->name == StringW("UINoGlow"); });  // TODO: cache
+    material = mat;
 
     auto rectTransform = Utils::GetOrAddComponent<RectTransform*>(this);
-    rectTransform->set_anchorMin({0, 0});
-    rectTransform->set_anchorMax({1, 1});
+    rectTransform->anchorMin = {0, 0};
+    rectTransform->anchorMax = {1, 1};
 }
 
 void CanvasHighlight::SetHighlighted(bool value) {
@@ -146,7 +151,7 @@ void CanvasHighlight::SetHighlighted(bool value) {
 }
 
 // rounded corners might look nice
-void CanvasHighlight::OnPopulateMesh(UI::VertexHelper *vh) {
+void CanvasHighlight::OnPopulateMesh(UI::VertexHelper* vh) {
     vh->Clear();
 
     if (!highlighted)
@@ -154,17 +159,15 @@ void CanvasHighlight::OnPopulateMesh(UI::VertexHelper *vh) {
 
     auto rect = GetPixelAdjustedRect();
 
-    auto color = get_color();
-    auto color32 = Color32(color.r * 255, color.g * 255, color.b * 255, color.a * 255);
+    auto color32 = Color32::op_Implicit___UnityEngine__Color32(color);
 
-	vh->AddVert({rect.m_XMin, rect.m_YMin, 0}, color32, {0, 0});
-	vh->AddVert({rect.m_XMin, rect.m_YMin + rect.m_Height, 0}, color32, {0, 1});
-	vh->AddVert({rect.m_XMin + rect.m_Width, rect.m_YMin + rect.m_Height, 0}, color32, {1, 1});
-	vh->AddVert({rect.m_XMin + rect.m_Width, rect.m_YMin, 0}, color32, {1, 0});
-	vh->AddTriangle(0, 1, 2);
-	vh->AddTriangle(2, 3, 0);
+    vh->AddVert({rect.m_XMin, rect.m_YMin, 0}, color32, {0, 0, 0, 0});
+    vh->AddVert({rect.m_XMin, rect.m_YMin + rect.m_Height, 0}, color32, {0, 1, 0, 0});
+    vh->AddVert({rect.m_XMin + rect.m_Width, rect.m_YMin + rect.m_Height, 0}, color32, {1, 1, 0, 0});
+    vh->AddVert({rect.m_XMin + rect.m_Width, rect.m_YMin, 0}, color32, {1, 0, 0, 0});
+    vh->AddTriangle(0, 1, 2);
+    vh->AddTriangle(2, 3, 0);
 }
-
 
 void TextOutlineSizer::OnEnable() {
     static auto base = il2cpp_utils::FindMethodUnsafe(classof(EventSystems::UIBehaviour*), "OnEnable", 0);
@@ -175,11 +178,9 @@ void TextOutlineSizer::OnEnable() {
     if (!rectTransform)
         rectTransform = GetComponent<RectTransform*>();
 
-    rectTransform->set_sizeDelta({0, 0});
+    rectTransform->sizeDelta = {0, 0};
     SetDirty();
 }
-
-#include "UnityEngine/UI/LayoutRebuilder.hpp"
 
 void TextOutlineSizer::OnDisable() {
     static auto base = il2cpp_utils::FindMethodUnsafe(classof(EventSystems::UIBehaviour*), "OnDisable", 0);
@@ -219,9 +220,6 @@ Outline* TextOutlineSizer::GetOutline() {
     return outline;
 }
 
-#include "UnityEngine/DrivenTransformProperties.hpp"
-#include "UnityEngine/Bounds.hpp"
-
 custom_types::Helpers::Coroutine TextOutlineSizer::SetLayout() {
     co_yield nullptr;
     settingLayout = false;
@@ -231,22 +229,21 @@ custom_types::Helpers::Coroutine TextOutlineSizer::SetLayout() {
 
     auto outline = GetOutline();
 
-    auto bounds = text->get_bounds();
+    auto bounds = text->bounds;
 
-    if (text->get_text() == "")
-        bounds = Bounds({}, {});
+    if (text->text == "")
+        bounds = Bounds({0, 0, 0}, {0, 0, 0});
 
-    outline->get_rectTransform()->set_anchoredPosition({bounds.m_Center.x, bounds.m_Center.y});
+    outline->rectTransform->anchoredPosition = {bounds.m_Center.x, bounds.m_Center.y};
     outline->SetBaseSize({bounds.m_Extents.x * 2, bounds.m_Extents.y * 2});
 
     co_return;
 }
 
-
 void GroupOutlineSizer::OnEnable() {
     if (!rectTransform)
         rectTransform = GetComponent<RectTransform*>();
-    rectTransform->set_sizeDelta({0, 0});
+    rectTransform->sizeDelta = {0, 0};
 }
 
 Outline* GroupOutlineSizer::GetOutline() {
@@ -273,18 +270,22 @@ Vector4 GroupOutlineSizer::CalculateBounds() {
             continue;
 
         hasChild = true;
-        childOutline->get_rectTransform()->GetWorldCorners(corners);
+        childOutline->rectTransform->GetWorldCorners(corners);
         for (auto& corner : corners) {
             auto point = rectTransform->InverseTransformPoint(corner);
-            if (point.x < minX) minX = point.x;
-            else if (point.x > maxX) maxX = point.x;
-            if (point.y < minY) minY = point.y;
-            else if (point.y > maxY) maxY = point.y;
+            if (point.x < minX)
+                minX = point.x;
+            else if (point.x > maxX)
+                maxX = point.x;
+            if (point.y < minY)
+                minY = point.y;
+            else if (point.y > maxY)
+                maxY = point.y;
         }
     }
 
     if (!hasChild)
-        return {};
+        return {0, 0, 0, 0};
     return {minX, minY, maxX, maxY};
 }
 
@@ -295,14 +296,13 @@ void GroupOutlineSizer::Update() {
     auto bounds = CalculateBounds();
     auto outline = GetOutline();
 
-    outline->get_rectTransform()->set_anchoredPosition({(bounds.x + bounds.z) / 2, (bounds.y + bounds.w) / 2});
+    outline->rectTransform->anchoredPosition = {(bounds.x + bounds.z) / 2, (bounds.y + bounds.w) / 2};
     outline->SetBaseSize({bounds.z - bounds.x + padding * 2, bounds.w - bounds.y + padding * 2});
 
-    outline->get_transform()->SetAsFirstSibling();
+    outline->transform->SetAsFirstSibling();
 
     return;
 }
-
 
 void EditingBase::Awake() {
     if (!rectTransform)
@@ -330,7 +330,7 @@ void EditingBase::OnInitializePotentialDrag(EventSystems::PointerEventData* even
 }
 
 UnityEngine::Vector2 EditingBase::GetPointerPos(EventSystems::PointerEventData* eventData) {
-    auto pos = rectTransform->get_parent()->InverseTransformPoint(eventData->pointerCurrentRaycast.worldPosition);
+    auto pos = rectTransform->parent->InverseTransformPoint(eventData->pointerCurrentRaycast.worldPosition);
     return {pos.x, pos.y};
 }
 
@@ -346,15 +346,14 @@ void EditingBase::Deselect() {
 
 void EditingBase::UpdateColor() {
     if (pointer || dragging)
-        outline->set_color(highlightColor);
+        outline->color = highlightColor;
     else if (selected)
-        outline->set_color(selectColor);
+        outline->color = selectColor;
     else
-        outline->set_color(offColor);
+        outline->color = offColor;
     if (auto group = il2cpp_utils::try_cast<EditingGroup>(this).value_or(nullptr))
         group->UpdateColorChildren();
 }
-
 
 void EditingGroup::OnEnable() {
     if (!outlineSizer)
@@ -369,8 +368,6 @@ void EditingGroup::OnPointerExit(EventSystems::PointerEventData* eventData) {
     BasePointerExit();
 }
 
-#include "UnityEngine/Time.hpp"
-
 void EditingGroup::OnDrag(EventSystems::PointerEventData* eventData) {
     auto& group = Editor::GetSelectedGroup(dragActionId);
     if (group.Detached)
@@ -380,7 +377,7 @@ void EditingGroup::OnDrag(EventSystems::PointerEventData* eventData) {
 
     if (!dragging) {
         dragStart = Time::get_time();
-        outlineSizer->set_enabled(false);
+        outlineSizer->enabled = false;
     }
     dragging = true;
 
@@ -399,7 +396,7 @@ void EditingGroup::OnEndDrag(EventSystems::PointerEventData* eventData) {
     if (tooShort)
         Editor::Undo();
 
-    outlineSizer->set_enabled(true);
+    outlineSizer->enabled = true;
     dragging = false;
     UpdateColor();
 }
@@ -409,12 +406,12 @@ void EditingGroup::OnDragNormal(EventSystems::PointerEventData* eventData) {
     auto& group = GetGroup();
 
     if (!dragging) {
-        grabOffset = group.Position - position;
+        grabOffset = Vector2::op_Subtraction(group.Position, position);
         Editor::BeginDrag(group.Anchor, true);
     }
 
     if (!Editor::UpdateDrag(this)) {
-        group.Position = position + grabOffset;
+        group.Position = Vector2::op_Addition(position, grabOffset);
         Editor::UpdatePosition();
     }
 }
@@ -423,50 +420,46 @@ void EditingGroup::OnEndDragNormal(EventSystems::PointerEventData* eventData) {
     Editor::EndDrag();
 }
 
-#include "VRUIControls/VRPointer.hpp"
-#include "GlobalNamespace/VRController.hpp"
-
 void EditingGroup::OnDragDetached(EventSystems::PointerEventData* eventData) {
     if (!cachedInputModule)
-        cachedInputModule = il2cpp_utils::try_cast<VRUIControls::VRInputModule>(eventData->get_currentInputModule()).value_or(nullptr);
+        cachedInputModule = il2cpp_utils::try_cast<VRUIControls::VRInputModule>(eventData->currentInputModule.ptr()).value_or(nullptr);
     if (!cachedInputModule)
         return;
     auto position = eventData->worldPosition;
     auto& group = GetGroup();
 
-    auto pointer = cachedInputModule->vrPointer;
-    auto controller = pointer->get_vrController();
+    auto pointer = cachedInputModule->_vrPointer;
+    auto controller = pointer->_lastSelectedVrController;
     if (!dragging) {
-        detachedGrabPos = controller->get_transform()->InverseTransformPoint(get_transform()->get_position());
-        detachedGrabRot = Quaternion::Inverse(controller->get_transform()->get_rotation()) * get_transform()->get_rotation();
+        detachedGrabPos = controller->transform->InverseTransformPoint(transform->position);
+        detachedGrabRot = Quaternion::op_Multiply(Quaternion::Inverse(controller->transform->rotation), transform->rotation);
         Editor::EnableDetachedCanvas(true);
     }
 
     float unscaledDeltaTime = Time::get_unscaledDeltaTime();
     // thumbstick movement
-    if(pointer->_get__lastControllerUsedWasRight()) {
-        float diff = controller->get_verticalAxisValue() * unscaledDeltaTime;
+    if (pointer->_lastSelectedControllerWasRight) {
+        float diff = controller->thumbstick.y * unscaledDeltaTime;
         // no movement if too close
-        if(detachedGrabPos.get_magnitude() < 0.5 && diff > 0)
+        if (detachedGrabPos.magnitude < 0.5 && diff > 0)
             diff = 0;
         else
-            detachedGrabPos = detachedGrabPos - (Vector3::get_forward() * diff);
+            detachedGrabPos = Vector3::op_Subtraction(detachedGrabPos, Vector3::op_Multiply(Vector3::get_forward(), diff));
         // rotate on the third axis horizontally
-        float zRot = -30 * controller->get_horizontalAxisValue() * unscaledDeltaTime;
-        detachedGrabRot = detachedGrabRot * Quaternion::Euler({0, 0, zRot});
-    }
-    else {
-        float xRot = -30 * controller->get_verticalAxisValue() * unscaledDeltaTime;
-        float yRot = -30 * controller->get_horizontalAxisValue() * unscaledDeltaTime;
-        auto extraRot = Quaternion::Euler({0, yRot, 0}) * Quaternion::Euler({xRot, 0, 0});
-        detachedGrabRot = detachedGrabRot * extraRot;
+        float zRot = -30 * controller->thumbstick.x * unscaledDeltaTime;
+        detachedGrabRot = Quaternion::op_Multiply(detachedGrabRot, Quaternion::Euler({0, 0, zRot}));
+    } else {
+        float xRot = -30 * controller->thumbstick.y * unscaledDeltaTime;
+        float yRot = -30 * controller->thumbstick.x * unscaledDeltaTime;
+        auto extraRot = Quaternion::op_Multiply(Quaternion::Euler({0, yRot, 0}), Quaternion::Euler({xRot, 0, 0}));
+        detachedGrabRot = Quaternion::op_Multiply(detachedGrabRot, extraRot);
     }
 
-    auto pos = controller->get_transform()->TransformPoint(detachedGrabPos);
-    auto rot = controller->get_transform()->get_rotation() * detachedGrabRot;
+    auto pos = controller->transform->TransformPoint(detachedGrabPos);
+    auto rot = Quaternion::op_Multiply(controller->transform->rotation, detachedGrabRot);
 
     group.DetachedPosition = Vector3::Lerp(group.DetachedPosition, pos, 10 * unscaledDeltaTime);
-    group.DetachedRotation = Quaternion::Slerp(Quaternion::Euler(group.DetachedRotation), rot, 5 * unscaledDeltaTime).get_eulerAngles();
+    group.DetachedRotation = Quaternion::Slerp(Quaternion::Euler(group.DetachedRotation), rot, 5 * unscaledDeltaTime).eulerAngles;
     Editor::UpdatePosition();
 }
 
@@ -477,16 +470,16 @@ void EditingGroup::OnEndDragDetached(EventSystems::PointerEventData* eventData) 
 void EditingGroup::UpdateColorChildren() {
     if (!highlightedComponents.empty()) {
         if (selected)
-            outline->set_color(selectColor);
+            outline->color = selectColor;
         else
-            outline->set_color(offColor);
+            outline->color = offColor;
     }
 }
 
 void EditingGroup::UpdateDragAnchor(int anchor) {
     auto& group = Editor::GetSelectedGroup(dragActionId);
     group.Anchor = anchor;
-    group.Position = group.Position + grabOffset;
+    group.Position = Vector2::op_Addition(group.Position, grabOffset);
     Editor::UpdatePosition();
 }
 
@@ -501,7 +494,6 @@ Group& EditingGroup::GetGroup() {
 void EditingGroup::Init(int groupIdx) {
     group = groupIdx;
 }
-
 
 void EditingComponent::OnPointerEnter(EventSystems::PointerEventData* eventData) {
     BasePointerEnter();
@@ -520,7 +512,7 @@ void EditingComponent::OnDrag(EventSystems::PointerEventData* eventData) {
     auto& component = Editor::GetSelectedComponent(dragActionId);
 
     if (!dragging) {
-        grabOffset = component.Position - position;
+        grabOffset = Vector2::op_Subtraction(component.Position, position);
         if (GetGroup().Detached)
             Editor::EnableDetachedCanvas(true);
         else
@@ -529,7 +521,7 @@ void EditingComponent::OnDrag(EventSystems::PointerEventData* eventData) {
     }
     dragging = true;
 
-    component.Position = position + grabOffset;
+    component.Position = Vector2::op_Addition(position, grabOffset);
     Editor::UpdatePosition();
     OptionsViewController::GetInstance()->UpdateSimpleUI();
 }
@@ -550,7 +542,7 @@ void EditingComponent::OnEndDrag(EventSystems::PointerEventData* eventData) {
 
 EditingGroup* EditingComponent::GetEditingGroup() {
     if (!group)
-        group = GetComponentsInParent<EditingGroup*>(true).First();
+        group = GetComponentsInParent<EditingGroup*>(true)->First();
     return group;
 }
 

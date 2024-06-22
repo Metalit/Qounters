@@ -1,16 +1,28 @@
 #include "customtypes/settings.hpp"
+
+#include "GlobalNamespace/EnvironmentInfoSO.hpp"
+#include "GlobalNamespace/EnvironmentType.hpp"
+#include "GlobalNamespace/EnvironmentsListModel.hpp"
+#include "GlobalNamespace/PlayerDataFileModel.hpp"
+#include "GlobalNamespace/PlayerDataModel.hpp"
+#include "HMUI/ScreenSystem.hpp"
+#include "UnityEngine/UI/ContentSizeFitter.hpp"
+#include "bsml/shared/BSML-Lite.hpp"
+#include "bsml/shared/Helpers/creation.hpp"
+#include "bsml/shared/Helpers/extension.hpp"
+#include "bsml/shared/Helpers/getters.hpp"
+#include "config.hpp"
+#include "custom-types/shared/coroutine.hpp"
+#include "custom-types/shared/delegate.hpp"
 #include "customtypes/components.hpp"
 #include "customtypes/editing.hpp"
 #include "editor.hpp"
 #include "environment.hpp"
-#include "config.hpp"
 #include "main.hpp"
 #include "sources.hpp"
 #include "sourceui.hpp"
 #include "templates.hpp"
 #include "utils.hpp"
-
-#include "questui/shared/BeatSaberUI.hpp"
 
 DEFINE_TYPE(Qounters, SettingsFlowCoordinator);
 DEFINE_TYPE(Qounters, SettingsViewController);
@@ -23,11 +35,7 @@ DEFINE_TYPE(Qounters, SpritesListSource);
 
 using namespace GlobalNamespace;
 using namespace UnityEngine;
-using namespace QuestUI;
 using namespace Qounters;
-
-#include "HMUI/ViewController_AnimationType.hpp"
-#include "HMUI/ScreenSystem.hpp"
 
 void Qounters::SettingsFlowCoordinator::DidActivate(bool firstActivation, bool addedToHierarchy, bool screenSystemEnabling) {
     if (addedToHierarchy) {
@@ -43,9 +51,11 @@ void Qounters::SettingsFlowCoordinator::DidActivate(bool firstActivation, bool a
     }
 
     if (!blankViewController)
-        blankViewController = BeatSaberUI::CreateViewController();
+        blankViewController = BSML::Helpers::CreateViewController();
 
-    ProvideInitialViewControllers(blankViewController, SettingsViewController::GetInstance(), TemplatesViewController::GetInstance(), nullptr, nullptr);
+    ProvideInitialViewControllers(
+        blankViewController, SettingsViewController::GetInstance(), TemplatesViewController::GetInstance(), nullptr, nullptr
+    );
     Qounters::OptionsViewController::GetInstance()->Deselect();
 }
 
@@ -95,17 +105,18 @@ void Qounters::SettingsFlowCoordinator::OnModalCancel() {
 }
 
 void Qounters::SettingsFlowCoordinator::SelectPreset(StringW name) {
-    ConfirmAction([name = (std::string) name]() {
-        auto presets = getConfig().Presets.GetValue();
-        if (!presets.contains(name)) {
-            SettingsViewController::GetInstance()->UpdateUI();
-            return;
-        }
-        getConfig().Preset.SetValue(name);
-        Editor::LoadPreset(presets[name]);
-    }, []() {
-        SettingsViewController::GetInstance()->UpdateUI();
-    });
+    ConfirmAction(
+        [name = (std::string) name]() {
+            auto presets = getConfig().Presets.GetValue();
+            if (!presets.contains(name)) {
+                SettingsViewController::GetInstance()->UpdateUI();
+                return;
+            }
+            getConfig().Preset.SetValue(name);
+            Editor::LoadPreset(presets[name]);
+        },
+        []() { SettingsViewController::GetInstance()->UpdateUI(); }
+    );
 }
 
 void Qounters::SettingsFlowCoordinator::RenamePreset(StringW name) {
@@ -113,9 +124,7 @@ void Qounters::SettingsFlowCoordinator::RenamePreset(StringW name) {
 }
 
 void Qounters::SettingsFlowCoordinator::DuplicatePreset(StringW newName) {
-    ConfirmAction([name = (std::string) newName]() {
-        MakeNewPreset(name, false);
-    });
+    ConfirmAction([name = (std::string) newName]() { MakeNewPreset(name, false); });
 }
 
 void Qounters::SettingsFlowCoordinator::DeletePreset() {
@@ -135,7 +144,7 @@ void Qounters::SettingsFlowCoordinator::DeletePreset() {
 
 Qounters::SettingsFlowCoordinator* Qounters::SettingsFlowCoordinator::GetInstance() {
     if (!instance)
-        instance = BeatSaberUI::CreateFlowCoordinator<Qounters::SettingsFlowCoordinator*>();
+        instance = BSML::Helpers::CreateFlowCoordinator<Qounters::SettingsFlowCoordinator*>();
     return instance;
 }
 
@@ -143,7 +152,7 @@ void Qounters::SettingsFlowCoordinator::OnDestroy() {
     instance = nullptr;
 }
 
-void Qounters::SettingsFlowCoordinator::ConfirmAction(std::function<void ()> action, std::function<void ()> cancel) {
+void Qounters::SettingsFlowCoordinator::ConfirmAction(std::function<void()> action, std::function<void()> cancel) {
     nextModalAction = action;
     nextModalCancel = cancel;
     if (IsSaved())
@@ -171,11 +180,6 @@ void Qounters::SettingsFlowCoordinator::MakeNewPreset(std::string name, bool rem
     SettingsViewController::GetInstance()->UpdateUI();
 }
 
-#include "GlobalNamespace/EnvironmentInfoSO.hpp"
-#include "GlobalNamespace/PlayerDataModel.hpp"
-#include "GlobalNamespace/PlayerDataFileManagerSO.hpp"
-#include "GlobalNamespace/EnvironmentsListSO.hpp"
-
 void SettingsViewController::DidActivate(bool firstActivation, bool addedToHierarchy, bool screenSystemEnabling) {
     if (!firstActivation) {
         UpdateUI();
@@ -183,12 +187,12 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
     }
 
     std::vector<std::string> dropdownStrings = {};
-    auto manager = BeatSaberUI::GetMainFlowCoordinator()->playerDataModel->playerDataFileManager;
-    for (auto& env : ListW<EnvironmentInfoSO*>(manager->allEnvironmentInfos->GetAllEnvironmentInfosWithType(manager->normalEnvironmentType)))
+    auto environments = BSML::Helpers::GetMainFlowCoordinator()->_playerDataModel->_playerDataFileModel->_environmentsListModel;
+    for (auto& env : ListW<EnvironmentInfoSO*>(environments->GetAllEnvironmentInfosWithType(EnvironmentType::Normal)))
         dropdownStrings.emplace_back(env->environmentName);
-    for (auto& env : ListW<EnvironmentInfoSO*>(manager->allEnvironmentInfos->GetAllEnvironmentInfosWithType(manager->a360DegreesEnvironmentType)))
+    for (auto& env : ListW<EnvironmentInfoSO*>(environments->GetAllEnvironmentInfosWithType(EnvironmentType::Circle)))
         dropdownStrings.emplace_back(env->environmentName);
-    for (auto& env : manager->allEnvironmentInfos->environmentInfos) {
+    for (auto& env : environments->_envInfos) {
         std::string str = env->environmentName;
         bool add = true;
         for (auto& added : dropdownStrings) {
@@ -200,98 +204,102 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
         if (add)
             dropdownStrings.emplace_back(str);
     }
+    std::vector<std::string_view> dropdownStringViews{dropdownStrings.begin(), dropdownStrings.end()};
 
-    auto vertical = BeatSaberUI::CreateVerticalLayoutGroup(this);
-    vertical->set_childControlHeight(false);
-    vertical->set_childForceExpandHeight(false);
-    vertical->set_spacing(1);
+    auto vertical = BSML::Lite::CreateVerticalLayoutGroup(this);
+    vertical->childControlHeight = false;
+    vertical->childForceExpandHeight = false;
+    vertical->spacing = 1;
 
-    auto buttons1 = BeatSaberUI::CreateHorizontalLayoutGroup(vertical);
-    buttons1->GetComponent<UI::LayoutElement*>()->set_preferredHeight(9);
-    buttons1->set_spacing(3);
-    undoButton = BeatSaberUI::CreateUIButton(buttons1, "Undo", Editor::Undo);
-    BeatSaberUI::CreateUIButton(buttons1, "Exit", Qounters::SettingsFlowCoordinator::DismissScene);
+    auto buttons1 = BSML::Lite::CreateHorizontalLayoutGroup(vertical);
+    buttons1->GetComponent<UI::LayoutElement*>()->preferredHeight = 9;
+    buttons1->spacing = 3;
+    undoButton = BSML::Lite::CreateUIButton(buttons1, "Undo", Editor::Undo);
+    BSML::Lite::CreateUIButton(buttons1, "Exit", Qounters::SettingsFlowCoordinator::DismissScene);
 
-    auto buttons2 = BeatSaberUI::CreateHorizontalLayoutGroup(vertical);
-    buttons2->GetComponent<UI::LayoutElement*>()->set_preferredHeight(9);
-    buttons2->set_spacing(3);
-    BeatSaberUI::CreateUIButton(buttons2, "Save", Qounters::SettingsFlowCoordinator::Save);
-    BeatSaberUI::CreateUIButton(buttons2, "Save And Exit", "ActionButton", []() {
+    auto buttons2 = BSML::Lite::CreateHorizontalLayoutGroup(vertical);
+    buttons2->GetComponent<UI::LayoutElement*>()->preferredHeight = 9;
+    buttons2->spacing = 3;
+    BSML::Lite::CreateUIButton(buttons2, "Save", Qounters::SettingsFlowCoordinator::Save);
+    BSML::Lite::CreateUIButton(buttons2, "Save And Exit", "ActionButton", []() {
         Qounters::SettingsFlowCoordinator::Save();
         Qounters::SettingsFlowCoordinator::DismissScene();
     });
 
-    auto environment = BeatSaberUI::CreateHorizontalLayoutGroup(vertical);
-    environment->set_spacing(3);
-    auto dropdown = AddConfigValueDropdownString(environment, getConfig().Environment, dropdownStrings);
-    dropdown->GetComponentsInParent<UI::LayoutElement*>(true).First()->set_preferredWidth(65);
-    auto apply = BeatSaberUI::CreateUIButton(environment, "Apply", Qounters::SettingsFlowCoordinator::RefreshScene);
+    auto environment = BSML::Lite::CreateHorizontalLayoutGroup(vertical);
+    environment->spacing = 3;
+    auto dropdown = AddConfigValueDropdownString(environment, getConfig().Environment, dropdownStringViews);
+    dropdown->GetComponentsInParent<UI::LayoutElement*>(true)->First()->preferredWidth = 65;
+    auto apply = BSML::Lite::CreateUIButton(environment, "Apply", Qounters::SettingsFlowCoordinator::RefreshScene);
 
-    BeatSaberUI::CreateText(vertical, "Changes to the preset list are always saved!")->set_alignment(TMPro::TextAlignmentOptions::Center);
+    BSML::Lite::CreateText(vertical, "Changes to the preset list are always saved!", {0, 0}, {50, 8})->alignment =
+        TMPro::TextAlignmentOptions::Center;
 
-    presetDropdown = BeatSaberUI::CreateDropdown(vertical, "Current Preset", "", {}, Qounters::SettingsFlowCoordinator::SelectPreset);
+    presetDropdown = BSML::Lite::CreateDropdown(vertical, "Current Preset", "", {}, Qounters::SettingsFlowCoordinator::SelectPreset);
 
-    auto buttons3 = BeatSaberUI::CreateHorizontalLayoutGroup(vertical);
-    buttons3->GetComponent<UI::LayoutElement*>()->set_preferredHeight(9);
-    buttons3->set_spacing(3);
-    BeatSaberUI::CreateUIButton(buttons3, "Rename", [this]() {
+    auto buttons3 = BSML::Lite::CreateHorizontalLayoutGroup(vertical);
+    buttons3->GetComponent<UI::LayoutElement*>()->preferredHeight = 9;
+    buttons3->spacing = 3;
+    BSML::Lite::CreateUIButton(buttons3, "Rename", [this]() {
         nameModalIsRename = true;
+        nameInput->text = getConfig().Preset.GetValue();
         nameModal->Show(true, true, nullptr);
     });
-    BeatSaberUI::CreateUIButton(buttons3, "Duplicate", [this]() {
+    BSML::Lite::CreateUIButton(buttons3, "Duplicate", [this]() {
         nameModalIsRename = false;
+        nameInput->text = getConfig().Preset.GetValue();
         nameModal->Show(true, true, nullptr);
     });
-    deleteButton = BeatSaberUI::CreateUIButton(buttons3, "Delete", Qounters::SettingsFlowCoordinator::DeletePreset);
+    deleteButton = BSML::Lite::CreateUIButton(buttons3, "Delete", Qounters::SettingsFlowCoordinator::DeletePreset);
 
-    auto snapIncrement = AddConfigValueIncrementFloat(vertical, getConfig().SnapStep, 1, 0.5, 0.5, 5)->get_transform()->GetChild(1);
-    snapIncrement->get_gameObject()->SetActive(getConfig().Snap.GetValue());
-    ((UnityEngine::RectTransform*) snapIncrement)->set_anchoredPosition({-20, 0});
+    auto snapIncrement = AddConfigValueIncrementFloat(vertical, getConfig().SnapStep, 1, 0.5, 0.5, 5);
+    auto incrementObject = snapIncrement->transform->GetChild(1)->gameObject;
+    incrementObject->active = getConfig().Snap.GetValue();
+    incrementObject->GetComponent<RectTransform*>()->anchoredPosition = {-20, 0};
 
-    auto snapToggle = BeatSaberUI::CreateToggle(vertical, getConfig().Snap.GetName(), getConfig().Snap.GetValue(), [snapIncrement](bool value) {
-        getConfig().Snap.SetValue(value);
-        snapIncrement->get_gameObject()->SetActive(value);
-    })->get_transform();
-    auto oldParent = snapToggle->GetParent()->get_gameObject();
-    snapToggle->SetParent(snapIncrement->GetParent(), false);
-    UnityEngine::Object::Destroy(oldParent);
+    auto snapToggle =
+        BSML::Lite::CreateToggle(vertical, getConfig().Snap.GetName(), getConfig().Snap.GetValue(), [incrementObject](bool value) mutable {
+            getConfig().Snap.SetValue(value);
+            incrementObject->active = value;
+        });
+    snapToggle->toggle->transform->SetParent(snapIncrement->transform, false);
+    snapToggle->transform->SetParent(snapIncrement->transform, false);
+    UnityEngine::Object::Destroy(snapToggle->text->gameObject);
 
-    previewToggle = BeatSaberUI::CreateToggle(vertical, "Preview Mode", false, Editor::SetPreviewMode);
+    previewToggle = BSML::Lite::CreateToggle(vertical, "Preview Mode", false, Editor::SetPreviewMode);
 
-    confirmModal = BeatSaberUI::CreateModal(this, Vector2(95, 25), [](HMUI::ModalView* _) { Qounters::SettingsFlowCoordinator::OnModalCancel(); });
-    auto modalLayout1 = BeatSaberUI::CreateVerticalLayoutGroup(confirmModal);
-    modalLayout1->set_childControlHeight(false);
-    modalLayout1->set_childForceExpandHeight(true);
-    modalLayout1->set_spacing(1);
+    confirmModal = BSML::Lite::CreateModal(this, {95, 25}, Qounters::SettingsFlowCoordinator::OnModalCancel);
+    auto modalLayout1 = BSML::Lite::CreateVerticalLayoutGroup(confirmModal);
+    modalLayout1->childControlHeight = false;
+    modalLayout1->childForceExpandHeight = true;
+    modalLayout1->spacing = 1;
 
     auto warningString = "You have unsaved changes that will be lost.\nAre you sure you would like to continue? This action cannot be undone.";
-    auto text1 = BeatSaberUI::CreateText(modalLayout1, warningString, Vector2(), Vector2(0, 13));
-    text1->set_alignment(TMPro::TextAlignmentOptions::Bottom);
+    auto text1 = BSML::Lite::CreateText(modalLayout1, warningString, {0, 0}, {50, 13});
+    text1->alignment = TMPro::TextAlignmentOptions::Bottom;
 
-    auto modalButtons = BeatSaberUI::CreateHorizontalLayoutGroup(modalLayout1);
-    modalButtons->GetComponent<UI::LayoutElement*>()->set_preferredHeight(9);
-    modalButtons->set_spacing(3);
-    BeatSaberUI::CreateUIButton(modalButtons, "Continue", Qounters::SettingsFlowCoordinator::OnModalConfirm);
-    BeatSaberUI::CreateUIButton(modalButtons, "Save And Continue", []() {
+    auto modalButtons = BSML::Lite::CreateHorizontalLayoutGroup(modalLayout1);
+    modalButtons->GetComponent<UI::LayoutElement*>()->preferredHeight = 9;
+    modalButtons->spacing = 3;
+    BSML::Lite::CreateUIButton(modalButtons, "Continue", Qounters::SettingsFlowCoordinator::OnModalConfirm);
+    BSML::Lite::CreateUIButton(modalButtons, "Save And Continue", []() {
         Qounters::SettingsFlowCoordinator::Save();
         Qounters::SettingsFlowCoordinator::OnModalConfirm();
     });
-    BeatSaberUI::CreateUIButton(modalButtons, "Cancel", [this]() {
-        Qounters::SettingsFlowCoordinator::OnModalCancel();
-    });
+    BSML::Lite::CreateUIButton(modalButtons, "Cancel", [this]() { Qounters::SettingsFlowCoordinator::OnModalCancel(); });
 
-    nameModal = BeatSaberUI::CreateModal(this, Vector2(95, 20), nullptr);
-    auto modalLayout2 = BeatSaberUI::CreateVerticalLayoutGroup(nameModal);
-    modalLayout2->set_childControlHeight(false);
-    modalLayout2->set_childForceExpandHeight(true);
-    modalLayout2->set_spacing(1);
+    nameModal = BSML::Lite::CreateModal(this, {95, 20}, nullptr);
+    auto modalLayout2 = BSML::Lite::CreateVerticalLayoutGroup(nameModal);
+    modalLayout2->childControlHeight = false;
+    modalLayout2->childForceExpandHeight = true;
+    modalLayout2->spacing = 1;
 
-    auto text2 = BeatSaberUI::CreateText(modalLayout2, "Enter new preset name", Vector2(), Vector2(0, 8));
-    text2->set_alignment(TMPro::TextAlignmentOptions::Bottom);
+    auto text2 = BSML::Lite::CreateText(modalLayout2, "Enter new preset name", {0, 0}, {50, 8});
+    text2->alignment = TMPro::TextAlignmentOptions::Bottom;
 
-    auto nameInput = BeatSaberUI::CreateStringSetting(modalLayout2, "Name", "", Vector2(), Vector3());
-    Utils::GetOrAddComponent<KeyboardCloseHandler*>(nameInput)->okCallback = [this, nameInput]() {
-        std::string val = nameInput->get_text();
+    nameInput = BSML::Lite::CreateStringSetting(modalLayout2, "Name", "", {0, 0}, {0, 0, 0});
+    Utils::GetOrAddComponent<KeyboardCloseHandler*>(nameInput)->okCallback = [this]() {
+        std::string val = nameInput->text;
         if (val.empty())
             return;
         nameModal->Hide(true, nullptr);
@@ -307,7 +315,7 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
 
 SettingsViewController* SettingsViewController::GetInstance() {
     if (!instance)
-        instance = BeatSaberUI::CreateViewController<SettingsViewController*>();
+        instance = BSML::Helpers::CreateViewController<SettingsViewController*>();
     return instance;
 }
 
@@ -316,12 +324,12 @@ void SettingsViewController::OnDestroy() {
 }
 
 void SettingsViewController::ShowConfirmModal() {
-    if (confirmModal && !confirmModal->isShown)
+    if (confirmModal && !confirmModal->_isShown)
         confirmModal->Show(true, true, nullptr);
 }
 
 void SettingsViewController::HideConfirmModal() {
-    if (confirmModal && confirmModal->isShown)
+    if (confirmModal && confirmModal->_isShown)
         confirmModal->Hide(true, nullptr);
 }
 
@@ -329,23 +337,24 @@ void SettingsViewController::UpdateUI() {
     if (!uiInitialized)
         return;
 
-    undoButton->set_interactable(Editor::HasUndo());
+    undoButton->interactable = Editor::HasUndo();
 
     auto presets = getConfig().Presets.GetValue();
     auto preset = getConfig().Preset.GetValue();
-    auto texts = List<StringW>::New_ctor(presets.size());
+    auto texts = ListW<System::Object*>::New(presets.size());
     int selectedIdx = 0;
     int i = 0;
     for (auto& [name, _] : presets) {
-        texts->Add(name);
+        texts->Add((System::Object*) StringW(name).convert());
         if (name == preset)
             selectedIdx = i;
         i++;
     }
-    presetDropdown->SetTexts(texts->i_IReadOnlyList_1_T());
-    presetDropdown->SelectCellWithIdx(selectedIdx);
+    presetDropdown->values = texts;
+    presetDropdown->UpdateChoices();
+    presetDropdown->set_Value(texts[selectedIdx]);
 
-    deleteButton->set_interactable(presets.size() > 1);
+    deleteButton->interactable = presets.size() > 1;
 
     Utils::InstantSetToggle(previewToggle, Editor::GetPreviewMode());
 }
@@ -354,51 +363,47 @@ void TemplatesViewController::DidActivate(bool firstActivation, bool addedToHier
     if (!firstActivation)
         return;
 
-    list = BeatSaberUI::CreateScrollableList(get_transform(), {50, 80}, [this](int idx) {
+    list = BSML::Lite::CreateScrollableList(transform, {50, 80}, [this](int idx) {
         list->tableView->ClearSelection();
         ShowTemplateModal(idx);
     });
-    list->set_listStyle(CustomListTableData::ListStyle::Simple);
-    auto rect = (RectTransform*) list->get_transform()->GetParent();
-    rect->set_anchorMin({0.5, 0.5});
-    rect->set_anchorMax({0.5, 0.5});
+    list->listStyle = BSML::CustomListTableData::ListStyle::Simple;
+    auto rect = list->transform->parent.cast<RectTransform>();
+    rect->anchorMin = {0.5, 0.5};
+    rect->anchorMax = {0.5, 0.5};
 
     for (auto templateName : Utils::GetKeys(templates))
-        list->data.emplace_back(templateName);
+        list->data->Add(BSML::CustomCellInfo::construct(templateName));
 
     list->tableView->ReloadData();
-    list->simpleTextTableCellInstance = nullptr;
+    list->simpleTextTableCell = nullptr;
 
-    modal = BeatSaberUI::CreateModal(this);
-    modalLayout = BeatSaberUI::CreateVerticalLayoutGroup(modal)->get_rectTransform();
-    modalLayout->set_anchorMin({0.5, 0.5});
-    modalLayout->set_anchorMax({0.5, 0.5});
+    modal = BSML::Lite::CreateModal(this);
+    modalLayout = BSML::Lite::CreateVerticalLayoutGroup(modal)->rectTransform;
+    modalLayout->anchorMin = {0.5, 0.5};
+    modalLayout->anchorMax = {0.5, 0.5};
 
     auto fitter = modalLayout->GetComponent<UI::ContentSizeFitter*>();
-    fitter->set_verticalFit(UI::ContentSizeFitter::FitMode::PreferredSize);
-    fitter->set_horizontalFit(UI::ContentSizeFitter::FitMode::PreferredSize);
+    fitter->verticalFit = UI::ContentSizeFitter::FitMode::PreferredSize;
+    fitter->horizontalFit = UI::ContentSizeFitter::FitMode::PreferredSize;
 
     uiInitialized = true;
 }
 
-#include "custom-types/shared/coroutine.hpp"
-
 custom_types::Helpers::Coroutine FitModalCoroutine(HMUI::ModalView* modal, RectTransform* modalLayout) {
     co_yield nullptr;
 
-    modal->GetComponent<RectTransform*>()->set_sizeDelta(modalLayout->get_sizeDelta() + Vector2(5, 5));
+    modal->GetComponent<RectTransform*>()->sizeDelta = Vector2::op_Addition(modalLayout->sizeDelta, {5, 5});
 }
-
-#include "custom-types/shared/delegate.hpp"
 
 void TemplatesViewController::ShowTemplateModal(int idx) {
     if (!uiInitialized)
         return;
 
     while (modalLayout->GetChildCount() > 0)
-        UnityEngine::Object::DestroyImmediate(modalLayout->GetChild(0)->get_gameObject());
+        UnityEngine::Object::DestroyImmediate(modalLayout->GetChild(0)->gameObject);
 
-    templates[idx].second(modalLayout->get_gameObject());
+    templates[idx].second(modalLayout->gameObject);
     Utils::SetChildrenWidth(modalLayout, 75);
 
     modal->Show(true, true, nullptr);
@@ -414,7 +419,7 @@ void TemplatesViewController::HideModal() {
 
 TemplatesViewController* TemplatesViewController::GetInstance() {
     if (!instance)
-        instance = BeatSaberUI::CreateViewController<TemplatesViewController*>();
+        instance = BSML::Helpers::CreateViewController<TemplatesViewController*>();
     return instance;
 }
 
@@ -428,9 +433,9 @@ void Qounters::OptionsViewController::DidActivate(bool firstActivation, bool add
     if (!firstActivation)
         return;
 
-    groupParent = BeatSaberUI::CreateScrollView(this);
+    groupParent = BSML::Lite::CreateScrollView(this);
 
-    gPosIncrementX = BeatSaberUI::CreateIncrementSetting(groupParent, "X Position", 1, 0.5, 0, [this](float val) {
+    gPosIncrementX = BSML::Lite::CreateIncrementSetting(groupParent, "X Position", 1, 0.5, 0, [this](float val) {
         static int id = Editor::GetActionId();
         auto& group = Editor::GetSelectedGroup(id);
         if (group.Detached)
@@ -441,7 +446,7 @@ void Qounters::OptionsViewController::DidActivate(bool firstActivation, bool add
         Editor::FinalizeAction();
     });
     Utils::AddIncrementIncrement(gPosIncrementX, 5);
-    gPosIncrementY = BeatSaberUI::CreateIncrementSetting(groupParent, "Y Position", 1, 0.5, 0, [this](float val) {
+    gPosIncrementY = BSML::Lite::CreateIncrementSetting(groupParent, "Y Position", 1, 0.5, 0, [this](float val) {
         static int id = Editor::GetActionId();
         auto& group = Editor::GetSelectedGroup(id);
         if (group.Detached)
@@ -452,7 +457,7 @@ void Qounters::OptionsViewController::DidActivate(bool firstActivation, bool add
         Editor::FinalizeAction();
     });
     Utils::AddIncrementIncrement(gPosIncrementY, 5);
-    gPosIncrementZ = BeatSaberUI::CreateIncrementSetting(groupParent, "Z Position", 1, 0.5, 0, [this](float val) {
+    gPosIncrementZ = BSML::Lite::CreateIncrementSetting(groupParent, "Z Position", 1, 0.5, 0, [this](float val) {
         static int id = Editor::GetActionId();
         Editor::GetSelectedGroup(id).DetachedPosition.z = val;
         Editor::UpdatePosition(true);
@@ -460,74 +465,62 @@ void Qounters::OptionsViewController::DidActivate(bool firstActivation, bool add
     });
     Utils::AddIncrementIncrement(gPosIncrementZ, 5);
 
-    gRotSlider = BeatSaberUI::CreateSliderSetting(groupParent, "Rotation", 1, 0, -180, 180, 0, [this](float val) {
+    gRotSlider = BSML::Lite::CreateSliderSetting(groupParent, "Rotation", 1, 0, -180, 180, 0, [this](float val) {
         static int id = Editor::GetActionId();
         Editor::GetSelectedGroup(id).Rotation = val;
         Editor::UpdatePosition();
     });
-    Utils::AddSliderEndDrag(gRotSlider, [](float _) {
-        Editor::FinalizeAction();
-    });
-    gRotSlider->GetComponent<RectTransform*>()->set_sizeDelta({0, 8});
-    AddSliderIncrement(gRotSlider, 10);
+    Utils::AddSliderEndDrag(gRotSlider, [](float _) { Editor::FinalizeAction(); });
+    gRotSlider->GetComponent<RectTransform*>()->sizeDelta = {0, 8};
 
-    gRotSliderX = BeatSaberUI::CreateSliderSetting(groupParent, "X Rotation", 1, 0, -180, 180, 0, [this](float val) {
+    gRotSliderX = BSML::Lite::CreateSliderSetting(groupParent, "X Rotation", 1, 0, -180, 180, 0, [this](float val) {
         static int id = Editor::GetActionId();
         Editor::GetSelectedGroup(id).DetachedRotation.x = val;
         Editor::UpdatePosition();
     });
-    Utils::AddSliderEndDrag(gRotSliderX, [](float _) {
-        Editor::FinalizeAction();
-    });
-    gRotSliderX->GetComponent<RectTransform*>()->set_sizeDelta({0, 8});
-    AddSliderIncrement(gRotSliderX, 10);
-    gRotSliderY = BeatSaberUI::CreateSliderSetting(groupParent, "Y Rotation", 1, 0, -180, 180, 0, [this](float val) {
+    Utils::AddSliderEndDrag(gRotSliderX, [](float _) { Editor::FinalizeAction(); });
+    gRotSliderX->GetComponent<RectTransform*>()->sizeDelta = {0, 8};
+    gRotSliderY = BSML::Lite::CreateSliderSetting(groupParent, "Y Rotation", 1, 0, -180, 180, 0, [this](float val) {
         static int id = Editor::GetActionId();
         Editor::GetSelectedGroup(id).DetachedRotation.y = val;
         Editor::UpdatePosition();
     });
-    Utils::AddSliderEndDrag(gRotSliderY, [](float _) {
-        Editor::FinalizeAction();
-    });
-    gRotSliderY->GetComponent<RectTransform*>()->set_sizeDelta({0, 8});
-    AddSliderIncrement(gRotSliderY, 10);
-    gRotSliderZ = BeatSaberUI::CreateSliderSetting(groupParent, "Z Rotation", 1, 0, -180, 180, 0, [this](float val) {
+    Utils::AddSliderEndDrag(gRotSliderY, [](float _) { Editor::FinalizeAction(); });
+    gRotSliderY->GetComponent<RectTransform*>()->sizeDelta = {0, 8};
+    gRotSliderZ = BSML::Lite::CreateSliderSetting(groupParent, "Z Rotation", 1, 0, -180, 180, 0, [this](float val) {
         static int id = Editor::GetActionId();
         Editor::GetSelectedGroup(id).DetachedRotation.z = val;
         Editor::UpdatePosition();
     });
-    Utils::AddSliderEndDrag(gRotSliderZ, [](float _) {
-        Editor::FinalizeAction();
-    });
-    gRotSliderZ->GetComponent<RectTransform*>()->set_sizeDelta({0, 8});
-    AddSliderIncrement(gRotSliderZ, 10);
+    Utils::AddSliderEndDrag(gRotSliderZ, [](float _) { Editor::FinalizeAction(); });
+    gRotSliderZ->GetComponent<RectTransform*>()->sizeDelta = {0, 8};
 
-    auto gButtonsParent1 = BeatSaberUI::CreateHorizontalLayoutGroup(groupParent);
-    gButtonsParent1->set_spacing(3);
+    auto gButtonsParent1 = BSML::Lite::CreateHorizontalLayoutGroup(groupParent);
+    gButtonsParent1->spacing = 3;
 
-    gComponentButton = BeatSaberUI::CreateUIButton(gButtonsParent1, "Add Component", Editor::AddComponent);
+    gComponentButton = BSML::Lite::CreateUIButton(gButtonsParent1, "Add Component", Editor::AddComponent);
 
-    gDetachButton = BeatSaberUI::CreateUIButton(gButtonsParent1, "Detach", Editor::ToggleAttachment);
+    gDetachButton = BSML::Lite::CreateUIButton(gButtonsParent1, "Detach", Editor::ToggleAttachment);
 
-    auto gButtonsParent2 = BeatSaberUI::CreateHorizontalLayoutGroup(groupParent);
-    gButtonsParent2->set_spacing(3);
+    auto gButtonsParent2 = BSML::Lite::CreateHorizontalLayoutGroup(groupParent);
+    gButtonsParent2->spacing = 3;
 
-    gDeleteButton = BeatSaberUI::CreateUIButton(gButtonsParent2, "Delete", Editor::Remove);
+    gDeleteButton = BSML::Lite::CreateUIButton(gButtonsParent2, "Delete", Editor::Remove);
 
-    gDeselectButton = BeatSaberUI::CreateUIButton(gButtonsParent2, "Deselect", Editor::Deselect);
+    gDeselectButton = BSML::Lite::CreateUIButton(gButtonsParent2, "Deselect", Editor::Deselect);
 
     Utils::FixScrollView(groupParent, 75);
 
-    componentParent = BeatSaberUI::CreateScrollView(this);
+    componentParent = BSML::Lite::CreateScrollView(this);
 
-    cPosIncrementX = BeatSaberUI::CreateIncrementSetting(componentParent, "Rel. X Position", 1, 0.5, 0, [this](float val) {
+    cPosIncrementX = BSML::Lite::CreateIncrementSetting(componentParent, "Rel. X Position", 1, 0.5, 0, [this](float val) {
         static int id = Editor::GetActionId();
         Editor::GetSelectedComponent(id).Position.x = val;
         Editor::UpdatePosition(true);
         Editor::FinalizeAction();
     });
     Utils::AddIncrementIncrement(cPosIncrementX, 5);
-    cPosIncrementY = BeatSaberUI::CreateIncrementSetting(componentParent, "Rel. Y Position", 1, 0.5, 0, [this](float val) {
+    cPosIncrementY = BSML::Lite::CreateIncrementSetting(componentParent, "Rel. Y Position", 1, 0.5, 0, [this](float val) {
         static int id = Editor::GetActionId();
         Editor::GetSelectedComponent(id).Position.y = val;
         Editor::UpdatePosition(true);
@@ -535,37 +528,28 @@ void Qounters::OptionsViewController::DidActivate(bool firstActivation, bool add
     });
     Utils::AddIncrementIncrement(cPosIncrementY, 5);
 
-    cRotSlider = BeatSaberUI::CreateSliderSetting(componentParent, "Relative Rotation", 1, 0, -180, 180, 0, [this](float val) {
+    cRotSlider = BSML::Lite::CreateSliderSetting(componentParent, "Relative Rotation", 1, 0, -180, 180, 0, [this](float val) {
         static int id = Editor::GetActionId();
         Editor::GetSelectedComponent(id).Rotation = val;
         Editor::UpdatePosition();
     });
-    Utils::AddSliderEndDrag(cRotSlider, [](float _) {
-        Editor::FinalizeAction();
-    });
-    cRotSlider->GetComponent<RectTransform*>()->set_sizeDelta({0, 8});
-    AddSliderIncrement(cRotSlider, 10);
+    Utils::AddSliderEndDrag(cRotSlider, [](float _) { Editor::FinalizeAction(); });
+    cRotSlider->GetComponent<RectTransform*>()->sizeDelta = {0, 8};
 
-    cScaleSliderX = BeatSaberUI::CreateSliderSetting(componentParent, "X Scale", 0.01, 0, 0.01, 10, 0, [this](float val) {
+    cScaleSliderX = BSML::Lite::CreateSliderSetting(componentParent, "X Scale", 0.01, 0, 0.01, 10, 0, [this](float val) {
         static int id = Editor::GetActionId();
         Editor::GetSelectedComponent(id).Scale.x = val;
         Editor::UpdatePosition();
     });
-    Utils::AddSliderEndDrag(cScaleSliderX, [](float _) {
-        Editor::FinalizeAction();
-    });
-    cScaleSliderX->GetComponent<RectTransform*>()->set_sizeDelta({0, 8});
-    AddSliderIncrement(cScaleSliderX, 0.01);
-    cScaleSliderY = BeatSaberUI::CreateSliderSetting(componentParent, "Y Scale", 0.01, 0, 0.01, 10, 0, [this](float val) {
+    Utils::AddSliderEndDrag(cScaleSliderX, [](float _) { Editor::FinalizeAction(); });
+    cScaleSliderX->GetComponent<RectTransform*>()->sizeDelta = {0, 8};
+    cScaleSliderY = BSML::Lite::CreateSliderSetting(componentParent, "Y Scale", 0.01, 0, 0.01, 10, 0, [this](float val) {
         static int id = Editor::GetActionId();
         Editor::GetSelectedComponent(id).Scale.y = val;
         Editor::UpdatePosition();
     });
-    Utils::AddSliderEndDrag(cScaleSliderY, [](float _) {
-        Editor::FinalizeAction();
-    });
-    cScaleSliderY->GetComponent<RectTransform*>()->set_sizeDelta({0, 8});
-    AddSliderIncrement(cScaleSliderY, 0.01);
+    Utils::AddSliderEndDrag(cScaleSliderY, [](float _) { Editor::FinalizeAction(); });
+    cScaleSliderY->GetComponent<RectTransform*>()->sizeDelta = {0, 8};
 
     cTypeDropdown = Utils::CreateDropdownEnum(componentParent, "Type", 0, TypeStrings, [this](int val) {
         static int id = Editor::GetActionId();
@@ -574,35 +558,35 @@ void Qounters::OptionsViewController::DidActivate(bool firstActivation, bool add
         Editor::FinalizeAction();
     });
 
-    cTypeOptions = BeatSaberUI::CreateVerticalLayoutGroup(componentParent);
-    cTypeOptions->GetComponent<UI::ContentSizeFitter*>()->set_verticalFit(UI::ContentSizeFitter::FitMode::PreferredSize);
+    cTypeOptions = BSML::Lite::CreateVerticalLayoutGroup(componentParent);
+    cTypeOptions->GetComponent<UI::ContentSizeFitter*>()->verticalFit = UI::ContentSizeFitter::FitMode::PreferredSize;
 
     cColorSourceDropdown = Utils::CreateDropdown(componentParent, "Color Source", "", Utils::GetKeys(colorSources), [this](std::string val) {
         static int id = Editor::GetActionId();
         auto& comp = Editor::GetSelectedComponent(id);
         if (comp.ColorSource != val) {
-            cColorSourceDropdown->Hide(false);
+            cColorSourceDropdown->dropdown->Hide(false);
             comp.ColorSource = val;
             Editor::UpdateColorSource();
         }
         Editor::FinalizeAction();
     });
 
-    cColorSourceOptions = BeatSaberUI::CreateVerticalLayoutGroup(componentParent);
-    cColorSourceOptions->GetComponent<UI::ContentSizeFitter*>()->set_verticalFit(UI::ContentSizeFitter::FitMode::PreferredSize);
+    cColorSourceOptions = BSML::Lite::CreateVerticalLayoutGroup(componentParent);
+    cColorSourceOptions->GetComponent<UI::ContentSizeFitter*>()->verticalFit = UI::ContentSizeFitter::FitMode::PreferredSize;
 
     cEnableSourceDropdown = Utils::CreateDropdown(componentParent, "Enabled If", "", Utils::GetKeys(enableSources), [this](std::string val) {
         static int id = Editor::GetActionId();
         auto& comp = Editor::GetSelectedComponent(id);
         if (comp.EnableSource != val) {
-            cEnableSourceDropdown->Hide(false);
+            cEnableSourceDropdown->dropdown->Hide(false);
             comp.EnableSource = val;
             Editor::UpdateEnableSource();
         }
         Editor::FinalizeAction();
     });
 
-    cInvertEnableToggle = BeatSaberUI::CreateToggle(componentParent, "Invert Enabled", false, [this](bool val) {
+    cInvertEnableToggle = BSML::Lite::CreateToggle(componentParent, "Invert Enabled", false, [this](bool val) {
         static int id = Editor::GetActionId();
         auto& comp = Editor::GetSelectedComponent(id);
         comp.InvertEnable = val;
@@ -610,17 +594,15 @@ void Qounters::OptionsViewController::DidActivate(bool firstActivation, bool add
         Editor::FinalizeAction();
     });
 
-    cEnableSourceOptions = BeatSaberUI::CreateVerticalLayoutGroup(componentParent);
-    cEnableSourceOptions->GetComponent<UI::ContentSizeFitter*>()->set_verticalFit(UI::ContentSizeFitter::FitMode::PreferredSize);
+    cEnableSourceOptions = BSML::Lite::CreateVerticalLayoutGroup(componentParent);
+    cEnableSourceOptions->GetComponent<UI::ContentSizeFitter*>()->verticalFit = UI::ContentSizeFitter::FitMode::PreferredSize;
 
-    auto cButtonsParent = BeatSaberUI::CreateHorizontalLayoutGroup(componentParent);
-    cButtonsParent->set_spacing(3);
+    auto cButtonsParent = BSML::Lite::CreateHorizontalLayoutGroup(componentParent);
+    cButtonsParent->spacing = 3;
 
-    cDeleteButton = BeatSaberUI::CreateUIButton(cButtonsParent, "Delete", [this]() {
-        Editor::Remove();
-    });
+    cDeleteButton = BSML::Lite::CreateUIButton(cButtonsParent, "Delete", [this]() { Editor::Remove(); });
 
-    cDeselectButton = BeatSaberUI::CreateUIButton(cButtonsParent, "Deselect", Editor::Deselect);
+    cDeselectButton = BSML::Lite::CreateUIButton(cButtonsParent, "Deselect", Editor::Deselect);
 
     Utils::FixScrollView(componentParent, 75);
 
@@ -659,38 +641,38 @@ void Qounters::OptionsViewController::UpdateSimpleUI() {
     if (group) {
         auto& state = Editor::GetSelectedGroup(-1);
         if (state.Detached) {
-            gPosIncrementX->CurrentValue = state.DetachedPosition.x;
-            gPosIncrementX->UpdateValue();
-            gPosIncrementY->CurrentValue = state.DetachedPosition.y;
-            gPosIncrementY->UpdateValue();
-            gPosIncrementZ->CurrentValue = state.DetachedPosition.z;
-            gPosIncrementZ->UpdateValue();
-            gRotSliderX->set_value(state.DetachedRotation.x);
-            gRotSliderY->set_value(state.DetachedRotation.y);
-            gRotSliderZ->set_value(state.DetachedRotation.z);
+            gPosIncrementX->currentValue = state.DetachedPosition.x;
+            gPosIncrementX->UpdateState();
+            gPosIncrementY->currentValue = state.DetachedPosition.y;
+            gPosIncrementY->UpdateState();
+            gPosIncrementZ->currentValue = state.DetachedPosition.z;
+            gPosIncrementZ->UpdateState();
+            gRotSliderX->set_Value(state.DetachedRotation.x);
+            gRotSliderY->set_Value(state.DetachedRotation.y);
+            gRotSliderZ->set_Value(state.DetachedRotation.z);
         } else {
-            gPosIncrementX->CurrentValue = state.Position.x;
-            gPosIncrementX->UpdateValue();
-            gPosIncrementY->CurrentValue = state.Position.y;
-            gPosIncrementY->UpdateValue();
-            gRotSlider->set_value(state.Rotation);
+            gPosIncrementX->currentValue = state.Position.x;
+            gPosIncrementX->UpdateState();
+            gPosIncrementY->currentValue = state.Position.y;
+            gPosIncrementY->UpdateState();
+            gRotSlider->set_Value(state.Rotation);
         }
-        gPosIncrementZ->get_gameObject()->SetActive(state.Detached);
-        gRotSlider->get_gameObject()->SetActive(!state.Detached);
-        gRotSliderX->get_gameObject()->SetActive(state.Detached);
-        gRotSliderY->get_gameObject()->SetActive(state.Detached);
-        gRotSliderZ->get_gameObject()->SetActive(state.Detached);
-        BeatSaberUI::SetButtonText(gDetachButton, state.Detached ? "Attach" : "Detach");
+        gPosIncrementZ->gameObject->active = state.Detached;
+        gRotSlider->gameObject->active = !state.Detached;
+        gRotSliderX->gameObject->active = state.Detached;
+        gRotSliderY->gameObject->active = state.Detached;
+        gRotSliderZ->gameObject->active = state.Detached;
+        BSML::Lite::SetButtonText(gDetachButton, state.Detached ? "Attach" : "Detach");
     } else if (component) {
         auto& state = Editor::GetSelectedComponent(-1);
-        cPosIncrementX->CurrentValue = state.Position.x;
-        cPosIncrementX->UpdateValue();
-        cPosIncrementY->CurrentValue = state.Position.y;
-        cPosIncrementY->UpdateValue();
-        cRotSlider->set_value(state.Rotation);
-        cScaleSliderX->set_value(state.Scale.x);
-        cScaleSliderY->set_value(state.Scale.y);
-        cTypeDropdown->SelectCellWithIdx(state.Type);
+        cPosIncrementX->currentValue = state.Position.x;
+        cPosIncrementX->UpdateState();
+        cPosIncrementY->currentValue = state.Position.y;
+        cPosIncrementY->UpdateState();
+        cRotSlider->set_Value(state.Rotation);
+        cScaleSliderX->set_Value(state.Scale.x);
+        cScaleSliderY->set_Value(state.Scale.y);
+        cTypeDropdown->dropdown->SelectCellWithIdx(state.Type);
         Utils::SetDropdownValue(cColorSourceDropdown, state.ColorSource);
         Utils::SetDropdownValue(cEnableSourceDropdown, state.EnableSource);
         Utils::InstantSetToggle(cInvertEnableToggle, state.InvertEnable);
@@ -721,22 +703,22 @@ void Qounters::OptionsViewController::UpdateUI() {
 
 void Qounters::OptionsViewController::UpdateTypeOptions() {
     auto& state = Editor::GetSelectedComponent(-1, false);
-    CreateTypeOptionsUI(cTypeOptions->get_transform(), state.Type, state.Options);
+    CreateTypeOptionsUI(cTypeOptions->transform, state.Type, state.Options);
 }
 
 void Qounters::OptionsViewController::UpdateColorSourceOptions() {
     auto& state = Editor::GetSelectedComponent(-1, false);
-    ColorSource::CreateUI(cColorSourceOptions->get_gameObject(), state.ColorSource, state.ColorOptions);
+    ColorSource::CreateUI(cColorSourceOptions->gameObject, state.ColorSource, state.ColorOptions);
 }
 
 void Qounters::OptionsViewController::UpdateEnableSourceOptions() {
     auto& state = Editor::GetSelectedComponent(-1, false);
-    EnableSource::CreateUI(cEnableSourceOptions->get_gameObject(), state.EnableSource, state.EnableOptions);
+    EnableSource::CreateUI(cEnableSourceOptions->gameObject, state.EnableSource, state.EnableOptions);
 }
 
 Qounters::OptionsViewController* Qounters::OptionsViewController::GetInstance() {
     if (!instance)
-        instance = BeatSaberUI::CreateViewController<Qounters::OptionsViewController*>();
+        instance = BSML::Helpers::CreateViewController<Qounters::OptionsViewController*>();
     return instance;
 }
 
@@ -751,11 +733,9 @@ custom_types::Helpers::Coroutine Qounters::OptionsViewController::UpdateScrollVi
     co_return;
 }
 
-
-void Qounters::EndDragHandler::OnEndDrag(UnityEngine::EventSystems::PointerEventData *eventData) {
+void Qounters::EndDragHandler::OnEndDrag(UnityEngine::EventSystems::PointerEventData* eventData) {
     callback();
 }
-
 
 void SpritesListCell::OnImageClicked(int idx) {
     int realIdx = idx + imageStartIdx;
@@ -771,15 +751,13 @@ void SpritesListCell::SetImageStartIdx(int idx) {
     imageStartIdx = idx;
 
     while (layout->GetChildCount() > 0)
-        UnityEngine::Object::DestroyImmediate(layout->GetChild(0)->get_gameObject());
+        UnityEngine::Object::DestroyImmediate(layout->GetChild(0)->gameObject);
 
     for (int i = 0; i < imagesPerCell; i++) {
         if (i + idx < ImageSpriteCache::NumberOfSprites()) {
-            images[i] = BeatSaberUI::CreateClickableImage(layout, ImageSpriteCache::GetSpriteIdx(i + idx), [this, i]() {
-                OnImageClicked(i);
-            });
-            images[i]->set_preserveAspect(true);
-            images[i]->GetComponent<UI::LayoutElement*>()->set_preferredWidth(cellSize);
+            images[i] = BSML::Lite::CreateClickableImage(layout, ImageSpriteCache::GetSpriteIdx(i + idx), [this, i]() { OnImageClicked(i); });
+            images[i]->preserveAspect = true;
+            images[i]->GetComponent<UI::LayoutElement*>()->preferredWidth = cellSize;
         } else
             images[i] = nullptr;
     }
@@ -796,27 +774,26 @@ void SpritesListCell::SetImageStartIdx(int idx) {
 SpritesListCell* SpritesListCell::CreateNew(int imagesStartIdx, StringW reuseIdentifier) {
     auto object = GameObject::New_ctor("QountersSpritesListCell");
 
-    object->AddComponent<RectTransform*>()->set_sizeDelta({0, cellSize});
+    object->AddComponent<RectTransform*>()->sizeDelta = {0, cellSize};
 
     auto ret = object->AddComponent<SpritesListCell*>();
-    ret->set_reuseIdentifier(reuseIdentifier);
+    ret->reuseIdentifier = reuseIdentifier;
 
-    auto layout = BeatSaberUI::CreateHorizontalLayoutGroup(ret);
-    layout->set_spacing(imageSpacing);
-    layout->set_childForceExpandWidth(false);
-    layout->set_childAlignment(TextAnchor::MiddleCenter);
-    layout->GetComponent<UI::ContentSizeFitter*>()->set_verticalFit(UI::ContentSizeFitter::FitMode::Unconstrained);
+    auto layout = BSML::Lite::CreateHorizontalLayoutGroup(ret);
+    layout->spacing = imageSpacing;
+    layout->childForceExpandWidth = false;
+    layout->childAlignment = TextAnchor::MiddleCenter;
+    layout->GetComponent<UI::ContentSizeFitter*>()->verticalFit = UI::ContentSizeFitter::FitMode::Unconstrained;
 
-    ret->images = ArrayW<ClickableImage*>(imagesPerCell);
-    ret->layout = layout->get_rectTransform();
+    ret->images = ArrayW<BSML::ClickableImage*>(imagesPerCell);
+    ret->layout = layout->rectTransform;
     ret->SetImageStartIdx(imagesStartIdx);
 
     return ret;
 }
 
-
 HMUI::TableCell* SpritesListSource::CellForIdx(HMUI::TableView* tableView, int idx) {
-    auto ret = (SpritesListCell*) tableView->DequeueReusableCellForIdentifier(reuseIdentifier);
+    auto ret = tableView->DequeueReusableCellForIdentifier(reuseIdentifier).try_cast<SpritesListCell>().value_or(nullptr);
 
     if (!ret)
         ret = SpritesListCell::CreateNew(idx * SpritesListCell::imagesPerCell, reuseIdentifier);
@@ -837,7 +814,3 @@ int SpritesListSource::NumberOfCells() {
 void SpritesListSource::OnImageClicked(int imageIdx) {
     imageClickedCallback(imageIdx);
 }
-
-// IConnectedPlayer* MultiplayerSessionManager::get_localPlayer() {
-//     return localPlayer;
-// }

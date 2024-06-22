@@ -1,69 +1,80 @@
 #include "events.hpp"
+
 #include "config.hpp"
 #include "qounters.hpp"
 #include "sources.hpp"
 
 namespace Qounters {
     std::map<int, std::vector<std::pair<Sources, std::string>>> eventSourceRegistry = {
-        {(int) Events::ScoreChanged, {
-            {Sources::Text, TextSource::ScoreName},
-            {Sources::Text, TextSource::RankName},
-            {Sources::Text, TextSource::PPName},
-            {Sources::Text, TextSource::FCPercentName},
-            {Sources::Shape, ShapeSource::ScoreName},
-            {Sources::Color, ColorSource::RankName},
-            {Sources::Color, ColorSource::PersonalBestName},
-            {Sources::Enable, EnableSource::PercentageName},
-        }},
-        {(int) Events::NoteCut, {
-            {Sources::Text, TextSource::AverageCutName},
-            {Sources::Text, TextSource::TimeDependenceName},
-            {Sources::Text, TextSource::MistakesName},
-            {Sources::Text, TextSource::NotesName},
-            {Sources::Text, TextSource::FCPercentName},
-            {Sources::Shape, ShapeSource::AverageCutName},
-            {Sources::Shape, ShapeSource::NotesName},
-        }},
-        {(int) Events::NoteMissed, {
-            {Sources::Text, TextSource::MistakesName},
-            {Sources::Text, TextSource::NotesName},
-            {Sources::Shape, ShapeSource::NotesName},
-        }},
-        {(int) Events::BombCut, {
-            {Sources::Text, TextSource::MistakesName},
-            {Sources::Text, TextSource::NotesName},
-            {Sources::Shape, ShapeSource::NotesName},
-        }},
-        {(int) Events::WallHit, {
-            {Sources::Text, TextSource::MistakesName},
-        }},
-        {(int) Events::ComboChanged, {
-            {Sources::Text, TextSource::ComboName},
-            {Sources::Text, TextSource::MultiplierName},
-            {Sources::Shape, ShapeSource::MultiplierName},
-            {Sources::Color, ColorSource::ComboName},
-            {Sources::Color, ColorSource::MultiplierName},
-            {Sources::Enable, EnableSource::FullComboName},
-        }},
-        {(int) Events::HealthChanged, {
-            {Sources::Text, TextSource::HealthName},
-            {Sources::Text, TextSource::FailsName},
-            {Sources::Shape, ShapeSource::HealthName},
-            {Sources::Color, ColorSource::HealthName},
-            {Sources::Enable, EnableSource::FailedName},
-        }},
-        {(int) Events::Update, {
-            {Sources::Text, TextSource::TimeName},
-            {Sources::Shape, ShapeSource::TimeName},
-        }},
-        {(int) Events::SlowUpdate, {
-            {Sources::Text, TextSource::SaberSpeedName},
-            {Sources::Text, TextSource::SpinometerName},
-        }},
-        {(int) Events::PPInfo, {
-            {Sources::Text, TextSource::PPName},
-            {Sources::Enable, EnableSource::RankedName},
-        }},
+        {(int) Events::ScoreChanged,
+         {
+             {Sources::Text, TextSource::ScoreName},
+             {Sources::Text, TextSource::RankName},
+             {Sources::Text, TextSource::PPName},
+             {Sources::Text, TextSource::FCPercentName},
+             {Sources::Shape, ShapeSource::ScoreName},
+             {Sources::Color, ColorSource::RankName},
+             {Sources::Color, ColorSource::PersonalBestName},
+             {Sources::Enable, EnableSource::PercentageName},
+         }},
+        {(int) Events::NoteCut,
+         {
+             {Sources::Text, TextSource::AverageCutName},
+             {Sources::Text, TextSource::TimeDependenceName},
+             {Sources::Text, TextSource::MistakesName},
+             {Sources::Text, TextSource::NotesName},
+             {Sources::Text, TextSource::FCPercentName},
+             {Sources::Shape, ShapeSource::AverageCutName},
+             {Sources::Shape, ShapeSource::NotesName},
+         }},
+        {(int) Events::NoteMissed,
+         {
+             {Sources::Text, TextSource::MistakesName},
+             {Sources::Text, TextSource::NotesName},
+             {Sources::Shape, ShapeSource::NotesName},
+         }},
+        {(int) Events::BombCut,
+         {
+             {Sources::Text, TextSource::MistakesName},
+             {Sources::Text, TextSource::NotesName},
+             {Sources::Shape, ShapeSource::NotesName},
+         }},
+        {(int) Events::WallHit,
+         {
+             {Sources::Text, TextSource::MistakesName},
+         }},
+        {(int) Events::ComboChanged,
+         {
+             {Sources::Text, TextSource::ComboName},
+             {Sources::Text, TextSource::MultiplierName},
+             {Sources::Shape, ShapeSource::MultiplierName},
+             {Sources::Color, ColorSource::ComboName},
+             {Sources::Color, ColorSource::MultiplierName},
+             {Sources::Enable, EnableSource::FullComboName},
+         }},
+        {(int) Events::HealthChanged,
+         {
+             {Sources::Text, TextSource::HealthName},
+             {Sources::Text, TextSource::FailsName},
+             {Sources::Shape, ShapeSource::HealthName},
+             {Sources::Color, ColorSource::HealthName},
+             {Sources::Enable, EnableSource::FailedName},
+         }},
+        {(int) Events::Update,
+         {
+             {Sources::Text, TextSource::TimeName},
+             {Sources::Shape, ShapeSource::TimeName},
+         }},
+        {(int) Events::SlowUpdate,
+         {
+             {Sources::Text, TextSource::SaberSpeedName},
+             {Sources::Text, TextSource::SpinometerName},
+         }},
+        {(int) Events::PPInfo,
+         {
+             {Sources::Text, TextSource::PPName},
+             {Sources::Enable, EnableSource::RankedName},
+         }},
     };
 
     std::map<std::string, std::map<int, int>> customEvents = {};

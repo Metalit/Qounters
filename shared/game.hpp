@@ -1,8 +1,7 @@
 #pragma once
 
-#include "main.hpp"
-
 #include "UnityEngine/Color.hpp"
+#include "main.hpp"
 
 namespace Qounters::Game {
     int GetScore(int saber);

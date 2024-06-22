@@ -1,9 +1,7 @@
 #pragma once
 
-#include "main.hpp"
-
 #include "UnityEngine/GameObject.hpp"
-
+#include "main.hpp"
 #include "types.hpp"
 
 namespace Qounters {

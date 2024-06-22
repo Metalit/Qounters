@@ -1,10 +1,8 @@
 #pragma once
 
-#include "main.hpp"
-
 #include "UnityEngine/GameObject.hpp"
-
 #include "config-utils/shared/config-utils.hpp"
+#include "main.hpp"
 #include "types.hpp"
 
 namespace Qounters {
@@ -13,7 +11,7 @@ namespace Qounters {
     extern std::vector<std::pair<std::string, std::pair<SourceFn<UnityEngine::Color>, SourceUIFn>>> colorSources;
     extern std::vector<std::pair<std::string, std::pair<SourceFn<bool>, SourceUIFn>>> enableSources;
 
-    template<class T>
+    template <class T>
     T GetSource(std::vector<std::pair<std::string, T>> sourceVec, std::string source) {
         for (auto& [str, ret] : sourceVec) {
             if (str == source)
@@ -22,8 +20,9 @@ namespace Qounters {
         return {};
     }
 
-    template<class T>
-    void RegisterSource(std::vector<std::pair<std::string, std::pair<T, SourceUIFn>>> sourceVec, std::string source, T sourceFn, SourceUIFn sourceUIFn) {
+    template <class T>
+    void
+    RegisterSource(std::vector<std::pair<std::string, std::pair<T, SourceUIFn>>> sourceVec, std::string source, T sourceFn, SourceUIFn sourceUIFn) {
         sourceVec.emplace_back(source, std::make_pair(sourceFn, sourceUIFn));
     }
 
@@ -40,31 +39,31 @@ namespace Qounters {
         RegisterSource(enableSources, sourceName, sourceFn, sourceUIFn);
     }
 
-    extern const std::vector<std::string> AverageCutPartStrings;
-    extern const std::vector<std::string> NotesDisplayStrings;
-    extern const std::vector<std::string> PPLeaderboardStrings;
-    extern const std::vector<std::string> SaberSpeedModeStrings;
-    extern const std::vector<std::string> SpinometerModeStrings;
-    extern const std::vector<std::string> RankedStatusLeaderboardStrings;
+    extern std::vector<std::string_view> const AverageCutPartStrings;
+    extern std::vector<std::string_view> const NotesDisplayStrings;
+    extern std::vector<std::string_view> const PPLeaderboardStrings;
+    extern std::vector<std::string_view> const SaberSpeedModeStrings;
+    extern std::vector<std::string_view> const SpinometerModeStrings;
+    extern std::vector<std::string_view> const RankedStatusLeaderboardStrings;
 
     namespace TextSource {
-        inline const std::string StaticName = "Static";
-        inline const std::string ScoreName = "Score";
-        inline const std::string RankName = "Rank";
-        inline const std::string PersonalBestName = "Personal Best";
-        inline const std::string ComboName = "Combo";
-        inline const std::string MultiplierName = "Multiplier";
-        inline const std::string HealthName = "Health";
-        inline const std::string TimeName = "Time";
-        inline const std::string AverageCutName = "Average Cut";
-        inline const std::string TimeDependenceName = "Time Dependence";
-        inline const std::string FailsName = "Fails";
-        inline const std::string MistakesName = "Mistakes";
-        inline const std::string NotesName = "Notes";
-        inline const std::string PPName = "PP";
-        inline const std::string SaberSpeedName = "Saber Speed";
-        inline const std::string SpinometerName = "Spinometer";
-        inline const std::string FCPercentName = "FC Percentage";
+        inline std::string const StaticName = "Static";
+        inline std::string const ScoreName = "Score";
+        inline std::string const RankName = "Rank";
+        inline std::string const PersonalBestName = "Personal Best";
+        inline std::string const ComboName = "Combo";
+        inline std::string const MultiplierName = "Multiplier";
+        inline std::string const HealthName = "Health";
+        inline std::string const TimeName = "Time";
+        inline std::string const AverageCutName = "Average Cut";
+        inline std::string const TimeDependenceName = "Time Dependence";
+        inline std::string const FailsName = "Fails";
+        inline std::string const MistakesName = "Mistakes";
+        inline std::string const NotesName = "Notes";
+        inline std::string const PPName = "PP";
+        inline std::string const SaberSpeedName = "Saber Speed";
+        inline std::string const SpinometerName = "Spinometer";
+        inline std::string const FCPercentName = "FC Percentage";
 
         DECLARE_JSON_CLASS(Static,
             VALUE_DEFAULT(std::string, Input, "")
@@ -185,13 +184,13 @@ namespace Qounters {
     }
 
     namespace ShapeSource {
-        inline const std::string StaticName = "Static";
-        inline const std::string ScoreName = "Score";
-        inline const std::string MultiplierName = "Multiplier";
-        inline const std::string HealthName = "Health";
-        inline const std::string TimeName = "Time";
-        inline const std::string AverageCutName = "Average Cut";
-        inline const std::string NotesName = "Notes";
+        inline std::string const StaticName = "Static";
+        inline std::string const ScoreName = "Score";
+        inline std::string const MultiplierName = "Multiplier";
+        inline std::string const HealthName = "Health";
+        inline std::string const TimeName = "Time";
+        inline std::string const AverageCutName = "Average Cut";
+        inline std::string const NotesName = "Notes";
 
         DECLARE_JSON_CLASS(Static,
             VALUE_DEFAULT(float, Input, 1)
@@ -230,13 +229,13 @@ namespace Qounters {
     }
 
     namespace ColorSource {
-        inline const std::string StaticName = "Static";
-        inline const std::string PlayerName = "Player";
-        inline const std::string RankName = "Rank";
-        inline const std::string PersonalBestName = "Personal Best";
-        inline const std::string ComboName = "Combo";
-        inline const std::string MultiplierName = "Multiplier";
-        inline const std::string HealthName = "Health";
+        inline std::string const StaticName = "Static";
+        inline std::string const PlayerName = "Player";
+        inline std::string const RankName = "Rank";
+        inline std::string const PersonalBestName = "Personal Best";
+        inline std::string const ComboName = "Combo";
+        inline std::string const MultiplierName = "Multiplier";
+        inline std::string const HealthName = "Health";
 
         DECLARE_JSON_CLASS(Static,
             VALUE_DEFAULT(ConfigUtils::Color, Input, ConfigUtils::Color(1, 1, 1, 1))
@@ -296,11 +295,11 @@ namespace Qounters {
     }
 
     namespace EnableSource {
-        inline const std::string StaticName = "Always";
-        inline const std::string RankedName = "Ranked";
-        inline const std::string FullComboName = "Full Combo";
-        inline const std::string PercentageName = "Percentage Above";
-        inline const std::string FailedName = "Failed";
+        inline std::string const StaticName = "Always";
+        inline std::string const RankedName = "Ranked";
+        inline std::string const FullComboName = "Full Combo";
+        inline std::string const PercentageName = "Percentage Above";
+        inline std::string const FailedName = "Failed";
 
         DECLARE_JSON_CLASS(Static,
         )

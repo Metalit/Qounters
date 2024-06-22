@@ -1,7 +1,6 @@
 #pragma once
 
 #include "UnityEngine/Vector2.hpp"
-
 #include "types.hpp"
 
 namespace Qounters {

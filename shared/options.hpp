@@ -61,8 +61,8 @@ namespace Qounters {
             BaseGame,
         };
         using OptionsTypes = TypeOptions<TextOptions, ShapeOptions, ImageOptions, BaseGameOptions>;
-        VALUE(ConfigUtils::Vector2, Position)
-        VALUE(float, Rotation)
+        VALUE_DEFAULT(ConfigUtils::Vector2, Position, ConfigUtils::Vector2(0, 0))
+        VALUE_DEFAULT(float, Rotation, 0)
         VALUE_DEFAULT(ConfigUtils::Vector2, Scale, ConfigUtils::Vector2(1, 1))
         VALUE(int, Type)
         VALUE(OptionsTypes, Options)
@@ -82,12 +82,12 @@ namespace Qounters {
             AnchorMax = Bottom,
         };
         VALUE(ConfigUtils::Vector2, Position)
-        VALUE(float, Rotation)
+        VALUE_DEFAULT(float, Rotation, 0)
         VALUE(int, Anchor)
-        VECTOR(Component, Components)
+        VECTOR_DEFAULT(Component, Components, {})
         VALUE_DEFAULT(bool, Detached, false)
-        VALUE_DEFAULT(ConfigUtils::Vector3, DetachedPosition, {})
-        VALUE_DEFAULT(ConfigUtils::Vector3, DetachedRotation, {})
+        VALUE_DEFAULT(ConfigUtils::Vector3, DetachedPosition, ConfigUtils::Vector3(0, 0, 0))
+        VALUE_DEFAULT(ConfigUtils::Vector3, DetachedRotation, ConfigUtils::Vector3(0, 0, 0))
     )
 
     DECLARE_JSON_CLASS(Preset,
@@ -97,11 +97,11 @@ namespace Qounters {
 
     Preset GetDefaultHUDPreset();
 
-    extern const std::vector<std::string> TypeStrings;
-    extern const std::vector<std::string> AnchorStrings;
-    extern const std::vector<std::string> AlignStrings;
-    extern const std::vector<std::string> ShapeStrings;
-    extern const std::vector<std::string> FillStrings;
-    extern const std::vector<std::string> ComponentStrings;
-    extern const std::vector<std::string> SaberStrings;
+    extern const std::vector<std::string_view> TypeStrings;
+    extern const std::vector<std::string_view> AnchorStrings;
+    extern const std::vector<std::string_view> AlignStrings;
+    extern const std::vector<std::string_view> ShapeStrings;
+    extern const std::vector<std::string_view> FillStrings;
+    extern const std::vector<std::string_view> ComponentStrings;
+    extern const std::vector<std::string_view> SaberStrings;
 }

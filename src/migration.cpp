@@ -1,18 +1,20 @@
 #include "migration.hpp"
+
+#include <utility>
+
 #include "config.hpp"
 #include "editor.hpp"
 #include "main.hpp"
 #include "sources.hpp"
 #include "templates.hpp"
-#include <utility>
 
 namespace Qounters::Migration {
     std::pair<int, UnityEngine::Vector2> EstimatePosition(std::string position, float distance, OldConfig const& config) {
-        distance /= 2; // correct for scale difference
+        distance /= 2;  // correct for scale difference
         if (position == "BelowCombo") {
-            float offset = -12 * (1 - 6 * config.ComboOffset) / 2; // ComboOffset
-            offset += 34; // difference between my canvas and the combo panel
-            offset -= 25; // correct for pivot location
+            float offset = -12 * (1 - 6 * config.ComboOffset) / 2;  // ComboOffset
+            offset += 34;  // difference between my canvas and the combo panel
+            offset -= 25;  // correct for pivot location
             return {(int) Group::Anchors::Left, {0, -distance + offset}};
         } else if (position == "AboveCombo") {
             float offset = 40 * (1 - 6 * config.ComboOffset) / 2;
@@ -42,27 +44,27 @@ namespace Qounters::Migration {
     }
 
     void Migrate() {
-        static const std::string oldConfigPath = "/sdcard/ModData/com.beatgames.beatsaber/Configs/Qounters-.json";
+        static std::string const oldConfigPath = "/sdcard/ModData/com.beatgames.beatsaber/Configs/Qounters-.json";
 
         if (!fileexists(oldConfigPath)) {
-            getLogger().info("No qounters- config found");
+            logger.info("No qounters- config found");
             return;
         }
 
         auto presets = getConfig().Presets.GetValue();
         std::string newPresetName = "Migrated";
         if (presets.contains(newPresetName)) {
-            getLogger().info("Migrated preset found, skipping migration");
+            logger.info("Migrated preset found, skipping migration");
             return;
         }
 
-        getLogger().info("Migrating qounters- config");
+        logger.info("Migrating qounters- config");
 
         OldConfig config;
         try {
             ReadFromFile(oldConfigPath, config);
         } catch (std::exception const& exc) {
-            getLogger().error("Failed to read old config: %s", exc.what());
+            logger.error("Failed to read old config: {}", exc.what());
             return;
         }
 
@@ -95,18 +97,21 @@ namespace Qounters::Migration {
         if (config.PBConfig.Enabled) {
             auto [anchor, pos] = EstimatePosition(config.PBConfig.Position, config.PBConfig.Distance, config);
             if (config.PBConfig.UnderScore) {
-                auto [anchor2, pos2] = config.ScoreConfig.Enabled
-                    ? EstimatePosition(config.ScoreConfig.Position, config.ScoreConfig.Distance, config)
-                    : std::make_pair((int) Group::Anchors::Left, UnityEngine::Vector2(0, -35));
+                auto [anchor2, pos2] = config.ScoreConfig.Enabled ? EstimatePosition(config.ScoreConfig.Position, config.ScoreConfig.Distance, config)
+                                                                  : std::make_pair((int) Group::Anchors::Left, UnityEngine::Vector2(0, -35));
                 anchor = anchor2;
                 pos = {pos2.x, pos2.y - 15};
             }
-            Templates::AddPersonalBest(anchor, pos, config.PBConfig.Mode == "Absolute", config.PBConfig.HideFirstScore, config.PBConfig.DecimalPrecision);
+            Templates::AddPersonalBest(
+                anchor, pos, config.PBConfig.Mode == "Absolute", config.PBConfig.HideFirstScore, config.PBConfig.DecimalPrecision
+            );
         }
 
         if (config.CutConfig.Enabled) {
             auto [anchor, pos] = EstimatePosition(config.CutConfig.Position, config.CutConfig.Distance, config);
-            Templates::AddAverageCut(anchor, pos, config.CutConfig.SeparateSaberCounts, config.CutConfig.SeparateCutValues, config.CutConfig.AveragePrecision);
+            Templates::AddAverageCut(
+                anchor, pos, config.CutConfig.SeparateSaberCounts, config.CutConfig.SeparateCutValues, config.CutConfig.AveragePrecision
+            );
         }
 
         if (config.NotesLeftConfig.Enabled) {
@@ -178,6 +183,6 @@ namespace Qounters::Migration {
         getConfig().Presets.SetValue(presets);
         getConfig().Preset.SetValue(newPresetName);
 
-        getLogger().info("Done migrating");
+        logger.info("Done migrating");
     }
 }
