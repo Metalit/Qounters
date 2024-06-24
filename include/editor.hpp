@@ -26,14 +26,20 @@ namespace Qounters::Editor {
     void EndDrag();
     void EnableDetachedCanvas(bool enabled);
 
+    // adds an undo every time, no action ID or FinalizeAction
     void AddComponent();
     void ToggleAttachment();
     void Remove();
+    // use GetSelectedX, modify the reference, call these, then call FinalizeAction
     void UpdatePosition(bool neverSnap = false);
     void UpdateType();
     void UpdateColorSource();
     void UpdateEnableSource();
-    void UpdateInvertEnabled();
+    void UpdateOptions();
+    void UpdateSourceOptions();
+    void UpdateColorOptions();
+    void UpdateEnableOptions();
+    // GetSelectedX optional, but still needs FinalizeAction
     void SetOptions(int actionId, Component::OptionsTypes options);
     void SetSourceOptions(int actionId, UnparsedJSON options);
     void SetColorOptions(int actionId, UnparsedJSON options);
@@ -48,10 +54,10 @@ namespace Qounters::Editor {
     void DisableActions();
     void EnableActions();
 
-    Group& GetSelectedGroup(int actionId, bool addUndo = true);
-    Component& GetSelectedComponent(int actionId, bool addUndo = true);
+    Group& GetSelectedGroup(int actionId);
+    Component& GetSelectedComponent(int actionId);
     template <class T>
-    T GetOptions(int actionId, bool addUndo = true) {
-        return GetSelectedComponent(actionId, addUndo).Options.GetValue<T>().value_or(T());
+    T GetOptions(int actionId) {
+        return GetSelectedComponent(actionId).Options.GetValue<T>().value_or(T());
     }
 }

@@ -588,9 +588,8 @@ void Qounters::OptionsViewController::DidActivate(bool firstActivation, bool add
 
     cInvertEnableToggle = BSML::Lite::CreateToggle(componentParent, "Invert Enabled", false, [this](bool val) {
         static int id = Editor::GetActionId();
-        auto& comp = Editor::GetSelectedComponent(id);
-        comp.InvertEnable = val;
-        Editor::UpdateInvertEnabled();
+        Editor::GetSelectedComponent(id).InvertEnable = val;
+        Editor::UpdateEnableOptions();
         Editor::FinalizeAction();
     });
 
@@ -702,17 +701,17 @@ void Qounters::OptionsViewController::UpdateUI() {
 }
 
 void Qounters::OptionsViewController::UpdateTypeOptions() {
-    auto& state = Editor::GetSelectedComponent(-1, false);
+    auto& state = Editor::GetSelectedComponent(-1);
     CreateTypeOptionsUI(cTypeOptions->transform, state.Type, state.Options);
 }
 
 void Qounters::OptionsViewController::UpdateColorSourceOptions() {
-    auto& state = Editor::GetSelectedComponent(-1, false);
+    auto& state = Editor::GetSelectedComponent(-1);
     ColorSource::CreateUI(cColorSourceOptions->gameObject, state.ColorSource, state.ColorOptions);
 }
 
 void Qounters::OptionsViewController::UpdateEnableSourceOptions() {
-    auto& state = Editor::GetSelectedComponent(-1, false);
+    auto& state = Editor::GetSelectedComponent(-1);
     EnableSource::CreateUI(cEnableSourceOptions->gameObject, state.EnableSource, state.EnableOptions);
 }
 

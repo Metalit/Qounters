@@ -59,7 +59,7 @@ namespace Qounters {
 
         Utils::CreateDropdownEnum(parent, "Align", options.Align, AlignStrings, [](int val) {
             static int id = Editor::GetActionId();
-            auto opts = Editor::GetOptions<TextOptions>(id, false);
+            auto opts = Editor::GetOptions<TextOptions>(id);
             opts.Align = val;
             Editor::SetOptions(id, opts);
             Editor::FinalizeAction();
@@ -67,7 +67,7 @@ namespace Qounters {
 
         auto inc = BSML::Lite::CreateIncrementSetting(parent, "Font Size", 1, 0.5, options.Size, true, false, 0, -1, Vector2(), [](float val) {
             static int id = Editor::GetActionId();
-            auto opts = Editor::GetOptions<TextOptions>(id, false);
+            auto opts = Editor::GetOptions<TextOptions>(id);
             opts.Size = val;
             Editor::SetOptions(id, opts);
             Editor::FinalizeAction();
@@ -75,7 +75,7 @@ namespace Qounters {
 
         BSML::Lite::CreateToggle(parent, "Italic", options.Italic, [](bool val) {
             static int id = Editor::GetActionId();
-            auto opts = Editor::GetOptions<TextOptions>(id, false);
+            auto opts = Editor::GetOptions<TextOptions>(id);
             opts.Italic = val;
             Editor::SetOptions(id, opts);
             Editor::FinalizeAction();
@@ -83,7 +83,7 @@ namespace Qounters {
 
         sourceDropdown = Utils::CreateDropdown(parent, "Text Source", options.TextSource, Utils::GetKeys(textSources), [parent](std::string val) {
             static int id = Editor::GetActionId();
-            auto opts = Editor::GetOptions<TextOptions>(id, false);
+            auto opts = Editor::GetOptions<TextOptions>(id);
             if (val == opts.TextSource)
                 return;
             sourceDropdown->dropdown->Hide(false);
@@ -104,7 +104,7 @@ namespace Qounters {
 
         Utils::CreateDropdownEnum(parent, "Shape", options.Shape, ShapeStrings, [](int val) {
             static int id = Editor::GetActionId();
-            auto opts = Editor::GetOptions<ShapeOptions>(id, false);
+            auto opts = Editor::GetOptions<ShapeOptions>(id);
             opts.Shape = val;
             Editor::SetOptions(id, opts);
             Editor::FinalizeAction();
@@ -113,7 +113,7 @@ namespace Qounters {
         auto inc =
             BSML::Lite::CreateIncrementSetting(parent, "Outline Width", 1, 0.1, options.OutlineWidth, true, false, 0.1, -1, Vector2(), [](float val) {
                 static int id = Editor::GetActionId();
-                auto opts = Editor::GetOptions<ShapeOptions>(id, false);
+                auto opts = Editor::GetOptions<ShapeOptions>(id);
                 opts.OutlineWidth = val;
                 Editor::SetOptions(id, opts);
                 Editor::FinalizeAction();
@@ -121,7 +121,7 @@ namespace Qounters {
 
         Utils::CreateDropdownEnum(parent, "Fill", options.Fill, FillStrings, [](int val) {
             static int id = Editor::GetActionId();
-            auto opts = Editor::GetOptions<ShapeOptions>(id, false);
+            auto opts = Editor::GetOptions<ShapeOptions>(id);
             opts.Fill = val;
             Editor::SetOptions(id, opts);
             Editor::FinalizeAction();
@@ -129,7 +129,7 @@ namespace Qounters {
 
         sourceDropdown = Utils::CreateDropdown(parent, "Fill Source", options.FillSource, Utils::GetKeys(shapeSources), [parent](std::string val) {
             static int id = Editor::GetActionId();
-            auto opts = Editor::GetOptions<ShapeOptions>(id, false);
+            auto opts = Editor::GetOptions<ShapeOptions>(id);
             if (opts.FillSource != val) {
                 sourceDropdown->dropdown->Hide(false);
                 opts.FillSource = val;
@@ -145,7 +145,7 @@ namespace Qounters {
 
         BSML::Lite::CreateToggle(parent, "Inverse Fill", options.Inverse, [](bool val) {
             static int id = Editor::GetActionId();
-            auto opts = Editor::GetOptions<ShapeOptions>(id, false);
+            auto opts = Editor::GetOptions<ShapeOptions>(id);
             opts.Inverse = val;
             Editor::SetOptions(id, opts);
             Editor::FinalizeAction();
@@ -170,7 +170,7 @@ namespace Qounters {
             modal->Hide();
             currentImage->sprite = ImageSpriteCache::GetSpriteIdx(idx);
             static int actionId = Editor::GetActionId();
-            auto opts = Editor::GetOptions<ImageOptions>(actionId, false);
+            auto opts = Editor::GetOptions<ImageOptions>(actionId);
             opts.Path = ImageSpriteCache::GetInstance()->spritePaths[idx];
             Editor::SetOptions(actionId, opts);
             Editor::FinalizeAction();
@@ -195,7 +195,7 @@ namespace Qounters {
     void CreateBaseGameOptionsUI(GameObject* parent, BaseGameOptions const& options) {
         Utils::CreateDropdownEnum(parent, "Component", options.Component, ComponentStrings, [](int val) {
             static int id = Editor::GetActionId();
-            auto opts = Editor::GetOptions<BaseGameOptions>(id, false);
+            auto opts = Editor::GetOptions<BaseGameOptions>(id);
             opts.Component = val;
             Editor::SetOptions(id, opts);
             Editor::FinalizeAction();

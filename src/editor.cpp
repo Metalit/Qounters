@@ -49,7 +49,7 @@ namespace Qounters::Editor {
     Group nextUndoGroup;
     Component nextUndoComponent;
     int lastActionId;
-    bool newAction;
+    std::vector<void (*)()> nextUndoUpdates;
 
     bool runningUndo;
 
@@ -75,8 +75,13 @@ namespace Qounters::Editor {
         prevSelected = nullptr;
     }
 
+    inline void AddUpdate(void (*update)()) {
+        if (runningUndo || disableActions)
+            return;
+        nextUndoUpdates.emplace_back(update);
+    }
     inline void AddUndo(auto&& fn) {
-        if (runningUndo || disableActions || !newAction)
+        if (runningUndo || disableActions)
             return;
         bool wasEmpty = undos.empty();
         undos.emplace_back(selectedGroupIdx, selectedComponentIdx, fn);
@@ -133,7 +138,7 @@ namespace Qounters::Editor {
         selectedGroupIdx = -1;
         selectedComponentIdx = -1;
         lastActionId = -1;
-        newAction = true;
+        nextUndoUpdates.clear();
         runningUndo = false;
         disableActions = false;
         previewMode = false;
@@ -318,7 +323,7 @@ namespace Qounters::Editor {
                 anchors[i]->SetHighlighted(true);
                 anchors[i]->color = highlightColor;
                 auto hitPoint = anchors[i]->rectTransform->InverseTransformPoint(hit->position);
-                GetSelectedGroup(lastActionId).Position = UnityEngine::Vector2(hitPoint.x, hitPoint.y);
+                GetSelectedGroup(-1).Position = UnityEngine::Vector2(hitPoint.x, hitPoint.y);
                 dragged->UpdateDragAnchor(i);
                 return true;
             }
@@ -346,7 +351,7 @@ namespace Qounters::Editor {
     }
 
     void AddComponent() {
-        auto& vec = GetSelectedGroup(lastActionId).Components;
+        auto& vec = GetSelectedGroup(-1).Components;
         auto newIdx = vec.size();
         auto& newComponent = vec.emplace_back();
         newComponent.Type = (int) Component::Types::Text;
@@ -359,21 +364,16 @@ namespace Qounters::Editor {
 
         CreateQounterComponent(newComponent, newIdx, selected->transform, true);
         auto created = editing[{selectedGroupIdx, newIdx}];
-        if (!runningUndo)
+        if (!runningUndo) {
             created->Select();
-        SelectEditing(created);
-
-        newAction = true;
-        lastActionId = -1;
+            SelectEditing(created);
+        }
 
         AddUndo(Remove);
     }
 
     void ToggleAttachment() {
-        auto& group = GetSelectedGroup(-1, false);
-
-        newAction = true;
-        lastActionId = -1;
+        auto& group = GetSelectedGroup(-1);
 
         AddUndo([state = group]() {
             GetSelectedGroup(-1) = state;
@@ -417,15 +417,12 @@ namespace Qounters::Editor {
     }
 
     void Remove() {
-        newAction = true;
-        lastActionId = -1;
-
         if (selectedComponentIdx != -1) {
-            AddUndo([state = GetSelectedComponent(-1, false)]() {
+            AddUndo([state = GetSelectedComponent(-1)]() {
                 CreateQounterComponent(state, selectedComponentIdx, editing[{selectedGroupIdx, -1}]->transform, true);
             });
         } else {
-            AddUndo([state = GetSelectedGroup(-1, false)]() {
+            AddUndo([state = GetSelectedGroup(-1)]() {
                 std::set<int> toRemove;
                 if (removedComponentIdxs.contains(selectedGroupIdx))
                     toRemove = removedComponentIdxs[selectedGroupIdx];
@@ -448,37 +445,30 @@ namespace Qounters::Editor {
         position.y = floor((position.y / step) + 0.5) * step;
     }
 
+    void UpdatePositionUndo() {
+        UpdatePosition(true);
+    }
     void UpdatePosition(bool neverSnap) {
         if (!selected)
             return;
-        bool snap = !neverSnap && !runningUndo && getConfig().Snap.GetValue();
+        AddUpdate(UpdatePositionUndo);
+        bool snap = !neverSnap && getConfig().Snap.GetValue();
         auto rect = selected->rectTransform;
         if (selectedComponentIdx != -1) {
-            AddUndo([state = nextUndoComponent]() {
-                GetSelectedComponent(-1) = state;
-                UpdatePosition();
-            });
             if (snap)
-                SnapPosition(GetSelectedComponent(lastActionId).Position);
-            UpdateComponentPosition(rect, GetSelectedComponent(lastActionId));
+                SnapPosition(GetSelectedComponent(-1).Position);
+            UpdateComponentPosition(rect, GetSelectedComponent(-1));
         } else {
-            AddUndo([state = nextUndoGroup]() {
-                GetSelectedGroup(-1) = state;
-                UpdatePosition();
-            });
             if (snap)
-                SnapPosition(GetSelectedGroup(lastActionId).Position);
-            UpdateGroupPosition(rect, GetSelectedGroup(lastActionId));
+                SnapPosition(GetSelectedGroup(-1).Position);
+            UpdateGroupPosition(rect, GetSelectedGroup(-1));
         }
     }
 
     void UpdateType() {
-        AddUndo([state = nextUndoComponent]() {
-            GetSelectedComponent(-1) = state;
-            UpdateType();
-        });
+        AddUpdate(UpdateType);
 
-        auto& component = GetSelectedComponent(lastActionId);
+        auto& component = GetSelectedComponent(-1);
         RemoveWithoutDeselect(selectedGroupIdx, selectedComponentIdx);
         if (!runningUndo)
             SetDefaultOptions(component);
@@ -492,13 +482,10 @@ namespace Qounters::Editor {
     }
 
     void UpdateColorSource() {
-        AddUndo([state = nextUndoComponent]() {
-            GetSelectedComponent(-1) = state;
-            UpdateColorSource();
-        });
+        AddUpdate(UpdateColorSource);
 
         if (!runningUndo) {
-            SetColorOptions(lastActionId, ColorSource::Static());
+            SetColorOptions(-1, ColorSource::Static());
             OptionsViewController::GetInstance()->UpdateUI();
         } else {
             auto& component = GetSelectedComponent(-1);
@@ -508,13 +495,10 @@ namespace Qounters::Editor {
     }
 
     void UpdateEnableSource() {
-        AddUndo([state = nextUndoComponent]() {
-            GetSelectedComponent(-1) = state;
-            UpdateEnableSource();
-        });
+        AddUpdate(UpdateEnableSource);
 
         if (!runningUndo) {
-            SetEnableOptions(lastActionId, EnableSource::Static());
+            SetEnableOptions(-1, EnableSource::Static());
             OptionsViewController::GetInstance()->UpdateUI();
         } else {
             auto& component = GetSelectedComponent(-1);
@@ -525,55 +509,50 @@ namespace Qounters::Editor {
         }
     }
 
-    void UpdateInvertEnabled() {
-        AddUndo([state = nextUndoComponent]() {
-            GetSelectedComponent(-1) = state;
-            UpdateInvertEnabled();
-        });
-
-        auto& component = GetSelectedComponent(lastActionId);
-        auto editingComponent = (EditingComponent*) selected;
-        UpdateComponentEnabled(editingComponent->typeComponent->gameObject, component.EnableSource, component.EnableOptions, component.InvertEnable);
-    }
-
-    void SetOptions(int actionId, Component::OptionsTypes options) {
-        auto& component = GetSelectedComponent(actionId);
-
-        AddUndo([state = nextUndoComponent]() { SetOptions(-1, state.Options); });
-
-        component.Options = options;
-        auto editingComponent = (EditingComponent*) selected;
-        UpdateComponentOptions(component.Type, editingComponent->typeComponent, options);
-    }
-
-    void SetSourceOptions(int actionId, UnparsedJSON options) {
-        auto& component = GetSelectedComponent(actionId);
-
-        AddUndo([state = nextUndoComponent]() { SetOptions(-1, state.Options); });
-
-        SetSourceOptions(component, options);
+    void UpdateOptions() {
+        auto& component = GetSelectedComponent(-1);
         auto editingComponent = (EditingComponent*) selected;
         UpdateComponentOptions(component.Type, editingComponent->typeComponent, component.Options);
+        AddUpdate(UpdateOptions);
+    }
+    void SetOptions(int actionId, Component::OptionsTypes options) {
+        auto& component = GetSelectedComponent(actionId);
+        component.Options = options;
+        UpdateOptions();
     }
 
-    void SetColorOptions(int actionId, UnparsedJSON options) {
+    void UpdateSourceOptions() {
+        // updates a few unnecessary things, but it's ok
+        UpdateOptions();
+    }
+    void SetSourceOptions(int actionId, UnparsedJSON options) {
         auto& component = GetSelectedComponent(actionId);
+        SetSourceOptions(component, options);
+        UpdateSourceOptions();
+    }
 
-        AddUndo([state = nextUndoComponent]() { SetColorOptions(-1, state.ColorOptions); });
-
-        component.ColorOptions = options;
+    void UpdateColorOptions() {
+        auto& component = GetSelectedComponent(-1);
         auto editingComponent = (EditingComponent*) selected;
         UpdateComponentColor(editingComponent->typeComponent, component.ColorSource, component.ColorOptions);
+        AddUpdate(UpdateColorOptions);
+    }
+    void SetColorOptions(int actionId, UnparsedJSON options) {
+        auto& component = GetSelectedComponent(actionId);
+        component.ColorOptions = options;
+        UpdateColorOptions();
     }
 
-    void SetEnableOptions(int actionId, UnparsedJSON options) {
-        auto& component = GetSelectedComponent(actionId);
-
-        AddUndo([state = nextUndoComponent]() { SetEnableOptions(-1, state.EnableOptions); });
-
-        component.EnableOptions = options;
+    void UpdateEnableOptions() {
+        auto& component = GetSelectedComponent(-1);
         auto editingComponent = (EditingComponent*) selected;
         UpdateComponentEnabled(editingComponent->typeComponent->gameObject, component.EnableSource, component.EnableOptions, component.InvertEnable);
+        AddUpdate(UpdateEnableOptions);
+    }
+    void SetEnableOptions(int actionId, UnparsedJSON options) {
+        auto& component = GetSelectedComponent(actionId);
+        component.EnableOptions = options;
+        UpdateEnableOptions();
     }
 
     void Undo() {
@@ -607,8 +586,25 @@ namespace Qounters::Editor {
     }
 
     void FinalizeAction() {
-        if (!disableActions)
-            lastActionId = -1;
+        if (disableActions)
+            return;
+        lastActionId = -1;
+        if (!nextUndoUpdates.empty()) {
+            if (selectedComponentIdx == -1) {
+                AddUndo([state = nextUndoGroup, updates = std::move(nextUndoUpdates)]() {
+                    GetSelectedGroup(-1) = state;
+                    for (auto& update : updates)
+                        update();
+                });
+            } else {
+                AddUndo([state = nextUndoComponent, updates = std::move(nextUndoUpdates)]() {
+                    GetSelectedComponent(-1) = state;
+                    for (auto& update : updates)
+                        update();
+                });
+            }
+        }
+        nextUndoUpdates.clear();
     }
 
     void DisableActions() {
@@ -619,27 +615,21 @@ namespace Qounters::Editor {
         disableActions = false;
     }
 
-    Group& GetSelectedGroup(int actionId, bool addUndo) {
-        addUndo = addUndo && !runningUndo && !disableActions;
-        if (addUndo) {
-            newAction = actionId != lastActionId;
-            lastActionId = actionId;
-        }
+    Group& GetSelectedGroup(int actionId) {
         auto& ret = GetGroup(selectedGroupIdx);
-        if (addUndo && newAction)
+        if (!runningUndo && !disableActions && actionId >= 0 && actionId != lastActionId) {
+            lastActionId = actionId;
             nextUndoGroup = ret;
+        }
         return ret;
     }
 
-    Component& GetSelectedComponent(int actionId, bool addUndo) {
-        addUndo = addUndo && !runningUndo && !disableActions;
-        if (addUndo) {
-            newAction = actionId != lastActionId;
-            lastActionId = actionId;
-        }
+    Component& GetSelectedComponent(int actionId) {
         auto& ret = GetGroup(selectedGroupIdx).Components[selectedComponentIdx];
-        if (addUndo && newAction)
+        if (!runningUndo && !disableActions && actionId >= 0 && actionId != lastActionId) {
+            lastActionId = actionId;
             nextUndoComponent = ret;
+        }
         return ret;
     }
 }
