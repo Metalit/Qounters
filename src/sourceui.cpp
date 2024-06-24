@@ -36,7 +36,6 @@ namespace Qounters::TextSource {
             Editor::SetSourceOptions(id, opts);
             Editor::FinalizeAction();
         });
-        SetButtons(inc);
 
         BSML::Lite::CreateToggle(parent, "Percentage", opts.Percentage, [](bool val) {
             static int id = Editor::GetActionId();
@@ -80,7 +79,6 @@ namespace Qounters::TextSource {
             Editor::SetSourceOptions(id, opts);
             Editor::FinalizeAction();
         });
-        SetButtons(inc);
 
         BSML::Lite::CreateToggle(parent, "Percentage", opts.Percentage, [](bool val) {
             static int id = Editor::GetActionId();
@@ -128,7 +126,6 @@ namespace Qounters::TextSource {
             Editor::SetSourceOptions(id, opts);
             Editor::FinalizeAction();
         });
-        SetButtons(inc);
 
         BSML::Lite::CreateToggle(parent, "Percentage", opts.Percentage, [](bool val) {
             static int id = Editor::GetActionId();
@@ -172,7 +169,6 @@ namespace Qounters::TextSource {
             Editor::SetSourceOptions(id, opts);
             Editor::FinalizeAction();
         });
-        SetButtons(inc);
 
         Utils::CreateDropdownEnum(parent, "Part", opts.Part, AverageCutPartStrings, [](int val) {
             static int id = Editor::GetActionId();
@@ -198,7 +194,6 @@ namespace Qounters::TextSource {
             Editor::SetSourceOptions(id, opts);
             Editor::FinalizeAction();
         });
-        SetButtons(inc);
 
         auto inc2 = BSML::Lite::CreateIncrementSetting(parent, "Decimal Offset", 0, 1, opts.DecimalOffset, 0, 10, [](float val) {
             static int id = Editor::GetActionId();
@@ -206,7 +201,6 @@ namespace Qounters::TextSource {
             Editor::SetSourceOptions(id, opts);
             Editor::FinalizeAction();
         });
-        SetButtons(inc2);
     }
     void FailsUI(GameObject* parent, UnparsedJSON unparsed) {
         static Fails opts;
@@ -293,7 +287,6 @@ namespace Qounters::TextSource {
             Editor::SetSourceOptions(id, opts);
             Editor::FinalizeAction();
         });
-        SetButtons(inc);
     }
     void SaberSpeedUI(GameObject* parent, UnparsedJSON unparsed) {
         static SaberSpeed opts;
@@ -312,7 +305,6 @@ namespace Qounters::TextSource {
             Editor::SetSourceOptions(id, opts);
             Editor::FinalizeAction();
         });
-        SetButtons(inc);
 
         Utils::CreateDropdownEnum(parent, "Mode", opts.Mode, SaberSpeedModeStrings, [](int val) {
             static int id = Editor::GetActionId();
@@ -356,7 +348,6 @@ namespace Qounters::TextSource {
             Editor::SetSourceOptions(id, opts);
             Editor::FinalizeAction();
         });
-        SetButtons(inc);
     }
 
     void CreateUI(UnityEngine::GameObject* parent, std::string source, UnparsedJSON options) {
