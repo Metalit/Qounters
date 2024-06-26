@@ -5,6 +5,7 @@
 #include "UnityEngine/Ray.hpp"
 #include "UnityEngine/Rect.hpp"
 #include "UnityEngine/Resources.hpp"
+#include "UnityEngine/Time.hpp"
 #include "VRUIControls/VRGraphicRaycaster.hpp"
 #include "VRUIControls/VRInputModule.hpp"
 #include "VRUIControls/VRPointer.hpp"
@@ -48,8 +49,12 @@ namespace Qounters::Editor {
 
     Group nextUndoGroup;
     Component nextUndoComponent;
+    int currentActionId;
+    std::set<void (*)()> nextUndoUpdates;
+
     int lastActionId;
-    std::vector<void (*)()> nextUndoUpdates;
+    float lastActionTime;
+    std::set<void (*)()> lastUndoUpdates;
 
     bool runningUndo;
 
@@ -78,7 +83,7 @@ namespace Qounters::Editor {
     inline void AddUpdate(void (*update)()) {
         if (runningUndo || disableActions)
             return;
-        nextUndoUpdates.emplace_back(update);
+        nextUndoUpdates.emplace(update);
     }
     inline void AddUndo(auto&& fn) {
         if (runningUndo || disableActions)
@@ -137,8 +142,11 @@ namespace Qounters::Editor {
         selected = nullptr;
         selectedGroupIdx = -1;
         selectedComponentIdx = -1;
-        lastActionId = -1;
+        currentActionId = -1;
         nextUndoUpdates.clear();
+        lastActionId = -1;
+        lastActionTime = 0;
+        lastUndoUpdates.clear();
         runningUndo = false;
         disableActions = false;
         previewMode = false;
@@ -588,22 +596,41 @@ namespace Qounters::Editor {
     void FinalizeAction() {
         if (disableActions)
             return;
-        lastActionId = -1;
+        float time = UnityEngine::Time::get_time();
+        bool merge = currentActionId == lastActionId && time - lastActionTime < UNDO_MERGE_THRESHOLD;
+        lastActionTime = time;
+        lastActionId = currentActionId;
+        currentActionId = -1;
         if (!nextUndoUpdates.empty()) {
-            if (selectedComponentIdx == -1) {
-                AddUndo([state = nextUndoGroup, updates = std::move(nextUndoUpdates)]() {
+            if (merge && !runningUndo && !disableActions && !undos.empty()) {
+                std::set<void (*)()> newUpdates = {};
+                for (auto& update : nextUndoUpdates) {
+                    if (!lastUndoUpdates.contains(update))
+                        newUpdates.emplace(update);
+                }
+                if (!newUpdates.empty()) {
+                    auto& [a, b, oldUndo] = undos.back();
+                    oldUndo = [oldUndo, updates = std::move(newUpdates)]() {
+                        oldUndo();
+                        for (auto& update : updates)
+                            update();
+                    };
+                }
+            } else if (selectedComponentIdx == -1) {
+                AddUndo([state = nextUndoGroup, updates = nextUndoUpdates]() {
                     GetSelectedGroup(-1) = state;
                     for (auto& update : updates)
                         update();
                 });
             } else {
-                AddUndo([state = nextUndoComponent, updates = std::move(nextUndoUpdates)]() {
+                AddUndo([state = nextUndoComponent, updates = nextUndoUpdates]() {
                     GetSelectedComponent(-1) = state;
                     for (auto& update : updates)
                         update();
                 });
             }
         }
+        lastUndoUpdates.swap(nextUndoUpdates);
         nextUndoUpdates.clear();
     }
 
@@ -617,8 +644,8 @@ namespace Qounters::Editor {
 
     Group& GetSelectedGroup(int actionId) {
         auto& ret = GetGroup(selectedGroupIdx);
-        if (!runningUndo && !disableActions && actionId >= 0 && actionId != lastActionId) {
-            lastActionId = actionId;
+        if (!runningUndo && !disableActions && actionId >= 0 && actionId != currentActionId) {
+            currentActionId = actionId;
             nextUndoGroup = ret;
         }
         return ret;
@@ -626,8 +653,8 @@ namespace Qounters::Editor {
 
     Component& GetSelectedComponent(int actionId) {
         auto& ret = GetGroup(selectedGroupIdx).Components[selectedComponentIdx];
-        if (!runningUndo && !disableActions && actionId >= 0 && actionId != lastActionId) {
-            lastActionId = actionId;
+        if (!runningUndo && !disableActions && actionId >= 0 && actionId != currentActionId) {
+            currentActionId = actionId;
             nextUndoComponent = ret;
         }
         return ret;

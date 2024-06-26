@@ -7,6 +7,7 @@ static constexpr auto logger = Paper::ConstLoggerContext(MOD_ID);
 #define IMAGE_DIRECTORY "/sdcard/ModData/com.beatgames.beatsaber/Mods/" MOD_ID "/"
 #define SPEED_SAMPLES_PER_SEC 4
 #define MAX_SECS_WITHOUT_DRAG 0.2
+#define UNDO_MERGE_THRESHOLD 0.5
 
 extern bool hasCJD;
 
