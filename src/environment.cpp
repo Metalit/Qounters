@@ -75,6 +75,7 @@
 #include "customtypes/settings.hpp"
 #include "internals.hpp"
 #include "main.hpp"
+#include "playtest.hpp"
 #include "qounters.hpp"
 #include "utils.hpp"
 
@@ -407,13 +408,15 @@ void Qounters::OnSceneStart(EnvironmentInfoSO* environment) {
 
     logger.debug("Disabling objects");
 
-    if (auto gameplay = GameObject::Find("StandardGameplay"))
-        Utils::DisableAllBut(gameplay->transform, {"EventSystem", "ControllerLeft", "ControllerRight"});
+    if (auto gameplay = GameObject::Find("BeatmapCallbacksUpdater"))
+        gameplay->SetActive(false);
 
     GameObject::Find("DisableGCWhileEnabled")->active = false;
 
     if (auto bts = GameObject::Find("BTSEnvironmentCharacterSpawner"))
-        bts->active = false;  // the game literally just freezes
+        bts->SetActive(false); // the game literally just freezes
+
+    Qounters::PlayTest::Setup();
 }
 
 void Qounters::OnSceneEnd() {

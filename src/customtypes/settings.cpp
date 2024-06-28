@@ -19,6 +19,7 @@
 #include "editor.hpp"
 #include "environment.hpp"
 #include "main.hpp"
+#include "playtest.hpp"
 #include "sources.hpp"
 #include "sourceui.hpp"
 #include "templates.hpp"
@@ -265,8 +266,15 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
     snapToggle->toggle->transform->SetParent(snapIncrement->transform, false);
     snapToggle->transform->SetParent(snapIncrement->transform, false);
     UnityEngine::Object::Destroy(snapToggle->text->gameObject);
-
-    previewToggle = BSML::Lite::CreateToggle(vertical, "Preview Mode", false, Editor::SetPreviewMode);
+    
+    auto preview = BSML::Lite::CreateHorizontalLayoutGroup(vertical);
+    preview->set_spacing(3);
+    previewToggle = BSML::Lite::CreateToggle(preview, "Preview Mode", false, Editor::SetPreviewMode);
+    previewToggle->GetComponentsInParent<UI::LayoutElement*>(true)->First()->set_preferredWidth(65);
+    playtestButton = BSML::Lite::CreateUIButton(preview, "Playtest", []() {
+        Qounters::PlayTest::SpawnSequence();
+    });
+    playtestButton->interactable = Editor::GetPreviewMode();
 
     confirmModal = BSML::Lite::CreateModal(this, {95, 25}, Qounters::SettingsFlowCoordinator::OnModalCancel);
     auto modalLayout1 = BSML::Lite::CreateVerticalLayoutGroup(confirmModal);
