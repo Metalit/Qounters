@@ -46,10 +46,7 @@ int GetNoteCount(BeatmapCallbacksUpdater* updater) {
         return 0;
     }
     auto noteDataItemsList = (LinkedList*) data->_beatmapDataItemsPerTypeAndId->GetList(csTypeOf(NoteData*), 0)->items;
-    logger.debug("ver {}", noteDataItemsList->version);
     auto enumerator = noteDataItemsList->GetEnumerator();
-    logger.debug("ver {}", noteDataItemsList->version);
-    logger.debug("enum ver {}", enumerator._version);
     while (enumerator.MoveNext()) {
         auto noteData = (NoteData*) enumerator.Current;
         if (ShouldProcessNote(noteData) && noteData->time > songTime)
