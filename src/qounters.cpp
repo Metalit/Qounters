@@ -288,6 +288,8 @@ void Qounters::SetDefaultOptions(Component& component) {
 std::map<std::string, HUDType> const supportedHUDs = {
     {"BasicGameHUD", HUDType::Basic},
     {"NarrowGameHUD", HUDType::Basic},
+    {"LatticeHUD", HUDType::Basic},
+    {"RockGameHUD", HUDType::Basic},
     {"FlyingGameHUD/Container", HUDType::Rotational},
     {"MultiplayerLocalActivePlayerController(Clone)/IsActiveObjects/HUD", HUDType::Multiplayer},
     {"MultiplayerDuelLocalActivePlayerController(Clone)/IsActiveObjects/HUD", HUDType::Multiplayer},
@@ -407,9 +409,7 @@ void Qounters::CreateQounterComponent(Component const& qounterComponent, int com
     }
 
     UpdateColorOptions(component, qounterComponent.ColorSource, qounterComponent.ColorOptions, true);
-    UpdateEnableOptions(
-        component->gameObject, qounterComponent.EnableSource, qounterComponent.EnableOptions, true, qounterComponent.InvertEnable
-    );
+    UpdateEnableOptions(component->gameObject, qounterComponent.EnableSource, qounterComponent.EnableOptions, true, qounterComponent.InvertEnable);
 
     UpdateComponentPosition(component->rectTransform, qounterComponent);
 
@@ -441,6 +441,9 @@ void Qounters::CreateQounterGroup(Group const& qounterGroup, int groupIdx, bool 
 }
 
 void Qounters::CreateQounters() {
+    if (GetHUD().second == HUDType::Unsupported)
+        return;
+
     auto presets = getConfig().Presets.GetValue();
     auto presetName = getConfig().Preset.GetValue();
 
@@ -460,13 +463,14 @@ void Qounters::Reset() {
     shapes.clear();
     colors.clear();
     enables.clear();
+    BaseGameGraphic::Reset();
 }
 
 void Qounters::SetupObjects() {
     Reset();
 
-    auto hud = GetHUD().first;
-    if (!hud)
+    auto [hud, type] = GetHUD();
+    if (type == HUDType::Unsupported)
         return;
 
     BaseGameGraphic::MakeClones();

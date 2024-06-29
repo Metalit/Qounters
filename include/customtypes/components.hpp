@@ -53,6 +53,7 @@ DECLARE_CLASS_CODEGEN(Qounters, BaseGameGraphic, UUI::Graphic,
 
     DECLARE_STATIC_METHOD(BaseGameGraphic*, Create, UnityEngine::Transform* parent);
     DECLARE_STATIC_METHOD(void, MakeClones);
+    DECLARE_STATIC_METHOD(void, Reset);
 
    private:
     static constexpr int cloneCount = (int) BaseGameOptions::Components::ComponentsMax + 1;

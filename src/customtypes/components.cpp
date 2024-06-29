@@ -342,6 +342,11 @@ void BaseGameGraphic::MakeClones() {
     }
 }
 
+void BaseGameGraphic::Reset() {
+    for (int i = 0; i <= (int) BaseGameOptions::Components::ComponentsMax; i++)
+        clones[i] = nullptr;
+}
+
 ImageSpriteCache* ImageSpriteCache::instance;
 
 void ImageSpriteCache::OnDestroy() {
