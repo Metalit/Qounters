@@ -9,7 +9,6 @@
 
 static modloader::ModInfo modInfo = {MOD_ID, VERSION, 0};
 
-bool hasCJD = false;
 GlobalNamespace::IConnectedPlayer* localFakeConnectedPlayer = nullptr;
 bool blockOtherRaycasts = false;
 std::unordered_set<UnityEngine::Canvas*> raycastCanvases = {};
@@ -41,8 +40,6 @@ extern "C" void late_load() {
     BSML::Init();
 
     BSML::Register::RegisterMenuButton("Qounters++", "Qounters++ Settings", Qounters::PresentSettingsEnvironment);
-
-    // hasCJD = Modloader::requireMod("CustomJSONData");
 
     logger.info("Installing hooks");
     Qounters::InstallHooks();

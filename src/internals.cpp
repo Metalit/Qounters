@@ -18,8 +18,8 @@
 #include "GlobalNamespace/PlayerLevelStatsData.hpp"
 #include "GlobalNamespace/ScoreController.hpp"
 #include "GlobalNamespace/ScoreModel.hpp"
-#include "System/Collections/Generic/LinkedList_1.hpp"
 #include "System/Collections/Generic/Dictionary_2.hpp"
+#include "System/Collections/Generic/LinkedList_1.hpp"
 #include "System/Collections/IEnumerator.hpp"
 #include "UnityEngine/AudioClip.hpp"
 #include "UnityEngine/Resources.hpp"
@@ -245,18 +245,10 @@ void Qounters::Initialize() {
 }
 
 bool Qounters::ShouldProcessNote(NoteData* data) {
-    bool shouldProcess = false;
-    switch (data->gameplayType) {
-        case NoteData::GameplayType::Normal:
-            shouldProcess = true;
-            break;
-        case NoteData::GameplayType::BurstSliderHead:
-            shouldProcess = true;
-            break;
-        default:
-            break;
-    }
-    if (!hasCJD)
-        return shouldProcess;
-    return shouldProcess;  // TODO
+    // check first for noodle
+    if (data->scoringType == NoteData::ScoringType::NoScore || data->scoringType == NoteData::ScoringType::Ignore)
+        return false;
+    if (data->gameplayType == NoteData::GameplayType::Normal || data->gameplayType == NoteData::GameplayType::BurstSliderHead)
+        return true;
+    return false;
 }
