@@ -4,7 +4,7 @@
 #include "BeatmapDataLoaderVersion4/BeatmapDataLoader.hpp"
 #include "BeatmapSaveDataVersion3/BpmChangeEventData.hpp"
 #include "BeatmapSaveDataVersion4/LightshowSaveData.hpp"
-#include "GlobalNamespace/BasicBeatmapEventData.hpp"
+#include "GlobalNamespace/BeatmapBasicData.hpp"
 #include "GlobalNamespace/BeatmapCallbacksController.hpp"
 #include "GlobalNamespace/BeatmapCallbacksUpdater.hpp"
 #include "GlobalNamespace/BeatmapCharacteristicSO.hpp"
@@ -12,41 +12,31 @@
 #include "GlobalNamespace/BeatmapLevel.hpp"
 #include "GlobalNamespace/BeatmapLevelExtensions.hpp"
 #include "GlobalNamespace/BeatmapLevelSO.hpp"
-#include "GlobalNamespace/BeatmapLevelsModel.hpp"
 #include "GlobalNamespace/BpmTimeProcessor.hpp"
 #include "GlobalNamespace/ColorSchemeSO.hpp"
 #include "GlobalNamespace/ColorSchemesSettings.hpp"
-#include "GlobalNamespace/EnvironmentColorType.hpp"
+#include "GlobalNamespace/DefaultEnvironmentEventsFactory.hpp"
 #include "GlobalNamespace/EnvironmentInfoSO.hpp"
 #include "GlobalNamespace/EnvironmentKeywords.hpp"
 #include "GlobalNamespace/EnvironmentsListModel.hpp"
 #include "GlobalNamespace/FadeInOutController.hpp"
 #include "GlobalNamespace/GameScenesManager.hpp"
+#include "GlobalNamespace/GameplayCoreSceneSetupData.hpp"
 #include "GlobalNamespace/IBeatmapLevelLoader.hpp"
 #include "GlobalNamespace/ISortedList_1.hpp"
 #include "GlobalNamespace/LevelCompletionResults.hpp"
-#include "GlobalNamespace/LightColorBeatmapEventData.hpp"
-#include "GlobalNamespace/LightColorGroup.hpp"
-#include "GlobalNamespace/LightColorGroupEffectManager.hpp"
-#include "GlobalNamespace/LightGroup.hpp"
 #include "GlobalNamespace/MenuEnvironmentManager.hpp"
 #include "GlobalNamespace/MenuTransitionsHelper.hpp"
 #include "GlobalNamespace/MockPlayer.hpp"
 #include "GlobalNamespace/MockPlayerSettings.hpp"
 #include "GlobalNamespace/MultiplayerController.hpp"
 #include "GlobalNamespace/MultiplayerIntroAnimationController.hpp"
-#include "GlobalNamespace/MultiplayerLevelCompletionResults.hpp"
 #include "GlobalNamespace/MultiplayerLevelScenesTransitionSetupDataSO.hpp"
-#include "GlobalNamespace/MultiplayerPlayerResultsData.hpp"
 #include "GlobalNamespace/MultiplayerPlayersManager.hpp"
-#include "GlobalNamespace/MultiplayerResultsData.hpp"
-#include "GlobalNamespace/OverrideEnvironmentSettings.hpp"
 #include "GlobalNamespace/PauseMenuManager.hpp"
 #include "GlobalNamespace/PlayerData.hpp"
-#include "GlobalNamespace/PlayerDataFileManagerSO.hpp"
 #include "GlobalNamespace/PlayerDataFileModel.hpp"
 #include "GlobalNamespace/PlayerDataModel.hpp"
-#include "GlobalNamespace/RecordingToolManager.hpp"
 #include "GlobalNamespace/SimpleLevelStarter.hpp"
 #include "GlobalNamespace/SongPreviewPlayer.hpp"
 #include "GlobalNamespace/StandardLevelScenesTransitionSetupDataSO.hpp"
@@ -54,13 +44,11 @@
 #include "GlobalNamespace/VRRenderingParamsSetup.hpp"
 #include "HMUI/ViewController.hpp"
 #include "System/Action_1.hpp"
-#include "System/Action_2.hpp"
 #include "System/Collections/Generic/Dictionary_2.hpp"
 #include "System/Collections/Generic/HashSet_1.hpp"
 #include "System/Collections/Generic/LinkedListNode_1.hpp"
 #include "System/Collections/Generic/LinkedList_1.hpp"
 #include "System/Nullable_1.hpp"
-#include "System/Threading/CancellationToken.hpp"
 #include "System/Threading/Tasks/Task_1.hpp"
 #include "UnityEngine/AddressableAssets/AssetReferenceT_1.hpp"
 #include "UnityEngine/JsonUtility.hpp"
@@ -68,7 +56,6 @@
 #include "UnityEngine/TextAsset.hpp"
 #include "VRUIControls/VRInputModule.hpp"
 #include "Zenject/DiContainer.hpp"
-#include "bsml/shared/BSML/MainThreadScheduler.hpp"
 #include "config.hpp"
 #include "custom-types/shared/delegate.hpp"
 #include "customtypes/components.hpp"
@@ -77,8 +64,6 @@
 #include "main.hpp"
 #include "qounters.hpp"
 #include "utils.hpp"
-
-// #include "GlobalNamespace/CoreGameHUDController.hpp"
 
 using namespace GlobalNamespace;
 using namespace UnityEngine;
@@ -97,6 +82,23 @@ SimpleLevelStarter* GetLevelStarter() {
     return Resources::FindObjectsOfTypeAll<SimpleLevelStarter*>()->Last();
 }
 
+EnvironmentInfoSO* GetEnvironment(SimpleLevelStarter* levelStarter) {
+    std::string name = getConfig().Environment.GetValue();
+
+    auto listModel = levelStarter->_playerDataModel->playerDataFileModel->_environmentsListModel;
+    for (auto& info : listModel->_envInfos) {
+        if (info->environmentName == name)
+            return info;
+    }
+
+    auto ret = listModel->GetFirstEnvironmentInfoWithType(EnvironmentType::Normal);
+    if (name != "Multiplayer") {
+        logger.warn("Environment {} not found, resetting to {}", name, ret->environmentName);
+        getConfig().Environment.SetValue(ret->environmentName);
+    }
+    return ret;
+}
+
 void Present(SimpleLevelStarter* levelStarter, bool refresh, ScenesTransitionSetupDataSO* setupData, EnvironmentInfoSO* environment = nullptr) {
     auto startDelegate = custom_types::MakeDelegate<System::Action_1<Zenject::DiContainer*>*>(
         (std::function<void(Zenject::DiContainer*)>) [environment](Zenject::DiContainer*) { Qounters::OnSceneStart(environment); }
@@ -110,64 +112,39 @@ void Present(SimpleLevelStarter* levelStarter, bool refresh, ScenesTransitionSet
 
 void PresentMultiplayer(SimpleLevelStarter* levelStarter, bool refresh, BeatmapLevel* level, BeatmapKey diff, ColorScheme* colors) {
     auto setupData = levelStarter->_menuTransitionsHelper->_multiplayerLevelScenesTransitionSetupData;
-    auto levelLoader = levelStarter->_menuTransitionsHelper->_beatmapLevelsModel->levelLoader;
-    auto levelData = levelLoader->LoadBeatmapLevelDataAsync(level, System::Threading::CancellationToken::get_None());
-    BSML::MainThreadScheduler::ScheduleUntil(
-        std::function<bool()>([levelData]() { return levelData->GetAwaiter().IsCompleted; }),
-        [levelData, diff, level, colors, levelStarter, refresh, setupData]() mutable {
-            auto beatmapLevelData = levelData->Result.beatmapLevelData;
-            setupData->Init(
-                "Settings",
-                diff,
-                level,
-                beatmapLevelData,
-                colors,
-                levelStarter->_gameplayModifiers,
-                levelStarter->_playerDataModel->playerData->playerSpecificSettings,
-                nullptr,
-                levelStarter->_menuTransitionsHelper->_audioClipAsyncLoader,
-                levelStarter->_menuTransitionsHelper->_graphicSettingsHandler->_currentPreset,
-                levelStarter->_menuTransitionsHelper->_beatmapDataLoader,
-                false
-            );
-            localFakeConnectedPlayer = nullptr;
-
-            Present(levelStarter, refresh, setupData);
-        }
+    setupData->Init(
+        "Settings",
+        diff,
+        level,
+        nullptr,
+        colors,
+        levelStarter->_gameplayModifiers,
+        levelStarter->_playerDataModel->playerData->playerSpecificSettings,
+        nullptr,
+        levelStarter->_menuTransitionsHelper->_audioClipAsyncLoader,
+        levelStarter->_menuTransitionsHelper->_graphicSettingsHandler->_currentPreset,
+        levelStarter->_menuTransitionsHelper->_beatmapDataLoader,
+        false
     );
+    setupData->gameplayCoreSceneSetupData->_beatmapLevelsModel = levelStarter->_menuTransitionsHelper->_beatmapLevelsModel;
+    setupData->gameplayCoreSceneSetupData->_allowNullBeatmapLevelData = false;
+    localFakeConnectedPlayer = nullptr;
+
+    Present(levelStarter, refresh, setupData);
 }
 
-void PresentSingleplayer(SimpleLevelStarter* levelStarter, bool refresh, BeatmapLevel* level, BeatmapKey diff, ColorScheme* colors) {
-    auto env = OverrideEnvironmentSettings::New_ctor();
-
-    auto dataManager = levelStarter->_playerDataModel->playerDataFileModel;
-    auto listModel = dataManager->_environmentsListModel;
-
-    env->overrideEnvironments = true;
-    EnvironmentInfoSO* environment = nullptr;
-    for (auto& info : listModel->_envInfos) {
-        if (info->environmentName == getConfig().Environment.GetValue()) {
-            environment = info;
-            break;
-        }
-    }
-    if (!environment) {
-        environment = listModel->GetFirstEnvironmentInfoWithType(EnvironmentType::Normal);
-        logger.warn("Environment {} not found, resetting to {}", getConfig().Environment.GetValue(), environment->environmentName);
-        getConfig().Environment.SetValue(environment->environmentName);
-    }
-    env->SetEnvironmentInfoForType(environment->environmentType, environment);
-
-    if (colors == nullptr) {
+void PresentSingleplayer(
+    SimpleLevelStarter* levelStarter, bool refresh, BeatmapLevel* level, BeatmapKey diff, ColorScheme* colors, EnvironmentInfoSO* environment
+) {
+    if (colors == nullptr)
         colors = environment->colorScheme->colorScheme;
-    }
 
     auto setupData = levelStarter->_menuTransitionsHelper->_standardLevelScenesTransitionSetupData;
     setupData->Init(
         "Settings",
         diff,
         level,
-        env,
+        nullptr,
         colors,
         nullptr,
         levelStarter->_gameplayModifiers,
@@ -188,11 +165,13 @@ void PresentSingleplayer(SimpleLevelStarter* levelStarter, bool refresh, Beatmap
 }
 
 void PresentScene(SimpleLevelStarter* levelStarter, bool refresh) {
-    // TODO: create custom beatmap level for cleaner code and fix 360 env override
     auto levelSO = !levelStarter->_beatmapLevel->IsValid() ? levelStarter->_beatmapLevel->LoadAssetAsync().WaitForCompletion().ptr()
                                                            : (BeatmapLevelSO*) levelStarter->_beatmapLevel->Asset.ptr();
     auto level = BeatmapLevelExtensions::ToRuntime(levelSO);
     auto diff = BeatmapKey(levelStarter->_beatmapCharacteristic, levelStarter->_beatmapDifficulty, level->levelID);
+
+    auto environment = GetEnvironment(levelStarter);
+    level->GetDifficultyBeatmapData(diff.beatmapCharacteristic, diff.difficulty)->environmentName = environment->serializedName;
 
     ColorScheme* colors = nullptr;
     currentColors = getConfig().ColorScheme.GetValue();
@@ -204,14 +183,12 @@ void PresentScene(SimpleLevelStarter* levelStarter, bool refresh) {
         colors = colorSchemeSettings->GetColorSchemeForId(currentColors);
 
     logger.debug("Presenting scene");
-    logger.debug("level {}", fmt::ptr(level));
-    logger.debug("level info {} {} {}", level->levelID, (int) diff.difficulty, diff.beatmapCharacteristic->serializedName);
 
     currentEnvironment = getConfig().Environment.GetValue();
     if (currentEnvironment == "Multiplayer")
         PresentMultiplayer(levelStarter, refresh, level, diff, colors);
     else
-        PresentSingleplayer(levelStarter, refresh, level, diff, colors);
+        PresentSingleplayer(levelStarter, refresh, level, diff, colors, environment);
 }
 
 void Qounters::PresentSettingsEnvironment() {
@@ -347,57 +324,36 @@ void Qounters::OnSceneStart(EnvironmentInfoSO* environment) {
     env->active = false;
     env->active = true;
 
-    std::vector<BeatmapEventData*> eventData = std::vector<BeatmapEventData*>();
-    if (environment) {
+    auto bcu = Object::FindObjectOfType<BeatmapCallbacksUpdater*>();
+    if (environment && bcu) {
+        // kinda lame beatgames
+        auto lightShowBeatmapData = BeatmapData::New_ctor(4);
+        lightShowBeatmapData->updateAllBeatmapDataOnInsert = true;
+
         if (environment->defaultLightshowAsset) {
-            logger.debug("Loading v3 lightshow data");
-            // Should we convert the save data ourselves? This is insane
-            auto envKeywords = EnvironmentKeywords::New_ctor(environment->environmentKeywords);
-            auto envLightGroups = environment->environmentLightGroups;
-            auto lightShowJSON = environment->defaultLightshowAsset->text;
-            auto lightShowSaveData = JsonUtility::FromJson<BeatmapSaveDataVersion4::LightshowSaveData*>(lightShowJSON);
+            logger.debug("loading lightshow data from asset");
+            auto lightShowSaveData = JsonUtility::FromJson<BeatmapSaveDataVersion4::LightshowSaveData*>(environment->defaultLightshowAsset->text);
+
             auto bpmTimeProcessor = BpmTimeProcessor::New_ctor(
                 69.420, ListW<BeatmapSaveDataVersion3::BpmChangeEventData*>::New()->i___System__Collections__Generic__IReadOnlyList_1_T_()
             );
-
-            auto lightShowBeatmapData = BeatmapData::New_ctor(4);
-            lightShowBeatmapData->updateAllBeatmapDataOnInsert = true;
+            auto envKeywords = EnvironmentKeywords::New_ctor(environment->environmentKeywords);
+            auto envLightGroups = environment->environmentLightGroups;
 
             BeatmapDataLoaderVersion4::BeatmapDataLoader::LoadLightshow(
                 lightShowBeatmapData, lightShowSaveData, bpmTimeProcessor, envKeywords, envLightGroups
             );
+        } else
+            GlobalNamespace::DefaultEnvironmentEventsFactory::InsertDefaultEvents(lightShowBeatmapData);
 
-            auto events = lightShowBeatmapData->_allBeatmapData;
-            auto eventsLinkedList = events->items;
-            auto currentEvent = eventsLinkedList->First;
-            for (int i = 0; i < events->count; i++) {
-                auto event = il2cpp_utils::try_cast<BeatmapEventData>(currentEvent->Value);
-                if (event)
-                    eventData.push_back(*event);
-                if (currentEvent != eventsLinkedList->Last)
-                    currentEvent = currentEvent->Next;
-                else
-                    break;
-            }
-
-            logger.debug("Loaded defaults");
-        }
-    }
-
-    if (auto bcu = Object::FindObjectOfType<BeatmapCallbacksUpdater*>()) {
+        logger.debug("running default lightshow");
+        auto events = lightShowBeatmapData->_allBeatmapData->items;
+        auto currentEvent = events->First;
         auto bcc = bcu->_beatmapCallbacksController;
-
-        // V2
-        bcc->TriggerBeatmapEvent(BasicBeatmapEventData::New_ctor(0, BasicBeatmapEventType::Event0, 1, 1));
-        bcc->TriggerBeatmapEvent(BasicBeatmapEventData::New_ctor(0, BasicBeatmapEventType::Event1, 1, 1));
-        bcc->TriggerBeatmapEvent(BasicBeatmapEventData::New_ctor(0, BasicBeatmapEventType::Event2, 1, 1));
-        bcc->TriggerBeatmapEvent(BasicBeatmapEventData::New_ctor(0, BasicBeatmapEventType::Event3, 1, 1));
-        bcc->TriggerBeatmapEvent(BasicBeatmapEventData::New_ctor(0, BasicBeatmapEventType::Event4, 1, 1));
-
-        // V3
-        for (auto& event : eventData) {
-            if (event)
-                bcc->TriggerBeatmapEvent(event);
+        while (currentEvent != events->Last) {
+            if (auto event = il2cpp_utils::try_cast<BeatmapEventData>(currentEvent->Value))
+                bcc->TriggerBeatmapEvent(*event);
+            currentEvent = currentEvent->Next;
         }
     }
 
