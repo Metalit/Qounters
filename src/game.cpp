@@ -240,6 +240,8 @@ namespace Qounters::Game {
             ret += positiveMods;
         if (negative)
             ret += negativeMods;
+        if (negative && noFail && health <= 0)
+            ret -= 0.5;
         return ret;
     }
     int GetBestScore() {
