@@ -19,12 +19,12 @@
 #include "GlobalNamespace/ScoreMultiplierCounter.hpp"
 #include "GlobalNamespace/ScoringElement.hpp"
 #include "GlobalNamespace/StandardLevelDetailView.hpp"
-#include "GlobalNamespace/StandardLevelScenesTransitionSetupDataSO.hpp"
 #include "GlobalNamespace/UIKeyboardManager.hpp"
 #include "UnityEngine/Time.hpp"
 #include "VRUIControls/VRGraphicRaycaster.hpp"
 #include "beatsaber-hook/shared/utils/hooking.hpp"
 #include "config.hpp"
+#include "customtypes/components.hpp"
 #include "customtypes/settings.hpp"
 #include "environment.hpp"
 #include "events.hpp"
@@ -243,7 +243,13 @@ MAKE_HOOK_MATCH(
     initData->advancedHUD = true;
     saberManager = UnityEngine::Object::FindObjectOfType<SaberManager*>();
 
-    if (!InSettingsEnvironment()) {
+    DestroySignal::Create([]() {
+        logger.info("Qounters end");
+        Reset();
+        saberManager = nullptr;
+    });
+
+    if (!InSettingsEnvironment() && !initData->hide) {
         Initialize();
         SetupObjects();
         CreateQounters();
@@ -259,18 +265,6 @@ MAKE_HOOK_MATCH(
         PP::GetMapInfo(self->beatmapKey);
 
     StandardLevelDetailView_SetContentForBeatmapData(self);
-}
-
-MAKE_HOOK_MATCH(
-    StandardLevelScenesTransitionSetupDataSO_Finish,
-    &StandardLevelScenesTransitionSetupDataSO::Finish,
-    void,
-    StandardLevelScenesTransitionSetupDataSO* self,
-    LevelCompletionResults* levelCompletionResults
-) {
-    Reset();
-
-    StandardLevelScenesTransitionSetupDataSO_Finish(self, levelCompletionResults);
 }
 
 MAKE_HOOK_MATCH(PauseController_Pause, &PauseController::Pause, void, PauseController* self) {
@@ -373,7 +367,6 @@ void Qounters::InstallHooks() {
     INSTALL_HOOK(logger, AudioTimeSyncController_Update);
     INSTALL_HOOK(logger, CoreGameHUDController_Initialize);
     INSTALL_HOOK(logger, StandardLevelDetailView_SetContentForBeatmapData);
-    INSTALL_HOOK(logger, StandardLevelScenesTransitionSetupDataSO_Finish);
     INSTALL_HOOK(logger, PauseController_Pause);
     INSTALL_HOOK(logger, MultiplayerLocalActivePlayerInGameMenuViewController_ShowMenu);
     INSTALL_HOOK(logger, MultiplayerLocalActivePlayerInGameMenuViewController_HideMenu);

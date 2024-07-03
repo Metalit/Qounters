@@ -17,6 +17,7 @@
 DEFINE_TYPE(Qounters, Shape);
 DEFINE_TYPE(Qounters, BaseGameGraphic);
 DEFINE_TYPE(Qounters, ImageSpriteCache);
+DEFINE_TYPE(Qounters, DestroySignal);
 
 using namespace GlobalNamespace;
 using namespace UnityEngine;
@@ -392,4 +393,13 @@ int ImageSpriteCache::NumberOfSprites() {
 
 Sprite* ImageSpriteCache::GetSpriteIdx(int spriteIdx) {
     return GetInstance()->sprites[spriteIdx];
+}
+
+void DestroySignal::OnDestroy() {
+    callback();
+}
+
+void DestroySignal::Create(std::function<void()> callback) {
+    auto go = GameObject::New_ctor("QountersDestroySignal");
+    go->AddComponent<DestroySignal*>()->callback = callback;
 }
