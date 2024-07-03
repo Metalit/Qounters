@@ -211,7 +211,11 @@ void Qounters::UpdateComponentPosition(RectTransform* component, Component const
 
 void Qounters::UpdateGroupPosition(RectTransform* group, Group const& qounterGroup) {
     if (qounterGroup.Detached) {
-        group->SetParent(nullptr, true);
+        // parent to our own object instead of FlyingGameHUDRotation for more control
+        if (auto parent = GameObject::Find("QountersRotationalAnchor"))
+            group->SetParent(parent->transform, true);
+        else
+            group->SetParent(nullptr, true);
         group->position = qounterGroup.DetachedPosition;
         group->eulerAngles = qounterGroup.DetachedRotation;
         group->localScale = {0.02, 0.02, 0.02};

@@ -5,6 +5,7 @@
 #include "GlobalNamespace/BeatmapObjectManager.hpp"
 #include "GlobalNamespace/CoreGameHUDController.hpp"
 #include "GlobalNamespace/CutScoreBuffer.hpp"
+#include "GlobalNamespace/FlyingGameHUDRotation.hpp"
 #include "GlobalNamespace/GameEnergyCounter.hpp"
 #include "GlobalNamespace/MultiplayerLocalActivePlayerGameplayManager.hpp"
 #include "GlobalNamespace/MultiplayerLocalActivePlayerInGameMenuViewController.hpp"
@@ -37,6 +38,14 @@
 using namespace GlobalNamespace;
 using namespace VRUIControls;
 using namespace Qounters;
+
+SaberManager* saberManager = nullptr;
+float lastUpdated = 0;
+
+UnityEngine::Quaternion prevRotLeft;
+UnityEngine::Quaternion prevRotRight;
+
+UnityEngine::Transform* rotationalAnchor = nullptr;
 
 MAKE_HOOK_MATCH(
     ScoreController_DespawnScoringElement, &ScoreController::DespawnScoringElement, void, ScoreController* self, ScoringElement* scoringElement
@@ -202,12 +211,6 @@ MAKE_HOOK_MATCH(GameEnergyCounter_ProcessEnergyChange, &GameEnergyCounter::Proce
     BroadcastEvent((int) Events::HealthChanged);
 }
 
-SaberManager* saberManager = nullptr;
-float lastUpdated = 0;
-
-UnityEngine::Quaternion prevRotLeft;
-UnityEngine::Quaternion prevRotRight;
-
 MAKE_HOOK_MATCH(AudioTimeSyncController_Update, &AudioTimeSyncController::Update, void, AudioTimeSyncController* self) {
 
     AudioTimeSyncController_Update(self);
@@ -247,15 +250,26 @@ MAKE_HOOK_MATCH(
         logger.info("Qounters end");
         Reset();
         saberManager = nullptr;
+        rotationalAnchor = nullptr;
     });
 
     if (!InSettingsEnvironment() && !initData->hide) {
+        if (self->name == "FlyingGameHUD")
+            rotationalAnchor = UnityEngine::GameObject::New_ctor("QountersRotationalAnchor")->transform;
         Initialize();
         SetupObjects();
         CreateQounters();
     }
 
     CoreGameHUDController_Initialize(self, initData);
+}
+
+MAKE_HOOK_MATCH(FlyingGameHUDRotation_LateUpdate, &FlyingGameHUDRotation::LateUpdate, void, FlyingGameHUDRotation* self) {
+
+    FlyingGameHUDRotation_LateUpdate(self);
+
+    if (rotationalAnchor)
+        rotationalAnchor->rotation = self->transform->rotation;
 }
 
 MAKE_HOOK_MATCH(
@@ -366,6 +380,7 @@ void Qounters::InstallHooks() {
     INSTALL_HOOK(logger, GameEnergyCounter_ProcessEnergyChange);
     INSTALL_HOOK(logger, AudioTimeSyncController_Update);
     INSTALL_HOOK(logger, CoreGameHUDController_Initialize);
+    INSTALL_HOOK(logger, FlyingGameHUDRotation_LateUpdate);
     INSTALL_HOOK(logger, StandardLevelDetailView_SetContentForBeatmapData);
     INSTALL_HOOK(logger, PauseController_Pause);
     INSTALL_HOOK(logger, MultiplayerLocalActivePlayerInGameMenuViewController_ShowMenu);
