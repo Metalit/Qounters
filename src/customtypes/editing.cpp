@@ -330,7 +330,11 @@ void EditingBase::OnInitializePotentialDrag(EventSystems::PointerEventData* even
 }
 
 UnityEngine::Vector2 EditingBase::GetPointerPos(EventSystems::PointerEventData* eventData) {
-    auto pos = rectTransform->parent->InverseTransformPoint(eventData->pointerCurrentRaycast.worldPosition);
+    auto parent = rectTransform->parent;
+    // fix for mask image of shape components
+    if (parent->name == "BSMLImage")
+        parent = parent->parent;
+    auto pos = parent->InverseTransformPoint(eventData->pointerCurrentRaycast.worldPosition);
     return {pos.x, pos.y};
 }
 
