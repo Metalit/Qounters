@@ -2,6 +2,7 @@
 
 #include "environment.hpp"
 #include "game.hpp"
+#include "internals.hpp"
 #include "pp.hpp"
 #include "sourceui.hpp"
 #include "utils.hpp"
@@ -253,9 +254,9 @@ namespace Qounters::TextSource {
 
         float pp = 0;
         if (opts.Leaderboard == (int) PP::Leaderboards::BeatLeader)
-            pp = Qounters::PP::CalculateBL(percent, failed);
+            pp = Qounters::PP::CalculateBL(percent, modifiers, failed);
         else if (opts.Leaderboard == (int) PP::Leaderboards::ScoreSaber)
-            pp = Qounters::PP::CalculateSS(percent, failed);
+            pp = Qounters::PP::CalculateSS(percent, modifiers, failed);
 
         return Utils::FormatDecimals(pp, opts.Decimals) + " PP";
     }

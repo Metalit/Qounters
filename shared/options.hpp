@@ -3,20 +3,20 @@
 #include "sources.hpp"
 
 namespace Qounters {
-    DECLARE_JSON_CLASS(TextOptions,
+    DECLARE_JSON_STRUCT(TextOptions) {
         enum class Aligns {
             Left,
             Right,
             Center,
         };
-        VALUE_DEFAULT(int, Align, (int) Aligns::Center)
-        VALUE_DEFAULT(float, Size, 15)
-        VALUE_DEFAULT(bool, Italic, false)
-        VALUE_DEFAULT(std::string, TextSource, TextSource::StaticName)
-        VALUE_DEFAULT(UnparsedJSON, SourceOptions, TextSource::Static())
-    )
+        VALUE_DEFAULT(int, Align, (int) Aligns::Center);
+        VALUE_DEFAULT(float, Size, 15);
+        VALUE_DEFAULT(bool, Italic, false);
+        VALUE_DEFAULT(std::string, TextSource, TextSource::StaticName);
+        VALUE_DEFAULT(UnparsedJSON, SourceOptions, TextSource::Static());
+    };
 
-    DECLARE_JSON_CLASS(ShapeOptions,
+    DECLARE_JSON_STRUCT(ShapeOptions) {
         enum class Shapes {
             Square,
             SquareOutline,
@@ -31,29 +31,29 @@ namespace Qounters {
             Vertical,
             Circle,
         };
-        VALUE_DEFAULT(int, Shape, (int) Shapes::Square)
-        VALUE_DEFAULT(float, OutlineWidth, 1)
-        VALUE_DEFAULT(int, Fill, (int) Fills::None)
-        VALUE_DEFAULT(std::string, FillSource, TextSource::StaticName)
-        VALUE_DEFAULT(UnparsedJSON, SourceOptions, ShapeSource::Static())
-        VALUE_DEFAULT(bool, Inverse, false)
-    )
+        VALUE_DEFAULT(int, Shape, (int) Shapes::Square);
+        VALUE_DEFAULT(float, OutlineWidth, 1);
+        VALUE_DEFAULT(int, Fill, (int) Fills::None);
+        VALUE_DEFAULT(std::string, FillSource, TextSource::StaticName);
+        VALUE_DEFAULT(UnparsedJSON, SourceOptions, ShapeSource::Static());
+        VALUE_DEFAULT(bool, Inverse, false);
+    };
 
-    DECLARE_JSON_CLASS(ImageOptions,
-        VALUE_DEFAULT(std::string, Path, "Default.png")
-    )
+    DECLARE_JSON_STRUCT(ImageOptions) {
+        VALUE_DEFAULT(std::string, Path, "Default.png");
+    };
 
-    DECLARE_JSON_CLASS(BaseGameOptions,
+    DECLARE_JSON_STRUCT(BaseGameOptions) {
         enum class Components {
             Multiplier,
             ProgressBar,
             HealthBar,
             ComponentsMax = HealthBar,
         };
-        VALUE(int, Component)
-    )
+        VALUE(int, Component);
+    };
 
-    DECLARE_JSON_CLASS(Component,
+    DECLARE_JSON_STRUCT(Component) {
         enum class Types {
             Text,
             Shape,
@@ -61,19 +61,19 @@ namespace Qounters {
             BaseGame,
         };
         using OptionsTypes = TypeOptions<TextOptions, ShapeOptions, ImageOptions, BaseGameOptions>;
-        VALUE_DEFAULT(ConfigUtils::Vector2, Position, ConfigUtils::Vector2(0, 0))
-        VALUE_DEFAULT(float, Rotation, 0)
-        VALUE_DEFAULT(ConfigUtils::Vector2, Scale, ConfigUtils::Vector2(1, 1))
-        VALUE(int, Type)
-        VALUE(OptionsTypes, Options)
-        VALUE_DEFAULT(std::string, ColorSource, ColorSource::StaticName)
-        VALUE_DEFAULT(UnparsedJSON, ColorOptions, ColorSource::Static())
-        VALUE_DEFAULT(std::string, EnableSource, EnableSource::StaticName)
+        VALUE_DEFAULT(ConfigUtils::Vector2, Position, ConfigUtils::Vector2(0, 0));
+        VALUE_DEFAULT(float, Rotation, 0);
+        VALUE_DEFAULT(ConfigUtils::Vector2, Scale, ConfigUtils::Vector2(1, 1));
+        VALUE(int, Type);
+        VALUE(OptionsTypes, Options);
+        VALUE_DEFAULT(std::string, ColorSource, ColorSource::StaticName);
+        VALUE_DEFAULT(UnparsedJSON, ColorOptions, ColorSource::Static());
+        VALUE_DEFAULT(std::string, EnableSource, EnableSource::StaticName);
         VALUE_DEFAULT(bool, InvertEnable, false);
-        VALUE_DEFAULT(UnparsedJSON, EnableOptions, EnableSource::Static())
-    )
+        VALUE_DEFAULT(UnparsedJSON, EnableOptions, EnableSource::Static());
+    };
 
-    DECLARE_JSON_CLASS(Group,
+    DECLARE_JSON_STRUCT(Group) {
         enum class Anchors {
             Left,
             Right,
@@ -81,27 +81,27 @@ namespace Qounters {
             Bottom,
             AnchorMax = Bottom,
         };
-        VALUE(ConfigUtils::Vector2, Position)
-        VALUE_DEFAULT(float, Rotation, 0)
-        VALUE(int, Anchor)
-        VECTOR_DEFAULT(Component, Components, {})
-        VALUE_DEFAULT(bool, Detached, false)
-        VALUE_DEFAULT(ConfigUtils::Vector3, DetachedPosition, ConfigUtils::Vector3(0, 0, 0))
-        VALUE_DEFAULT(ConfigUtils::Vector3, DetachedRotation, ConfigUtils::Vector3(0, 0, 0))
-    )
+        VALUE(ConfigUtils::Vector2, Position);
+        VALUE_DEFAULT(float, Rotation, 0);
+        VALUE(int, Anchor);
+        VECTOR_DEFAULT(Component, Components, {});
+        VALUE_DEFAULT(bool, Detached, false);
+        VALUE_DEFAULT(ConfigUtils::Vector3, DetachedPosition, ConfigUtils::Vector3(0, 0, 0));
+        VALUE_DEFAULT(ConfigUtils::Vector3, DetachedRotation, ConfigUtils::Vector3(0, 0, 0));
+    };
 
-    DECLARE_JSON_CLASS(Preset,
-        VECTOR(Group, Qounters)
-        MAP(Preset, Layouts)
-    )
+    DECLARE_JSON_STRUCT(Preset) {
+        VECTOR(Group, Qounters);
+        MAP(Preset, Layouts);
+    };
 
     Preset GetDefaultHUDPreset();
 
-    extern const std::vector<std::string_view> TypeStrings;
-    extern const std::vector<std::string_view> AnchorStrings;
-    extern const std::vector<std::string_view> AlignStrings;
-    extern const std::vector<std::string_view> ShapeStrings;
-    extern const std::vector<std::string_view> FillStrings;
-    extern const std::vector<std::string_view> ComponentStrings;
-    extern const std::vector<std::string_view> SaberStrings;
+    extern std::vector<std::string_view> const TypeStrings;
+    extern std::vector<std::string_view> const AnchorStrings;
+    extern std::vector<std::string_view> const AlignStrings;
+    extern std::vector<std::string_view> const ShapeStrings;
+    extern std::vector<std::string_view> const FillStrings;
+    extern std::vector<std::string_view> const ComponentStrings;
+    extern std::vector<std::string_view> const SaberStrings;
 }

@@ -2,6 +2,7 @@
 
 #include "GlobalNamespace/BeatmapData.hpp"
 #include "GlobalNamespace/ColorScheme.hpp"
+#include "GlobalNamespace/GameplayModifiers.hpp"
 #include "GlobalNamespace/NoteData.hpp"
 #include "types.hpp"
 
@@ -40,6 +41,7 @@ namespace Qounters {
     extern std::vector<float> leftAngles;
     extern std::vector<float> rightAngles;
     extern bool noFail;
+    extern GlobalNamespace::GameplayModifiers* modifiers;
     extern float positiveMods;
     extern float negativeMods;
     extern int personalBest;

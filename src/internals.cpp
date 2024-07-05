@@ -153,6 +153,7 @@ namespace Qounters {
     std::vector<float> leftAngles;
     std::vector<float> rightAngles;
     bool noFail;
+    GlobalNamespace::GameplayModifiers* modifiers;
     float positiveMods;
     float negativeMods;
     int personalBest;
@@ -220,6 +221,7 @@ void Qounters::Initialize() {
     leftAngles = {};
     rightAngles = {};
     noFail = false;
+    modifiers = scoreController->_gameplayModifiers;
     // GetNegativeMods sets noFail
     positiveMods = GetPositiveMods(scoreController);
     negativeMods = GetNegativeMods(scoreController);

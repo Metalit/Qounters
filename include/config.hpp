@@ -12,13 +12,13 @@ namespace Qounters {
     void CreateTypeOptionsUI(UnityEngine::Transform* parent, int type, Component::OptionsTypes const& options);
 }
 
-DECLARE_CONFIG(Config,
-    CONFIG_VALUE(Enabled, bool, "Enabled", true)
-    CONFIG_VALUE(Migrated, bool, "Migrated", false)
-    CONFIG_VALUE(Presets, StringKeyedMap<Qounters::Preset>, "Presets", {})
-    CONFIG_VALUE(Preset, std::string, "Preset", "Default")
-    CONFIG_VALUE(Environment, std::string, "Settings Environment", "The First")
-    CONFIG_VALUE(ColorScheme, std::string, "Color Scheme", "User Override / Environment")
-    CONFIG_VALUE(Snap, bool, "Snap Enabled", true)
-    CONFIG_VALUE(SnapStep, float, "Snap To Grid", 2)
-)
+DECLARE_CONFIG(Config) {
+    CONFIG_VALUE(Enabled, bool, "Enabled", true);
+    CONFIG_VALUE(Migrated, bool, "Migrated", false);
+    CONFIG_VALUE(Presets, StringKeyedMap<Qounters::Preset>, "Presets", {});
+    CONFIG_VALUE(Preset, std::string, "Preset", "Default");
+    CONFIG_VALUE(Environment, std::string, "Settings Environment", "The First");
+    CONFIG_VALUE(ColorScheme, std::string, "Color Scheme", "User Override / Environment");
+    CONFIG_VALUE(Snap, bool, "Snap Enabled", true);
+    CONFIG_VALUE(SnapStep, float, "Snap To Grid", 2);
+};

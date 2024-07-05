@@ -65,104 +65,103 @@ namespace Qounters {
         inline std::string const SpinometerName = "Spinometer";
         inline std::string const FCPercentName = "FC Percentage";
 
-        DECLARE_JSON_CLASS(Static,
-            VALUE_DEFAULT(std::string, Input, "")
-        )
-        DECLARE_JSON_CLASS(Score,
-            VALUE_DEFAULT(int, Saber, (int) Sabers::Both)
-            VALUE_DEFAULT(int, Decimals, 1)
-            VALUE_DEFAULT(bool, Percentage, true)
-        )
-        DECLARE_JSON_CLASS(Rank,
-            VALUE_DEFAULT(int, Saber, (int) Sabers::Both)
-            VALUE_DEFAULT(bool, PositiveModifiers, false)
-            VALUE_DEFAULT(bool, NegativeModifiers, true)
-        )
-        DECLARE_JSON_CLASS(PersonalBest,
-            VALUE_DEFAULT(int, Decimals, 1)
-            VALUE_DEFAULT(bool, Percentage, true)
-            VALUE_DEFAULT(bool, HideFirstScore, true)
-            VALUE_DEFAULT(bool, Label, true)
-        )
-        DECLARE_JSON_CLASS(Combo,
-            VALUE_DEFAULT(int, Saber, (int) Sabers::Both)
-        )
-        DECLARE_JSON_CLASS(Multiplier,
-        )
-        DECLARE_JSON_CLASS(Health,
-            VALUE_DEFAULT(int, Decimals, 1)
-            VALUE_DEFAULT(bool, Percentage, true)
-        )
-        DECLARE_JSON_CLASS(Time,
-            VALUE_DEFAULT(bool, Remaining, false)
-            VALUE_DEFAULT(bool, Percentage, false)
-        )
-        DECLARE_JSON_CLASS(AverageCut,
+        DECLARE_JSON_STRUCT(Static) {
+            VALUE_DEFAULT(std::string, Input, "");
+        };
+        DECLARE_JSON_STRUCT(Score) {
+            VALUE_DEFAULT(int, Saber, (int) Sabers::Both);
+            VALUE_DEFAULT(int, Decimals, 1);
+            VALUE_DEFAULT(bool, Percentage, true);
+        };
+        DECLARE_JSON_STRUCT(Rank) {
+            VALUE_DEFAULT(int, Saber, (int) Sabers::Both);
+            VALUE_DEFAULT(bool, PositiveModifiers, false);
+            VALUE_DEFAULT(bool, NegativeModifiers, true);
+        };
+        DECLARE_JSON_STRUCT(PersonalBest) {
+            VALUE_DEFAULT(int, Decimals, 1);
+            VALUE_DEFAULT(bool, Percentage, true);
+            VALUE_DEFAULT(bool, HideFirstScore, true);
+            VALUE_DEFAULT(bool, Label, true);
+        };
+        DECLARE_JSON_STRUCT(Combo) {
+            VALUE_DEFAULT(int, Saber, (int) Sabers::Both);
+        };
+        DECLARE_JSON_STRUCT(Multiplier){};
+        DECLARE_JSON_STRUCT(Health) {
+            VALUE_DEFAULT(int, Decimals, 1);
+            VALUE_DEFAULT(bool, Percentage, true);
+        };
+        DECLARE_JSON_STRUCT(Time) {
+            VALUE_DEFAULT(bool, Remaining, false);
+            VALUE_DEFAULT(bool, Percentage, false);
+        };
+        DECLARE_JSON_STRUCT(AverageCut) {
             enum class Parts {
                 Pre,
                 Post,
                 Acc,
                 All,
             };
-            VALUE_DEFAULT(int, Saber, (int) Sabers::Both)
-            VALUE_DEFAULT(int, Decimals, 1)
-            VALUE_DEFAULT(int, Part, (int) Parts::All)
-        )
-        DECLARE_JSON_CLASS(TimeDependence,
-            VALUE_DEFAULT(int, Saber, (int) Sabers::Both)
-            VALUE_DEFAULT(int, Decimals, 1)
-            VALUE_DEFAULT(int, DecimalOffset, 0)
-        )
-        DECLARE_JSON_CLASS(Fails,
-            VALUE_DEFAULT(bool, Restarts, false)
-        )
-        DECLARE_JSON_CLASS(Mistakes,
-            VALUE_DEFAULT(int, Saber, (int) Sabers::Both)
-            VALUE_DEFAULT(bool, Misses, true)
-            VALUE_DEFAULT(bool, BadCuts, true)
-            VALUE_DEFAULT(bool, Bombs, false)
-            VALUE_DEFAULT(bool, Walls, false)
-        )
-        DECLARE_JSON_CLASS(Notes,
+            VALUE_DEFAULT(int, Saber, (int) Sabers::Both);
+            VALUE_DEFAULT(int, Decimals, 1);
+            VALUE_DEFAULT(int, Part, (int) Parts::All);
+        };
+        DECLARE_JSON_STRUCT(TimeDependence) {
+            VALUE_DEFAULT(int, Saber, (int) Sabers::Both);
+            VALUE_DEFAULT(int, Decimals, 1);
+            VALUE_DEFAULT(int, DecimalOffset, 0);
+        };
+        DECLARE_JSON_STRUCT(Fails) {
+            VALUE_DEFAULT(bool, Restarts, false);
+        };
+        DECLARE_JSON_STRUCT(Mistakes) {
+            VALUE_DEFAULT(int, Saber, (int) Sabers::Both);
+            VALUE_DEFAULT(bool, Misses, true);
+            VALUE_DEFAULT(bool, BadCuts, true);
+            VALUE_DEFAULT(bool, Bombs, false);
+            VALUE_DEFAULT(bool, Walls, false);
+        };
+        DECLARE_JSON_STRUCT(Notes) {
             enum class Displays {
                 Cut,
                 Remaining,
                 Ratio,
                 Percent,
             };
-            VALUE_DEFAULT(int, Saber, (int) Sabers::Both)
-            VALUE_DEFAULT(int, Display, (int) Displays::Remaining)
-            VALUE_DEFAULT(int, Decimals, 1)
-        )
-        DECLARE_JSON_CLASS(PP,
+            VALUE_DEFAULT(int, Saber, (int) Sabers::Both);
+            VALUE_DEFAULT(int, Display, (int) Displays::Remaining);
+            VALUE_DEFAULT(int, Decimals, 1);
+        };
+        DECLARE_JSON_STRUCT(PP) {
             enum class Leaderboards {
                 ScoreSaber,
                 BeatLeader,
             };
-            VALUE_DEFAULT(int, Leaderboard, (int) Leaderboards::ScoreSaber)
-            VALUE_DEFAULT(int, Decimals, 1)
-        )
-        DECLARE_JSON_CLASS(SaberSpeed,
+            VALUE_DEFAULT(int, Leaderboard, (int) Leaderboards::ScoreSaber);
+            VALUE_DEFAULT(int, Decimals, 1);
+        };
+        DECLARE_JSON_STRUCT(SaberSpeed) {
             enum class Modes {
                 Average,
                 Best5Seconds,
             };
-            VALUE_DEFAULT(int, Saber, (int) Sabers::Both)
-            VALUE_DEFAULT(int, Decimals, 1)
-            VALUE_DEFAULT(int, Mode, (int) Modes::Average)
-        )
-        DECLARE_JSON_CLASS(Spinometer,
+            VALUE_DEFAULT(int, Saber, (int) Sabers::Both);
+            VALUE_DEFAULT(int, Decimals, 1);
+            VALUE_DEFAULT(int, Mode, (int) Modes::Average);
+        };
+        DECLARE_JSON_STRUCT(Spinometer) {
             enum class Modes {
                 Average,
                 Highest,
             };
-            VALUE_DEFAULT(int, Saber, (int) Sabers::Both)
-            VALUE_DEFAULT(int, Mode, (int) Modes::Average)
-        )
-        DECLARE_JSON_CLASS(FCPercent,
-            VALUE_DEFAULT(int, Saber, (int) Sabers::Both)
-            VALUE_DEFAULT(int, Decimals, 1)
-        )
+            VALUE_DEFAULT(int, Saber, (int) Sabers::Both);
+            VALUE_DEFAULT(int, Mode, (int) Modes::Average);
+        };
+        DECLARE_JSON_STRUCT(FCPercent) {
+            VALUE_DEFAULT(int, Saber, (int) Sabers::Both);
+            VALUE_DEFAULT(int, Decimals, 1);
+        };
 
         std::string GetStatic(UnparsedJSON options);
         std::string GetScore(UnparsedJSON options);
@@ -192,32 +191,31 @@ namespace Qounters {
         inline std::string const AverageCutName = "Average Cut";
         inline std::string const NotesName = "Notes";
 
-        DECLARE_JSON_CLASS(Static,
-            VALUE_DEFAULT(float, Input, 1)
-        )
-        DECLARE_JSON_CLASS(Score,
-            VALUE_DEFAULT(int, Saber, (int) Sabers::Both)
-        )
-        DECLARE_JSON_CLASS(Multiplier,
+        DECLARE_JSON_STRUCT(Static) {
+            VALUE_DEFAULT(float, Input, 1);
+        };
+        DECLARE_JSON_STRUCT(Score) {
+            VALUE_DEFAULT(int, Saber, (int) Sabers::Both);
+        };
+        DECLARE_JSON_STRUCT(Multiplier) {
             VALUE_DEFAULT(bool, Absolute, false);
-        )
-        DECLARE_JSON_CLASS(Health,
-        )
-        DECLARE_JSON_CLASS(Time,
-        )
-        DECLARE_JSON_CLASS(AverageCut,
+            ;
+        };
+        DECLARE_JSON_STRUCT(Health){};
+        DECLARE_JSON_STRUCT(Time){};
+        DECLARE_JSON_STRUCT(AverageCut) {
             enum class Parts {
                 Pre,
                 Post,
                 Acc,
                 All,
             };
-            VALUE_DEFAULT(int, Saber, (int) Sabers::Both)
-            VALUE_DEFAULT(int, Part, (int) Parts::All)
-        )
-        DECLARE_JSON_CLASS(Notes,
-            VALUE_DEFAULT(int, Saber, (int) Sabers::Both)
-        )
+            VALUE_DEFAULT(int, Saber, (int) Sabers::Both);
+            VALUE_DEFAULT(int, Part, (int) Parts::All);
+        };
+        DECLARE_JSON_STRUCT(Notes) {
+            VALUE_DEFAULT(int, Saber, (int) Sabers::Both);
+        };
 
         float GetStatic(UnparsedJSON options);
         float GetScore(UnparsedJSON options);
@@ -237,10 +235,10 @@ namespace Qounters {
         inline std::string const MultiplierName = "Multiplier";
         inline std::string const HealthName = "Health";
 
-        DECLARE_JSON_CLASS(Static,
-            VALUE_DEFAULT(ConfigUtils::Color, Input, ConfigUtils::Color(1, 1, 1, 1))
-        )
-        DECLARE_JSON_CLASS(Player,
+        DECLARE_JSON_STRUCT(Static) {
+            VALUE_DEFAULT(ConfigUtils::Color, Input, ConfigUtils::Color(1, 1, 1, 1));
+        };
+        DECLARE_JSON_STRUCT(Player) {
             enum class ColorSettings {
                 LeftSaber,
                 RightSaber,
@@ -250,12 +248,12 @@ namespace Qounters {
                 Boost1,
                 Boost2,
             };
-            VALUE_DEFAULT(int, Setting, (int) ColorSettings::LeftSaber)
-        )
-        DECLARE_JSON_CLASS(Rank,
-            VALUE_DEFAULT(int, Saber, (int) Sabers::Both)
-            VALUE_DEFAULT(bool, PositiveModifiers, false)
-            VALUE_DEFAULT(bool, NegativeModifiers, true)
+            VALUE_DEFAULT(int, Setting, (int) ColorSettings::LeftSaber);
+        };
+        DECLARE_JSON_STRUCT(Rank) {
+            VALUE_DEFAULT(int, Saber, (int) Sabers::Both);
+            VALUE_DEFAULT(bool, PositiveModifiers, false);
+            VALUE_DEFAULT(bool, NegativeModifiers, true);
             VALUE_DEFAULT(ConfigUtils::Color, SS, ConfigUtils::Color(0, 1, 1, 1));
             VALUE_DEFAULT(ConfigUtils::Color, S, ConfigUtils::Color(1, 1, 1, 1));
             VALUE_DEFAULT(ConfigUtils::Color, A, ConfigUtils::Color(0, 1, 0, 1));
@@ -263,27 +261,27 @@ namespace Qounters {
             VALUE_DEFAULT(ConfigUtils::Color, C, ConfigUtils::Color(1, 0.5, 0, 1));
             VALUE_DEFAULT(ConfigUtils::Color, D, ConfigUtils::Color(1, 0, 0, 1));
             VALUE_DEFAULT(ConfigUtils::Color, E, ConfigUtils::Color(1, 0, 0, 1));
-        )
-        DECLARE_JSON_CLASS(PersonalBest,
+        };
+        DECLARE_JSON_STRUCT(PersonalBest) {
             VALUE_DEFAULT(ConfigUtils::Color, Better, ConfigUtils::Color(0, 1, 1, 1));
             VALUE_DEFAULT(ConfigUtils::Color, Worse, ConfigUtils::Color(1, 0.647, 0, 1));
-        )
-        DECLARE_JSON_CLASS(Combo,
-            VALUE_DEFAULT(int, Saber, (int) Sabers::Both)
+        };
+        DECLARE_JSON_STRUCT(Combo) {
+            VALUE_DEFAULT(int, Saber, (int) Sabers::Both);
             VALUE_DEFAULT(ConfigUtils::Color, Full, ConfigUtils::Color(1, 1, 1, 1));
             VALUE_DEFAULT(ConfigUtils::Color, NonFull, ConfigUtils::Color(1, 1, 1, 1));
-        )
-        DECLARE_JSON_CLASS(Multiplier,
+        };
+        DECLARE_JSON_STRUCT(Multiplier) {
             VALUE_DEFAULT(ConfigUtils::Color, One, ConfigUtils::Color(1, 1, 1, 1));
             VALUE_DEFAULT(ConfigUtils::Color, Two, ConfigUtils::Color(1, 1, 1, 1));
             VALUE_DEFAULT(ConfigUtils::Color, Four, ConfigUtils::Color(1, 1, 1, 1));
             VALUE_DEFAULT(ConfigUtils::Color, Eight, ConfigUtils::Color(1, 1, 1, 1));
-        )
-        DECLARE_JSON_CLASS(Health,
+        };
+        DECLARE_JSON_STRUCT(Health) {
             VALUE_DEFAULT(ConfigUtils::Color, Full, ConfigUtils::Color(1, 1, 1, 1));
             VALUE_DEFAULT(ConfigUtils::Color, AboveHalf, ConfigUtils::Color(1, 1, 1, 1));
             VALUE_DEFAULT(ConfigUtils::Color, BelowHalf, ConfigUtils::Color(1, 1, 1, 1));
-        )
+        };
 
         UnityEngine::Color GetStatic(UnparsedJSON options);
         UnityEngine::Color GetPlayer(UnparsedJSON options);
@@ -301,26 +299,24 @@ namespace Qounters {
         inline std::string const PercentageName = "Percentage Above";
         inline std::string const FailedName = "Failed";
 
-        DECLARE_JSON_CLASS(Static,
-        )
-        DECLARE_JSON_CLASS(Ranked,
+        DECLARE_JSON_STRUCT(Static){};
+        DECLARE_JSON_STRUCT(Ranked) {
             enum class Leaderboards {
                 ScoreSaber,
                 BeatLeader,
                 Either,
                 Both,
             };
-            VALUE_DEFAULT(int, Leaderboard, (int) Leaderboards::Either)
-        )
-        DECLARE_JSON_CLASS(FullCombo,
-            VALUE_DEFAULT(int, Saber, (int) Sabers::Both)
-        )
-        DECLARE_JSON_CLASS(Percentage,
-            VALUE_DEFAULT(int, Saber, (int) Sabers::Both)
-            VALUE_DEFAULT(float, Percent, 90)
-        )
-        DECLARE_JSON_CLASS(Failed,
-        )
+            VALUE_DEFAULT(int, Leaderboard, (int) Leaderboards::Either);
+        };
+        DECLARE_JSON_STRUCT(FullCombo) {
+            VALUE_DEFAULT(int, Saber, (int) Sabers::Both);
+        };
+        DECLARE_JSON_STRUCT(Percentage) {
+            VALUE_DEFAULT(int, Saber, (int) Sabers::Both);
+            VALUE_DEFAULT(float, Percent, 90);
+        };
+        DECLARE_JSON_STRUCT(Failed){};
 
         bool GetStatic(UnparsedJSON options);
         bool GetRanked(UnparsedJSON options);

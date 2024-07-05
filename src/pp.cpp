@@ -11,36 +11,34 @@
 #include "song-details/shared/SongDetails.hpp"
 #include "web-utils/shared/WebUtils.hpp"
 
-DECLARE_JSON_CLASS(BLModifiers,
-    VALUE(float, da)
-    VALUE(float, fs)
-    VALUE(float, sf)
-    VALUE(float, ss)
-    VALUE(float, gn)
-    VALUE(float, na)
-    VALUE(float, nb)
-    VALUE(float, nf)
-    VALUE(float, no)
-    VALUE(float, pm)
-    VALUE(float, sc)
-    VALUE(float, sa)
-    VALUE(float, op)
-)
+DECLARE_JSON_STRUCT(BLSpeedModifiers) {
+    VALUE(float, ssPassRating);
+    VALUE(float, ssAccRating);
+    VALUE(float, ssTechRating);
+    VALUE(float, fsPassRating);
+    VALUE(float, fsAccRating);
+    VALUE(float, fsTechRating);
+    VALUE(float, sfPassRating);
+    VALUE(float, sfAccRating);
+    VALUE(float, sfTechRating);
+};
 
-DECLARE_JSON_CLASS(BLSongDiff,
-    NAMED_VALUE(std::string, Difficulty, "difficultyName")
-    NAMED_VALUE(std::string, Characteristic, "modeName")
-    NAMED_VALUE_DEFAULT(int, RankedStatus, 0, "status")
-    NAMED_VALUE_DEFAULT(float, Stars, 0, "stars")
-    NAMED_VALUE_DEFAULT(float, Predicted, 0, "predictedAcc")
-    NAMED_VALUE_DEFAULT(float, Pass, 0, "passRating")
-    NAMED_VALUE_DEFAULT(float, Acc, 0, "accRating")
-    NAMED_VALUE_DEFAULT(float, Tech, 0, "techRating")
-)
+DECLARE_JSON_STRUCT(BLSongDiff) {
+    NAMED_VALUE(std::string, Difficulty, "difficultyName");
+    NAMED_VALUE(std::string, Characteristic, "modeName");
+    NAMED_VALUE_DEFAULT(int, RankedStatus, 0, "status");
+    NAMED_VALUE_DEFAULT(float, Stars, 0, "stars");
+    NAMED_VALUE_DEFAULT(float, Predicted, 0, "predictedAcc");
+    NAMED_VALUE_DEFAULT(float, Pass, 0, "passRating");
+    NAMED_VALUE_DEFAULT(float, Acc, 0, "accRating");
+    NAMED_VALUE_DEFAULT(float, Tech, 0, "techRating");
+    NAMED_MAP_DEFAULT(float, ModifierValues, {}, "modifierValues");
+    NAMED_VALUE_OPTIONAL(BLSpeedModifiers, ModifierRatings, "modifiersRating");
+};
 
-DECLARE_JSON_CLASS(BLSong,
-    NAMED_VECTOR(BLSongDiff, Difficulties, "difficulties")
-)
+DECLARE_JSON_STRUCT(BLSong) {
+    NAMED_VECTOR(BLSongDiff, Difficulties, "difficulties");
+};
 
 std::vector<std::pair<double, double>> beatleader = {
     {1.0, 7.424},    {0.999, 6.241}, {0.9975, 5.158}, {0.995, 4.010}, {0.9925, 3.241}, {0.99, 2.700}, {0.9875, 2.303}, {0.985, 2.007},
@@ -99,6 +97,41 @@ BLSongDiff latestBeatleaderSong;
 bool ssSongValid = false;
 float latestScoresaberSong;
 
+std::vector<std::string> GetModifiers(GlobalNamespace::GameplayModifiers* modifiers, bool speeds, bool failed) {
+    std::vector<std::string> ret;
+    if (modifiers->_disappearingArrows)
+        ret.emplace_back("da");
+    if (speeds && modifiers->_songSpeed == GlobalNamespace::GameplayModifiers::SongSpeed::Faster)
+        ret.emplace_back("fs");
+    if (speeds && modifiers->_songSpeed == GlobalNamespace::GameplayModifiers::SongSpeed::Slower)
+        ret.emplace_back("ss");
+    if (speeds && modifiers->_songSpeed == GlobalNamespace::GameplayModifiers::SongSpeed::SuperFast)
+        ret.emplace_back("sf");
+    if (modifiers->_ghostNotes)
+        ret.emplace_back("gn");
+    if (modifiers->_noArrows)
+        ret.emplace_back("na");
+    if (modifiers->_noBombs)
+        ret.emplace_back("nb");
+    if (failed && modifiers->_noFailOn0Energy)
+        ret.emplace_back("nf");
+    if (modifiers->_enabledObstacleType == GlobalNamespace::GameplayModifiers::EnabledObstacleType::NoObstacles)
+        ret.emplace_back("no");
+    if (modifiers->_proMode)
+        ret.emplace_back("pm");
+    if (modifiers->_smallCubes)
+        ret.emplace_back("sc");
+    if (modifiers->_instaFail)
+        ret.emplace_back("if");
+    if (modifiers->_energyType == GlobalNamespace::GameplayModifiers::EnergyType::Battery)
+        ret.emplace_back("be");
+    if (modifiers->_strictAngles)
+        ret.emplace_back("sa");
+    if (modifiers->_zenMode)
+        ret.emplace_back("zm");
+    return ret;
+}
+
 float AccCurve(float acc, std::vector<std::pair<double, double>>& curve) {
     int i = 1;
     for (; i < curve.size(); i++) {
@@ -133,20 +166,55 @@ bool Qounters::PP::IsRankedSS() {
     return ssSongValid && latestScoresaberSong > 0;
 }
 
-float Qounters::PP::CalculateBL(float percentage, bool failed) {
+float Qounters::PP::CalculateBL(float percentage, GlobalNamespace::GameplayModifiers* modifiers, bool failed) {
     if (failed || !blSongValid)
         return 0;
-    // TODO: speed modifier custom ratings
-    float accRating = latestBeatleaderSong.Acc;
     float passRating = latestBeatleaderSong.Pass;
+    float accRating = latestBeatleaderSong.Acc;
     float techRating = latestBeatleaderSong.Tech;
-    // TODO: custom modifier values
+
+    bool precalculatedSpeeds = latestBeatleaderSong.ModifierRatings.has_value();
+    if (precalculatedSpeeds) {
+        switch (modifiers->_songSpeed) {
+            case GlobalNamespace::GameplayModifiers::SongSpeed::Slower:
+                passRating = latestBeatleaderSong.ModifierRatings->ssPassRating;
+                accRating = latestBeatleaderSong.ModifierRatings->ssAccRating;
+                techRating = latestBeatleaderSong.ModifierRatings->ssTechRating;
+                break;
+            case GlobalNamespace::GameplayModifiers::SongSpeed::Faster:
+                passRating = latestBeatleaderSong.ModifierRatings->fsPassRating;
+                accRating = latestBeatleaderSong.ModifierRatings->fsAccRating;
+                techRating = latestBeatleaderSong.ModifierRatings->fsTechRating;
+                break;
+            case GlobalNamespace::GameplayModifiers::SongSpeed::SuperFast:
+                passRating = latestBeatleaderSong.ModifierRatings->sfPassRating;
+                accRating = latestBeatleaderSong.ModifierRatings->sfAccRating;
+                techRating = latestBeatleaderSong.ModifierRatings->sfTechRating;
+                break;
+            default:
+                break;
+        }
+    }
+
+    float multiplier = 1;
+    auto mods = GetModifiers(modifiers, !precalculatedSpeeds, failed);
+    for (auto& mod : mods) {
+        auto value = latestBeatleaderSong.ModifierValues.find(mod);
+        if (value != latestBeatleaderSong.ModifierValues.end())
+            multiplier += value->second;
+    }
+    passRating *= multiplier;
+    accRating *= multiplier;
+    techRating *= multiplier;
+
+    logger.debug("calculating pp with ratings {} {} {}", passRating, accRating, techRating);
+
     auto [passPP, accPP, techPP] = CalculatePP(percentage, accRating, passRating, techRating);
     auto rawPP = Inflate(passPP + accPP + techPP);
     return rawPP;
 }
 
-float Qounters::PP::CalculateSS(float percentage, bool failed) {
+float Qounters::PP::CalculateSS(float percentage, GlobalNamespace::GameplayModifiers* modifiers, bool failed) {
     if (!ssSongValid)
         return 0;
     if (failed)
