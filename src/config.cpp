@@ -22,6 +22,7 @@ std::vector<std::string_view> const Qounters::AnchorStrings = {
     "Right",
     "Top",
     "Bottom",
+    "Center",
 };
 std::vector<std::string_view> const Qounters::AlignStrings = {
     "Left",

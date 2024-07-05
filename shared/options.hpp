@@ -79,7 +79,8 @@ namespace Qounters {
             Right,
             Top,
             Bottom,
-            AnchorMax = Bottom,
+            Center,
+            AnchorMax = Center,
         };
         VALUE(ConfigUtils::Vector2, Position);
         VALUE_DEFAULT(float, Rotation, 0);

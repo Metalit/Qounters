@@ -299,31 +299,34 @@ std::map<std::string, HUDType> const supportedHUDs = {
     {"MultiplayerDuelLocalActivePlayerController(Clone)/IsActiveObjects/HUD", HUDType::Multiplayer},
 };
 
-std::map<HUDType, std::map<Group::Anchors, std::tuple<std::string, Vector3, Vector2, Vector2>>> const hudPanels = {
+std::map<HUDType, std::map<Group::Anchors, std::tuple<std::string, Vector3, Vector3, Vector2, Vector2>>> const hudPanels = {
     {HUDType::Basic,
      {
-         {Group::Anchors::Left, {"LeftPanel", {-3, 0.4, 7}, {50, 125}, {0, 0.75}}},
-         {Group::Anchors::Right, {"RightPanel", {3, 0.4, 7}, {50, 125}, {0, 0.75}}},
-         {Group::Anchors::Bottom, {"EnergyPanel", {0, -0.64, 7}, {-25, 25}, {0, -10}}},
-         {Group::Anchors::Top, {"QountersTopPanel", {0, 3, 7}, {125, 50}, {0, 0}}},
+         {Group::Anchors::Left, {"LeftPanel", {-3, 0.4, 7}, {0, 0, 0}, {50, 125}, {0, 0.75}}},
+         {Group::Anchors::Right, {"RightPanel", {3, 0.4, 7}, {0, 0, 0}, {50, 125}, {0, 0.75}}},
+         {Group::Anchors::Bottom, {"EnergyPanel", {0, -0.64, 7}, {0, 0, 0}, {125, 50}, {0, -10}}},
+         {Group::Anchors::Top, {"QountersTopPanel", {0, 3.2, 7}, {0, 0, 0}, {125, 50}, {0, 0}}},
+         {Group::Anchors::Center, {"QountersCenterPanel", {0, 1.5, 7}, {0, 0, 0}, {125, 80}, {0, 0}}},
      }},
     {HUDType::Rotational,
      {
-         {Group::Anchors::Left, {"ComboPanel", {-80, 0, 0}, {10, 10}, {0, 0}}},
-         {Group::Anchors::Right, {"MultiplierCanvas", {80, 0, 0}, {10, 10}, {0, 0}}},
-         {Group::Anchors::Bottom, {"EnergyPanel", {0, -38, 0}, {10, 10}, {0, 0}}},
-         {Group::Anchors::Top, {"SongProgressCanvas", {0, 30, 0}, {10, 10}, {0, 0}}},
+         {Group::Anchors::Left, {"ComboPanel", {-1.6, 4, 12}, {345, 0, 0}, {50, 125}, {0, 0}}},
+         {Group::Anchors::Right, {"MultiplierCanvas", {1.6, 4, 12}, {345, 0, 0}, {50, 125}, {0, 0}}},
+         {Group::Anchors::Bottom, {"EnergyPanel", {0, 3.266, 12.197}, {345, 0, 0}, {100, 50}, {0, -5}}},
+         {Group::Anchors::Top, {"SongProgressCanvas", {0.05, 4.58, 11.845}, {345, 0, 0}, {100, 50}, {-2.5, 15}}},
+         {Group::Anchors::Center, {"QountersCenterPanel", {0, 1.5, 7}, {0, 0, 0}, {125, 80}, {0, 0}}},
      }},
     {HUDType::Multiplayer,
      {
-         {Group::Anchors::Left, {"QountersLeftPanel", {-3, 0.4, 7}, {50, 125}, {0, 0.75}}},
-         {Group::Anchors::Right, {"QountersRightPanel", {3, 0.4, 7}, {50, 125}, {0, 0.75}}},
-         {Group::Anchors::Bottom, {"EnergyPanel", {0, -38, 0}, {10, 10}, {0, 0}}},
-         {Group::Anchors::Top, {"QountersTopPanel", {0, 3, 7}, {125, 50}, {0, 0}}},
+         {Group::Anchors::Left, {"QountersLeftPanel", {-3, 0.4, 7}, {0, 0, 0}, {50, 125}, {0, 0.75}}},
+         {Group::Anchors::Right, {"QountersRightPanel", {3, 0.4, 7}, {0, 0, 0}, {50, 125}, {0, 0.75}}},
+         {Group::Anchors::Bottom, {"EnergyPanel", {0, 0, 2.3}, {90, 0, 0}, {125, 50}, {0, 0}}},
+         {Group::Anchors::Top, {"QountersTopPanel", {0, 3.2, 7}, {0, 0, 0}, {125, 50}, {0, 0}}},
+         {Group::Anchors::Center, {"QountersCenterPanel", {0, 1.5, 7}, {0, 0, 0}, {125, 80}, {0, 0}}},
      }},
 };
 
-RectTransform* GetCanvas(std::string parentName, Transform* hud, Vector3 fallback) {
+RectTransform* GetCanvas(std::string parentName, Transform* hud, Vector3 fallback, Vector3 fallbackRot) {
     static ConstString name("QountersCanvas");
 
     auto parent = Utils::FindRecursive(hud, parentName);
@@ -336,24 +339,27 @@ RectTransform* GetCanvas(std::string parentName, Transform* hud, Vector3 fallbac
         logger.info("Creating custom parent object {}", parentName);
         parent = GameObject::New_ctor(parentName)->transform;
         parent->position = fallback;
+        parent->eulerAngles = fallbackRot;
+        parent->SetParent(hud, true);
     }
 
     if (auto ret = parent->Find(name))
         return ret.cast<RectTransform>();
-    parent->SetParent(hud, false);
 
     auto canvas = BSML::Lite::CreateCanvas();
     canvas->name = name;
 
     canvas->GetComponent<Canvas*>()->sortingOrder = 0;
 
-    auto ret = canvas->transform;
+    auto ret = canvas->GetComponent<RectTransform*>();
     ret->localScale = {0.02, 0.02, 0.02};
     ret->SetParent(parent, true);
     ret->localPosition = {0, 0, -0.5};
     ret->localEulerAngles = {0, 0, 0};
+    ret->anchorMin = {0.5, 0.5};
+    ret->anchorMax = {0.5, 0.5};
 
-    return ret.cast<RectTransform>();
+    return ret;
 }
 
 std::pair<Transform*, HUDType> Qounters::GetHUD() {
@@ -370,8 +376,8 @@ Transform* Qounters::GetAnchor(int anchor) {
     if (type == HUDType::Unsupported)
         return nullptr;
 
-    auto [name, fallback, size, pos] = hudPanels.at(type).at((Group::Anchors) anchor);
-    auto ret = GetCanvas(name, hud, fallback);
+    auto [name, fallback, fallbackRot, size, pos] = hudPanels.at(type).at((Group::Anchors) anchor);
+    auto ret = GetCanvas(name, hud, fallback, fallbackRot);
     ret->sizeDelta = size;
     ret->anchoredPosition = pos;
     return ret;

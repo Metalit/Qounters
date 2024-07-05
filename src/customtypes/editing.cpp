@@ -139,10 +139,6 @@ void CanvasHighlight::OnEnable() {
 
     auto mat = Resources::FindObjectsOfTypeAll<Material*>()->First([](auto x) { return x->name == StringW("UINoGlow"); });  // TODO: cache
     material = mat;
-
-    auto rectTransform = Utils::GetOrAddComponent<RectTransform*>(this);
-    rectTransform->anchorMin = {0, 0};
-    rectTransform->anchorMax = {1, 1};
 }
 
 void CanvasHighlight::SetHighlighted(bool value) {
