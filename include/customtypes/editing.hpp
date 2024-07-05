@@ -29,9 +29,8 @@ DECLARE_CLASS_CODEGEN(Qounters, Outline, UUI::Graphic,
     DECLARE_INSTANCE_METHOD(void, SetBaseSize, UnityEngine::Vector2 value);
     DECLARE_INSTANCE_METHOD(void, SetBorderWidth, float value);
     DECLARE_INSTANCE_METHOD(void, SetBorderGap, float value);
-    DECLARE_INSTANCE_METHOD(void, UpdateSizeDelta);
+    DECLARE_INSTANCE_METHOD(void, UpdateSize);
     DECLARE_OVERRIDE_METHOD_MATCH(void, OnPopulateMesh, CAST_METHOD(UUI::Graphic, OnPopulateMesh, UUI::VertexHelper*), UUI::VertexHelper* vh);
-    DECLARE_INSTANCE_METHOD(void, OnRectTransformDimensionsChange);
 
     DECLARE_DEFAULT_CTOR();
 

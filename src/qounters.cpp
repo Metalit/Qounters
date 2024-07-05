@@ -190,11 +190,13 @@ void Qounters::UpdateComponentEnabled(GameObject* component, std::string newSour
 }
 
 void Qounters::UpdateComponentPosition(RectTransform* component, Component const& qounterComponent) {
+    Shape* shape = nullptr;
     switch ((Component::Types) qounterComponent.Type) {
         case Component::Types::Text:
             component->sizeDelta = {0, 0};
             break;
         case Component::Types::Shape:
+            shape = component->GetComponent<Shape*>();
             component = component->parent.cast<RectTransform>();
         case Component::Types::Image:
             component->sizeDelta = {25, 25};
@@ -207,6 +209,10 @@ void Qounters::UpdateComponentPosition(RectTransform* component, Component const
     component->anchoredPosition = qounterComponent.Position;
     component->localEulerAngles = {0, 0, qounterComponent.Rotation};
     component->localScale = {qounterComponent.Scale.x, qounterComponent.Scale.y, 0};
+    if (shape)
+        shape->SetVerticesDirty();
+    if (auto editing = component->GetComponent<EditingBase*>())
+        editing->outline->UpdateSize();
 }
 
 void Qounters::UpdateGroupPosition(RectTransform* group, Group const& qounterGroup) {
@@ -233,6 +239,9 @@ void Qounters::UpdateGroupPosition(RectTransform* group, Group const& qounterGro
     group->localPosition = {qounterGroup.Position.x, qounterGroup.Position.y, 0};
     group->localEulerAngles = {0, 0, qounterGroup.Rotation};
     group->localScale = {1, 1, 1};
+    // necessary if scale changing becomes supported
+    // for (auto& editing : group->GetComponentsInChildren<EditingBase*>())
+    //     editing->outline->UpdateSize();
 }
 
 void Qounters::RemoveComponent(int componentType, UnityEngine::Component* component) {
@@ -393,7 +402,7 @@ void Qounters::CreateQounterComponent(Component const& qounterComponent, int com
             auto text = BSML::Lite::CreateText(parent, "");
             text->enableWordWrapping = false;
             if (editing)
-                text->get_gameObject()->AddComponent<TextOutlineSizer*>();
+                text->gameObject->AddComponent<TextOutlineSizer*>();
             component = text;
             UpdateTextOptions(text, qounterComponent.Options, true);
             break;

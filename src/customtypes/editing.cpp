@@ -52,28 +52,29 @@ void Outline::OnEnable() {
 
     rectTransform->anchorMin = {0, 0};
     rectTransform->anchorMax = {1, 1};
-    UpdateSizeDelta();
+    UpdateSize();
 }
 
 void Outline::SetBaseSize(Vector2 value) {
     baseSize = value;
-    UpdateSizeDelta();
+    UpdateSize();
 }
 
 void Outline::SetBorderWidth(float value) {
     borderWidth = value;
-    UpdateSizeDelta();
+    UpdateSize();
 }
 
 void Outline::SetBorderGap(float value) {
     borderGap = value;
-    UpdateSizeDelta();
+    UpdateSize();
 }
 
-void Outline::UpdateSizeDelta() {
+void Outline::UpdateSize() {
     auto scale = transform->lossyScale;
     auto pad = 2 * (borderGap + borderWidth);
     rectTransform->sizeDelta = {baseSize.x + (pad * 0.02f / scale.x), baseSize.y + (pad * 0.02f / scale.y)};
+    SetVerticesDirty();
 }
 
 void Outline::OnPopulateMesh(UI::VertexHelper* vh) {
@@ -120,11 +121,6 @@ void Outline::OnPopulateMesh(UI::VertexHelper* vh) {
     vh->AddTriangle(7, 5, 4);
     vh->AddTriangle(6, 0, 3);
     vh->AddTriangle(3, 7, 6);
-}
-
-void Outline::OnRectTransformDimensionsChange() {
-    UpdateSizeDelta();  // TODO: doesn't seem to update consistently with scale changes
-    SetVerticesDirty();
 }
 
 Outline* Outline::Create(Component* obj) {

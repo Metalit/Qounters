@@ -130,10 +130,6 @@ std::vector<std::tuple<int, int, int>> GetHollowTriangles(std::vector<Vector2> p
     return ret;
 }
 
-Color32 ToColor32(Color color) {
-    return Color32::op_Implicit___UnityEngine__Color32(color);
-}
-
 // curved ui can probably be done as simple as {curvedCanvasRadius, 0} in AddVert uv2
 void Shape::OnPopulateMesh(UI::VertexHelper* vh) {
     auto bounds = GetPixelAdjustedRect();
@@ -145,7 +141,7 @@ void Shape::OnPopulateMesh(UI::VertexHelper* vh) {
     float borderY = border * 5 * 0.02 / scale.y;
 
     std::vector<Vector2> points;
-    auto color32 = ToColor32(color);
+    auto color32 = Color32::op_Implicit___UnityEngine__Color32(color);
 
     vh->Clear();
     for (auto& [x, y] : GetCircumferencePoints(sideCount, bounds)) {
