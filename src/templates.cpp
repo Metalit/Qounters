@@ -115,9 +115,9 @@ namespace Qounters::Templates {
         auto addLine = [&splitSaber, &group](TextSource::AverageCut opts, float yPos) {
             if (splitSaber) {
                 opts.Saber = (int) Sabers::Left;
-                AddText(group, TextSource::AverageCutName, opts).Position = UnityEngine::Vector2(-12.5, yPos);
+                AddText(group, TextSource::AverageCutName, opts, 15, TextOptions::Aligns::Right).Position = UnityEngine::Vector2(-2, yPos);
                 opts.Saber = (int) Sabers::Right;
-                AddText(group, TextSource::AverageCutName, opts).Position = UnityEngine::Vector2(12.5, yPos);
+                AddText(group, TextSource::AverageCutName, opts, 15, TextOptions::Aligns::Left).Position = UnityEngine::Vector2(2, yPos);
             } else
                 AddText(group, TextSource::AverageCutName, opts).Position = UnityEngine::Vector2(0, yPos);
         };
