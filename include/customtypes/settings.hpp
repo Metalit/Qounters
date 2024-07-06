@@ -126,6 +126,7 @@ DECLARE_CLASS_CODEGEN(Qounters, OptionsViewController, HMUI::ViewController,
 
     DECLARE_INSTANCE_FIELD(UnityEngine::GameObject*, groupParent);
     DECLARE_INSTANCE_FIELD(UnityEngine::GameObject*, componentParent);
+    DECLARE_INSTANCE_FIELD(UnityEngine::UI::HorizontalLayoutGroup*, cButtonsParent);
 
     DECLARE_INSTANCE_FIELD(BSML::IncrementSetting*, gPosIncrementX);
     DECLARE_INSTANCE_FIELD(BSML::IncrementSetting*, gPosIncrementY);
@@ -144,6 +145,7 @@ DECLARE_CLASS_CODEGEN(Qounters, OptionsViewController, HMUI::ViewController,
     DECLARE_INSTANCE_FIELD(BSML::SliderSetting*, cRotSlider);
     DECLARE_INSTANCE_FIELD(BSML::SliderSetting*, cScaleSliderX);
     DECLARE_INSTANCE_FIELD(BSML::SliderSetting*, cScaleSliderY);
+    DECLARE_INSTANCE_FIELD(UnityEngine::Component*, typeCollapseComponent);
     DECLARE_INSTANCE_FIELD(BSML::DropdownListSetting*, cTypeDropdown);
     DECLARE_INSTANCE_FIELD(BSML::DropdownListSetting*, cColorSourceDropdown);
     DECLARE_INSTANCE_FIELD(BSML::DropdownListSetting*, cEnableSourceDropdown);
@@ -163,6 +165,36 @@ DECLARE_CLASS_CODEGEN(Qounters, OptionsViewController, HMUI::ViewController,
    private:
     static inline Qounters::OptionsViewController* instance = nullptr;
 )
+
+#define INTERFACES std::vector<Il2CppClass*>({ \
+    classof(UES::IEventSystemHandler*), \
+    classof(UES::IPointerEnterHandler*), \
+    classof(UES::IPointerExitHandler*), \
+    classof(UES::IPointerClickHandler*), \
+})
+
+DECLARE_CLASS_CODEGEN_INTERFACES(Qounters, CollapseController, UnityEngine::MonoBehaviour, INTERFACES,
+    DECLARE_DEFAULT_CTOR();
+
+    DECLARE_INSTANCE_FIELD(StringW, title);
+    DECLARE_INSTANCE_FIELD(bool, open);
+    DECLARE_INSTANCE_FIELD(TMPro::TextMeshProUGUI*, text);
+    DECLARE_INSTANCE_FIELD(HMUI::ImageView*, line);
+
+    DECLARE_OVERRIDE_METHOD_MATCH(void, OnPointerEnter, &UES::IPointerEnterHandler::OnPointerEnter, UES::PointerEventData* eventData);
+    DECLARE_OVERRIDE_METHOD_MATCH(void, OnPointerExit, &UES::IPointerExitHandler::OnPointerExit, UES::PointerEventData* eventData);
+    DECLARE_OVERRIDE_METHOD_MATCH(void, OnPointerClick, &UES::IPointerClickHandler::OnPointerClick, UES::PointerEventData* eventData);
+
+    DECLARE_INSTANCE_METHOD(void, UpdateOpen);
+
+   public:
+    std::vector<UnityEngine::Component*> contents;
+    void SetContents(std::vector<UnityEngine::Component*> const& newContents);
+
+    std::function<void ()> onUpdate = nullptr;
+)
+
+#undef INTERFACES
 
 #define INTERFACES std::vector<Il2CppClass*>({ \
     classof(UES::IEventSystemHandler*), \
@@ -231,3 +263,4 @@ DECLARE_CLASS_CODEGEN_INTERFACES(Qounters, SpritesListSource, UnityEngine::MonoB
 )
 
 #undef INTERFACES
+#undef UES

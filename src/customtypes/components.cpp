@@ -260,7 +260,7 @@ void BaseGameGraphic::SetComponent(int comp) {
             instance->localScale = {1, 1, 1};
             break;
     }
-    instance->localEulerAngles = {};
+    instance->localEulerAngles = {0, 0, 0};
 
     graphics = instance->GetComponentsInChildren<UI::Graphic*>();
     SetChildColors();

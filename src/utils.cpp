@@ -157,6 +157,10 @@ BSML::ColorSetting* Utils::CreateColorPicker(
     std::function<void()> onClose
 ) {
     auto ret = BSML::Lite::CreateColorPicker(parent, name, value);
+    ret->modalColorPicker->onChange = [ret, onChange](UnityEngine::Color val) {
+        ret->set_currentColor(val);
+        onChange(val);
+    };
     auto modal = ret->modalColorPicker->GetComponent<UnityEngine::RectTransform*>();
     modal->Find("BSMLHSVPanel/ColorPickerButtonPrimary")->gameObject->active = false;
     modal->Find("BSMLHorizontalLayoutGroup")->gameObject->active = false;
@@ -182,11 +186,39 @@ BSML::ColorSetting* Utils::CreateColorPicker(
     return ret;
 }
 
+CollapseController*
+Utils::CreateCollapseArea(UnityEngine::GameObject* parent, std::string title, bool open, std::vector<UnityEngine::Component*> contents) {
+    auto layout = BSML::Lite::CreateHorizontalLayoutGroup(parent);
+    layout->spacing = 2;
+    layout->childAlignment = UnityEngine::TextAnchor::MiddleCenter;
+    layout->childForceExpandHeight = false;
+    // makes the whole area clickable
+    layout->gameObject->AddComponent<CanvasHighlight*>();
+    auto ret = layout->gameObject->AddComponent<CollapseController*>();
+    ret->open = open;
+    ret->title = title;
+    ret->text = BSML::Lite::CreateText(layout, "", TMPro::FontStyles::Normal, 3.5);
+    ret->line = BSML::Lite::CreateImage(layout, BSML::Utilities::ImageResources::GetWhitePixel());
+    auto dims = ret->line->GetComponent<UnityEngine::UI::LayoutElement*>();
+    dims->preferredWidth = 0;
+    dims->preferredHeight = 0.4;
+    dims->flexibleWidth = 999;
+    ret->contents = contents;
+    ret->UpdateOpen();
+    // update colors
+    ret->OnPointerExit(nullptr);
+    return ret;
+}
+
 void Utils::AddSliderEndDrag(BSML::SliderSetting* slider, std::function<void(float)> onEndDrag) {
-    std::function<void()> boundCallback = [slider, onEndDrag]() {
-        onEndDrag(slider->slider->value);
+    std::function<void()> boundCallback = [slider = slider->slider, onEndDrag]() {
+        onEndDrag(slider->value);
     };
     GetOrAddComponent<EndDragHandler*>(slider->slider)->callback = boundCallback;
+    if (slider->showButtons && slider->incButton && slider->decButton) {
+        slider->incButton->onClick->AddListener(BSML::MakeUnityAction(boundCallback));
+        slider->decButton->onClick->AddListener(BSML::MakeUnityAction(boundCallback));
+    }
 }
 
 void Utils::AddStringSettingOnClose(HMUI::InputFieldView* input, std::function<void(std::string)> onKeyboardClosed) {

@@ -28,6 +28,7 @@ DEFINE_TYPE(Qounters, SettingsFlowCoordinator);
 DEFINE_TYPE(Qounters, SettingsViewController);
 DEFINE_TYPE(Qounters, TemplatesViewController);
 DEFINE_TYPE(Qounters, OptionsViewController);
+DEFINE_TYPE(Qounters, CollapseController);
 DEFINE_TYPE(Qounters, EndDragHandler);
 DEFINE_TYPE(Qounters, KeyboardCloseHandler);
 DEFINE_TYPE(Qounters, SpritesListCell);
@@ -509,6 +510,8 @@ void Qounters::OptionsViewController::DidActivate(bool firstActivation, bool add
 
     componentParent = BSML::Lite::CreateScrollView(this);
 
+    auto positionCollapse = Utils::CreateCollapseArea(componentParent, "Position Options", true);
+
     cPosIncrementX = BSML::Lite::CreateIncrementSetting(componentParent, "Rel. X Position", 1, 0.5, 0, [](float val) {
         static int id = Editor::GetActionId();
         Editor::GetSelectedComponent(id).Position.x = val;
@@ -532,7 +535,7 @@ void Qounters::OptionsViewController::DidActivate(bool firstActivation, bool add
     Utils::AddSliderEndDrag(cRotSlider, [](float _) { Editor::FinalizeAction(); });
     cRotSlider->GetComponent<RectTransform*>()->sizeDelta = {0, 8};
 
-    cScaleSliderX = BSML::Lite::CreateSliderSetting(componentParent, "X Scale", 0.01, 0, 0.01, 10, 0, [this](float val) {
+    cScaleSliderX = BSML::Lite::CreateSliderSetting(componentParent, "X Scale", 0.01, 0, 0.01, 10, 0, [](float val) {
         static int id = Editor::GetActionId();
         Editor::GetSelectedComponent(id).Scale.x = val;
         Editor::UpdatePosition();
@@ -547,7 +550,15 @@ void Qounters::OptionsViewController::DidActivate(bool firstActivation, bool add
     Utils::AddSliderEndDrag(cScaleSliderY, [](float _) { Editor::FinalizeAction(); });
     cScaleSliderY->GetComponent<RectTransform*>()->sizeDelta = {0, 8};
 
-    cTypeDropdown = Utils::CreateDropdownEnum(componentParent, "Type", 0, TypeStrings, [](int val) {
+    positionCollapse->SetContents({cPosIncrementX, cPosIncrementY, cRotSlider, cScaleSliderX, cScaleSliderY});
+    positionCollapse->onUpdate = Qounters::OptionsViewController::UpdateScrollViewStatic;
+
+    auto typeCollapse = Utils::CreateCollapseArea(componentParent, "Text Options", true);
+    typeCollapseComponent = typeCollapse;
+
+    cTypeDropdown = Utils::CreateDropdownEnum(componentParent, "Type", 0, TypeStrings, [typeCollapse](int val) {
+        typeCollapse->title = std::string(TypeStrings[val]) + " Options";
+        typeCollapse->UpdateOpen();
         static int id = Editor::GetActionId();
         Editor::GetSelectedComponent(id).Type = val;
         Editor::UpdateType();
@@ -556,6 +567,11 @@ void Qounters::OptionsViewController::DidActivate(bool firstActivation, bool add
 
     cTypeOptions = BSML::Lite::CreateVerticalLayoutGroup(componentParent);
     cTypeOptions->GetComponent<UI::ContentSizeFitter*>()->verticalFit = UI::ContentSizeFitter::FitMode::PreferredSize;
+
+    typeCollapse->SetContents({cTypeDropdown->transform->parent, cTypeOptions});
+    typeCollapse->onUpdate = Qounters::OptionsViewController::UpdateScrollViewStatic;
+
+    auto colorCollapse = Utils::CreateCollapseArea(componentParent, "Color Options", false);
 
     cColorSourceDropdown = Utils::CreateDropdown(componentParent, "Color Source", "", Utils::GetKeys(colorSources), [this](std::string val) {
         static int id = Editor::GetActionId();
@@ -571,7 +587,12 @@ void Qounters::OptionsViewController::DidActivate(bool firstActivation, bool add
     cColorSourceOptions = BSML::Lite::CreateVerticalLayoutGroup(componentParent);
     cColorSourceOptions->GetComponent<UI::ContentSizeFitter*>()->verticalFit = UI::ContentSizeFitter::FitMode::PreferredSize;
 
-    cEnableSourceDropdown = Utils::CreateDropdown(componentParent, "Enabled If", "", Utils::GetKeys(enableSources), [this](std::string val) {
+    colorCollapse->SetContents({cColorSourceDropdown->transform->parent, cColorSourceOptions});
+    colorCollapse->onUpdate = Qounters::OptionsViewController::UpdateScrollViewStatic;
+
+    auto enableCollapse = Utils::CreateCollapseArea(componentParent, "Visibility Options", false);
+
+    cEnableSourceDropdown = Utils::CreateDropdown(componentParent, "Visible If", "", Utils::GetKeys(enableSources), [this](std::string val) {
         static int id = Editor::GetActionId();
         auto& comp = Editor::GetSelectedComponent(id);
         if (comp.EnableSource != val) {
@@ -582,7 +603,7 @@ void Qounters::OptionsViewController::DidActivate(bool firstActivation, bool add
         Editor::FinalizeAction();
     });
 
-    cInvertEnableToggle = BSML::Lite::CreateToggle(componentParent, "Invert Enabled", false, [](bool val) {
+    cInvertEnableToggle = BSML::Lite::CreateToggle(componentParent, "Invert Visibility", false, [](bool val) {
         static int id = Editor::GetActionId();
         Editor::GetSelectedComponent(id).InvertEnable = val;
         Editor::UpdateEnableOptions();
@@ -592,8 +613,15 @@ void Qounters::OptionsViewController::DidActivate(bool firstActivation, bool add
     cEnableSourceOptions = BSML::Lite::CreateVerticalLayoutGroup(componentParent);
     cEnableSourceOptions->GetComponent<UI::ContentSizeFitter*>()->verticalFit = UI::ContentSizeFitter::FitMode::PreferredSize;
 
-    auto cButtonsParent = BSML::Lite::CreateHorizontalLayoutGroup(componentParent);
+    enableCollapse->SetContents({cEnableSourceDropdown->transform->parent, cInvertEnableToggle, cEnableSourceOptions});
+    enableCollapse->onUpdate = Qounters::OptionsViewController::UpdateScrollViewStatic;
+
+    cButtonsParent = BSML::Lite::CreateHorizontalLayoutGroup(this);
     cButtonsParent->spacing = 3;
+    cButtonsParent->childControlWidth = false;
+    cButtonsParent->childForceExpandWidth = false;
+    cButtonsParent->childAlignment = TextAnchor::MiddleCenter;
+    cButtonsParent->rectTransform->anchoredPosition = {0, -37};
 
     cDeleteButton = BSML::Lite::CreateUIButton(cButtonsParent, "Delete", Editor::Remove);
 
@@ -635,6 +663,7 @@ void Qounters::OptionsViewController::UpdateSimpleUI() {
 
     Utils::SetScrollViewActive(groupParent, group);
     Utils::SetScrollViewActive(componentParent, component);
+    cButtonsParent->gameObject->active = component;
 
     Editor::DisableActions();
 
@@ -672,6 +701,9 @@ void Qounters::OptionsViewController::UpdateSimpleUI() {
         cRotSlider->set_Value(state.Rotation);
         cScaleSliderX->set_Value(state.Scale.x);
         cScaleSliderY->set_Value(state.Scale.y);
+        auto typeCollapse = (CollapseController*) typeCollapseComponent;
+        typeCollapse->title = std::string(TypeStrings[state.Type]) + " Options";
+        typeCollapse->UpdateOpen();
         cTypeDropdown->dropdown->SelectCellWithIdx(state.Type);
         Utils::SetDropdownValue(cColorSourceDropdown, state.ColorSource);
         Utils::SetDropdownValue(cEnableSourceDropdown, state.EnableSource);
@@ -731,11 +763,32 @@ void Qounters::OptionsViewController::OnDestroy() {
     instance = nullptr;
 }
 
-custom_types::Helpers::Coroutine Qounters::OptionsViewController::UpdateScrollView() {
-    co_yield nullptr;
-    if (uiInitialized && component)
-        Utils::RebuildWithScrollPosition(componentParent);
-    co_return;
+void Qounters::CollapseController::OnPointerEnter(UnityEngine::EventSystems::PointerEventData* eventData) {
+    text->color = {0.6, 0.6, 0.6, 1};
+    line->color = {0.5, 0.5, 0.5, 1};
+}
+
+void Qounters::CollapseController::OnPointerExit(UnityEngine::EventSystems::PointerEventData* eventData) {
+    text->color = {1, 1, 1, 1};
+    line->color = {0.8, 0.8, 0.8, 1};
+}
+
+void Qounters::CollapseController::OnPointerClick(UnityEngine::EventSystems::PointerEventData* eventData) {
+    open = !open;
+    UpdateOpen();
+}
+
+void Qounters::CollapseController::UpdateOpen() {
+    text->text = StringW(open ? u"▼  " : u"▶  ") + title;
+    for (auto& obj : contents)
+        obj->gameObject->active = open;
+    if (onUpdate)
+        onUpdate();
+}
+
+void Qounters::CollapseController::SetContents(std::vector<UnityEngine::Component*> const& newContents) {
+    contents = newContents;
+    UpdateOpen();
 }
 
 void Qounters::EndDragHandler::OnEndDrag(UnityEngine::EventSystems::PointerEventData* eventData) {

@@ -12,6 +12,7 @@
 #include "bsml/shared/BSML/Components/Settings/IncrementSetting.hpp"
 #include "bsml/shared/BSML/Components/Settings/SliderSetting.hpp"
 #include "bsml/shared/BSML/Components/Settings/ToggleSetting.hpp"
+#include "customtypes/settings.hpp"
 
 namespace Qounters::Utils {
     std::string FormatDecimals(double num, int decimals);
@@ -56,6 +57,8 @@ namespace Qounters::Utils {
         std::function<void(UnityEngine::Color)> onChange,
         std::function<void()> onClose
     );
+    Qounters::CollapseController*
+    CreateCollapseArea(UnityEngine::GameObject* parent, std::string title, bool open, std::vector<UnityEngine::Component*> contents = {});
     void AddSliderEndDrag(BSML::SliderSetting* slider, std::function<void(float)> onEndDrag);
     void AddStringSettingOnClose(HMUI::InputFieldView* input, std::function<void(std::string)> onKeyboardClosed);
     void AddIncrementIncrement(BSML::IncrementSetting* setting, float increment);

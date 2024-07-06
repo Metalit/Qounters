@@ -25,6 +25,9 @@ namespace Qounters {
             Triangle,
             TriangleOutline,
         };
+        static inline bool IsOutline(int shape) {
+            return std::set{Shapes::SquareOutline, Shapes::CircleOutline, Shapes::TriangleOutline}.contains((Shapes) shape);
+        };
         enum class Fills {
             None,
             Horizontal,

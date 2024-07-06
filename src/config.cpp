@@ -57,6 +57,7 @@ namespace Qounters {
     void CreateTextOptionsUI(GameObject* parent, TextOptions const& options) {
         static BSML::DropdownListSetting* sourceDropdown;
         static UI::VerticalLayoutGroup* sourceOptions;
+        static bool collapseOpen = true;
 
         Utils::CreateDropdownEnum(parent, "Align", options.Align, AlignStrings, [](int val) {
             static int id = Editor::GetActionId();
@@ -82,6 +83,8 @@ namespace Qounters {
             Editor::FinalizeAction();
         });
 
+        auto sourceCollapse = Utils::CreateCollapseArea(parent, "Text Source Options", collapseOpen);
+
         sourceDropdown = Utils::CreateDropdown(parent, "Text Source", options.TextSource, Utils::GetKeys(textSources), [parent](std::string val) {
             static int id = Editor::GetActionId();
             auto opts = Editor::GetOptions<TextOptions>(id);
@@ -97,13 +100,23 @@ namespace Qounters {
 
         sourceOptions = BSML::Lite::CreateVerticalLayoutGroup(parent);
         TextSource::CreateUI(sourceOptions->gameObject, options.TextSource, options.SourceOptions);
+
+        sourceCollapse->SetContents({sourceDropdown->transform->parent, sourceOptions});
+        sourceCollapse->onUpdate = [sourceCollapse]() {
+            Qounters::OptionsViewController::UpdateScrollViewStatic();
+            collapseOpen = sourceCollapse->open;
+        };
     }
 
     void CreateShapeOptionsUI(GameObject* parent, ShapeOptions const& options) {
+        static BSML::IncrementSetting* borderIncrement;
         static BSML::DropdownListSetting* sourceDropdown;
         static UI::VerticalLayoutGroup* sourceOptions;
+        static bool collapseOpen = false;
 
         Utils::CreateDropdownEnum(parent, "Shape", options.Shape, ShapeStrings, [](int val) {
+            borderIncrement->gameObject->active = ShapeOptions::IsOutline(val);
+            Qounters::OptionsViewController::UpdateScrollViewStatic();
             static int id = Editor::GetActionId();
             auto opts = Editor::GetOptions<ShapeOptions>(id);
             opts.Shape = val;
@@ -111,8 +124,8 @@ namespace Qounters {
             Editor::FinalizeAction();
         });
 
-        auto inc =
-            BSML::Lite::CreateIncrementSetting(parent, "Outline Width", 1, 0.1, options.OutlineWidth, true, false, 0.1, -1, Vector2(), [](float val) {
+        borderIncrement =
+            BSML::Lite::CreateIncrementSetting(parent, "Border Width", 1, 0.1, options.OutlineWidth, true, false, 0.1, -1, Vector2(), [](float val) {
                 static int id = Editor::GetActionId();
                 auto opts = Editor::GetOptions<ShapeOptions>(id);
                 opts.OutlineWidth = val;
@@ -120,10 +133,20 @@ namespace Qounters {
                 Editor::FinalizeAction();
             });
 
-        Utils::CreateDropdownEnum(parent, "Fill", options.Fill, FillStrings, [](int val) {
+        auto fillCollapse = Utils::CreateCollapseArea(parent, "Fill Options", collapseOpen);
+
+        auto directionDropdown = Utils::CreateDropdownEnum(parent, "Fill Direction", options.Fill, FillStrings, [](int val) {
             static int id = Editor::GetActionId();
             auto opts = Editor::GetOptions<ShapeOptions>(id);
             opts.Fill = val;
+            Editor::SetOptions(id, opts);
+            Editor::FinalizeAction();
+        });
+
+        auto inverseToggle = BSML::Lite::CreateToggle(parent, "Inverse Fill", options.Inverse, [](bool val) {
+            static int id = Editor::GetActionId();
+            auto opts = Editor::GetOptions<ShapeOptions>(id);
+            opts.Inverse = val;
             Editor::SetOptions(id, opts);
             Editor::FinalizeAction();
         });
@@ -144,13 +167,11 @@ namespace Qounters {
         sourceOptions = BSML::Lite::CreateVerticalLayoutGroup(parent);
         ShapeSource::CreateUI(sourceOptions->gameObject, options.FillSource, options.SourceOptions);
 
-        BSML::Lite::CreateToggle(parent, "Inverse Fill", options.Inverse, [](bool val) {
-            static int id = Editor::GetActionId();
-            auto opts = Editor::GetOptions<ShapeOptions>(id);
-            opts.Inverse = val;
-            Editor::SetOptions(id, opts);
-            Editor::FinalizeAction();
-        });
+        fillCollapse->SetContents({directionDropdown->transform->parent, inverseToggle, sourceDropdown->transform->parent, sourceOptions});
+        fillCollapse->onUpdate = [fillCollapse]() {
+            Qounters::OptionsViewController::UpdateScrollViewStatic();
+            collapseOpen = fillCollapse->open;
+        };
     }
 
     void CreateImageOptionsUI(GameObject* parent, ImageOptions const& options) {
@@ -189,6 +210,9 @@ namespace Qounters {
 
         currentImage = BSML::Lite::CreateImage(horizontal, currentSprite);
         currentImage->preserveAspect = true;
+        auto dims = currentImage->GetComponent<UI::LayoutElement*>();
+        dims->preferredWidth = -1;
+        dims->preferredHeight = 10;
 
         BSML::Lite::CreateUIButton(horizontal, "Select Image", []() { modal->Show(); });
     }

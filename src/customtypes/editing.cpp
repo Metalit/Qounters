@@ -9,6 +9,7 @@
 #include "UnityEngine/Time.hpp"
 #include "UnityEngine/UI/LayoutRebuilder.hpp"
 #include "VRUIControls/VRPointer.hpp"
+#include "bsml/shared/BSML/MainThreadScheduler.hpp"
 #include "config.hpp"
 #include "customtypes/settings.hpp"
 #include "editor.hpp"
@@ -182,17 +183,11 @@ void TextOutlineSizer::OnDisable() {
 }
 
 void TextOutlineSizer::SetLayoutHorizontal() {
-    if (settingLayout)
-        return;
-    settingLayout = true;
-    StartCoroutine(custom_types::Helpers::CoroutineHelper::New(SetLayout()));
+    SetLayout();
 }
 
 void TextOutlineSizer::SetLayoutVertical() {
-    if (settingLayout)
-        return;
-    settingLayout = true;
-    StartCoroutine(custom_types::Helpers::CoroutineHelper::New(SetLayout()));
+    SetLayout();
 }
 
 void TextOutlineSizer::OnRectTransformDimensionsChange() {
@@ -212,24 +207,25 @@ Outline* TextOutlineSizer::GetOutline() {
     return outline;
 }
 
-custom_types::Helpers::Coroutine TextOutlineSizer::SetLayout() {
-    co_yield nullptr;
-    settingLayout = false;
+void TextOutlineSizer::SetLayout() {
+    if (settingLayout)
+        return;
+    settingLayout = true;
 
-    if (!GetOutline())
-        co_return;
+    BSML::MainThreadScheduler::ScheduleNextFrame([this]() {
+        settingLayout = false;
 
-    auto outline = GetOutline();
+        auto outline = GetOutline();
+        if (!outline)
+            return;
 
-    auto bounds = text->bounds;
+        auto bounds = text->bounds;
+        if (text->text == "")
+            bounds = Bounds({0, 0, 0}, {0, 0, 0});
 
-    if (text->text == "")
-        bounds = Bounds({0, 0, 0}, {0, 0, 0});
-
-    outline->rectTransform->anchoredPosition = {bounds.m_Center.x, bounds.m_Center.y};
-    outline->SetBaseSize({bounds.m_Extents.x * 2, bounds.m_Extents.y * 2});
-
-    co_return;
+        outline->rectTransform->anchoredPosition = {bounds.m_Center.x, bounds.m_Center.y};
+        outline->SetBaseSize({bounds.m_Extents.x * 2, bounds.m_Extents.y * 2});
+    });
 }
 
 void GroupOutlineSizer::OnEnable() {
