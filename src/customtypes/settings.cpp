@@ -290,7 +290,7 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
         Qounters::SettingsFlowCoordinator::Save();
         Qounters::SettingsFlowCoordinator::OnModalConfirm();
     });
-    BSML::Lite::CreateUIButton(modalButtons, "Cancel", []() { Qounters::SettingsFlowCoordinator::OnModalCancel(); });
+    BSML::Lite::CreateUIButton(modalButtons, "Cancel", Qounters::SettingsFlowCoordinator::OnModalCancel);
 
     nameModal = BSML::Lite::CreateModal(this, {95, 20}, nullptr);
     auto modalLayout2 = BSML::Lite::CreateVerticalLayoutGroup(nameModal);

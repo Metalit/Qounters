@@ -9,6 +9,7 @@
 #include "HMUI/ButtonBinder.hpp"
 #include "HMUI/ScrollView.hpp"
 #include "System/Action.hpp"
+#include "UnityEngine/CanvasGroup.hpp"
 #include "UnityEngine/EventSystems/EventSystem.hpp"
 #include "UnityEngine/GameObject.hpp"
 #include "UnityEngine/Resources.hpp"
@@ -146,6 +147,8 @@ BSML::DropdownListSetting* Utils::CreateDropdownEnum(
         }
     });
     object->transform->parent->GetComponent<UnityEngine::UI::LayoutElement*>()->preferredHeight = 7;
+    if (auto behindModal = parent->GetComponentInParent<HMUI::ModalView*>(true))
+        AddModalAnimations(object->dropdown, behindModal);
     return object;
 }
 
@@ -208,6 +211,28 @@ Utils::CreateCollapseArea(UnityEngine::GameObject* parent, std::string title, bo
     // update colors
     ret->OnPointerExit(nullptr);
     return ret;
+}
+
+void AnimateModal(HMUI::ModalView* modal, bool out) {
+    auto bg = modal->transform->Find("BG")->GetComponent<UnityEngine::UI::Image*>();
+    auto canvas = modal->GetComponent<UnityEngine::CanvasGroup*>();
+
+    if (out) {
+        bg->color = {0.2, 0.2, 0.2, 1};
+        canvas->alpha = 0.9;
+    } else {
+        bg->color = {1, 1, 1, 1};
+        canvas->alpha = 1;
+    }
+}
+
+void Utils::AddModalAnimations(HMUI::SimpleTextDropdown* dropdown, HMUI::ModalView* behindModal) {
+    dropdown->_button->onClick->AddListener(BSML::MakeUnityAction([behindModal]() { AnimateModal(behindModal, true); }));
+    dropdown->add_didSelectCellWithIdxEvent(BSML::MakeSystemAction(
+        (std::function<void(UnityW<HMUI::DropdownWithTableView>, int)>) [behindModal](auto, int) { AnimateModal(behindModal, false); }
+    ));
+    dropdown->_modalView->add_blockerClickedEvent(BSML::MakeSystemAction([behindModal]() { AnimateModal(behindModal, false); }));
+    dropdown->_modalView->_animateParentCanvas = false;
 }
 
 void Utils::AddSliderEndDrag(BSML::SliderSetting* slider, std::function<void(float)> onEndDrag) {
