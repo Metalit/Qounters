@@ -150,8 +150,8 @@ namespace Qounters::Editor {
         runningUndo = false;
         disableActions = false;
         previewMode = false;
+        vrInput = Utils::GetCurrentInputModule();
         if (newEnvironment) {
-            vrInput = UnityEngine::Resources::FindObjectsOfTypeAll<VRUIControls::VRInputModule*>()->Last();
             SetupAnchors();
             CreateDragCanvases();
         }

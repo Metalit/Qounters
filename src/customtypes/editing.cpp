@@ -418,7 +418,7 @@ void EditingGroup::OnEndDragNormal(EventSystems::PointerEventData* eventData) {
 
 void EditingGroup::OnDragDetached(EventSystems::PointerEventData* eventData) {
     if (!cachedInputModule)
-        cachedInputModule = il2cpp_utils::try_cast<VRUIControls::VRInputModule>(eventData->currentInputModule.ptr()).value_or(nullptr);
+        cachedInputModule = eventData->currentInputModule.try_cast<VRUIControls::VRInputModule>().value_or(nullptr);
     if (!cachedInputModule)
         return;
     auto position = eventData->worldPosition;

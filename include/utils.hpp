@@ -6,6 +6,7 @@
 #include "UnityEngine/GameObject.hpp"
 #include "UnityEngine/Transform.hpp"
 #include "UnityEngine/UI/Toggle.hpp"
+#include "VRUIControls/VRInputModule.hpp"
 #include "bsml/shared/BSML/Components/Settings/ColorSetting.hpp"
 #include "bsml/shared/BSML/Components/Settings/DropdownListSetting.hpp"
 #include "bsml/shared/BSML/Components/Settings/IncrementSetting.hpp"
@@ -62,4 +63,6 @@ namespace Qounters::Utils {
     void FixScrollView(UnityEngine::GameObject* scrollView, float width);
     void SetScrollViewActive(UnityEngine::GameObject* scrollView, bool active);
     void RebuildWithScrollPosition(UnityEngine::GameObject* scrollView);
+
+    VRUIControls::VRInputModule* GetCurrentInputModule();
 }

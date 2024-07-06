@@ -203,7 +203,7 @@ void Qounters::PresentSettingsEnvironment() {
 
     menuEnvironment = Object::FindObjectOfType<MenuEnvironmentManager*>();
     songPreview = Object::FindObjectOfType<SongPreviewPlayer*>();
-    vrInput = Object::FindObjectOfType<VRUIControls::VRInputModule*>();
+    vrInput = Utils::GetCurrentInputModule();
     keyboardManager = Object::FindObjectOfType<UIKeyboardManager*>();
     menuEnv = GameObject::Find("MenuEnvironmentCore");
 
@@ -278,11 +278,11 @@ void OnMultiplayerSceneStart(MultiplayerController* multiplayerController) {
     GameObject::Find("MultiplayerOtherPlayersScoreDiffTextManager")->active = false;
     GameObject::Find("MultiplayerPositionHUD")->active = false;
 
-    auto activeObjects = GameObject::Find("IsActiveObjects")->transform;
-    Utils::FindRecursive(activeObjects, "Origin")->gameObject->active = false;
+    auto base = GameObject::Find("MultiplayerLocalActivePlayerController(Clone)/IsActiveObjects")->transform;
+    base->Find("LocalPlayerGameCore")->gameObject->active = false;
 
-    Utils::FindRecursive(activeObjects, "MenuControllers")->gameObject->active = true;
-    auto wrapper = Utils::FindRecursive(activeObjects, "MenuWrapper");
+    Utils::FindRecursive(base, "MenuControllers")->gameObject->active = true;
+    auto wrapper = Utils::FindRecursive(base, "MenuWrapper");
     wrapper->gameObject->active = true;
     wrapper->Find("Canvas")->gameObject->active = false;
 }
@@ -300,9 +300,10 @@ void Qounters::OnSceneStart(EnvironmentInfoSO* environment) {
     menuEnvironment->transform->root->gameObject->active = true;
     songPreview->CrossfadeToDefault();
     vrInput->gameObject->active = false;
+    vrInput->eventSystem->gameObject->active = false;
 
-    auto newInput = Resources::FindObjectsOfTypeAll<VRUIControls::VRInputModule*>()->FirstOrDefault([](auto x) { return x != vrInput; });
-
+    auto newInput = Utils::GetCurrentInputModule();
+    logger.debug("found new input module {}", fmt::ptr(newInput));
     if (newInput) {
         keyboardManager->_vrInputModule = newInput;
         keyboardManager->Start();
@@ -381,6 +382,7 @@ void Qounters::OnSceneEnd() {
     menuEnvironment->ShowEnvironmentType(MenuEnvironmentManager::MenuEnvironmentType::Default);
     songPreview->CrossfadeToDefault();
     vrInput->gameObject->active = true;
+    vrInput->eventSystem->gameObject->active = true;
     vrInput->_vrPointer->_leftVRController->gameObject->active = true;
     vrInput->_vrPointer->_rightVRController->gameObject->active = true;
     keyboardManager->OnDestroy();

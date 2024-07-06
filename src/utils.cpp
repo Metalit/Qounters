@@ -8,7 +8,9 @@
 #include "HMUI/ButtonBinder.hpp"
 #include "HMUI/ScrollView.hpp"
 #include "System/Action.hpp"
+#include "UnityEngine/EventSystems/EventSystem.hpp"
 #include "UnityEngine/GameObject.hpp"
+#include "UnityEngine/Resources.hpp"
 #include "UnityEngine/UI/LayoutRebuilder.hpp"
 #include "bsml/shared/BSML-Lite.hpp"
 #include "bsml/shared/BSML/Components/ScrollViewContent.hpp"
@@ -198,11 +200,11 @@ void Qounters::Utils::AddIncrementIncrement(BSML::IncrementSetting* setting, flo
     auto transform = setting->get_transform()->Find("ValuePicker").cast<UnityEngine::RectTransform>();
     transform->anchoredPosition = {-6, 0};
 
-    auto leftButton = BSML::Lite::CreateUIButton(transform, "", "DecButton", {-20, 0}, {6, 8}, [setting, increment](){
+    auto leftButton = BSML::Lite::CreateUIButton(transform, "", "DecButton", {-20, 0}, {6, 8}, [setting, increment]() {
         setting->currentValue -= increment;
         setting->EitherPressed();
     });
-    auto rightButton = BSML::Lite::CreateUIButton(transform, "", "IncButton", {7, 0}, {8, 8}, [setting, increment](){
+    auto rightButton = BSML::Lite::CreateUIButton(transform, "", "IncButton", {7, 0}, {8, 8}, [setting, increment]() {
         setting->currentValue += increment;
         setting->EitherPressed();
     });
@@ -226,7 +228,7 @@ UnityEngine::RectTransform* GetScrollViewTop(UnityEngine::GameObject* scrollView
 }
 
 void Qounters::Utils::FixScrollView(UnityEngine::GameObject* scrollView, float width) {
-    UnityEngine::Object::Destroy(scrollView->GetComponentInParent(csTypeOf(BSML::ScrollViewContent*), true));
+    UnityEngine::Object::Destroy(scrollView->GetComponentInParent<BSML::ScrollViewContent*>(true));
     scrollView->GetComponent<UnityEngine::UI::VerticalLayoutGroup*>()->spacing = 0;
     GetScrollViewTop(scrollView)->sizeDelta = {width - 100, 0};
     auto transform = scrollView->GetComponent<UnityEngine::RectTransform*>();
@@ -248,4 +250,17 @@ void Qounters::Utils::RebuildWithScrollPosition(UnityEngine::GameObject* scrollV
     UnityEngine::UI::LayoutRebuilder::ForceRebuildLayoutImmediate(scrollComponent->_contentRectTransform);
     scrollComponent->UpdateContentSize();
     scrollComponent->ScrollTo(std::min(scroll, scrollComponent->scrollableSize), false);
+}
+
+VRUIControls::VRInputModule* Qounters::Utils::GetCurrentInputModule() {
+    auto eventSystem = UnityEngine::EventSystems::EventSystem::get_current();
+    if (!eventSystem) {
+        auto eventSystems = UnityEngine::Resources::FindObjectsOfTypeAll<UnityEngine::EventSystems::EventSystem*>();
+        eventSystem = eventSystems->FirstOrDefault([](auto e) { return e->isActiveAndEnabled; });
+        if (!eventSystem)
+            eventSystem = eventSystems->FirstOrDefault();
+    }
+    if (!eventSystem)
+        return nullptr;
+    return eventSystem->GetComponent<VRUIControls::VRInputModule*>();
 }
