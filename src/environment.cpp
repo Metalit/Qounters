@@ -60,6 +60,7 @@
 #include "custom-types/shared/delegate.hpp"
 #include "customtypes/components.hpp"
 #include "customtypes/settings.hpp"
+#include "editor.hpp"
 #include "internals.hpp"
 #include "main.hpp"
 #include "qounters.hpp"
@@ -227,6 +228,7 @@ void Qounters::DismissSettingsEnvironment() {
     Reset();
 
     inSettings = false;
+    Editor::SetPreviewMode(false);
 
     DismissFlowCoordinator();
 

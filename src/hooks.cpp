@@ -27,6 +27,7 @@
 #include "config.hpp"
 #include "customtypes/components.hpp"
 #include "customtypes/settings.hpp"
+#include "editor.hpp"
 #include "environment.hpp"
 #include "events.hpp"
 #include "game.hpp"
@@ -337,6 +338,10 @@ MAKE_HOOK_MATCH(
 ) {
     if (blockOtherRaycasts && !raycastCanvases.contains(self->_canvas))
         return;
+    if (InSettingsEnvironment() && Editor::GetPreviewMode()) {
+        if (self->_canvas->name == "QounterGroup")
+            return;
+    }
 
     VRGraphicRaycaster_Raycast(self, eventData, resultAppendList);
 }

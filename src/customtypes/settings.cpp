@@ -267,7 +267,10 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
     snapToggle->transform->SetParent(snapIncrement->transform, false);
     UnityEngine::Object::Destroy(snapToggle->text->gameObject);
 
-    previewToggle = BSML::Lite::CreateToggle(vertical, "Preview Mode", false, Editor::SetPreviewMode);
+    previewToggle = BSML::Lite::CreateToggle(vertical, "Preview Mode", false, [this](bool value) {
+        Editor::SetPreviewMode(value);
+        undoButton->interactable = !value && Editor::HasUndo();
+    });
 
     confirmModal = BSML::Lite::CreateModal(this, {95, 25}, Qounters::SettingsFlowCoordinator::OnModalCancel);
     auto modalLayout1 = BSML::Lite::CreateVerticalLayoutGroup(confirmModal);
@@ -338,7 +341,7 @@ void SettingsViewController::UpdateUI() {
     if (!uiInitialized)
         return;
 
-    undoButton->interactable = Editor::HasUndo();
+    undoButton->interactable = !Editor::GetPreviewMode() && Editor::HasUndo();
 
     auto presets = getConfig().Presets.GetValue();
     auto preset = getConfig().Preset.GetValue();

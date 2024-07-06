@@ -105,7 +105,7 @@ void Utils::InstantSetToggle(BSML::ToggleSetting* toggle, bool value) {
     if (toggle->toggle->m_IsOn == value)
         return;
     toggle->toggle->m_IsOn = value;
-    auto animatedSwitch = toggle->GetComponent<HMUI::AnimatedSwitchView*>();
+    auto animatedSwitch = toggle->toggle->GetComponent<HMUI::AnimatedSwitchView*>();
     animatedSwitch->HandleOnValueChanged(value);
     animatedSwitch->_switchAmount = value;
     animatedSwitch->LerpPosition(value);
