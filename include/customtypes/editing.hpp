@@ -12,7 +12,6 @@
 #include "UnityEngine/UI/VertexHelper.hpp"
 #include "VRUIControls/VRInputModule.hpp"
 #include "config.hpp"
-#include "custom-types/shared/coroutine.hpp"
 #include "custom-types/shared/macros.hpp"
 #include "main.hpp"
 
@@ -67,6 +66,7 @@ DECLARE_CLASS_CODEGEN_INTERFACES(Qounters, TextOutlineSizer, UES::UIBehaviour, I
     DECLARE_OVERRIDE_METHOD_MATCH(void, SetLayoutVertical, &UUI::ILayoutController::SetLayoutVertical);
     DECLARE_OVERRIDE_METHOD_MATCH(void, OnRectTransformDimensionsChange, &UES::UIBehaviour::OnRectTransformDimensionsChange);
     DECLARE_INSTANCE_METHOD(void, SetDirty);
+    DECLARE_INSTANCE_METHOD(void, SetLayout);
 
     DECLARE_DEFAULT_CTOR();
 
@@ -79,8 +79,6 @@ DECLARE_CLASS_CODEGEN_INTERFACES(Qounters, TextOutlineSizer, UES::UIBehaviour, I
 
    private:
     Outline* outline = nullptr;
-
-    custom_types::Helpers::Coroutine SetLayout();
 )
 
 #undef INTERFACES

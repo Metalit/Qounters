@@ -8,11 +8,11 @@
 #include "HMUI/ScreenSystem.hpp"
 #include "UnityEngine/UI/ContentSizeFitter.hpp"
 #include "bsml/shared/BSML-Lite.hpp"
+#include "bsml/shared/BSML/MainThreadScheduler.hpp"
 #include "bsml/shared/Helpers/creation.hpp"
 #include "bsml/shared/Helpers/extension.hpp"
 #include "bsml/shared/Helpers/getters.hpp"
 #include "config.hpp"
-#include "custom-types/shared/coroutine.hpp"
 #include "custom-types/shared/delegate.hpp"
 #include "customtypes/components.hpp"
 #include "customtypes/editing.hpp"
@@ -286,7 +286,7 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
         Qounters::SettingsFlowCoordinator::Save();
         Qounters::SettingsFlowCoordinator::OnModalConfirm();
     });
-    BSML::Lite::CreateUIButton(modalButtons, "Cancel", [this]() { Qounters::SettingsFlowCoordinator::OnModalCancel(); });
+    BSML::Lite::CreateUIButton(modalButtons, "Cancel", []() { Qounters::SettingsFlowCoordinator::OnModalCancel(); });
 
     nameModal = BSML::Lite::CreateModal(this, {95, 20}, nullptr);
     auto modalLayout2 = BSML::Lite::CreateVerticalLayoutGroup(nameModal);
@@ -390,12 +390,6 @@ void TemplatesViewController::DidActivate(bool firstActivation, bool addedToHier
     uiInitialized = true;
 }
 
-custom_types::Helpers::Coroutine FitModalCoroutine(HMUI::ModalView* modal, RectTransform* modalLayout) {
-    co_yield nullptr;
-
-    modal->GetComponent<RectTransform*>()->sizeDelta = Vector2::op_Addition(modalLayout->sizeDelta, {5, 5});
-}
-
 void TemplatesViewController::ShowTemplateModal(int idx) {
     if (!uiInitialized)
         return;
@@ -407,7 +401,9 @@ void TemplatesViewController::ShowTemplateModal(int idx) {
     Utils::SetChildrenWidth(modalLayout, 75);
 
     modal->Show(true, true, nullptr);
-    modal->StartCoroutine(custom_types::Helpers::CoroutineHelper::New(FitModalCoroutine(modal, modalLayout)));
+    BSML::MainThreadScheduler::ScheduleNextFrame([this]() {
+        modal->GetComponent<RectTransform*>()->sizeDelta = Vector2::op_Addition(modalLayout->sizeDelta, {5, 5});
+    });
 }
 
 void TemplatesViewController::HideModal() {
@@ -435,7 +431,7 @@ void Qounters::OptionsViewController::DidActivate(bool firstActivation, bool add
 
     groupParent = BSML::Lite::CreateScrollView(this);
 
-    gPosIncrementX = BSML::Lite::CreateIncrementSetting(groupParent, "X Position", 1, 0.5, 0, [this](float val) {
+    gPosIncrementX = BSML::Lite::CreateIncrementSetting(groupParent, "X Position", 1, 0.5, 0, [](float val) {
         static int id = Editor::GetActionId();
         auto& group = Editor::GetSelectedGroup(id);
         if (group.Detached)
@@ -446,7 +442,7 @@ void Qounters::OptionsViewController::DidActivate(bool firstActivation, bool add
         Editor::FinalizeAction();
     });
     Utils::AddIncrementIncrement(gPosIncrementX, 5);
-    gPosIncrementY = BSML::Lite::CreateIncrementSetting(groupParent, "Y Position", 1, 0.5, 0, [this](float val) {
+    gPosIncrementY = BSML::Lite::CreateIncrementSetting(groupParent, "Y Position", 1, 0.5, 0, [](float val) {
         static int id = Editor::GetActionId();
         auto& group = Editor::GetSelectedGroup(id);
         if (group.Detached)
@@ -457,7 +453,7 @@ void Qounters::OptionsViewController::DidActivate(bool firstActivation, bool add
         Editor::FinalizeAction();
     });
     Utils::AddIncrementIncrement(gPosIncrementY, 5);
-    gPosIncrementZ = BSML::Lite::CreateIncrementSetting(groupParent, "Z Position", 1, 0.5, 0, [this](float val) {
+    gPosIncrementZ = BSML::Lite::CreateIncrementSetting(groupParent, "Z Position", 1, 0.5, 0, [](float val) {
         static int id = Editor::GetActionId();
         Editor::GetSelectedGroup(id).DetachedPosition.z = val;
         Editor::UpdatePosition(true);
@@ -465,7 +461,7 @@ void Qounters::OptionsViewController::DidActivate(bool firstActivation, bool add
     });
     Utils::AddIncrementIncrement(gPosIncrementZ, 5);
 
-    gRotSlider = BSML::Lite::CreateSliderSetting(groupParent, "Rotation", 1, 0, -180, 180, 0, [this](float val) {
+    gRotSlider = BSML::Lite::CreateSliderSetting(groupParent, "Rotation", 1, 0, -180, 180, 0, [](float val) {
         static int id = Editor::GetActionId();
         Editor::GetSelectedGroup(id).Rotation = val;
         Editor::UpdatePosition();
@@ -473,21 +469,21 @@ void Qounters::OptionsViewController::DidActivate(bool firstActivation, bool add
     Utils::AddSliderEndDrag(gRotSlider, [](float _) { Editor::FinalizeAction(); });
     gRotSlider->GetComponent<RectTransform*>()->sizeDelta = {0, 8};
 
-    gRotSliderX = BSML::Lite::CreateSliderSetting(groupParent, "X Rotation", 1, 0, -180, 180, 0, [this](float val) {
+    gRotSliderX = BSML::Lite::CreateSliderSetting(groupParent, "X Rotation", 1, 0, -180, 180, 0, [](float val) {
         static int id = Editor::GetActionId();
         Editor::GetSelectedGroup(id).DetachedRotation.x = val;
         Editor::UpdatePosition();
     });
     Utils::AddSliderEndDrag(gRotSliderX, [](float _) { Editor::FinalizeAction(); });
     gRotSliderX->GetComponent<RectTransform*>()->sizeDelta = {0, 8};
-    gRotSliderY = BSML::Lite::CreateSliderSetting(groupParent, "Y Rotation", 1, 0, -180, 180, 0, [this](float val) {
+    gRotSliderY = BSML::Lite::CreateSliderSetting(groupParent, "Y Rotation", 1, 0, -180, 180, 0, [](float val) {
         static int id = Editor::GetActionId();
         Editor::GetSelectedGroup(id).DetachedRotation.y = val;
         Editor::UpdatePosition();
     });
     Utils::AddSliderEndDrag(gRotSliderY, [](float _) { Editor::FinalizeAction(); });
     gRotSliderY->GetComponent<RectTransform*>()->sizeDelta = {0, 8};
-    gRotSliderZ = BSML::Lite::CreateSliderSetting(groupParent, "Z Rotation", 1, 0, -180, 180, 0, [this](float val) {
+    gRotSliderZ = BSML::Lite::CreateSliderSetting(groupParent, "Z Rotation", 1, 0, -180, 180, 0, [](float val) {
         static int id = Editor::GetActionId();
         Editor::GetSelectedGroup(id).DetachedRotation.z = val;
         Editor::UpdatePosition();
@@ -513,14 +509,14 @@ void Qounters::OptionsViewController::DidActivate(bool firstActivation, bool add
 
     componentParent = BSML::Lite::CreateScrollView(this);
 
-    cPosIncrementX = BSML::Lite::CreateIncrementSetting(componentParent, "Rel. X Position", 1, 0.5, 0, [this](float val) {
+    cPosIncrementX = BSML::Lite::CreateIncrementSetting(componentParent, "Rel. X Position", 1, 0.5, 0, [](float val) {
         static int id = Editor::GetActionId();
         Editor::GetSelectedComponent(id).Position.x = val;
         Editor::UpdatePosition(true);
         Editor::FinalizeAction();
     });
     Utils::AddIncrementIncrement(cPosIncrementX, 5);
-    cPosIncrementY = BSML::Lite::CreateIncrementSetting(componentParent, "Rel. Y Position", 1, 0.5, 0, [this](float val) {
+    cPosIncrementY = BSML::Lite::CreateIncrementSetting(componentParent, "Rel. Y Position", 1, 0.5, 0, [](float val) {
         static int id = Editor::GetActionId();
         Editor::GetSelectedComponent(id).Position.y = val;
         Editor::UpdatePosition(true);
@@ -528,7 +524,7 @@ void Qounters::OptionsViewController::DidActivate(bool firstActivation, bool add
     });
     Utils::AddIncrementIncrement(cPosIncrementY, 5);
 
-    cRotSlider = BSML::Lite::CreateSliderSetting(componentParent, "Relative Rotation", 1, 0, -180, 180, 0, [this](float val) {
+    cRotSlider = BSML::Lite::CreateSliderSetting(componentParent, "Relative Rotation", 1, 0, -180, 180, 0, [](float val) {
         static int id = Editor::GetActionId();
         Editor::GetSelectedComponent(id).Rotation = val;
         Editor::UpdatePosition();
@@ -543,7 +539,7 @@ void Qounters::OptionsViewController::DidActivate(bool firstActivation, bool add
     });
     Utils::AddSliderEndDrag(cScaleSliderX, [](float _) { Editor::FinalizeAction(); });
     cScaleSliderX->GetComponent<RectTransform*>()->sizeDelta = {0, 8};
-    cScaleSliderY = BSML::Lite::CreateSliderSetting(componentParent, "Y Scale", 0.01, 0, 0.01, 10, 0, [this](float val) {
+    cScaleSliderY = BSML::Lite::CreateSliderSetting(componentParent, "Y Scale", 0.01, 0, 0.01, 10, 0, [](float val) {
         static int id = Editor::GetActionId();
         Editor::GetSelectedComponent(id).Scale.y = val;
         Editor::UpdatePosition();
@@ -551,7 +547,7 @@ void Qounters::OptionsViewController::DidActivate(bool firstActivation, bool add
     Utils::AddSliderEndDrag(cScaleSliderY, [](float _) { Editor::FinalizeAction(); });
     cScaleSliderY->GetComponent<RectTransform*>()->sizeDelta = {0, 8};
 
-    cTypeDropdown = Utils::CreateDropdownEnum(componentParent, "Type", 0, TypeStrings, [this](int val) {
+    cTypeDropdown = Utils::CreateDropdownEnum(componentParent, "Type", 0, TypeStrings, [](int val) {
         static int id = Editor::GetActionId();
         Editor::GetSelectedComponent(id).Type = val;
         Editor::UpdateType();
@@ -586,7 +582,7 @@ void Qounters::OptionsViewController::DidActivate(bool firstActivation, bool add
         Editor::FinalizeAction();
     });
 
-    cInvertEnableToggle = BSML::Lite::CreateToggle(componentParent, "Invert Enabled", false, [this](bool val) {
+    cInvertEnableToggle = BSML::Lite::CreateToggle(componentParent, "Invert Enabled", false, [](bool val) {
         static int id = Editor::GetActionId();
         Editor::GetSelectedComponent(id).InvertEnable = val;
         Editor::UpdateEnableOptions();
@@ -599,7 +595,7 @@ void Qounters::OptionsViewController::DidActivate(bool firstActivation, bool add
     auto cButtonsParent = BSML::Lite::CreateHorizontalLayoutGroup(componentParent);
     cButtonsParent->spacing = 3;
 
-    cDeleteButton = BSML::Lite::CreateUIButton(cButtonsParent, "Delete", [this]() { Editor::Remove(); });
+    cDeleteButton = BSML::Lite::CreateUIButton(cButtonsParent, "Delete", Editor::Remove);
 
     cDeselectButton = BSML::Lite::CreateUIButton(cButtonsParent, "Deselect", Editor::Deselect);
 
@@ -607,7 +603,7 @@ void Qounters::OptionsViewController::DidActivate(bool firstActivation, bool add
 
     uiInitialized = true;
     UpdateUI();
-    StartCoroutine(custom_types::Helpers::CoroutineHelper::New(UpdateScrollView()));
+    BSML::MainThreadScheduler::ScheduleNextFrame(UpdateScrollViewStatic);
 }
 
 void Qounters::OptionsViewController::Deselect() {
@@ -626,6 +622,11 @@ void Qounters::OptionsViewController::ComponentSelected() {
     component = true;
     group = false;
     UpdateUI();
+}
+
+void Qounters::OptionsViewController::UpdateScrollView() {
+    if (uiInitialized && component)
+        Utils::RebuildWithScrollPosition(componentParent);
 }
 
 void Qounters::OptionsViewController::UpdateSimpleUI() {
@@ -719,6 +720,11 @@ Qounters::OptionsViewController* Qounters::OptionsViewController::GetInstance() 
     if (!instance)
         instance = BSML::Helpers::CreateViewController<Qounters::OptionsViewController*>();
     return instance;
+}
+
+void Qounters::OptionsViewController::UpdateScrollViewStatic() {
+    if (instance)
+        instance->UpdateScrollView();
 }
 
 void Qounters::OptionsViewController::OnDestroy() {

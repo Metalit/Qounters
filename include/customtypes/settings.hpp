@@ -112,6 +112,7 @@ DECLARE_CLASS_CODEGEN(Qounters, OptionsViewController, HMUI::ViewController,
     DECLARE_INSTANCE_METHOD(void, GroupSelected);
     DECLARE_INSTANCE_METHOD(void, ComponentSelected);
 
+    DECLARE_INSTANCE_METHOD(void, UpdateScrollView);
     DECLARE_INSTANCE_METHOD(void, UpdateSimpleUI);
     DECLARE_INSTANCE_METHOD(void, UpdateUI);
     DECLARE_INSTANCE_METHOD(void, UpdateTypeOptions);
@@ -155,12 +156,11 @@ DECLARE_CLASS_CODEGEN(Qounters, OptionsViewController, HMUI::ViewController,
     DECLARE_INSTANCE_FIELD(UnityEngine::UI::VerticalLayoutGroup*, cEnableSourceOptions);
 
     DECLARE_STATIC_METHOD(Qounters::OptionsViewController*, GetInstance);
+    DECLARE_STATIC_METHOD(void, UpdateScrollViewStatic);
 
     DECLARE_INSTANCE_METHOD(void, OnDestroy);
 
    private:
-    custom_types::Helpers::Coroutine UpdateScrollView();
-
     static inline Qounters::OptionsViewController* instance = nullptr;
 )
 

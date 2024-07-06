@@ -5,6 +5,7 @@
 
 #include "GlobalNamespace/BeatmapCharacteristicSO.hpp"
 #include "GlobalNamespace/BeatmapDifficulty.hpp"
+#include "HMUI/AnimatedSwitchView.hpp"
 #include "HMUI/ButtonBinder.hpp"
 #include "HMUI/ScrollView.hpp"
 #include "System/Action.hpp"
@@ -14,14 +15,16 @@
 #include "UnityEngine/UI/LayoutRebuilder.hpp"
 #include "bsml/shared/BSML-Lite.hpp"
 #include "bsml/shared/BSML/Components/ScrollViewContent.hpp"
-#include "custom-types/shared/delegate.hpp"
+#include "bsml/shared/Helpers/delegates.hpp"
+#include "bsml/shared/Helpers/utilities.hpp"
+#include "customtypes/editing.hpp"
 #include "customtypes/settings.hpp"
 #include "main.hpp"
 
 using namespace GlobalNamespace;
 using namespace Qounters;
 
-std::string Qounters::Utils::FormatDecimals(double num, int decimals) {
+std::string Utils::FormatDecimals(double num, int decimals) {
     if (decimals < 0)
         decimals = 0;
     std::stringstream stream;
@@ -29,7 +32,7 @@ std::string Qounters::Utils::FormatDecimals(double num, int decimals) {
     return stream.str();
 }
 
-std::string Qounters::Utils::SecondsToString(int value) {
+std::string Utils::SecondsToString(int value) {
     int minutes = value / 60;
     int seconds = value - minutes * 60;
 
@@ -41,14 +44,14 @@ std::string Qounters::Utils::SecondsToString(int value) {
     return minutesString + ":" + secondsString;
 }
 
-std::tuple<std::string, std::string, int> Qounters::Utils::GetBeatmapDetails(BeatmapKey beatmap) {
+std::tuple<std::string, std::string, int> Utils::GetBeatmapDetails(BeatmapKey beatmap) {
     std::string id = beatmap.levelId;
     std::string characteristic = beatmap.beatmapCharacteristic->serializedName;
     int difficulty = (int) beatmap.difficulty;
     return {id, characteristic, difficulty};
 }
 
-std::string Qounters::Utils::GetBeatmapIdentifier(BeatmapKey beatmap) {
+std::string Utils::GetBeatmapIdentifier(BeatmapKey beatmap) {
     if (!beatmap.IsValid())
         return "Unknown";
     auto [id, characteristic, difficulty] = GetBeatmapDetails(beatmap);
@@ -73,12 +76,12 @@ void DisableAllBut(UnityEngine::Transform* original, UnityEngine::Transform* sou
     }
 }
 
-void Qounters::Utils::DisableAllBut(UnityEngine::Transform* parent, std::set<std::string> enabled, std::set<std::string> disabled) {
+void Utils::DisableAllBut(UnityEngine::Transform* parent, std::set<std::string> enabled, std::set<std::string> disabled) {
     if (!enabled.contains(parent->name))
         DisableAllBut(parent, parent, enabled, disabled);
 }
 
-UnityEngine::Transform* Qounters::Utils::FindRecursive(UnityEngine::Transform* parent, std::string name) {
+UnityEngine::Transform* Utils::FindRecursive(UnityEngine::Transform* parent, std::string name) {
     for (int i = 0; i < parent->GetChildCount(); i++) {
         auto child = parent->GetChild(i);
         if (child->name == name)
@@ -92,15 +95,13 @@ UnityEngine::Transform* Qounters::Utils::FindRecursive(UnityEngine::Transform* p
     return nullptr;
 }
 
-std::string Qounters::Utils::GetTransformPath(UnityEngine::Transform* parent, UnityEngine::Transform* child) {
+std::string Utils::GetTransformPath(UnityEngine::Transform* parent, UnityEngine::Transform* child) {
     if (parent == child || !child->IsChildOf(parent))
         return "";
     return GetTransformPath(parent, child->parent) + "/" + static_cast<std::string>(child->name);
 }
 
-#include "HMUI/AnimatedSwitchView.hpp"
-
-void Qounters::Utils::InstantSetToggle(BSML::ToggleSetting* toggle, bool value) {
+void Utils::InstantSetToggle(BSML::ToggleSetting* toggle, bool value) {
     if (toggle->toggle->m_IsOn == value)
         return;
     toggle->toggle->m_IsOn = value;
@@ -111,7 +112,7 @@ void Qounters::Utils::InstantSetToggle(BSML::ToggleSetting* toggle, bool value) 
     animatedSwitch->LerpColors(value, animatedSwitch->_highlightAmount, animatedSwitch->_disabledAmount);
 }
 
-void Qounters::Utils::SetDropdownValue(BSML::DropdownListSetting* dropdown, std::string value) {
+void Utils::SetDropdownValue(BSML::DropdownListSetting* dropdown, std::string value) {
     auto values = ListW<StringW>(dropdown->values);
     for (int i = 0; i < values.size(); i++) {
         if (values[i] == value) {
@@ -121,7 +122,7 @@ void Qounters::Utils::SetDropdownValue(BSML::DropdownListSetting* dropdown, std:
     }
 }
 
-BSML::DropdownListSetting* Qounters::Utils::CreateDropdown(
+BSML::DropdownListSetting* Utils::CreateDropdown(
     UnityEngine::GameObject* parent,
     std::string name,
     std::string value,
@@ -133,7 +134,7 @@ BSML::DropdownListSetting* Qounters::Utils::CreateDropdown(
     return object;
 }
 
-BSML::DropdownListSetting* Qounters::Utils::CreateDropdownEnum(
+BSML::DropdownListSetting* Utils::CreateDropdownEnum(
     UnityEngine::GameObject* parent, std::string name, int value, std::vector<std::string_view> values, std::function<void(int)> onChange
 ) {
     auto object = BSML::Lite::CreateDropdown(parent, name, values[value], values, [onChange, values](StringW value) {
@@ -148,7 +149,7 @@ BSML::DropdownListSetting* Qounters::Utils::CreateDropdownEnum(
     return object;
 }
 
-BSML::ColorSetting* Qounters::Utils::CreateColorPicker(
+BSML::ColorSetting* Utils::CreateColorPicker(
     UnityEngine::GameObject* parent,
     std::string name,
     UnityEngine::Color value,
@@ -173,7 +174,7 @@ BSML::ColorSetting* Qounters::Utils::CreateColorPicker(
     wheel->anchoredPosition = {0, -10};
     preview->anchoredPosition = {17, -27};
     auto modalView = ret->modalColorPicker->modalView;
-    modalView->add_blockerClickedEvent(custom_types::MakeDelegate<System::Action*>((std::function<void()>) [ ret, modalView, onClose ]() {
+    modalView->add_blockerClickedEvent(BSML::MakeSystemAction([ret, modalView, onClose]() {
         modalView->Hide();
         ret->currentColor = ret->modalColorPicker->currentColor;
         onClose();
@@ -181,22 +182,22 @@ BSML::ColorSetting* Qounters::Utils::CreateColorPicker(
     return ret;
 }
 
-void Qounters::Utils::AddSliderEndDrag(BSML::SliderSetting* slider, std::function<void(float)> onEndDrag) {
+void Utils::AddSliderEndDrag(BSML::SliderSetting* slider, std::function<void(float)> onEndDrag) {
     std::function<void()> boundCallback = [slider, onEndDrag]() {
         onEndDrag(slider->slider->value);
     };
     GetOrAddComponent<EndDragHandler*>(slider->slider)->callback = boundCallback;
 }
 
-void Qounters::Utils::AddStringSettingOnClose(HMUI::InputFieldView* input, std::function<void(std::string)> onKeyboardClosed) {
+void Utils::AddStringSettingOnClose(HMUI::InputFieldView* input, std::function<void(std::string)> onKeyboardClosed) {
     std::function<void()> boundCallback = [input, onKeyboardClosed]() {
         onKeyboardClosed(input->text);
     };
     GetOrAddComponent<KeyboardCloseHandler*>(input)->closeCallback = boundCallback;
-    input->_buttonBinder->AddBinding(input->_clearSearchButton, custom_types::MakeDelegate<System::Action*>(boundCallback));
+    input->_buttonBinder->AddBinding(input->_clearSearchButton, BSML::MakeSystemAction(boundCallback));
 }
 
-void Qounters::Utils::AddIncrementIncrement(BSML::IncrementSetting* setting, float increment) {
+void Utils::AddIncrementIncrement(BSML::IncrementSetting* setting, float increment) {
     auto transform = setting->get_transform()->Find("ValuePicker").cast<UnityEngine::RectTransform>();
     transform->anchoredPosition = {-6, 0};
 
@@ -210,7 +211,7 @@ void Qounters::Utils::AddIncrementIncrement(BSML::IncrementSetting* setting, flo
     });
 }
 
-void Qounters::Utils::SetChildrenWidth(UnityEngine::Transform* parent, float width) {
+void Utils::SetChildrenWidth(UnityEngine::Transform* parent, float width) {
     for (int i = 0; i < parent->GetChildCount(); i++) {
         bool first = true;
         for (auto layout : parent->GetChild(i)->GetComponents<UnityEngine::UI::LayoutElement*>()) {
@@ -227,7 +228,7 @@ UnityEngine::RectTransform* GetScrollViewTop(UnityEngine::GameObject* scrollView
     return scrollView->transform->parent->parent->parent->GetComponent<UnityEngine::RectTransform*>();
 }
 
-void Qounters::Utils::FixScrollView(UnityEngine::GameObject* scrollView, float width) {
+void Utils::FixScrollView(UnityEngine::GameObject* scrollView, float width) {
     UnityEngine::Object::Destroy(scrollView->GetComponentInParent<BSML::ScrollViewContent*>(true));
     scrollView->GetComponent<UnityEngine::UI::VerticalLayoutGroup*>()->spacing = 0;
     GetScrollViewTop(scrollView)->sizeDelta = {width - 100, 0};
@@ -238,11 +239,11 @@ void Qounters::Utils::FixScrollView(UnityEngine::GameObject* scrollView, float w
     content->sizeDelta = {0, 74};
 }
 
-void Qounters::Utils::SetScrollViewActive(UnityEngine::GameObject* scrollView, bool active) {
+void Utils::SetScrollViewActive(UnityEngine::GameObject* scrollView, bool active) {
     GetScrollViewTop(scrollView)->gameObject->active = active;
 }
 
-void Qounters::Utils::RebuildWithScrollPosition(UnityEngine::GameObject* scrollView) {
+void Utils::RebuildWithScrollPosition(UnityEngine::GameObject* scrollView) {
     auto scrollComponent = GetScrollViewTop(scrollView)->GetComponent<HMUI::ScrollView*>();
     auto scroll = scrollComponent->position;
     // ew
@@ -252,7 +253,7 @@ void Qounters::Utils::RebuildWithScrollPosition(UnityEngine::GameObject* scrollV
     scrollComponent->ScrollTo(std::min(scroll, scrollComponent->scrollableSize), false);
 }
 
-VRUIControls::VRInputModule* Qounters::Utils::GetCurrentInputModule() {
+VRUIControls::VRInputModule* Utils::GetCurrentInputModule() {
     auto eventSystem = UnityEngine::EventSystems::EventSystem::get_current();
     if (!eventSystem) {
         auto eventSystems = UnityEngine::Resources::FindObjectsOfTypeAll<UnityEngine::EventSystems::EventSystem*>();

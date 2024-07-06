@@ -99,10 +99,12 @@ EnvironmentInfoSO* GetEnvironment(SimpleLevelStarter* levelStarter) {
     return ret;
 }
 
+inline System::Action_1<Zenject::DiContainer*>* MakeAction(std::function<void(Zenject::DiContainer*)> callback) {
+    return custom_types::MakeDelegate<System::Action_1<Zenject::DiContainer*>*>(callback);
+}
+
 void Present(SimpleLevelStarter* levelStarter, bool refresh, ScenesTransitionSetupDataSO* setupData, EnvironmentInfoSO* environment = nullptr) {
-    auto startDelegate = custom_types::MakeDelegate<System::Action_1<Zenject::DiContainer*>*>(
-        (std::function<void(Zenject::DiContainer*)>) [environment](Zenject::DiContainer*) { Qounters::OnSceneStart(environment); }
-    );
+    auto startDelegate = MakeAction([environment](Zenject::DiContainer*) { Qounters::OnSceneStart(environment); });
 
     if (refresh)
         levelStarter->_gameScenesManager->ReplaceScenes(setupData, nullptr, 0.25, nullptr, startDelegate);
@@ -228,10 +230,7 @@ void Qounters::DismissSettingsEnvironment() {
 
     DismissFlowCoordinator();
 
-    auto endDelegate =
-        custom_types::MakeDelegate<System::Action_1<Zenject::DiContainer*>*>((std::function<void(Zenject::DiContainer*)>) [](Zenject::DiContainer*) {
-            Qounters::OnSceneEnd();
-        });
+    auto endDelegate = MakeAction([](Zenject::DiContainer*) { Qounters::OnSceneEnd(); });
     GetLevelStarter()->_gameScenesManager->PopScenes(0.25, nullptr, endDelegate);
 }
 
