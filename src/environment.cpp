@@ -42,6 +42,8 @@
 #include "GlobalNamespace/StandardLevelScenesTransitionSetupDataSO.hpp"
 #include "GlobalNamespace/UIKeyboardManager.hpp"
 #include "GlobalNamespace/VRRenderingParamsSetup.hpp"
+#include "HMUI/CurvedCanvasSettings.hpp"
+#include "HMUI/ScreenSystem.hpp"
 #include "HMUI/ViewController.hpp"
 #include "System/Action_1.hpp"
 #include "System/Collections/Generic/Dictionary_2.hpp"
@@ -78,6 +80,7 @@ GameObject* menuEnv;
 bool inSettings = false;
 std::string currentEnvironment = "";
 std::string currentColors = "";
+float screensRadius = -1;
 
 SimpleLevelStarter* GetLevelStarter() {
     return Resources::FindObjectsOfTypeAll<SimpleLevelStarter*>()->Last();
@@ -220,6 +223,8 @@ void DismissFlowCoordinator() {
     auto mainFlow = GameObject::Find("MainFlowCoordinator")->GetComponent<HMUI::FlowCoordinator*>();
     auto settingsFlow = Qounters::SettingsFlowCoordinator::GetInstance();
     mainFlow->DismissFlowCoordinator(settingsFlow, HMUI::ViewController::AnimationDirection::Horizontal, nullptr, true);
+    if (screensRadius > 0)
+        mainFlow->_screenSystem->mainScreen->GetComponentInParent<HMUI::CurvedCanvasSettings*>()->SetRadius(screensRadius);
 }
 
 void Qounters::DismissSettingsEnvironment() {
@@ -316,8 +321,12 @@ void Qounters::OnSceneStart(EnvironmentInfoSO* environment) {
 
     auto mainFlow = GameObject::Find("MainFlowCoordinator")->GetComponent<HMUI::FlowCoordinator*>();
     auto settingsFlow = Qounters::SettingsFlowCoordinator::GetInstance();
-    if (!mainFlow->IsFlowCoordinatorInHierarchy(settingsFlow))
+    if (!mainFlow->IsFlowCoordinatorInHierarchy(settingsFlow)) {
         mainFlow->PresentFlowCoordinator(settingsFlow, nullptr, HMUI::ViewController::AnimationDirection::Horizontal, true, false);
+        auto curveSettings = mainFlow->_screenSystem->mainScreen->GetComponentInParent<HMUI::CurvedCanvasSettings*>();
+        screensRadius = curveSettings->_radius;
+        curveSettings->SetRadius(110);
+    }
 
     logger.debug("Fixing environment lighting");
 
