@@ -495,7 +495,7 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
     });
     Utils::AddIncrementIncrement(gPosIncrementZ, 5);
 
-    gRotSlider = BSML::Lite::CreateSliderSetting(groupParent, "Rotation", 1, 0, -180, 180, 0, [](float val) {
+    gRotSlider = BSML::Lite::CreateSliderSetting(groupParent, "Rotation", 1, 0, -180, 180, 0, true, {0, 0}, [](float val) {
         static int id = Editor::GetActionId();
         Editor::GetSelectedGroup(id).Rotation = val;
         Editor::UpdatePosition();
@@ -503,21 +503,21 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
     Utils::AddSliderEndDrag(gRotSlider, [](float _) { Editor::FinalizeAction(); });
     gRotSlider->GetComponent<RectTransform*>()->sizeDelta = {0, 8};
 
-    gRotSliderX = BSML::Lite::CreateSliderSetting(groupParent, "X Rotation", 1, 0, -180, 180, 0, [](float val) {
+    gRotSliderX = BSML::Lite::CreateSliderSetting(groupParent, "X Rotation", 1, 0, -180, 180, 0, true, {0, 0}, [](float val) {
         static int id = Editor::GetActionId();
         Editor::GetSelectedGroup(id).DetachedRotation.x = val;
         Editor::UpdatePosition();
     });
     Utils::AddSliderEndDrag(gRotSliderX, [](float _) { Editor::FinalizeAction(); });
     gRotSliderX->GetComponent<RectTransform*>()->sizeDelta = {0, 8};
-    gRotSliderY = BSML::Lite::CreateSliderSetting(groupParent, "Y Rotation", 1, 0, -180, 180, 0, [](float val) {
+    gRotSliderY = BSML::Lite::CreateSliderSetting(groupParent, "Y Rotation", 1, 0, -180, 180, 0, true, {0, 0}, [](float val) {
         static int id = Editor::GetActionId();
         Editor::GetSelectedGroup(id).DetachedRotation.y = val;
         Editor::UpdatePosition();
     });
     Utils::AddSliderEndDrag(gRotSliderY, [](float _) { Editor::FinalizeAction(); });
     gRotSliderY->GetComponent<RectTransform*>()->sizeDelta = {0, 8};
-    gRotSliderZ = BSML::Lite::CreateSliderSetting(groupParent, "Z Rotation", 1, 0, -180, 180, 0, [](float val) {
+    gRotSliderZ = BSML::Lite::CreateSliderSetting(groupParent, "Z Rotation", 1, 0, -180, 180, 0, true, {0, 0}, [](float val) {
         static int id = Editor::GetActionId();
         Editor::GetSelectedGroup(id).DetachedRotation.z = val;
         Editor::UpdatePosition();
@@ -560,7 +560,7 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
     });
     Utils::AddIncrementIncrement(cPosIncrementY, 5);
 
-    cRotSlider = BSML::Lite::CreateSliderSetting(componentParent, "Relative Rotation", 1, 0, -180, 180, 0, [](float val) {
+    cRotSlider = BSML::Lite::CreateSliderSetting(componentParent, "Relative Rotation", 1, 0, -180, 180, 0, true, {0, 0}, [](float val) {
         static int id = Editor::GetActionId();
         Editor::GetSelectedComponent(id).Rotation = val;
         Editor::UpdatePosition();
@@ -568,14 +568,14 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
     Utils::AddSliderEndDrag(cRotSlider, [](float _) { Editor::FinalizeAction(); });
     cRotSlider->GetComponent<RectTransform*>()->sizeDelta = {0, 8};
 
-    cScaleSliderX = BSML::Lite::CreateSliderSetting(componentParent, "X Scale", 0.01, 0, 0.01, 10, 0, [](float val) {
+    cScaleSliderX = BSML::Lite::CreateSliderSetting(componentParent, "X Scale", 0.01, 0, 0.01, 10, 0, true, {0, 0}, [](float val) {
         static int id = Editor::GetActionId();
         Editor::GetSelectedComponent(id).Scale.x = val;
         Editor::UpdatePosition();
     });
     Utils::AddSliderEndDrag(cScaleSliderX, [](float _) { Editor::FinalizeAction(); });
     cScaleSliderX->GetComponent<RectTransform*>()->sizeDelta = {0, 8};
-    cScaleSliderY = BSML::Lite::CreateSliderSetting(componentParent, "Y Scale", 0.01, 0, 0.01, 10, 0, [](float val) {
+    cScaleSliderY = BSML::Lite::CreateSliderSetting(componentParent, "Y Scale", 0.01, 0, 0.01, 10, 0, true, {0, 0}, [](float val) {
         static int id = Editor::GetActionId();
         Editor::GetSelectedComponent(id).Scale.y = val;
         Editor::UpdatePosition();
