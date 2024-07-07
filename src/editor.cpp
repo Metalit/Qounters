@@ -64,6 +64,7 @@ namespace Qounters::Editor {
 
     int prevSelectedGroupIdx, prevSelectedComponentIdx;
     EditingBase* prevSelected;
+    bool tempSelectIsReal;
 
     void TempSelect(int groupIdx, int componentIdx) {
         prevSelectedGroupIdx = selectedGroupIdx;
@@ -72,11 +73,13 @@ namespace Qounters::Editor {
         selectedGroupIdx = groupIdx;
         selectedComponentIdx = componentIdx;
         selected = editing[{groupIdx, componentIdx}];
+        tempSelectIsReal = prevSelected == selected;
     }
     void EndTempSelect() {
         selectedGroupIdx = prevSelectedGroupIdx;
         selectedComponentIdx = prevSelectedComponentIdx;
-        selected = prevSelected;
+        if (!tempSelectIsReal)
+            selected = prevSelected;
         prevSelected = nullptr;
     }
 
@@ -284,12 +287,11 @@ namespace Qounters::Editor {
     }
 
     void Deselect() {
-        if (runningUndo && selected != prevSelected)
+        if (runningUndo && !tempSelectIsReal)
             return;
         if (selected)
             selected->Deselect();
         selected = nullptr;
-        prevSelected = nullptr;
 
         SettingsFlowCoordinator::PresentTemplates();
     }
@@ -420,8 +422,6 @@ namespace Qounters::Editor {
         UnityEngine::Object::Destroy(remove->gameObject);
         if (remove == selected)
             selected = nullptr;
-        if (remove == prevSelected)
-            prevSelected = nullptr;
     }
 
     void Remove() {
@@ -482,7 +482,7 @@ namespace Qounters::Editor {
             SetDefaultOptions(component);
         CreateQounterComponent(component, selectedComponentIdx, editing[{selectedGroupIdx, -1}]->transform, true);
 
-        if (!runningUndo) {
+        if (!runningUndo || tempSelectIsReal) {
             selected = editing[{selectedGroupIdx, selectedComponentIdx}];
             selected->Select();
             OptionsViewController::GetInstance()->UpdateUI();
