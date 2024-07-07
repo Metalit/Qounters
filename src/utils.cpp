@@ -224,6 +224,7 @@ MenuDragger* Utils::CreateMenuDragger(UnityEngine::GameObject* parent, bool isLe
     rect->anchorMax = {0.5, 0.5};
     rect->anchoredPosition = {0, 44};
     rect->sizeDelta = {42, 3};
+    SetCanvasSorting(padding, 5);
     auto drag = BSML::Lite::CreateCanvas();
     drag->name = "QountersMenuDragCanvas";
     drag->AddComponent<CanvasHighlight*>();
@@ -320,7 +321,7 @@ UnityEngine::RectTransform* GetScrollViewTop(UnityEngine::GameObject* scrollView
 void Utils::FixScrollView(UnityEngine::GameObject* scrollView, float width) {
     UnityEngine::Object::Destroy(scrollView->GetComponentInParent<BSML::ScrollViewContent*>(true));
     scrollView->GetComponent<UnityEngine::UI::VerticalLayoutGroup*>()->spacing = 0;
-    GetScrollViewTop(scrollView)->sizeDelta = {width - 100, -5};
+    GetScrollViewTop(scrollView)->sizeDelta = {width - 80, -10};
     auto transform = scrollView->GetComponent<UnityEngine::RectTransform*>();
     transform->sizeDelta = {width, 74};
     SetChildrenWidth(transform, width);
@@ -340,6 +341,12 @@ void Utils::RebuildWithScrollPosition(UnityEngine::GameObject* scrollView) {
     UnityEngine::UI::LayoutRebuilder::ForceRebuildLayoutImmediate(scrollComponent->_contentRectTransform);
     scrollComponent->UpdateContentSize();
     scrollComponent->ScrollTo(std::min(scroll, scrollComponent->scrollableSize), false);
+}
+
+void Utils::SetCanvasSorting(UnityEngine::GameObject* canvas, int value) {
+    auto comp = canvas->GetComponent<UnityEngine::Canvas*>();
+    comp->overrideSorting = true;
+    comp->sortingOrder = value;
 }
 
 VRUIControls::VRInputModule* Utils::GetCurrentInputModule() {

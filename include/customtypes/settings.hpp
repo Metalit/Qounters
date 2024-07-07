@@ -132,7 +132,7 @@ DECLARE_CLASS_CODEGEN(Qounters, OptionsViewController, HMUI::ViewController,
     DECLARE_INSTANCE_FIELD_DEFAULT(bool, group, false);
     DECLARE_INSTANCE_FIELD_DEFAULT(bool, component, false);
 
-    DECLARE_INSTANCE_FIELD(UnityEngine::GameObject*, groupParent);
+    DECLARE_INSTANCE_FIELD(UnityEngine::UI::VerticalLayoutGroup*, groupParent);
     DECLARE_INSTANCE_FIELD(UnityEngine::GameObject*, componentParent);
     DECLARE_INSTANCE_FIELD(UnityEngine::UI::HorizontalLayoutGroup*, cButtonsParent);
 

@@ -68,6 +68,7 @@ namespace Qounters::Utils {
     void FixScrollView(UnityEngine::GameObject* scrollView, float width);
     void SetScrollViewActive(UnityEngine::GameObject* scrollView, bool active);
     void RebuildWithScrollPosition(UnityEngine::GameObject* scrollView);
+    void SetCanvasSorting(UnityEngine::GameObject* canvas, int value);
 
     VRUIControls::VRInputModule* GetCurrentInputModule();
 }

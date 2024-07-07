@@ -12,6 +12,7 @@
 #include "System/Single.hpp"
 #include "UnityEngine/UI/ContentSizeFitter.hpp"
 #include "bsml/shared/BSML-Lite.hpp"
+#include "bsml/shared/BSML/Components/Backgroundable.hpp"
 #include "bsml/shared/BSML/MainThreadScheduler.hpp"
 #include "bsml/shared/Helpers/creation.hpp"
 #include "bsml/shared/Helpers/extension.hpp"
@@ -41,6 +42,15 @@ DEFINE_TYPE(Qounters, SpritesListSource);
 
 using namespace UnityEngine;
 using namespace Qounters;
+
+void AddBackground(HMUI::ViewController* self, Vector2 size) {
+    auto bg = self->gameObject->AddComponent<BSML::Backgroundable*>();
+    bg->ApplyBackground("round-rect-panel");
+    bg->background->raycastTarget = true;
+    self->rectTransform->anchorMin = {0.5, 0.5};
+    self->rectTransform->anchorMax = {0.5, 0.5};
+    self->rectTransform->sizeDelta = size;
+}
 
 void SettingsFlowCoordinator::DidActivate(bool firstActivation, bool addedToHierarchy, bool screenSystemEnabling) {
     if (addedToHierarchy) {
@@ -237,10 +247,14 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
     }
     std::vector<std::string_view> dropdownStringViews{dropdownStrings.begin(), dropdownStrings.end()};
 
+    AddBackground(this, {110, 88});
+    Utils::SetCanvasSorting(gameObject, 4);
+
     auto vertical = BSML::Lite::CreateVerticalLayoutGroup(this);
     vertical->childControlHeight = false;
     vertical->childForceExpandHeight = false;
     vertical->spacing = 1;
+    vertical->rectTransform->anchoredPosition = {0, -4};
 
     auto buttons1 = BSML::Lite::CreateHorizontalLayoutGroup(vertical);
     buttons1->GetComponent<UI::LayoutElement*>()->preferredHeight = 9;
@@ -397,6 +411,8 @@ void TemplatesViewController::DidActivate(bool firstActivation, bool addedToHier
     if (!firstActivation)
         return;
 
+    AddBackground(this, {50, 88});
+
     list = BSML::Lite::CreateScrollableList(transform, {50, 80}, [this](int idx) {
         list->tableView->ClearSelection();
         ShowTemplateModal(idx);
@@ -463,7 +479,12 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
         return;
     }
 
-    groupParent = BSML::Lite::CreateScrollView(this);
+    AddBackground(this, {95, 88});
+
+    groupParent = BSML::Lite::CreateVerticalLayoutGroup(this);
+    groupParent->childForceExpandHeight = false;
+    groupParent->childControlHeight = false;
+    groupParent->rectTransform->anchoredPosition = {0, -4};
 
     gPosIncrementX = BSML::Lite::CreateIncrementSetting(groupParent, "X Position", 1, 0.5, 0, [](float val) {
         static int id = Editor::GetActionId();
@@ -539,7 +560,7 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
 
     gDeselectButton = BSML::Lite::CreateUIButton(gButtonsParent2, "Deselect", Editor::Deselect);
 
-    Utils::FixScrollView(groupParent, 75);
+    Utils::SetChildrenWidth(groupParent->transform, 85);
 
     componentParent = BSML::Lite::CreateScrollView(this);
 
@@ -694,7 +715,7 @@ void OptionsViewController::UpdateSimpleUI() {
     if (!uiInitialized)
         return;
 
-    Utils::SetScrollViewActive(groupParent, group);
+    groupParent->gameObject->active = group;
     Utils::SetScrollViewActive(componentParent, component);
     cButtonsParent->gameObject->active = component;
 

@@ -361,7 +361,7 @@ MAKE_HOOK_MATCH(UIKeyboardManager_OpenKeyboardFor, &UIKeyboardManager::OpenKeybo
     if (auto inputModal = input->GetComponentInParent<HMUI::ModalView*>()) {
         auto inputModalCanvas = inputModal->GetComponent<UnityEngine::Canvas*>();
         auto keyboardModalCanvas = self->_keyboardModalView->GetComponent<UnityEngine::Canvas*>();
-        keyboardModalCanvas->set_sortingOrder(inputModalCanvas->get_sortingOrder());
+        keyboardModalCanvas->sortingOrder = inputModalCanvas->sortingOrder;
     }
 
     UIKeyboardManager_OpenKeyboardFor(self, input);

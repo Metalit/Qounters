@@ -357,8 +357,7 @@ RectTransform* GetCanvas(std::string parentName, Transform* hud, Vector3 fallbac
 
     auto canvas = BSML::Lite::CreateCanvas();
     canvas->name = name;
-
-    canvas->GetComponent<Canvas*>()->sortingOrder = 0;
+    Utils::SetCanvasSorting(canvas, 0);
 
     auto ret = canvas->GetComponent<RectTransform*>();
     ret->localScale = {0.02, 0.02, 0.02};
@@ -444,6 +443,7 @@ void Qounters::CreateQounterGroup(Group const& qounterGroup, int groupIdx, bool 
 
     auto parent = BSML::Lite::CreateCanvas();
     parent->name = "QounterGroup";
+    Utils::SetCanvasSorting(parent, 0);
     auto parentTransform = parent->GetComponent<RectTransform*>();
     parentTransform->localScale = {1, 1, 1};
 
