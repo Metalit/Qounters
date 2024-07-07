@@ -21,4 +21,6 @@ DECLARE_CONFIG(Config) {
     CONFIG_VALUE(ColorScheme, std::string, "Color Scheme", "User Override / Environment");
     CONFIG_VALUE(Snap, bool, "Snap Enabled", true);
     CONFIG_VALUE(SnapStep, float, "Snap To Grid", 2);
+    CONFIG_VALUE(LeftOffset, float, "Left Menu Position", 0);
+    CONFIG_VALUE(RightOffset, float, "Right Menu Position", 0);
 };

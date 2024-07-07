@@ -5,6 +5,8 @@
 #include "HMUI/TableView.hpp"
 #include "HMUI/ViewController.hpp"
 #include "System/Action.hpp"
+#include "UnityEngine/EventSystems/IInitializePotentialDragHandler.hpp"
+#include "UnityEngine/EventSystems/IDragHandler.hpp"
 #include "UnityEngine/EventSystems/IEndDragHandler.hpp"
 #include "bsml/shared/BSML/Components/CustomListTableData.hpp"
 #include "bsml/shared/BSML/Components/Settings/DropdownListSetting.hpp"
@@ -18,9 +20,10 @@
 #define UES UnityEngine::EventSystems
 
 DECLARE_CLASS_CODEGEN(Qounters, SettingsFlowCoordinator, HMUI::FlowCoordinator,
-    DECLARE_OVERRIDE_METHOD_MATCH(void, DidActivate, &HMUI::FlowCoordinator::DidActivate, bool, bool, bool);
-
     DECLARE_DEFAULT_CTOR();
+
+    DECLARE_OVERRIDE_METHOD_MATCH(void, DidActivate, &HMUI::FlowCoordinator::DidActivate, bool, bool, bool);
+    DECLARE_OVERRIDE_METHOD_MATCH(void, DidDeactivate, &HMUI::FlowCoordinator::DidDeactivate, bool, bool);
 
     DECLARE_STATIC_METHOD(void, PresentTemplates);
     DECLARE_STATIC_METHOD(void, PresentOptions);
@@ -39,8 +42,12 @@ DECLARE_CLASS_CODEGEN(Qounters, SettingsFlowCoordinator, HMUI::FlowCoordinator,
     DECLARE_STATIC_METHOD(void, DeletePreset);
 
     DECLARE_INSTANCE_FIELD_DEFAULT(HMUI::ViewController*, blankViewController, nullptr);
+    DECLARE_INSTANCE_FIELD_DEFAULT(float, oldRadius, -1);
+    DECLARE_INSTANCE_FIELD(UnityEngine::GameObject*, leftDragger);
+    DECLARE_INSTANCE_FIELD(UnityEngine::GameObject*, rightDragger);
 
     DECLARE_STATIC_METHOD(Qounters::SettingsFlowCoordinator*, GetInstance);
+    DECLARE_STATIC_METHOD(float, GetRadius);
 
     DECLARE_INSTANCE_METHOD(void, OnDestroy);
 
@@ -55,9 +62,9 @@ DECLARE_CLASS_CODEGEN(Qounters, SettingsFlowCoordinator, HMUI::FlowCoordinator,
 )
 
 DECLARE_CLASS_CODEGEN(Qounters, SettingsViewController, HMUI::ViewController,
-    DECLARE_OVERRIDE_METHOD_MATCH(void, DidActivate, &HMUI::ViewController::DidActivate, bool, bool, bool);
-
     DECLARE_DEFAULT_CTOR();
+
+    DECLARE_OVERRIDE_METHOD_MATCH(void, DidActivate, &HMUI::ViewController::DidActivate, bool, bool, bool);
 
     DECLARE_STATIC_METHOD(SettingsViewController*, GetInstance);
 
@@ -83,9 +90,10 @@ DECLARE_CLASS_CODEGEN(Qounters, SettingsViewController, HMUI::ViewController,
 )
 
 DECLARE_CLASS_CODEGEN(Qounters, TemplatesViewController, HMUI::ViewController,
+    DECLARE_DEFAULT_CTOR();
+
     DECLARE_OVERRIDE_METHOD_MATCH(void, DidActivate, &HMUI::ViewController::DidActivate, bool, bool, bool);
 
-    DECLARE_DEFAULT_CTOR();
     DECLARE_INSTANCE_METHOD(void, OnDestroy);
 
     DECLARE_INSTANCE_METHOD(void, ShowTemplateModal, int idx);
@@ -104,9 +112,9 @@ DECLARE_CLASS_CODEGEN(Qounters, TemplatesViewController, HMUI::ViewController,
 )
 
 DECLARE_CLASS_CODEGEN(Qounters, OptionsViewController, HMUI::ViewController,
-    DECLARE_OVERRIDE_METHOD_MATCH(void, DidActivate, &HMUI::ViewController::DidActivate, bool, bool, bool);
-
     DECLARE_DEFAULT_CTOR();
+
+    DECLARE_OVERRIDE_METHOD_MATCH(void, DidActivate, &HMUI::ViewController::DidActivate, bool, bool, bool);
 
     DECLARE_INSTANCE_METHOD(void, Deselect);
     DECLARE_INSTANCE_METHOD(void, GroupSelected);
@@ -192,6 +200,41 @@ DECLARE_CLASS_CODEGEN_INTERFACES(Qounters, CollapseController, UnityEngine::Mono
     void SetContents(std::vector<UnityEngine::Component*> const& newContents);
 
     std::function<void ()> onUpdate = nullptr;
+)
+
+#undef INTERFACES
+
+#define INTERFACES std::vector<Il2CppClass*>({ \
+    classof(UES::IEventSystemHandler*), \
+    classof(UES::IPointerEnterHandler*), \
+    classof(UES::IPointerExitHandler*), \
+    classof(UES::IInitializePotentialDragHandler*), \
+    classof(UES::IDragHandler*), \
+    classof(UES::IEndDragHandler*), \
+})
+
+DECLARE_CLASS_CODEGEN_INTERFACES(Qounters, MenuDragger, UnityEngine::MonoBehaviour, INTERFACES,
+    DECLARE_DEFAULT_CTOR();
+
+    DECLARE_INSTANCE_METHOD(void, OnEnable);
+    DECLARE_INSTANCE_METHOD(void, OnDisable);
+
+    DECLARE_OVERRIDE_METHOD_MATCH(void, OnPointerEnter, &UES::IPointerEnterHandler::OnPointerEnter, UES::PointerEventData* eventData);
+    DECLARE_OVERRIDE_METHOD_MATCH(void, OnPointerExit, &UES::IPointerExitHandler::OnPointerExit, UES::PointerEventData* eventData);
+    DECLARE_OVERRIDE_METHOD_MATCH(void, OnInitializePotentialDrag, &UES::IInitializePotentialDragHandler::OnInitializePotentialDrag, UES::PointerEventData* eventData);
+    DECLARE_OVERRIDE_METHOD_MATCH(void, OnDrag, &UES::IDragHandler::OnDrag, UES::PointerEventData* eventData);
+    DECLARE_OVERRIDE_METHOD_MATCH(void, OnEndDrag, &UES::IEndDragHandler::OnEndDrag, UES::PointerEventData* eventData);
+
+    DECLARE_INSTANCE_METHOD(bool, IsPointerPosValid, UES::PointerEventData* eventData);
+    DECLARE_INSTANCE_METHOD(float, GetPointerPosX, UES::PointerEventData* eventData);
+
+    DECLARE_INSTANCE_FIELD(HMUI::ImageView*, line);
+    DECLARE_INSTANCE_FIELD(UnityEngine::RectTransform*, menu);
+    DECLARE_INSTANCE_FIELD(UnityEngine::GameObject*, dragCanvas);
+    DECLARE_INSTANCE_FIELD(UnityEngine::Canvas*, rootCanvas);
+    DECLARE_INSTANCE_FIELD(bool, isLeftMenu);
+    DECLARE_INSTANCE_FIELD(float, originalPosition);
+    DECLARE_INSTANCE_FIELD(float, dragPosition);
 )
 
 #undef INTERFACES

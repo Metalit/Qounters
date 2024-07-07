@@ -1,11 +1,15 @@
 #include "customtypes/settings.hpp"
 
+#include <numbers>
+
 #include "GlobalNamespace/EnvironmentInfoSO.hpp"
 #include "GlobalNamespace/EnvironmentType.hpp"
 #include "GlobalNamespace/EnvironmentsListModel.hpp"
 #include "GlobalNamespace/PlayerDataFileModel.hpp"
 #include "GlobalNamespace/PlayerDataModel.hpp"
+#include "HMUI/CurvedCanvasSettings.hpp"
 #include "HMUI/ScreenSystem.hpp"
+#include "System/Single.hpp"
 #include "UnityEngine/UI/ContentSizeFitter.hpp"
 #include "bsml/shared/BSML-Lite.hpp"
 #include "bsml/shared/BSML/MainThreadScheduler.hpp"
@@ -29,16 +33,16 @@ DEFINE_TYPE(Qounters, SettingsViewController);
 DEFINE_TYPE(Qounters, TemplatesViewController);
 DEFINE_TYPE(Qounters, OptionsViewController);
 DEFINE_TYPE(Qounters, CollapseController);
+DEFINE_TYPE(Qounters, MenuDragger);
 DEFINE_TYPE(Qounters, EndDragHandler);
 DEFINE_TYPE(Qounters, KeyboardCloseHandler);
 DEFINE_TYPE(Qounters, SpritesListCell);
 DEFINE_TYPE(Qounters, SpritesListSource);
 
-using namespace GlobalNamespace;
 using namespace UnityEngine;
 using namespace Qounters;
 
-void Qounters::SettingsFlowCoordinator::DidActivate(bool firstActivation, bool addedToHierarchy, bool screenSystemEnabling) {
+void SettingsFlowCoordinator::DidActivate(bool firstActivation, bool addedToHierarchy, bool screenSystemEnabling) {
     if (addedToHierarchy) {
         auto presets = getConfig().Presets.GetValue();
         auto presetName = getConfig().Preset.GetValue();
@@ -49,6 +53,10 @@ void Qounters::SettingsFlowCoordinator::DidActivate(bool firstActivation, bool a
         auto& preset = presets[presetName];
 
         Editor::Initialize(preset);
+
+        auto curveSettings = _screenSystem->mainScreen->GetComponentInParent<HMUI::CurvedCanvasSettings*>();
+        oldRadius = curveSettings->_radius;
+        curveSettings->SetRadius(GetRadius());
     }
 
     if (!blankViewController)
@@ -57,55 +65,71 @@ void Qounters::SettingsFlowCoordinator::DidActivate(bool firstActivation, bool a
     ProvideInitialViewControllers(
         blankViewController, SettingsViewController::GetInstance(), TemplatesViewController::GetInstance(), nullptr, nullptr
     );
-    Qounters::OptionsViewController::GetInstance()->Deselect();
+    OptionsViewController::GetInstance()->Deselect();
+
+    if (!leftDragger)
+        leftDragger = Utils::CreateMenuDragger(_screenSystem->_leftScreen->gameObject, true)->gameObject;
+    else
+        leftDragger->active = true;
+    if (!rightDragger)
+        rightDragger = Utils::CreateMenuDragger(_screenSystem->_rightScreen->gameObject, false)->gameObject;
+    else
+        rightDragger->active = true;
 }
 
-void Qounters::SettingsFlowCoordinator::Save() {
+void SettingsFlowCoordinator::DidDeactivate(bool removedFromHierarchy, bool screenSystemDisabling) {
+    if (oldRadius > 0)
+        _screenSystem->mainScreen->GetComponentInParent<HMUI::CurvedCanvasSettings*>()->SetRadius(oldRadius);
+    leftDragger->active = false;
+    rightDragger->active = false;
+}
+
+void SettingsFlowCoordinator::Save() {
     auto presets = getConfig().Presets.GetValue();
     presets[getConfig().Preset.GetValue()] = Editor::GetPreset();
     getConfig().Presets.SetValue(presets);
 }
 
-bool Qounters::SettingsFlowCoordinator::IsSaved() {
+bool SettingsFlowCoordinator::IsSaved() {
     return getConfig().Presets.GetValue()[getConfig().Preset.GetValue()] == Editor::GetPreset();
 }
 
-void Qounters::SettingsFlowCoordinator::PresentTemplates() {
+void SettingsFlowCoordinator::PresentTemplates() {
     auto instance = GetInstance();
     auto templates = TemplatesViewController::GetInstance();
     if (instance->rightScreenViewController != templates)
         instance->SetRightScreenViewController(templates, HMUI::ViewController::AnimationType::In);
 }
 
-void Qounters::SettingsFlowCoordinator::PresentOptions() {
+void SettingsFlowCoordinator::PresentOptions() {
     auto instance = GetInstance();
-    auto options = Qounters::OptionsViewController::GetInstance();
+    auto options = OptionsViewController::GetInstance();
     if (instance->rightScreenViewController != options)
         instance->SetRightScreenViewController(options, HMUI::ViewController::AnimationType::In);
 }
 
-void Qounters::SettingsFlowCoordinator::DismissScene() {
+void SettingsFlowCoordinator::DismissScene() {
     ConfirmAction(DismissSettingsEnvironment);
 }
 
-void Qounters::SettingsFlowCoordinator::RefreshScene() {
+void SettingsFlowCoordinator::RefreshScene() {
     if (CurrentSettingsEnvironment() != getConfig().Environment.GetValue())
         ConfirmAction(RefreshSettingsEnvironment);
 }
 
-void Qounters::SettingsFlowCoordinator::OnModalConfirm() {
+void SettingsFlowCoordinator::OnModalConfirm() {
     if (nextModalAction)
         nextModalAction();
     SettingsViewController::GetInstance()->HideConfirmModal();
 }
 
-void Qounters::SettingsFlowCoordinator::OnModalCancel() {
+void SettingsFlowCoordinator::OnModalCancel() {
     if (nextModalCancel)
         nextModalCancel();
     SettingsViewController::GetInstance()->HideConfirmModal();
 }
 
-void Qounters::SettingsFlowCoordinator::SelectPreset(StringW name) {
+void SettingsFlowCoordinator::SelectPreset(StringW name) {
     ConfirmAction(
         [name = (std::string) name]() {
             auto presets = getConfig().Presets.GetValue();
@@ -120,15 +144,15 @@ void Qounters::SettingsFlowCoordinator::SelectPreset(StringW name) {
     );
 }
 
-void Qounters::SettingsFlowCoordinator::RenamePreset(StringW name) {
+void SettingsFlowCoordinator::RenamePreset(StringW name) {
     MakeNewPreset(name, true);
 }
 
-void Qounters::SettingsFlowCoordinator::DuplicatePreset(StringW newName) {
+void SettingsFlowCoordinator::DuplicatePreset(StringW newName) {
     ConfirmAction([name = (std::string) newName]() { MakeNewPreset(name, false); });
 }
 
-void Qounters::SettingsFlowCoordinator::DeletePreset() {
+void SettingsFlowCoordinator::DeletePreset() {
     auto presets = getConfig().Presets.GetValue();
     if (presets.size() < 2)
         return;
@@ -143,17 +167,21 @@ void Qounters::SettingsFlowCoordinator::DeletePreset() {
     Editor::LoadPreset(presets[name]);
 }
 
-Qounters::SettingsFlowCoordinator* Qounters::SettingsFlowCoordinator::GetInstance() {
+SettingsFlowCoordinator* SettingsFlowCoordinator::GetInstance() {
     if (!instance)
-        instance = BSML::Helpers::CreateFlowCoordinator<Qounters::SettingsFlowCoordinator*>();
+        instance = BSML::Helpers::CreateFlowCoordinator<SettingsFlowCoordinator*>();
     return instance;
 }
 
-void Qounters::SettingsFlowCoordinator::OnDestroy() {
+float SettingsFlowCoordinator::GetRadius() {
+    return 110;
+}
+
+void SettingsFlowCoordinator::OnDestroy() {
     instance = nullptr;
 }
 
-void Qounters::SettingsFlowCoordinator::ConfirmAction(std::function<void()> action, std::function<void()> cancel) {
+void SettingsFlowCoordinator::ConfirmAction(std::function<void()> action, std::function<void()> cancel) {
     nextModalAction = action;
     nextModalCancel = cancel;
     if (IsSaved())
@@ -162,7 +190,7 @@ void Qounters::SettingsFlowCoordinator::ConfirmAction(std::function<void()> acti
         SettingsViewController::GetInstance()->ShowConfirmModal();
 }
 
-void Qounters::SettingsFlowCoordinator::MakeNewPreset(std::string name, bool removeOld) {
+void SettingsFlowCoordinator::MakeNewPreset(std::string name, bool removeOld) {
     auto presets = getConfig().Presets.GetValue();
     if (presets.contains(name))
         return;
@@ -186,6 +214,8 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
         UpdateUI();
         return;
     }
+
+    using namespace GlobalNamespace;
 
     std::vector<std::string> dropdownStrings = {};
     auto environments = BSML::Helpers::GetMainFlowCoordinator()->_playerDataModel->_playerDataFileModel->_environmentsListModel;
@@ -216,27 +246,27 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
     buttons1->GetComponent<UI::LayoutElement*>()->preferredHeight = 9;
     buttons1->spacing = 3;
     undoButton = BSML::Lite::CreateUIButton(buttons1, "Undo", Editor::Undo);
-    BSML::Lite::CreateUIButton(buttons1, "Exit", Qounters::SettingsFlowCoordinator::DismissScene);
+    BSML::Lite::CreateUIButton(buttons1, "Exit", SettingsFlowCoordinator::DismissScene);
 
     auto buttons2 = BSML::Lite::CreateHorizontalLayoutGroup(vertical);
     buttons2->GetComponent<UI::LayoutElement*>()->preferredHeight = 9;
     buttons2->spacing = 3;
-    BSML::Lite::CreateUIButton(buttons2, "Save", Qounters::SettingsFlowCoordinator::Save);
+    BSML::Lite::CreateUIButton(buttons2, "Save", SettingsFlowCoordinator::Save);
     BSML::Lite::CreateUIButton(buttons2, "Save And Exit", "ActionButton", []() {
-        Qounters::SettingsFlowCoordinator::Save();
-        Qounters::SettingsFlowCoordinator::DismissScene();
+        SettingsFlowCoordinator::Save();
+        SettingsFlowCoordinator::DismissScene();
     });
 
     auto environment = BSML::Lite::CreateHorizontalLayoutGroup(vertical);
     environment->spacing = 3;
     auto dropdown = AddConfigValueDropdownString(environment, getConfig().Environment, dropdownStringViews);
     dropdown->GetComponentsInParent<UI::LayoutElement*>(true)->First()->preferredWidth = 65;
-    auto apply = BSML::Lite::CreateUIButton(environment, "Apply", Qounters::SettingsFlowCoordinator::RefreshScene);
+    auto apply = BSML::Lite::CreateUIButton(environment, "Apply", SettingsFlowCoordinator::RefreshScene);
 
     BSML::Lite::CreateText(vertical, "Changes to the preset list are always saved!", {0, 0}, {50, 8})->alignment =
         TMPro::TextAlignmentOptions::Center;
 
-    presetDropdown = BSML::Lite::CreateDropdown(vertical, "Current Preset", "", {}, Qounters::SettingsFlowCoordinator::SelectPreset);
+    presetDropdown = BSML::Lite::CreateDropdown(vertical, "Current Preset", "", {}, SettingsFlowCoordinator::SelectPreset);
 
     auto buttons3 = BSML::Lite::CreateHorizontalLayoutGroup(vertical);
     buttons3->GetComponent<UI::LayoutElement*>()->preferredHeight = 9;
@@ -251,7 +281,7 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
         nameInput->text = getConfig().Preset.GetValue();
         nameModal->Show(true, true, nullptr);
     });
-    deleteButton = BSML::Lite::CreateUIButton(buttons3, "Delete", Qounters::SettingsFlowCoordinator::DeletePreset);
+    deleteButton = BSML::Lite::CreateUIButton(buttons3, "Delete", SettingsFlowCoordinator::DeletePreset);
 
     auto snapIncrement = AddConfigValueIncrementFloat(vertical, getConfig().SnapStep, 1, 0.5, 0.5, 5);
     auto incrementObject = snapIncrement->transform->GetChild(1)->gameObject;
@@ -265,14 +295,14 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
         });
     snapToggle->toggle->transform->SetParent(snapIncrement->transform, false);
     snapToggle->transform->SetParent(snapIncrement->transform, false);
-    UnityEngine::Object::Destroy(snapToggle->text->gameObject);
+    Object::Destroy(snapToggle->text->gameObject);
 
     previewToggle = BSML::Lite::CreateToggle(vertical, "Preview Mode", false, [this](bool value) {
         Editor::SetPreviewMode(value);
         undoButton->interactable = !value && Editor::HasUndo();
     });
 
-    confirmModal = BSML::Lite::CreateModal(this, {95, 25}, Qounters::SettingsFlowCoordinator::OnModalCancel);
+    confirmModal = BSML::Lite::CreateModal(this, {95, 25}, SettingsFlowCoordinator::OnModalCancel);
     auto modalLayout1 = BSML::Lite::CreateVerticalLayoutGroup(confirmModal);
     modalLayout1->childControlHeight = false;
     modalLayout1->childForceExpandHeight = true;
@@ -285,12 +315,12 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
     auto modalButtons = BSML::Lite::CreateHorizontalLayoutGroup(modalLayout1);
     modalButtons->GetComponent<UI::LayoutElement*>()->preferredHeight = 9;
     modalButtons->spacing = 3;
-    BSML::Lite::CreateUIButton(modalButtons, "Continue", Qounters::SettingsFlowCoordinator::OnModalConfirm);
+    BSML::Lite::CreateUIButton(modalButtons, "Continue", SettingsFlowCoordinator::OnModalConfirm);
     BSML::Lite::CreateUIButton(modalButtons, "Save And Continue", []() {
-        Qounters::SettingsFlowCoordinator::Save();
-        Qounters::SettingsFlowCoordinator::OnModalConfirm();
+        SettingsFlowCoordinator::Save();
+        SettingsFlowCoordinator::OnModalConfirm();
     });
-    BSML::Lite::CreateUIButton(modalButtons, "Cancel", Qounters::SettingsFlowCoordinator::OnModalCancel);
+    BSML::Lite::CreateUIButton(modalButtons, "Cancel", SettingsFlowCoordinator::OnModalCancel);
 
     nameModal = BSML::Lite::CreateModal(this, {95, 20}, nullptr);
     auto modalLayout2 = BSML::Lite::CreateVerticalLayoutGroup(nameModal);
@@ -308,9 +338,9 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
             return;
         nameModal->Hide(true, nullptr);
         if (nameModalIsRename)
-            Qounters::SettingsFlowCoordinator::RenamePreset(val);
+            SettingsFlowCoordinator::RenamePreset(val);
         else
-            Qounters::SettingsFlowCoordinator::DuplicatePreset(val);
+            SettingsFlowCoordinator::DuplicatePreset(val);
     };
 
     uiInitialized = true;
@@ -399,7 +429,7 @@ void TemplatesViewController::ShowTemplateModal(int idx) {
         return;
 
     while (modalLayout->GetChildCount() > 0)
-        UnityEngine::Object::DestroyImmediate(modalLayout->GetChild(0)->gameObject);
+        Object::DestroyImmediate(modalLayout->GetChild(0)->gameObject);
 
     templates[idx].second(modalLayout->gameObject);
     Utils::SetChildrenWidth(modalLayout, 75);
@@ -427,11 +457,11 @@ void TemplatesViewController::OnDestroy() {
     instance = nullptr;
 }
 
-void Qounters::OptionsViewController::DidActivate(bool firstActivation, bool addedToHierarchy, bool screenSystemEnabling) {
-    UpdateUI();
-
-    if (!firstActivation)
+void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierarchy, bool screenSystemEnabling) {
+    if (!firstActivation) {
+        UpdateUI();
         return;
+    }
 
     groupParent = BSML::Lite::CreateScrollView(this);
 
@@ -554,7 +584,7 @@ void Qounters::OptionsViewController::DidActivate(bool firstActivation, bool add
     cScaleSliderY->GetComponent<RectTransform*>()->sizeDelta = {0, 8};
 
     positionCollapse->SetContents({cPosIncrementX, cPosIncrementY, cRotSlider, cScaleSliderX, cScaleSliderY});
-    positionCollapse->onUpdate = Qounters::OptionsViewController::UpdateScrollViewStatic;
+    positionCollapse->onUpdate = OptionsViewController::UpdateScrollViewStatic;
 
     auto typeCollapse = Utils::CreateCollapseArea(componentParent, "Text Options", true);
     typeCollapseComponent = typeCollapse;
@@ -572,7 +602,7 @@ void Qounters::OptionsViewController::DidActivate(bool firstActivation, bool add
     cTypeOptions->GetComponent<UI::ContentSizeFitter*>()->verticalFit = UI::ContentSizeFitter::FitMode::PreferredSize;
 
     typeCollapse->SetContents({cTypeDropdown->transform->parent, cTypeOptions});
-    typeCollapse->onUpdate = Qounters::OptionsViewController::UpdateScrollViewStatic;
+    typeCollapse->onUpdate = OptionsViewController::UpdateScrollViewStatic;
 
     auto colorCollapse = Utils::CreateCollapseArea(componentParent, "Color Options", false);
 
@@ -591,7 +621,7 @@ void Qounters::OptionsViewController::DidActivate(bool firstActivation, bool add
     cColorSourceOptions->GetComponent<UI::ContentSizeFitter*>()->verticalFit = UI::ContentSizeFitter::FitMode::PreferredSize;
 
     colorCollapse->SetContents({cColorSourceDropdown->transform->parent, cColorSourceOptions});
-    colorCollapse->onUpdate = Qounters::OptionsViewController::UpdateScrollViewStatic;
+    colorCollapse->onUpdate = OptionsViewController::UpdateScrollViewStatic;
 
     auto enableCollapse = Utils::CreateCollapseArea(componentParent, "Visibility Options", false);
 
@@ -617,7 +647,7 @@ void Qounters::OptionsViewController::DidActivate(bool firstActivation, bool add
     cEnableSourceOptions->GetComponent<UI::ContentSizeFitter*>()->verticalFit = UI::ContentSizeFitter::FitMode::PreferredSize;
 
     enableCollapse->SetContents({cEnableSourceDropdown->transform->parent, cInvertEnableToggle, cEnableSourceOptions});
-    enableCollapse->onUpdate = Qounters::OptionsViewController::UpdateScrollViewStatic;
+    enableCollapse->onUpdate = OptionsViewController::UpdateScrollViewStatic;
 
     cButtonsParent = BSML::Lite::CreateHorizontalLayoutGroup(this);
     cButtonsParent->spacing = 3;
@@ -637,30 +667,30 @@ void Qounters::OptionsViewController::DidActivate(bool firstActivation, bool add
     BSML::MainThreadScheduler::ScheduleNextFrame(UpdateScrollViewStatic);
 }
 
-void Qounters::OptionsViewController::Deselect() {
+void OptionsViewController::Deselect() {
     component = false;
     group = false;
     UpdateUI();
 }
 
-void Qounters::OptionsViewController::GroupSelected() {
+void OptionsViewController::GroupSelected() {
     component = false;
     group = true;
     UpdateUI();
 }
 
-void Qounters::OptionsViewController::ComponentSelected() {
+void OptionsViewController::ComponentSelected() {
     component = true;
     group = false;
     UpdateUI();
 }
 
-void Qounters::OptionsViewController::UpdateScrollView() {
+void OptionsViewController::UpdateScrollView() {
     if (uiInitialized && component)
         Utils::RebuildWithScrollPosition(componentParent);
 }
 
-void Qounters::OptionsViewController::UpdateSimpleUI() {
+void OptionsViewController::UpdateSimpleUI() {
     if (!uiInitialized)
         return;
 
@@ -717,7 +747,7 @@ void Qounters::OptionsViewController::UpdateSimpleUI() {
     Editor::EnableActions();
 }
 
-void Qounters::OptionsViewController::UpdateUI() {
+void OptionsViewController::UpdateUI() {
     UpdateSimpleUI();
 
     for (auto modal : GetComponentsInChildren<HMUI::ModalView*>())
@@ -736,52 +766,52 @@ void Qounters::OptionsViewController::UpdateUI() {
     Editor::EnableActions();
 }
 
-void Qounters::OptionsViewController::UpdateTypeOptions() {
+void OptionsViewController::UpdateTypeOptions() {
     auto& state = Editor::GetSelectedComponent(-1);
     CreateTypeOptionsUI(cTypeOptions->transform, state.Type, state.Options);
 }
 
-void Qounters::OptionsViewController::UpdateColorSourceOptions() {
+void OptionsViewController::UpdateColorSourceOptions() {
     auto& state = Editor::GetSelectedComponent(-1);
     ColorSource::CreateUI(cColorSourceOptions->gameObject, state.ColorSource, state.ColorOptions);
 }
 
-void Qounters::OptionsViewController::UpdateEnableSourceOptions() {
+void OptionsViewController::UpdateEnableSourceOptions() {
     auto& state = Editor::GetSelectedComponent(-1);
     EnableSource::CreateUI(cEnableSourceOptions->gameObject, state.EnableSource, state.EnableOptions);
 }
 
-Qounters::OptionsViewController* Qounters::OptionsViewController::GetInstance() {
+OptionsViewController* OptionsViewController::GetInstance() {
     if (!instance)
-        instance = BSML::Helpers::CreateViewController<Qounters::OptionsViewController*>();
+        instance = BSML::Helpers::CreateViewController<OptionsViewController*>();
     return instance;
 }
 
-void Qounters::OptionsViewController::UpdateScrollViewStatic() {
+void OptionsViewController::UpdateScrollViewStatic() {
     if (instance)
         instance->UpdateScrollView();
 }
 
-void Qounters::OptionsViewController::OnDestroy() {
+void OptionsViewController::OnDestroy() {
     instance = nullptr;
 }
 
-void Qounters::CollapseController::OnPointerEnter(UnityEngine::EventSystems::PointerEventData* eventData) {
+void CollapseController::OnPointerEnter(EventSystems::PointerEventData* eventData) {
     text->color = {0.6, 0.6, 0.6, 1};
     line->color = {0.5, 0.5, 0.5, 1};
 }
 
-void Qounters::CollapseController::OnPointerExit(UnityEngine::EventSystems::PointerEventData* eventData) {
+void CollapseController::OnPointerExit(EventSystems::PointerEventData* eventData) {
     text->color = {1, 1, 1, 1};
     line->color = {0.8, 0.8, 0.8, 1};
 }
 
-void Qounters::CollapseController::OnPointerClick(UnityEngine::EventSystems::PointerEventData* eventData) {
+void CollapseController::OnPointerClick(EventSystems::PointerEventData* eventData) {
     open = !open;
     UpdateOpen();
 }
 
-void Qounters::CollapseController::UpdateOpen() {
+void CollapseController::UpdateOpen() {
     text->text = StringW(open ? u"▼  " : u"▶  ") + title;
     for (auto& obj : contents)
         obj->gameObject->active = open;
@@ -789,12 +819,80 @@ void Qounters::CollapseController::UpdateOpen() {
         onUpdate();
 }
 
-void Qounters::CollapseController::SetContents(std::vector<UnityEngine::Component*> const& newContents) {
+void CollapseController::SetContents(std::vector<Component*> const& newContents) {
     contents = newContents;
     UpdateOpen();
 }
 
-void Qounters::EndDragHandler::OnEndDrag(UnityEngine::EventSystems::PointerEventData* eventData) {
+inline float ClampInRadius(float pos) {
+    float radius = SettingsFlowCoordinator::GetRadius();
+    float circumference = 2 * radius * std::numbers::pi;
+    float quarter = circumference * 0.25;
+    return std::clamp(pos, -quarter, quarter);
+}
+
+void MenuDragger::OnEnable() {
+    if (line)
+        line->color = {0.8, 0.8, 0.8, 1};
+    if (menu) {
+        auto offset = (isLeftMenu ? getConfig().LeftOffset : getConfig().RightOffset).GetValue();
+        auto pos = menu->anchoredPosition;
+        originalPosition = pos.x;
+        menu->anchoredPosition = {ClampInRadius(pos.x + offset), pos.y};
+    }
+}
+
+void MenuDragger::OnDisable() {
+    if (menu)
+        menu->anchoredPosition = {originalPosition, menu->anchoredPosition.y};
+    if (dragCanvas)
+        dragCanvas->active = false;
+}
+
+void MenuDragger::OnPointerEnter(EventSystems::PointerEventData* eventData) {
+    line->color = {0.5, 0.5, 0.5, 1};
+}
+
+void MenuDragger::OnPointerExit(EventSystems::PointerEventData* eventData) {
+    line->color = {0.8, 0.8, 0.8, 1};
+}
+
+void MenuDragger::OnInitializePotentialDrag(EventSystems::PointerEventData* eventData) {
+    eventData->useDragThreshold = false;
+    float offset = (isLeftMenu ? getConfig().LeftOffset : getConfig().RightOffset).GetValue();
+    dragPosition = GetPointerPosX(eventData) - offset;
+}
+
+void MenuDragger::OnDrag(EventSystems::PointerEventData* eventData) {
+    if (!menu || !IsPointerPosValid(eventData))
+        return;
+    if (dragCanvas)
+        dragCanvas->active = true;
+    float offset = GetPointerPosX(eventData) - dragPosition;
+    (isLeftMenu ? getConfig().LeftOffset : getConfig().RightOffset).SetValue(offset);
+    menu->anchoredPosition = {ClampInRadius(originalPosition + offset), menu->anchoredPosition.y};
+}
+
+void MenuDragger::OnEndDrag(EventSystems::PointerEventData* eventData) {
+    if (dragCanvas)
+        dragCanvas->active = false;
+}
+
+bool MenuDragger::IsPointerPosValid(EventSystems::PointerEventData* eventData) {
+    auto raycast = eventData->pointerCurrentRaycast;
+    if (!raycast.isValid)
+        return false;
+    return raycast.screenPosition.x < System::Single::MaxValue || raycast.screenPosition.y < System::Single::MaxValue;
+}
+
+float MenuDragger::GetPointerPosX(EventSystems::PointerEventData* eventData) {
+    if (!rootCanvas)
+        rootCanvas = GetComponentInParent<UnityEngine::Canvas*>()->rootCanvas;
+    auto screenPos = eventData->pointerCurrentRaycast.screenPosition;
+    return rootCanvas->transform->InverseTransformPoint({screenPos.x, screenPos.y, 0}).x;
+}
+
+void EndDragHandler::OnEndDrag(EventSystems::PointerEventData* eventData) {
     callback();
 }
 
@@ -812,7 +910,7 @@ void SpritesListCell::SetImageStartIdx(int idx) {
     imageStartIdx = idx;
 
     while (layout->GetChildCount() > 0)
-        UnityEngine::Object::DestroyImmediate(layout->GetChild(0)->gameObject);
+        Object::DestroyImmediate(layout->GetChild(0)->gameObject);
 
     for (int i = 0; i < imagesPerCell; i++) {
         if (i + idx < ImageSpriteCache::NumberOfSprites()) {

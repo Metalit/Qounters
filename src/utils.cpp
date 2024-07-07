@@ -213,6 +213,38 @@ Utils::CreateCollapseArea(UnityEngine::GameObject* parent, std::string title, bo
     return ret;
 }
 
+MenuDragger* Utils::CreateMenuDragger(UnityEngine::GameObject* parent, bool isLeftMenu) {
+    auto padding = BSML::Lite::CreateCanvas();
+    padding->name = "QountersMenuDragger";
+    padding->AddComponent<CanvasHighlight*>();
+    auto rect = padding->GetComponent<UnityEngine::RectTransform*>();
+    rect->SetParent(parent->transform, false);
+    rect->localScale = {1, 1, 1};
+    rect->anchorMin = {0.5, 0.5};
+    rect->anchorMax = {0.5, 0.5};
+    rect->anchoredPosition = {0, 44};
+    rect->sizeDelta = {42, 3};
+    auto drag = BSML::Lite::CreateCanvas();
+    drag->name = "QountersMenuDragCanvas";
+    drag->AddComponent<CanvasHighlight*>();
+    auto dragRect = drag->GetComponent<UnityEngine::RectTransform*>();
+    dragRect->SetParent(rect, false);
+    dragRect->localScale = {1, 1, 1};
+    dragRect->sizeDelta = {1000, 1000};
+    drag->active = false;
+    auto ret = padding->AddComponent<MenuDragger*>();
+    ret->dragCanvas = drag;
+    ret->menu = parent->GetComponent<UnityEngine::RectTransform*>();
+    ret->line = BSML::Lite::CreateImage(padding, BSML::Utilities::ImageResources::GetWhitePixel());
+    auto img = ret->line->rectTransform;
+    img->anchorMin = {0.5, 0.5};
+    img->anchorMax = {0.5, 0.5};
+    img->sizeDelta = {40, 1};
+    ret->isLeftMenu = isLeftMenu;
+    ret->OnEnable();
+    return ret;
+}
+
 void AnimateModal(HMUI::ModalView* modal, bool out) {
     auto bg = modal->transform->Find("BG")->GetComponent<UnityEngine::UI::Image*>();
     auto canvas = modal->GetComponent<UnityEngine::CanvasGroup*>();
@@ -288,7 +320,7 @@ UnityEngine::RectTransform* GetScrollViewTop(UnityEngine::GameObject* scrollView
 void Utils::FixScrollView(UnityEngine::GameObject* scrollView, float width) {
     UnityEngine::Object::Destroy(scrollView->GetComponentInParent<BSML::ScrollViewContent*>(true));
     scrollView->GetComponent<UnityEngine::UI::VerticalLayoutGroup*>()->spacing = 0;
-    GetScrollViewTop(scrollView)->sizeDelta = {width - 100, 0};
+    GetScrollViewTop(scrollView)->sizeDelta = {width - 100, -5};
     auto transform = scrollView->GetComponent<UnityEngine::RectTransform*>();
     transform->sizeDelta = {width, 74};
     SetChildrenWidth(transform, width);
