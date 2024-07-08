@@ -301,6 +301,7 @@ void Qounters::SetDefaultOptions(Component& component) {
 std::map<std::string, HUDType> const supportedHUDs = {
     {"BasicGameHUD", HUDType::Basic},
     {"NarrowGameHUD", HUDType::Basic},
+    {"NarrowGameHUDVariant", HUDType::Basic},
     {"LatticeHUD", HUDType::Basic},
     {"RockGameHUD", HUDType::Basic},
     {"FlyingGameHUD/Container", HUDType::Rotational},
