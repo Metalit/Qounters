@@ -90,6 +90,8 @@ void SettingsFlowCoordinator::DidActivate(bool firstActivation, bool addedToHier
 void SettingsFlowCoordinator::DidDeactivate(bool removedFromHierarchy, bool screenSystemDisabling) {
     if (oldRadius > 0)
         _screenSystem->mainScreen->GetComponentInParent<HMUI::CurvedCanvasSettings*>()->SetRadius(oldRadius);
+    // idk why this stays active
+    OptionsViewController::GetInstance()->gameObject->active = false;
     leftDragger->active = false;
     rightDragger->active = false;
 }
@@ -105,14 +107,16 @@ bool SettingsFlowCoordinator::IsSaved() {
 }
 
 void SettingsFlowCoordinator::PresentTemplates() {
-    auto instance = GetInstance();
+    if (!instance)
+        return;
     auto templates = TemplatesViewController::GetInstance();
     if (instance->rightScreenViewController != templates)
         instance->SetRightScreenViewController(templates, HMUI::ViewController::AnimationType::In);
 }
 
 void SettingsFlowCoordinator::PresentOptions() {
-    auto instance = GetInstance();
+    if (!instance)
+        return;
     auto options = OptionsViewController::GetInstance();
     if (instance->rightScreenViewController != options)
         instance->SetRightScreenViewController(options, HMUI::ViewController::AnimationType::In);
@@ -188,6 +192,10 @@ float SettingsFlowCoordinator::GetRadius() {
 }
 
 void SettingsFlowCoordinator::OnDestroy() {
+    if (leftDragger)
+        Object::Destroy(leftDragger);
+    if (rightDragger)
+        Object::Destroy(rightDragger);
     instance = nullptr;
 }
 
