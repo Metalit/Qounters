@@ -925,6 +925,7 @@ void MenuDragger::OnPointerExit(EventSystems::PointerEventData* eventData) {
 void MenuDragger::OnInitializePotentialDrag(EventSystems::PointerEventData* eventData) {
     eventData->useDragThreshold = false;
     float offset = (isLeftMenu ? getConfig().LeftOffset : getConfig().RightOffset).GetValue();
+    offset = ClampInRadius(originalPosition + offset) - originalPosition;
     dragPosition = GetPointerPosX(eventData) - offset;
 }
 
