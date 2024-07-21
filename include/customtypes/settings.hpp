@@ -1,5 +1,6 @@
 #pragma once
 
+#include "GlobalNamespace/EnvironmentInfoSO.hpp"
 #include "HMUI/FlowCoordinator.hpp"
 #include "HMUI/TableCell.hpp"
 #include "HMUI/TableView.hpp"
@@ -40,6 +41,7 @@ DECLARE_CLASS_CODEGEN(Qounters, SettingsFlowCoordinator, HMUI::FlowCoordinator,
     DECLARE_STATIC_METHOD(void, RenamePreset, StringW name);
     DECLARE_STATIC_METHOD(void, DuplicatePreset, StringW newName);
     DECLARE_STATIC_METHOD(void, DeletePreset);
+    DECLARE_STATIC_METHOD(void, ResetPreset);
 
     DECLARE_INSTANCE_FIELD_DEFAULT(HMUI::ViewController*, blankViewController, nullptr);
     DECLARE_INSTANCE_FIELD_DEFAULT(float, oldRadius, -1);
@@ -74,8 +76,10 @@ DECLARE_CLASS_CODEGEN(Qounters, SettingsViewController, HMUI::ViewController,
     DECLARE_INSTANCE_METHOD(void, UpdateUI);
 
     DECLARE_INSTANCE_FIELD_DEFAULT(bool, uiInitialized, false);
+    DECLARE_INSTANCE_FIELD(ArrayW<UnityW<GlobalNamespace::EnvironmentInfoSO>>, environments);
 
     DECLARE_INSTANCE_FIELD(UnityEngine::UI::Button*, undoButton);
+    DECLARE_INSTANCE_FIELD(BSML::DropdownListSetting*, environmentDropdown);
     DECLARE_INSTANCE_FIELD(BSML::DropdownListSetting*, presetDropdown);
     DECLARE_INSTANCE_FIELD(UnityEngine::UI::Button*, deleteButton);
     DECLARE_INSTANCE_FIELD(BSML::ToggleSetting*, previewToggle);

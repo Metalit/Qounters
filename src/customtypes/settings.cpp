@@ -24,6 +24,7 @@
 #include "editor.hpp"
 #include "environment.hpp"
 #include "main.hpp"
+#include "options.hpp"
 #include "sources.hpp"
 #include "sourceui.hpp"
 #include "templates.hpp"
@@ -181,6 +182,18 @@ void SettingsFlowCoordinator::DeletePreset() {
     Editor::LoadPreset(presets[name]);
 }
 
+void SettingsFlowCoordinator::ResetPreset() {
+    auto presets = getConfig().Presets.GetValue();
+    auto name = getConfig().Preset.GetValue();
+    if (!presets.contains(name))
+        return;
+
+    presets[name] = GetDefaultHUDPreset();
+
+    getConfig().Presets.SetValue(presets);
+    Editor::LoadPreset(presets[name]);
+}
+
 SettingsFlowCoordinator* SettingsFlowCoordinator::GetInstance() {
     if (!instance)
         instance = BSML::Helpers::CreateFlowCoordinator<SettingsFlowCoordinator*>();
@@ -235,25 +248,7 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
 
     using namespace GlobalNamespace;
 
-    std::vector<std::string> dropdownStrings = {};
-    auto environments = BSML::Helpers::GetMainFlowCoordinator()->_playerDataModel->_playerDataFileModel->_environmentsListModel;
-    for (auto& env : ListW<EnvironmentInfoSO*>(environments->GetAllEnvironmentInfosWithType(EnvironmentType::Normal)))
-        dropdownStrings.emplace_back(env->environmentName);
-    for (auto& env : ListW<EnvironmentInfoSO*>(environments->GetAllEnvironmentInfosWithType(EnvironmentType::Circle)))
-        dropdownStrings.emplace_back(env->environmentName);
-    for (auto& env : environments->_envInfos) {
-        std::string str = env->environmentName;
-        bool add = true;
-        for (auto& added : dropdownStrings) {
-            if (added == str) {
-                add = false;
-                break;
-            }
-        }
-        if (add)
-            dropdownStrings.emplace_back(str);
-    }
-    std::vector<std::string_view> dropdownStringViews{dropdownStrings.begin(), dropdownStrings.end()};
+    environments = BSML::Helpers::GetMainFlowCoordinator()->_playerDataModel->_playerDataFileModel->_environmentsListModel->_envInfos;
 
     AddBackground(this, {110, 88});
     Utils::SetCanvasSorting(gameObject, 4);
@@ -265,14 +260,12 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
     vertical->rectTransform->anchoredPosition = {0, -4};
 
     auto buttons1 = BSML::Lite::CreateHorizontalLayoutGroup(vertical);
-    buttons1->GetComponent<UI::LayoutElement*>()->preferredHeight = 9;
     buttons1->spacing = 3;
     undoButton = BSML::Lite::CreateUIButton(buttons1, "Undo", Editor::Undo);
     BSML::Lite::CreateUIButton(buttons1, "Exit", SettingsFlowCoordinator::DismissScene);
 
     auto buttons2 = BSML::Lite::CreateHorizontalLayoutGroup(vertical);
-    buttons2->GetComponent<UI::LayoutElement*>()->preferredHeight = 9;
-    buttons2->spacing = 3;
+    buttons2->spacing = 1;
     BSML::Lite::CreateUIButton(buttons2, "Save", SettingsFlowCoordinator::Save);
     BSML::Lite::CreateUIButton(buttons2, "Save And Exit", "ActionButton", []() {
         SettingsFlowCoordinator::Save();
@@ -280,30 +273,53 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
     });
 
     auto environment = BSML::Lite::CreateHorizontalLayoutGroup(vertical);
-    environment->spacing = 3;
-    auto dropdown = AddConfigValueDropdownString(environment, getConfig().Environment, dropdownStringViews);
-    dropdown->GetComponentsInParent<UI::LayoutElement*>(true)->First()->preferredWidth = 65;
+    environment->spacing = 1;
+    environmentDropdown = BSML::Lite::CreateDropdown(environment, getConfig().Environment.GetName(), "", {}, [this](StringW value) {
+        for (auto& env : environments) {
+            if (env->environmentName == value)
+                getConfig().Environment.SetValue(env->serializedName);
+        }
+    });
+    auto parent = environmentDropdown->transform->parent;
+    parent->GetComponent<UI::LayoutElement*>()->preferredWidth = 87;
+
+    auto nested = Utils::CreateDropdownEnum(gameObject, "", getConfig().EnvironmentType.GetValue(), EnvironmentHUDTypeStrings, [this](int value) {
+        getConfig().EnvironmentType.SetValue(value);
+        UpdateUI();
+    });
+    auto rect = nested->GetComponent<RectTransform*>();
+    auto toDelete = rect->parent->gameObject;
+    rect->SetParent(parent, false);
+    rect->anchoredPosition = {-36, 0};
+    rect->sizeDelta = {22, 0};
+    Object::Destroy(toDelete);
+
     auto apply = BSML::Lite::CreateUIButton(environment, "Apply", SettingsFlowCoordinator::RefreshScene);
+    Utils::SetButtonSize(apply, 14, 8);
 
     BSML::Lite::CreateText(vertical, "Changes to the preset list are always saved!", {0, 0}, {50, 8})->alignment =
         TMPro::TextAlignmentOptions::Center;
 
-    presetDropdown = BSML::Lite::CreateDropdown(vertical, "Current Preset", "", {}, SettingsFlowCoordinator::SelectPreset);
+    presetDropdown = BSML::Lite::CreateDropdown(vertical, "Editing Preset", "", {}, SettingsFlowCoordinator::SelectPreset);
 
     auto buttons3 = BSML::Lite::CreateHorizontalLayoutGroup(vertical);
-    buttons3->GetComponent<UI::LayoutElement*>()->preferredHeight = 9;
-    buttons3->spacing = 3;
-    BSML::Lite::CreateUIButton(buttons3, "Rename", [this]() {
+    buttons3->spacing = 1;
+    auto renameButton = BSML::Lite::CreateUIButton(buttons3, "Rename", [this]() {
         nameModalIsRename = true;
         nameInput->text = getConfig().Preset.GetValue();
         nameModal->Show(true, true, nullptr);
     });
-    BSML::Lite::CreateUIButton(buttons3, "Duplicate", [this]() {
+    Utils::SetButtonSize(renameButton, 24, 8);
+    auto dupeButton = BSML::Lite::CreateUIButton(buttons3, "Duplicate", [this]() {
         nameModalIsRename = false;
         nameInput->text = getConfig().Preset.GetValue();
         nameModal->Show(true, true, nullptr);
     });
+    Utils::SetButtonSize(dupeButton, 24, 8);
     deleteButton = BSML::Lite::CreateUIButton(buttons3, "Delete", SettingsFlowCoordinator::DeletePreset);
+    Utils::SetButtonSize(deleteButton, 24, 8);
+    auto resetButton = BSML::Lite::CreateUIButton(buttons3, "Reset", SettingsFlowCoordinator::ResetPreset);
+    Utils::SetButtonSize(resetButton, 24, 8);
 
     auto snapIncrement = AddConfigValueIncrementFloat(vertical, getConfig().SnapStep, 1, 0.5, 0.5, 5);
     auto incrementObject = snapIncrement->transform->GetChild(1)->gameObject;
@@ -409,6 +425,26 @@ void SettingsViewController::UpdateUI() {
     presetDropdown->values = texts;
     presetDropdown->UpdateChoices();
     presetDropdown->set_Value(texts[selectedIdx]);
+
+    auto envs = ListW<System::Object*>::New();
+    GlobalNamespace::EnvironmentInfoSO* first = nullptr;
+    int selectedEnv = 0;
+    i = 0;
+    for (auto& env : environments) {
+        if ((int) GetHUDType(env->serializedName) == getConfig().EnvironmentType.GetValue()) {
+            if (!first)
+                first = env;
+            envs->Add((System::Object*) env->environmentName.convert());
+            if (env->serializedName == getConfig().Environment.GetValue())
+                selectedEnv = i;
+            i++;
+        }
+    }
+    if (selectedEnv == 0)
+        getConfig().Environment.SetValue(first->serializedName);
+    environmentDropdown->values = envs;
+    environmentDropdown->UpdateChoices();
+    environmentDropdown->set_Value(envs[selectedEnv]);
 
     deleteButton->interactable = presets.size() > 1;
 

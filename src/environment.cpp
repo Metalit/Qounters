@@ -79,23 +79,82 @@ bool inSettings = false;
 std::string currentEnvironment = "";
 std::string currentColors = "";
 
+std::map<std::string, EnvironmentHUDType> const hudTypes = {
+    {"DefaultEnvironment", EnvironmentHUDType::Wide},
+    {"TriangleEnvironment", EnvironmentHUDType::Wide},
+    {"NiceEnvironment", EnvironmentHUDType::Wide},
+    {"BigMirrorEnvironment", EnvironmentHUDType::Wide},
+    {"DragonsEnvironment", EnvironmentHUDType::Wide},
+    {"KDAEnvironment", EnvironmentHUDType::Wide},
+    {"MonstercatEnvironment", EnvironmentHUDType::Wide},
+    {"CrabRaveEnvironment", EnvironmentHUDType::Wide},
+    {"PanicEnvironment", EnvironmentHUDType::Wide},
+    {"TimbalandEnvironment", EnvironmentHUDType::Wide},
+    {"SkrillexEnvironment", EnvironmentHUDType::Wide},
+    {"TheSecondEnvironment", EnvironmentHUDType::Wide},
+    {"LizzoEnvironment", EnvironmentHUDType::Wide},
+    {"TheWeekndEnvironment", EnvironmentHUDType::Wide},
+    {"Dragons2Environment", EnvironmentHUDType::Wide},
+    {"Panic2Environment", EnvironmentHUDType::Wide},
+    {"TheRollingStonesEnvironment", EnvironmentHUDType::Wide},
+    {"LatticeEnvironment", EnvironmentHUDType::Wide},
+    {"DaftPunkEnvironment", EnvironmentHUDType::Wide},
+    {"HipHopEnvironment", EnvironmentHUDType::Wide}, // could be Close instead
+    {"ColliderEnvironment", EnvironmentHUDType::Wide},
+    {"OriginsEnvironment", EnvironmentHUDType::Narrow},
+    {"RocketEnvironment", EnvironmentHUDType::Narrow},
+    {"GreenDayGrenadeEnvironment", EnvironmentHUDType::Narrow},
+    {"GreenDayEnvironment", EnvironmentHUDType::Narrow},
+    {"FitBeatEnvironment", EnvironmentHUDType::Narrow},
+    {"LinkinParkEnvironment", EnvironmentHUDType::Narrow},
+    {"BTSEnvironment", EnvironmentHUDType::Narrow},
+    {"KaleidoscopeEnvironment", EnvironmentHUDType::Narrow},
+    {"InterscopeEnvironment", EnvironmentHUDType::Narrow},
+    {"BillieEnvironment", EnvironmentHUDType::Narrow},
+    {"HalloweenEnvironment", EnvironmentHUDType::Narrow},
+    {"GagaEnvironment", EnvironmentHUDType::Narrow},
+    {"LinkinPark2Environment", EnvironmentHUDType::Narrow},
+    {"WeaveEnvironment", EnvironmentHUDType::Close},
+    {"EDMEnvironment", EnvironmentHUDType::Close},
+    {"PyroEnvironment", EnvironmentHUDType::Sunken},
+    {"RockMixtapeEnvironment", EnvironmentHUDType::Sunken},
+    {"GlassDesertEnvironment", EnvironmentHUDType::Circle},
+    {"MultiplayerEnvironment", EnvironmentHUDType::Wide},
+};
+
+std::vector<std::string_view> Qounters::EnvironmentHUDTypeStrings = {
+    "Wide",
+    "Narrow",
+    "Close",
+    "Sunken",
+    "360",
+};
+
+EnvironmentHUDType Qounters::GetHUDType(std::string serializedName) {
+    auto itr = hudTypes.find(serializedName);
+    if (itr != hudTypes.end())
+        return itr->second;
+    return EnvironmentHUDType::Wide;
+}
+
 SimpleLevelStarter* GetLevelStarter() {
     return Resources::FindObjectsOfTypeAll<SimpleLevelStarter*>()->Last();
 }
 
 EnvironmentInfoSO* GetEnvironment(SimpleLevelStarter* levelStarter) {
-    std::string name = getConfig().Environment.GetValue();
+    currentEnvironment = getConfig().Environment.GetValue();
 
     auto listModel = levelStarter->_playerDataModel->playerDataFileModel->_environmentsListModel;
     for (auto& info : listModel->_envInfos) {
-        if (info->environmentName == name)
+        if (info->serializedName == currentEnvironment)
             return info;
     }
 
     auto ret = listModel->GetFirstEnvironmentInfoWithType(EnvironmentType::Normal);
-    if (name != "Multiplayer") {
-        logger.warn("Environment {} not found, resetting to {}", name, ret->environmentName);
-        getConfig().Environment.SetValue(ret->environmentName);
+    if (currentEnvironment != "Multiplayer") {
+        logger.warn("Environment {} not found, resetting to {}", currentEnvironment, ret->serializedName);
+        currentEnvironment = (std::string) ret->serializedName;
+        getConfig().Environment.SetValue(currentEnvironment);
     }
     return ret;
 }
@@ -187,7 +246,6 @@ void PresentScene(SimpleLevelStarter* levelStarter, bool refresh) {
 
     logger.debug("Presenting scene");
 
-    currentEnvironment = getConfig().Environment.GetValue();
     if (currentEnvironment == "Multiplayer")
         PresentMultiplayer(levelStarter, refresh, level, diff, colors);
     else
@@ -217,9 +275,8 @@ void Qounters::PresentSettingsEnvironment() {
 }
 
 void DismissFlowCoordinator() {
-    auto mainFlow = GameObject::Find("MainFlowCoordinator")->GetComponent<HMUI::FlowCoordinator*>();
     auto settingsFlow = Qounters::SettingsFlowCoordinator::GetInstance();
-    mainFlow->DismissFlowCoordinator(settingsFlow, HMUI::ViewController::AnimationDirection::Horizontal, nullptr, true);
+    settingsFlow->_parentFlowCoordinator->DismissFlowCoordinator(settingsFlow, HMUI::ViewController::AnimationDirection::Horizontal, nullptr, true);
 }
 
 void Qounters::DismissSettingsEnvironment() {
@@ -319,6 +376,9 @@ void Qounters::OnSceneStart(EnvironmentInfoSO* environment) {
     if (!mainFlow->IsFlowCoordinatorInHierarchy(settingsFlow))
         mainFlow->PresentFlowCoordinator(settingsFlow, nullptr, HMUI::ViewController::AnimationDirection::Horizontal, true, false);
 
+    float height = environment->serializedName == "LinkinPark2Environment" ? 0.7 : 0;
+    GameObject::Find("MenuCore/UI/ScreenSystem")->transform->localPosition = {0, height, 0};
+
     logger.debug("Fixing environment lighting");
 
     // rendering order issues
@@ -377,6 +437,7 @@ void Qounters::OnSceneStart(EnvironmentInfoSO* environment) {
 void Qounters::OnSceneEnd() {
     logger.info("Settings scene end");
 
+    GameObject::Find("MenuCore/UI/ScreenSystem")->transform->localPosition = {0, 0, 0};
     auto levelStarter = GetLevelStarter();
     levelStarter->_menuTransitionsHelper->_standardLevelScenesTransitionSetupData->didFinishEvent = nullptr;
     levelStarter->_gameScenesManager->_neverUnloadScenes->Remove("MenuCore");

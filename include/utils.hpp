@@ -38,6 +38,7 @@ namespace Qounters::Utils {
         return keys;
     }
 
+    void SetButtonSize(UnityEngine::UI::Button* button, int width, int height);
     void InstantSetToggle(BSML::ToggleSetting* toggle, bool value);
     void SetDropdownValue(BSML::DropdownListSetting* dropdown, std::string value);
     BSML::DropdownListSetting* CreateDropdown(

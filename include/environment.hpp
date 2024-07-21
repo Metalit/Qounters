@@ -4,6 +4,16 @@
 #include "main.hpp"
 
 namespace Qounters {
+    enum class EnvironmentHUDType {
+        Wide,
+        Narrow,
+        Close,
+        Sunken,
+        Circle,
+    };
+    extern std::vector<std::string_view> EnvironmentHUDTypeStrings;
+    EnvironmentHUDType GetHUDType(std::string serializedName);
+
     void PresentSettingsEnvironment();
     void DismissSettingsEnvironment();
     void RefreshSettingsEnvironment();

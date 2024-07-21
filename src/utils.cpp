@@ -102,6 +102,12 @@ std::string Utils::GetTransformPath(UnityEngine::Transform* parent, UnityEngine:
     return GetTransformPath(parent, child->parent) + "/" + static_cast<std::string>(child->name);
 }
 
+void Utils::SetButtonSize(UnityEngine::UI::Button* button, int width, int height) {
+    auto layout = button->GetComponent<UnityEngine::UI::LayoutElement*>();
+    layout->preferredWidth = width;
+    layout->preferredHeight = height;
+}
+
 void Utils::InstantSetToggle(BSML::ToggleSetting* toggle, bool value) {
     if (toggle->toggle->m_IsOn == value)
         return;

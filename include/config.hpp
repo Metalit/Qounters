@@ -17,6 +17,7 @@ DECLARE_CONFIG(Config) {
     CONFIG_VALUE(Migrated, bool, "Migrated", false);
     CONFIG_VALUE(Presets, StringKeyedMap<Qounters::Preset>, "Presets", {});
     CONFIG_VALUE(Preset, std::string, "Preset", "Default");
+    CONFIG_VALUE(EnvironmentType, int, "Settings Environment Type", 0);
     CONFIG_VALUE(Environment, std::string, "Settings Environment", "The First");
     CONFIG_VALUE(ColorScheme, std::string, "Color Scheme", "User Override / Environment");
     CONFIG_VALUE(Snap, bool, "Snap Enabled", true);
