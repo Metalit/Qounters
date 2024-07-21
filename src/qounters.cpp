@@ -478,12 +478,13 @@ void Qounters::CreateQounters() {
         CreateQounterGroup(preset.Qounters[i], i, false);
 }
 
-void Qounters::Reset() {
+void Qounters::Reset(bool sceneEnd) {
     texts.clear();
     shapes.clear();
     colors.clear();
     enables.clear();
-    BaseGameGraphic::Reset();
+    if (sceneEnd)
+        BaseGameGraphic::Reset();
 }
 
 void Qounters::SetupObjects() {

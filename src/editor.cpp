@@ -173,7 +173,7 @@ namespace Qounters::Editor {
             if (componentIdx == -1)
                 UnityEngine::Object::Destroy(obj->gameObject);
         }
-        Reset();
+        Reset(false);
         InitializeInternal(preset, false);
         SettingsViewController::GetInstance()->UpdateUI();
     }

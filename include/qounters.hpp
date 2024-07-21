@@ -29,7 +29,7 @@ namespace Qounters {
     void CreateQounterComponent(Component const& qounterComponent, int componentIdx, UnityEngine::Transform* parent, bool editing);
     void CreateQounterGroup(Group const& qounterGroup, int groupIdx, bool editing);
     void CreateQounters();
-    void Reset();
+    void Reset(bool sceneEnd = true);
     void SetupObjects();
 
     void UpdateSource(Sources sourceType, std::string source);
