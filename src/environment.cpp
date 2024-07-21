@@ -99,7 +99,7 @@ std::map<std::string, EnvironmentHUDType> const hudTypes = {
     {"TheRollingStonesEnvironment", EnvironmentHUDType::Wide},
     {"LatticeEnvironment", EnvironmentHUDType::Wide},
     {"DaftPunkEnvironment", EnvironmentHUDType::Wide},
-    {"HipHopEnvironment", EnvironmentHUDType::Wide}, // could be Close instead
+    {"HipHopEnvironment", EnvironmentHUDType::Wide},  // could be Close instead
     {"ColliderEnvironment", EnvironmentHUDType::Wide},
     {"OriginsEnvironment", EnvironmentHUDType::Narrow},
     {"RocketEnvironment", EnvironmentHUDType::Narrow},
@@ -357,14 +357,17 @@ void Qounters::OnSceneStart(EnvironmentInfoSO* environment) {
 
     menuEnvironment->transform->root->gameObject->active = true;
     songPreview->CrossfadeToDefault();
-    vrInput->gameObject->active = false;
-    vrInput->eventSystem->gameObject->active = false;
+
+    if (auto gameplay = GameObject::Find("StandardGameplay"))
+        gameplay->active = false;
 
     auto newInput = Utils::GetCurrentInputModule();
-    logger.debug("found new input module {}", fmt::ptr(newInput));
-    if (newInput) {
+    logger.debug("found input module {} (old was {})", fmt::ptr(newInput), fmt::ptr(vrInput));
+    if (newInput && newInput != vrInput) {
         keyboardManager->_vrInputModule = newInput;
         keyboardManager->Start();
+        vrInput->gameObject->active = false;
+        vrInput->eventSystem->gameObject->active = false;
         vrInput->_vrPointer->_leftVRController->gameObject->active = false;
         vrInput->_vrPointer->_rightVRController->gameObject->active = false;
     }
@@ -386,7 +389,7 @@ void Qounters::OnSceneStart(EnvironmentInfoSO* environment) {
     env->active = false;
     env->active = true;
 
-    auto bcu = Object::FindObjectOfType<BeatmapCallbacksUpdater*>();
+    auto bcu = Object::FindObjectOfType<BeatmapCallbacksUpdater*>(true);
     if (environment && bcu) {
         // kinda lame beatgames
         auto lightShowBeatmapData = BeatmapData::New_ctor(4);
@@ -423,11 +426,6 @@ void Qounters::OnSceneStart(EnvironmentInfoSO* environment) {
     renderParams->_sceneType = SceneType::Menu;
     renderParams->OnEnable();
 
-    logger.debug("Disabling objects");
-
-    if (auto gameplay = GameObject::Find("StandardGameplay"))
-        Utils::DisableAllBut(gameplay->transform, {"EventSystem", "ControllerLeft", "ControllerRight"});
-
     GameObject::Find("DisableGCWhileEnabled")->active = false;
 
     if (auto bts = GameObject::Find("BTSEnvironmentCharacterSpawner"))
@@ -447,8 +445,10 @@ void Qounters::OnSceneEnd() {
     vrInput->eventSystem->gameObject->active = true;
     vrInput->_vrPointer->_leftVRController->gameObject->active = true;
     vrInput->_vrPointer->_rightVRController->gameObject->active = true;
-    keyboardManager->OnDestroy();
-    keyboardManager->_vrInputModule = vrInput;
+    if (keyboardManager->_vrInputModule.ptr() != vrInput) {
+        keyboardManager->OnDestroy();
+        keyboardManager->_vrInputModule = vrInput;
+    }
     menuEnv->active = true;
     Object::FindObjectOfType<FadeInOutController*>()->FadeIn();
     localFakeConnectedPlayer = nullptr;
