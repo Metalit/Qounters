@@ -40,6 +40,7 @@ namespace Qounters::Utils {
 
     void SetButtonSize(UnityEngine::UI::Button* button, int width, int height);
     void InstantSetToggle(BSML::ToggleSetting* toggle, bool value);
+    void SetIncrementValue(BSML::IncrementSetting* increment, float value);
     void SetDropdownValue(BSML::DropdownListSetting* dropdown, std::string value);
     BSML::DropdownListSetting* CreateDropdown(
         UnityEngine::GameObject* parent,

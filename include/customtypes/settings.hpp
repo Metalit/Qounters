@@ -142,11 +142,13 @@ DECLARE_CLASS_CODEGEN(Qounters, OptionsViewController, HMUI::ViewController,
 
     DECLARE_INSTANCE_FIELD(BSML::IncrementSetting*, gPosIncrementX);
     DECLARE_INSTANCE_FIELD(BSML::IncrementSetting*, gPosIncrementY);
-    DECLARE_INSTANCE_FIELD(BSML::IncrementSetting*, gPosIncrementZ);
+    DECLARE_INSTANCE_FIELD(BSML::IncrementSetting*, gDetPosIncrementX);
+    DECLARE_INSTANCE_FIELD(BSML::IncrementSetting*, gDetPosIncrementY);
+    DECLARE_INSTANCE_FIELD(BSML::IncrementSetting*, gDetPosIncrementZ);
     DECLARE_INSTANCE_FIELD(BSML::SliderSetting*, gRotSlider);
-    DECLARE_INSTANCE_FIELD(BSML::SliderSetting*, gRotSliderX);
-    DECLARE_INSTANCE_FIELD(BSML::SliderSetting*, gRotSliderY);
-    DECLARE_INSTANCE_FIELD(BSML::SliderSetting*, gRotSliderZ);
+    DECLARE_INSTANCE_FIELD(BSML::SliderSetting*, gDetRotSliderX);
+    DECLARE_INSTANCE_FIELD(BSML::SliderSetting*, gDetRotSliderY);
+    DECLARE_INSTANCE_FIELD(BSML::SliderSetting*, gDetRotSliderZ);
     DECLARE_INSTANCE_FIELD(UnityEngine::UI::Button*, gComponentButton);
     DECLARE_INSTANCE_FIELD(UnityEngine::UI::Button*, gDetachButton);
     DECLARE_INSTANCE_FIELD(UnityEngine::UI::Button*, gDeleteButton);

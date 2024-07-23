@@ -175,7 +175,7 @@ void Qounters::Initialize() {
     auto gameplayCoreInstallers = UnityEngine::Resources::FindObjectsOfTypeAll<GameplayCoreInstaller*>();
     GameplayCoreInstaller* gameplayCoreInstaller;
     for (auto& installer : gameplayCoreInstallers) {
-        if (installer->get_isActiveAndEnabled() && installer->_sceneSetupData != nullptr) {
+        if (installer->isActiveAndEnabled && installer->_sceneSetupData != nullptr) {
             gameplayCoreInstaller = installer;
             break;
         }

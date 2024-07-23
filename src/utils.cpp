@@ -119,6 +119,11 @@ void Utils::InstantSetToggle(BSML::ToggleSetting* toggle, bool value) {
     animatedSwitch->LerpColors(value, animatedSwitch->_highlightAmount, animatedSwitch->_disabledAmount);
 }
 
+void Utils::SetIncrementValue(BSML::IncrementSetting* increment, float value) {
+    increment->currentValue = value;
+    increment->UpdateState();
+}
+
 void Utils::SetDropdownValue(BSML::DropdownListSetting* dropdown, std::string value) {
     auto values = ListW<StringW>(dropdown->values);
     for (int i = 0; i < values.size(); i++) {

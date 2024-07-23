@@ -53,6 +53,24 @@ void AddBackground(HMUI::ViewController* self, Vector2 size) {
     self->rectTransform->sizeDelta = size;
 }
 
+// exponential function f(x) where f(-1) = min, f(0) = 1, f(1) = max
+// min < 1, max > 1
+// https://math.stackexchange.com/a/2244310 + wolfram alpha
+static constexpr float min = 0.1, max = 5;
+static constexpr float coeff = (1 - max) / (min - 1);
+constexpr float CalculateScale(float input) {
+    return (std::pow(coeff, input) - 1 / coeff) * (max - min) / (coeff - 1 / coeff) + min;
+}
+float CalculateScaleInverse(float scale) {
+    static float const coeffLog = std::log(coeff);  // no constexpr :(
+    float const expr1 = (coeff * coeff * (min - scale) - max + scale) / (min - max);
+    return (std::log(expr1) - coeffLog) / coeffLog;
+}
+
+StringW ScaleFormat(float val) {
+    return Utils::FormatDecimals(CalculateScale(val), 2);
+}
+
 void SettingsFlowCoordinator::DidActivate(bool firstActivation, bool addedToHierarchy, bool screenSystemEnabling) {
     if (addedToHierarchy) {
         auto presets = getConfig().Presets.GetValue();
@@ -532,33 +550,39 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
 
     gPosIncrementX = BSML::Lite::CreateIncrementSetting(groupParent, "X Position", 1, 0.5, 0, [](float val) {
         static int id = Editor::GetActionId();
-        auto& group = Editor::GetSelectedGroup(id);
-        if (group.Detached)
-            group.DetachedPosition.x = val;
-        else
-            group.Position.x = val;
+        Editor::GetSelectedGroup(id).Position.x = val;
         Editor::UpdatePosition(true);
         Editor::FinalizeAction();
     });
     Utils::AddIncrementIncrement(gPosIncrementX, 5);
     gPosIncrementY = BSML::Lite::CreateIncrementSetting(groupParent, "Y Position", 1, 0.5, 0, [](float val) {
         static int id = Editor::GetActionId();
-        auto& group = Editor::GetSelectedGroup(id);
-        if (group.Detached)
-            group.DetachedPosition.y = val;
-        else
-            group.Position.y = val;
+        Editor::GetSelectedGroup(id).Position.y = val;
         Editor::UpdatePosition(true);
         Editor::FinalizeAction();
     });
     Utils::AddIncrementIncrement(gPosIncrementY, 5);
-    gPosIncrementZ = BSML::Lite::CreateIncrementSetting(groupParent, "Z Position", 1, 0.5, 0, [](float val) {
+    gDetPosIncrementX = BSML::Lite::CreateIncrementSetting(groupParent, "X Position", 2, 0.01, 0, [](float val) {
+        static int id = Editor::GetActionId();
+        Editor::GetSelectedGroup(id).DetachedPosition.x = val;
+        Editor::UpdatePosition(true);
+        Editor::FinalizeAction();
+    });
+    Utils::AddIncrementIncrement(gDetPosIncrementX, 0.25);
+    gDetPosIncrementY = BSML::Lite::CreateIncrementSetting(groupParent, "Y Position", 2, 0.01, 0, [](float val) {
+        static int id = Editor::GetActionId();
+        Editor::GetSelectedGroup(id).DetachedPosition.y = val;
+        Editor::UpdatePosition(true);
+        Editor::FinalizeAction();
+    });
+    Utils::AddIncrementIncrement(gDetPosIncrementY, 0.25);
+    gDetPosIncrementZ = BSML::Lite::CreateIncrementSetting(groupParent, "Z Position", 2, 0.01, 0, [](float val) {
         static int id = Editor::GetActionId();
         Editor::GetSelectedGroup(id).DetachedPosition.z = val;
         Editor::UpdatePosition(true);
         Editor::FinalizeAction();
     });
-    Utils::AddIncrementIncrement(gPosIncrementZ, 5);
+    Utils::AddIncrementIncrement(gDetPosIncrementZ, 0.25);
 
     gRotSlider = BSML::Lite::CreateSliderSetting(groupParent, "Rotation", 1, 0, -180, 180, 0, true, {0, 0}, [](float val) {
         static int id = Editor::GetActionId();
@@ -568,27 +592,27 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
     Utils::AddSliderEndDrag(gRotSlider, [](float _) { Editor::FinalizeAction(); });
     gRotSlider->GetComponent<RectTransform*>()->sizeDelta = {0, 8};
 
-    gRotSliderX = BSML::Lite::CreateSliderSetting(groupParent, "X Rotation", 1, 0, -180, 180, 0, true, {0, 0}, [](float val) {
+    gDetRotSliderX = BSML::Lite::CreateSliderSetting(groupParent, "X Rotation", 1, 0, -180, 180, 0, true, {0, 0}, [](float val) {
         static int id = Editor::GetActionId();
         Editor::GetSelectedGroup(id).DetachedRotation.x = val;
         Editor::UpdatePosition();
     });
-    Utils::AddSliderEndDrag(gRotSliderX, [](float _) { Editor::FinalizeAction(); });
-    gRotSliderX->GetComponent<RectTransform*>()->sizeDelta = {0, 8};
-    gRotSliderY = BSML::Lite::CreateSliderSetting(groupParent, "Y Rotation", 1, 0, -180, 180, 0, true, {0, 0}, [](float val) {
+    Utils::AddSliderEndDrag(gDetRotSliderX, [](float _) { Editor::FinalizeAction(); });
+    gDetRotSliderX->GetComponent<RectTransform*>()->sizeDelta = {0, 8};
+    gDetRotSliderY = BSML::Lite::CreateSliderSetting(groupParent, "Y Rotation", 1, 0, -180, 180, 0, true, {0, 0}, [](float val) {
         static int id = Editor::GetActionId();
         Editor::GetSelectedGroup(id).DetachedRotation.y = val;
         Editor::UpdatePosition();
     });
-    Utils::AddSliderEndDrag(gRotSliderY, [](float _) { Editor::FinalizeAction(); });
-    gRotSliderY->GetComponent<RectTransform*>()->sizeDelta = {0, 8};
-    gRotSliderZ = BSML::Lite::CreateSliderSetting(groupParent, "Z Rotation", 1, 0, -180, 180, 0, true, {0, 0}, [](float val) {
+    Utils::AddSliderEndDrag(gDetRotSliderY, [](float _) { Editor::FinalizeAction(); });
+    gDetRotSliderY->GetComponent<RectTransform*>()->sizeDelta = {0, 8};
+    gDetRotSliderZ = BSML::Lite::CreateSliderSetting(groupParent, "Z Rotation", 1, 0, -180, 180, 0, true, {0, 0}, [](float val) {
         static int id = Editor::GetActionId();
         Editor::GetSelectedGroup(id).DetachedRotation.z = val;
         Editor::UpdatePosition();
     });
-    Utils::AddSliderEndDrag(gRotSliderZ, [](float _) { Editor::FinalizeAction(); });
-    gRotSliderZ->GetComponent<RectTransform*>()->sizeDelta = {0, 8};
+    Utils::AddSliderEndDrag(gDetRotSliderZ, [](float _) { Editor::FinalizeAction(); });
+    gDetRotSliderZ->GetComponent<RectTransform*>()->sizeDelta = {0, 8};
 
     auto gButtonsParent1 = BSML::Lite::CreateHorizontalLayoutGroup(groupParent);
     gButtonsParent1->spacing = 3;
@@ -633,19 +657,21 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
     Utils::AddSliderEndDrag(cRotSlider, [](float _) { Editor::FinalizeAction(); });
     cRotSlider->GetComponent<RectTransform*>()->sizeDelta = {0, 8};
 
-    cScaleSliderX = BSML::Lite::CreateSliderSetting(componentParent, "X Scale", 0.01, 0, 0.01, 10, 0, true, {0, 0}, [](float val) {
+    cScaleSliderX = BSML::Lite::CreateSliderSetting(componentParent, "X Scale", 0.01, 0, -1, 1, 0, true, {0, 0}, [](float val) {
         static int id = Editor::GetActionId();
-        Editor::GetSelectedComponent(id).Scale.x = val;
+        Editor::GetSelectedComponent(id).Scale.x = CalculateScale(val);
         Editor::UpdatePosition();
     });
     Utils::AddSliderEndDrag(cScaleSliderX, [](float _) { Editor::FinalizeAction(); });
+    cScaleSliderX->formatter = ScaleFormat;
     cScaleSliderX->GetComponent<RectTransform*>()->sizeDelta = {0, 8};
-    cScaleSliderY = BSML::Lite::CreateSliderSetting(componentParent, "Y Scale", 0.01, 0, 0.01, 10, 0, true, {0, 0}, [](float val) {
+    cScaleSliderY = BSML::Lite::CreateSliderSetting(componentParent, "Y Scale", 0.01, 0, -1, 1, 0, true, {0, 0}, [](float val) {
         static int id = Editor::GetActionId();
-        Editor::GetSelectedComponent(id).Scale.y = val;
+        Editor::GetSelectedComponent(id).Scale.y = CalculateScale(val);
         Editor::UpdatePosition();
     });
     Utils::AddSliderEndDrag(cScaleSliderY, [](float _) { Editor::FinalizeAction(); });
+    cScaleSliderY->formatter = ScaleFormat;
     cScaleSliderY->GetComponent<RectTransform*>()->sizeDelta = {0, 8};
 
     positionCollapse->SetContents({cPosIncrementX, cPosIncrementY, cRotSlider, cScaleSliderX, cScaleSliderY});
@@ -768,37 +794,34 @@ void OptionsViewController::UpdateSimpleUI() {
     if (group) {
         auto& state = Editor::GetSelectedGroup(-1);
         if (state.Detached) {
-            gPosIncrementX->currentValue = state.DetachedPosition.x;
-            gPosIncrementX->UpdateState();
-            gPosIncrementY->currentValue = state.DetachedPosition.y;
-            gPosIncrementY->UpdateState();
-            gPosIncrementZ->currentValue = state.DetachedPosition.z;
-            gPosIncrementZ->UpdateState();
-            gRotSliderX->set_Value(state.DetachedRotation.x);
-            gRotSliderY->set_Value(state.DetachedRotation.y);
-            gRotSliderZ->set_Value(state.DetachedRotation.z);
+            Utils::SetIncrementValue(gDetPosIncrementX, state.DetachedPosition.x);
+            Utils::SetIncrementValue(gDetPosIncrementY, state.DetachedPosition.y);
+            Utils::SetIncrementValue(gDetPosIncrementZ, state.DetachedPosition.z);
+            gDetRotSliderX->set_Value(state.DetachedRotation.x);
+            gDetRotSliderY->set_Value(state.DetachedRotation.y);
+            gDetRotSliderZ->set_Value(state.DetachedRotation.z);
         } else {
-            gPosIncrementX->currentValue = state.Position.x;
-            gPosIncrementX->UpdateState();
-            gPosIncrementY->currentValue = state.Position.y;
-            gPosIncrementY->UpdateState();
+            Utils::SetIncrementValue(gPosIncrementX, state.Position.x);
+            Utils::SetIncrementValue(gPosIncrementY, state.Position.y);
             gRotSlider->set_Value(state.Rotation);
         }
-        gPosIncrementZ->gameObject->active = state.Detached;
+        gPosIncrementX->gameObject->active = !state.Detached;
+        gPosIncrementY->gameObject->active = !state.Detached;
+        gDetPosIncrementX->gameObject->active = state.Detached;
+        gDetPosIncrementY->gameObject->active = state.Detached;
+        gDetPosIncrementZ->gameObject->active = state.Detached;
         gRotSlider->gameObject->active = !state.Detached;
-        gRotSliderX->gameObject->active = state.Detached;
-        gRotSliderY->gameObject->active = state.Detached;
-        gRotSliderZ->gameObject->active = state.Detached;
+        gDetRotSliderX->gameObject->active = state.Detached;
+        gDetRotSliderY->gameObject->active = state.Detached;
+        gDetRotSliderZ->gameObject->active = state.Detached;
         BSML::Lite::SetButtonText(gDetachButton, state.Detached ? "Attach" : "Detach");
     } else if (component) {
         auto& state = Editor::GetSelectedComponent(-1);
-        cPosIncrementX->currentValue = state.Position.x;
-        cPosIncrementX->UpdateState();
-        cPosIncrementY->currentValue = state.Position.y;
-        cPosIncrementY->UpdateState();
+        Utils::SetIncrementValue(cPosIncrementX, state.Position.x);
+        Utils::SetIncrementValue(cPosIncrementY, state.Position.y);
         cRotSlider->set_Value(state.Rotation);
-        cScaleSliderX->set_Value(state.Scale.x);
-        cScaleSliderY->set_Value(state.Scale.y);
+        cScaleSliderX->set_Value(CalculateScaleInverse(state.Scale.x));
+        cScaleSliderY->set_Value(CalculateScaleInverse(state.Scale.y));
         auto typeCollapse = (CollapseController*) typeCollapseComponent;
         typeCollapse->title = std::string(TypeStrings[state.Type]) + " Options";
         typeCollapse->UpdateOpen();
@@ -953,7 +976,7 @@ bool MenuDragger::IsPointerPosValid(EventSystems::PointerEventData* eventData) {
 
 float MenuDragger::GetPointerPosX(EventSystems::PointerEventData* eventData) {
     if (!rootCanvas)
-        rootCanvas = GetComponentInParent<UnityEngine::Canvas*>()->rootCanvas;
+        rootCanvas = GetComponentInParent<Canvas*>()->rootCanvas;
     auto screenPos = eventData->pointerCurrentRaycast.screenPosition;
     return rootCanvas->transform->InverseTransformPoint({screenPos.x, screenPos.y, 0}).x;
 }
