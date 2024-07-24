@@ -70,8 +70,11 @@ namespace Qounters {
              {Sources::Text, TextSource::SaberSpeedName},
              {Sources::Text, TextSource::SpinometerName},
          }},
-        {(int) Events::PPInfo,
+        {(int) Events::MapInfo,
          {
+             {Sources::Text, TextSource::RankName},
+             {Sources::Text, TextSource::PersonalBestName},
+             {Sources::Text, TextSource::NotesName},
              {Sources::Text, TextSource::PPName},
              {Sources::Enable, EnableSource::RankedName},
          }},

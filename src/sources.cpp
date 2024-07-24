@@ -2,8 +2,6 @@
 
 #include "environment.hpp"
 #include "game.hpp"
-#include "internals.hpp"
-#include "pp.hpp"
 #include "sourceui.hpp"
 #include "utils.hpp"
 
@@ -233,7 +231,7 @@ namespace Qounters::TextSource {
 
         int notes = Game::GetNotesCut(opts.Saber);
         if (opts.Display == (int) Notes::Displays::Remaining)
-            notes = Game::GetTotalNotes(opts.Saber) - notes;
+            notes = Game::GetSongNotes(opts.Saber) - notes;
 
         if (opts.Display == (int) Notes::Displays::Ratio) {
             return fmt::format("{} / {}", notes, Game::GetTotalNotes(opts.Saber));
@@ -247,18 +245,7 @@ namespace Qounters::TextSource {
     std::string GetPP(UnparsedJSON unparsed) {
         auto opts = unparsed.Parse<PP>();
 
-        int score = Game::GetScore((int) Sabers::Both);
-        int max = Game::GetMaxScore((int) Sabers::Both);
-        float percent = max > 0 ? score / (double) max : 0.95;
-        bool failed = Game::GetHealth() == 0;
-
-        float pp = 0;
-        if (opts.Leaderboard == (int) PP::Leaderboards::BeatLeader)
-            pp = Qounters::PP::CalculateBL(percent, modifiers, failed);
-        else if (opts.Leaderboard == (int) PP::Leaderboards::ScoreSaber)
-            pp = Qounters::PP::CalculateSS(percent, modifiers, failed);
-
-        return Utils::FormatDecimals(pp, opts.Decimals) + " PP";
+        return Utils::FormatDecimals(Game::GetRankedPP(opts.Leaderboard), opts.Decimals) + " PP";
     }
     std::string GetSaberSpeed(UnparsedJSON unparsed) {
         auto opts = unparsed.Parse<SaberSpeed>();
@@ -436,16 +423,7 @@ namespace Qounters::EnableSource {
     bool GetRanked(UnparsedJSON unparsed) {
         auto opts = unparsed.Parse<Ranked>();
 
-        switch ((Ranked::Leaderboards) opts.Leaderboard) {
-            case Ranked::Leaderboards::ScoreSaber:
-                return PP::IsRankedSS();
-            case Ranked::Leaderboards::BeatLeader:
-                return PP::IsRankedBL();
-            case Ranked::Leaderboards::Either:
-                return PP::IsRankedSS() || PP::IsRankedBL();
-            case Ranked::Leaderboards::Both:
-                return PP::IsRankedSS() && PP::IsRankedBL();
-        }
+        return Game::GetIsRanked(opts.Leaderboard);
     }
     bool GetFullCombo(UnparsedJSON unparsed) {
         auto opts = unparsed.Parse<FullCombo>();

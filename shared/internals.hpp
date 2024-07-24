@@ -4,6 +4,8 @@
 #include "GlobalNamespace/ColorScheme.hpp"
 #include "GlobalNamespace/GameplayModifiers.hpp"
 #include "GlobalNamespace/NoteData.hpp"
+#include "GlobalNamespace/SaberManager.hpp"
+#include "UnityEngine/Quaternion.hpp"
 #include "types.hpp"
 
 namespace Qounters {
@@ -27,7 +29,8 @@ namespace Qounters {
     extern int bombsLeftHit;
     extern int bombsRightHit;
     extern int wallsHit;
-    extern int songNotes;
+    extern int songNotesLeft;
+    extern int songNotesRight;
     extern int leftPreSwing;
     extern int rightPreSwing;
     extern int leftPostSwing;
@@ -53,8 +56,13 @@ namespace Qounters {
     extern int rightMissedMaxScore;
     extern int leftMissedFixedScore;
     extern int rightMissedFixedScore;
+    extern float timeSinceSlowUpdate;
+    extern UnityEngine::Quaternion prevRotLeft;
+    extern UnityEngine::Quaternion prevRotRight;
+    extern GlobalNamespace::SaberManager* saberManager;
 
     void Initialize();
 
     bool ShouldProcessNote(GlobalNamespace::NoteData* data);
+    void DoSlowUpdate();
 }

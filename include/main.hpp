@@ -17,3 +17,6 @@ extern GlobalNamespace::IConnectedPlayer* localFakeConnectedPlayer;
 
 extern bool blockOtherRaycasts;
 extern std::unordered_set<UnityEngine::Canvas*> raycastCanvases;
+
+extern float settingsStarsBL;
+extern float settingsStarsSS;

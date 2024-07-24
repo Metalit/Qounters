@@ -34,4 +34,5 @@ namespace Qounters {
 
     void UpdateSource(Sources sourceType, std::string source);
     void UpdateAllEnables();
+    void UpdateAllSources();
 }

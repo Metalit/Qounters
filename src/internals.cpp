@@ -16,6 +16,7 @@
 #include "GlobalNamespace/PlayerData.hpp"
 #include "GlobalNamespace/PlayerDataModel.hpp"
 #include "GlobalNamespace/PlayerLevelStatsData.hpp"
+#include "GlobalNamespace/Saber.hpp"
 #include "GlobalNamespace/ScoreController.hpp"
 #include "GlobalNamespace/ScoreModel.hpp"
 #include "System/Collections/Generic/Dictionary_2.hpp"
@@ -23,7 +24,10 @@
 #include "System/Collections/IEnumerator.hpp"
 #include "UnityEngine/AudioClip.hpp"
 #include "UnityEngine/Resources.hpp"
+#include "UnityEngine/Time.hpp"
 #include "beatsaber-hook/shared/utils/il2cpp-utils-classes.hpp"
+#include "environment.hpp"
+#include "events.hpp"
 #include "main.hpp"
 #include "utils.hpp"
 
@@ -33,7 +37,7 @@ std::string lastBeatmap;
 
 using namespace GlobalNamespace;
 
-int GetNoteCount(BeatmapCallbacksUpdater* updater) {
+int GetNoteCount(BeatmapCallbacksUpdater* updater, bool left) {
     if (!updater)
         return 0;
     using LinkedList = System::Collections::Generic::LinkedList_1<NoteData*>;
@@ -49,7 +53,7 @@ int GetNoteCount(BeatmapCallbacksUpdater* updater) {
     auto enumerator = noteDataItemsList->GetEnumerator();
     while (enumerator.MoveNext()) {
         auto noteData = (NoteData*) enumerator.Current;
-        if (ShouldProcessNote(noteData) && noteData->time > songTime)
+        if (ShouldProcessNote(noteData) && noteData->time > songTime && (noteData->colorType == ColorType::ColorA) == left)
             noteCount++;
     }
     return noteCount;
@@ -105,7 +109,7 @@ float GetNegativeMods(ScoreController* controller) {
 
 int GetHighScore(PlayerDataModel* data, GameplayCoreInstaller* installer) {
     if (!data || !installer || !installer->_sceneSetupData)
-        return 0;
+        return -1;
     auto beatmap = installer->_sceneSetupData->beatmapKey;
     if (!data->playerData->levelsStatsData->ContainsKey(beatmap))
         return -1;
@@ -139,7 +143,8 @@ namespace Qounters {
     int bombsLeftHit;
     int bombsRightHit;
     int wallsHit;
-    int songNotes;
+    int songNotesLeft;
+    int songNotesRight;
     int leftPreSwing;
     int rightPreSwing;
     int leftPostSwing;
@@ -153,7 +158,7 @@ namespace Qounters {
     std::vector<float> leftAngles;
     std::vector<float> rightAngles;
     bool noFail;
-    GlobalNamespace::GameplayModifiers* modifiers;
+    GameplayModifiers* modifiers;
     float positiveMods;
     float negativeMods;
     int personalBest;
@@ -165,6 +170,10 @@ namespace Qounters {
     int rightMissedMaxScore;
     int leftMissedFixedScore;
     int rightMissedFixedScore;
+    float timeSinceSlowUpdate;
+    UnityEngine::Quaternion prevRotLeft;
+    UnityEngine::Quaternion prevRotRight;
+    SaberManager* saberManager;
 }
 
 void Qounters::Initialize() {
@@ -191,7 +200,7 @@ void Qounters::Initialize() {
     rightScore = 0;
     leftMaxScore = 0;
     rightMaxScore = 0;
-    songMaxScore = GetMaxScore(beatmapCallbacksUpdater);
+    songMaxScore = InSettingsEnvironment() ? 0 : GetMaxScore(beatmapCallbacksUpdater);
     leftCombo = 0;
     rightCombo = 0;
     combo = 0;
@@ -207,7 +216,8 @@ void Qounters::Initialize() {
     bombsLeftHit = 0;
     bombsRightHit = 0;
     wallsHit = 0;
-    songNotes = GetNoteCount(beatmapCallbacksUpdater);
+    songNotesLeft = InSettingsEnvironment() ? 0 : GetNoteCount(beatmapCallbacksUpdater, true);
+    songNotesRight = InSettingsEnvironment() ? 0 : GetNoteCount(beatmapCallbacksUpdater, false);
     leftPreSwing = 0;
     rightPreSwing = 0;
     leftPostSwing = 0;
@@ -230,7 +240,7 @@ void Qounters::Initialize() {
 
     logger.debug("modifiers {} -{}", positiveMods, negativeMods);
 
-    if (beatmap != lastBeatmap)
+    if (beatmap != lastBeatmap || InSettingsEnvironment())
         restarts = 0;
     lastBeatmap = beatmap;
 
@@ -241,6 +251,11 @@ void Qounters::Initialize() {
     rightMissedMaxScore = 0;
     leftMissedFixedScore = 0;
     rightMissedFixedScore = 0;
+
+    timeSinceSlowUpdate = 0;
+    prevRotLeft = UnityEngine::Quaternion::get_identity();
+    prevRotRight = UnityEngine::Quaternion::get_identity();
+    saberManager = UnityEngine::Object::FindObjectOfType<SaberManager*>();
 }
 
 bool Qounters::ShouldProcessNote(NoteData* data) {
@@ -250,4 +265,26 @@ bool Qounters::ShouldProcessNote(NoteData* data) {
     if (data->gameplayType == NoteData::GameplayType::Normal || data->gameplayType == NoteData::GameplayType::BurstSliderHead)
         return true;
     return false;
+}
+
+void Qounters::DoSlowUpdate() {
+    timeSinceSlowUpdate += UnityEngine::Time::get_deltaTime();
+    if (timeSinceSlowUpdate > 1 / (float) SPEED_SAMPLES_PER_SEC) {
+        if (saberManager) {
+            leftSpeeds.emplace_back(saberManager->leftSaber->bladeSpeed);
+            rightSpeeds.emplace_back(saberManager->rightSaber->bladeSpeed);
+
+            auto rotLeft = saberManager->leftSaber->transform->rotation;
+            auto rotRight = saberManager->rightSaber->transform->rotation;
+            // use speeds array as tracker for if prevRots have accurate values
+            if (leftSpeeds.size() > 1) {
+                leftAngles.emplace_back(UnityEngine::Quaternion::Angle(rotLeft, prevRotLeft));
+                rightAngles.emplace_back(UnityEngine::Quaternion::Angle(rotRight, prevRotRight));
+            }
+            prevRotLeft = rotLeft;
+            prevRotRight = rotRight;
+        }
+        timeSinceSlowUpdate = 0;
+        BroadcastEvent((int) Events::SlowUpdate);
+    }
 }

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "GlobalNamespace/IAudioTimeSource.hpp"
 #include "UnityEngine/Transform.hpp"
 #include "UnityEngine/UI/MaskableGraphic.hpp"
 #include "UnityEngine/UI/VertexHelper.hpp"
@@ -63,6 +64,14 @@ DECLARE_CLASS_CODEGEN(Qounters, BaseGameGraphic, UUI::Graphic,
     bool updateChildren = false;
 )
 
+DECLARE_CLASS_CODEGEN_INTERFACES(Qounters, SongTimeSource, Il2CppObject, classof(GlobalNamespace::IAudioTimeSource*),
+    DECLARE_OVERRIDE_METHOD_MATCH(float, get_songTime, &GlobalNamespace::IAudioTimeSource::get_songTime);
+    DECLARE_OVERRIDE_METHOD_MATCH(float, get_lastFrameDeltaSongTime, &GlobalNamespace::IAudioTimeSource::get_lastFrameDeltaSongTime);
+    DECLARE_OVERRIDE_METHOD_MATCH(float, get_songEndTime, &GlobalNamespace::IAudioTimeSource::get_songEndTime);
+    DECLARE_OVERRIDE_METHOD_MATCH(float, get_songLength, &GlobalNamespace::IAudioTimeSource::get_songLength);
+    DECLARE_OVERRIDE_METHOD_MATCH(bool, get_isReady, &GlobalNamespace::IAudioTimeSource::get_isReady);
+)
+
 DECLARE_CLASS_CODEGEN(Qounters, ImageSpriteCache, UnityEngine::MonoBehaviour,
     DECLARE_DEFAULT_CTOR();
     DECLARE_INSTANCE_METHOD(void, OnDestroy);
@@ -94,3 +103,4 @@ DECLARE_CLASS_CODEGEN(Qounters, DestroySignal, UnityEngine::MonoBehaviour,
 )
 
 #undef UUI
+#undef CAST_METHOD

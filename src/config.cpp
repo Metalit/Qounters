@@ -210,9 +210,7 @@ namespace Qounters {
 
         currentImage = BSML::Lite::CreateImage(horizontal, currentSprite);
         currentImage->preserveAspect = true;
-        auto dims = currentImage->GetComponent<UI::LayoutElement*>();
-        dims->preferredWidth = -1;
-        dims->preferredHeight = 10;
+        Utils::SetLayoutSize(currentImage, -1, 10);
 
         BSML::Lite::CreateUIButton(horizontal, "Select Image", []() { modal->Show(); });
     }

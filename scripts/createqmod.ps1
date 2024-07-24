@@ -70,10 +70,6 @@ foreach ($lib in $modJson.libraryFiles) {
     $filelist += $path
 }
 
-foreach ($img in $modJson.fileCopies) {
-    $filelist += "./images/" + $img.name
-}
-
 $zip = $qmodName + ".zip"
 $qmod = $qmodName + ".qmod"
 

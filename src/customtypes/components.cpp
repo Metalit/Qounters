@@ -5,17 +5,20 @@
 #include "GlobalNamespace/SongProgressUIController.hpp"
 #include "UnityEngine/Rect.hpp"
 #include "UnityEngine/RectTransform.hpp"
+#include "UnityEngine/Time.hpp"
 #include "UnityEngine/UI/Image.hpp"
 #include "UnityEngine/UI/Mask.hpp"
 #include "bsml/shared/BSML-Lite.hpp"
 #include "bsml/shared/Helpers/utilities.hpp"
 #include "config.hpp"
+#include "internals.hpp"
 #include "main.hpp"
 #include "qounters.hpp"
 #include "utils.hpp"
 
 DEFINE_TYPE(Qounters, Shape);
 DEFINE_TYPE(Qounters, BaseGameGraphic);
+DEFINE_TYPE(Qounters, SongTimeSource);
 DEFINE_TYPE(Qounters, ImageSpriteCache);
 DEFINE_TYPE(Qounters, DestroySignal);
 
@@ -197,7 +200,7 @@ void CopyFields(Transform* base, Transform* target, int component) {
         case BaseGameOptions::Components::ProgressBar: {
             auto baseComp = base->GetComponent<SongProgressUIController*>();
             auto targetComp = target->GetComponent<SongProgressUIController*>();
-            targetComp->_audioTimeSource = baseComp->_audioTimeSource;
+            targetComp->_audioTimeSource = (IAudioTimeSource*) CRASH_UNLESS(il2cpp_utils::New<SongTimeSource*>());
             break;
         }
         case BaseGameOptions::Components::HealthBar: {
@@ -342,6 +345,26 @@ void BaseGameGraphic::MakeClones() {
 void BaseGameGraphic::Reset() {
     for (int i = 0; i <= (int) BaseGameOptions::Components::ComponentsMax; i++)
         clones[i] = nullptr;
+}
+
+float SongTimeSource::get_songTime() {
+    return songTime;
+}
+
+float SongTimeSource::get_lastFrameDeltaSongTime() {
+    return Time::get_deltaTime();
+}
+
+float SongTimeSource::get_songEndTime() {
+    return songLength;
+}
+
+float SongTimeSource::get_songLength() {
+    return songLength;
+}
+
+bool SongTimeSource::get_isReady() {
+    return true;
 }
 
 ImageSpriteCache* ImageSpriteCache::instance;

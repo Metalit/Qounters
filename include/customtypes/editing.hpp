@@ -208,3 +208,4 @@ DECLARE_CLASS_CUSTOM_INTERFACES(Qounters, EditingComponent, EditingBase, INTERFA
 #undef INTERFACES
 #undef UUI
 #undef UES
+#undef CAST_METHOD

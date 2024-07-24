@@ -1,5 +1,6 @@
 #include "main.hpp"
 
+#include "assets.hpp"
 #include "bsml/shared/BSML.hpp"
 #include "config.hpp"
 #include "environment.hpp"
@@ -43,4 +44,9 @@ extern "C" void late_load() {
 
     logger.info("Installing hooks");
     Qounters::InstallHooks();
+
+    logger.info("Writing default images");
+    writefile(IMAGE_DIRECTORY "Beatleader.png", IncludedAssets::Beatleader_png);
+    writefile(IMAGE_DIRECTORY "Default.png", IncludedAssets::Default_png);
+    writefile(IMAGE_DIRECTORY "Scoresaber.png", IncludedAssets::Scoresaber_png);
 }

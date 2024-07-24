@@ -9,6 +9,7 @@
 #include "UnityEngine/EventSystems/IInitializePotentialDragHandler.hpp"
 #include "UnityEngine/EventSystems/IDragHandler.hpp"
 #include "UnityEngine/EventSystems/IEndDragHandler.hpp"
+#include "bsml/shared/BSML/Components/ClickableImage.hpp"
 #include "bsml/shared/BSML/Components/CustomListTableData.hpp"
 #include "bsml/shared/BSML/Components/Settings/DropdownListSetting.hpp"
 #include "bsml/shared/BSML/Components/Settings/IncrementSetting.hpp"
@@ -26,6 +27,7 @@ DECLARE_CLASS_CODEGEN(Qounters, SettingsFlowCoordinator, HMUI::FlowCoordinator,
     DECLARE_OVERRIDE_METHOD_MATCH(void, DidActivate, &HMUI::FlowCoordinator::DidActivate, bool, bool, bool);
     DECLARE_OVERRIDE_METHOD_MATCH(void, DidDeactivate, &HMUI::FlowCoordinator::DidDeactivate, bool, bool);
 
+    DECLARE_STATIC_METHOD(void, PresentPlaytest);
     DECLARE_STATIC_METHOD(void, PresentTemplates);
     DECLARE_STATIC_METHOD(void, PresentOptions);
 
@@ -91,6 +93,40 @@ DECLARE_CLASS_CODEGEN(Qounters, SettingsViewController, HMUI::ViewController,
     bool nameModalIsRename = false;
 
     static inline SettingsViewController* instance = nullptr;
+)
+
+DECLARE_CLASS_CODEGEN(Qounters, PlaytestViewController, HMUI::ViewController,
+    DECLARE_DEFAULT_CTOR();
+
+    DECLARE_OVERRIDE_METHOD_MATCH(void, DidActivate, &HMUI::ViewController::DidActivate, bool, bool, bool);
+
+    DECLARE_INSTANCE_METHOD(void, OnDestroy);
+    DECLARE_INSTANCE_METHOD(void, Update);
+
+    DECLARE_INSTANCE_METHOD(void, UpdateUI);
+
+    DECLARE_INSTANCE_FIELD_DEFAULT(bool, uiInitialized, false);
+
+    DECLARE_INSTANCE_FIELD(BSML::ClickableImage*, lNote);
+    DECLARE_INSTANCE_FIELD(BSML::ClickableImage*, rNote);
+    DECLARE_INSTANCE_FIELD(BSML::ClickableImage*, lChain);
+    DECLARE_INSTANCE_FIELD(BSML::ClickableImage*, rChain);
+    DECLARE_INSTANCE_FIELD(BSML::ClickableImage*, wall);
+    DECLARE_INSTANCE_FIELD(UnityEngine::UI::Button*, resetButton);
+    DECLARE_INSTANCE_FIELD(BSML::ToggleSetting*, pbToggle);
+    DECLARE_INSTANCE_FIELD(BSML::SliderSetting*, pbSlider);
+    DECLARE_INSTANCE_FIELD(BSML::SliderSetting*, timeSlider);
+    DECLARE_INSTANCE_FIELD(BSML::IncrementSetting*, posModsIncrement);
+    DECLARE_INSTANCE_FIELD(BSML::IncrementSetting*, negModsIncrement);
+    DECLARE_INSTANCE_FIELD(BSML::ToggleSetting*, blToggle);
+    DECLARE_INSTANCE_FIELD(BSML::SliderSetting*, blSlider);
+    DECLARE_INSTANCE_FIELD(BSML::ToggleSetting*, ssToggle);
+    DECLARE_INSTANCE_FIELD(BSML::SliderSetting*, ssSlider);
+
+    DECLARE_STATIC_METHOD(PlaytestViewController*, GetInstance);
+
+   private:
+    static inline PlaytestViewController* instance = nullptr;
 )
 
 DECLARE_CLASS_CODEGEN(Qounters, TemplatesViewController, HMUI::ViewController,

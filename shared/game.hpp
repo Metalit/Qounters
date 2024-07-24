@@ -20,7 +20,7 @@ namespace Qounters::Game {
     int GetNotesBadCut(int saber);
     int GetBombsHit(int saber);
     int GetWallsHit();
-    int GetSongNotes();
+    int GetSongNotes(int saber);
     float GetPreSwing(int saber);
     float GetPostSwing(int saber);
     float GetAccuracy(int saber);
@@ -35,4 +35,6 @@ namespace Qounters::Game {
     int GetRestarts();
     UnityEngine::Color GetColor(int color);
     int GetFCScore(int saber);
+    bool GetIsRanked(int leaderboards);
+    float GetRankedPP(int leaderboard);
 }

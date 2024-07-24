@@ -1,31 +1,26 @@
 $mod = "./mod.json"
-$modTemplate = Get-Item "./mod.template.json"
-$qpmShared = Get-Item "./qpm.shared.json"
+$modTemplate = "./mod.template.json"
+$qpmShared = "./qpm.shared.json"
 
-if (-not (Test-Path -Path $mod) -or $modTemplate.LastWriteTime -gt (Get-Item $mod).LastWriteTime -or $modTemplate.LastWriteTime -gt $qpmShared.LastWriteTime) {
-    if (Test-Path -Path ".\mod.template.json") {
-        & qpm qmod manifest
+if (Test-Path -Path $modTemplate) {
+    $update = -not (Test-Path -Path $mod)
+    if (-not $update) {
+        $update = (Get-Item $modTemplate).LastWriteTime -gt (Get-Item $mod).LastWriteTime
+    }
+    if (-not $update -and (Test-Path -Path $qpmShared)) {
+        $update = (Get-Item $qpmShared).LastWriteTime -gt (Get-Item $mod).LastWriteTime
+    }
+
+    if ($update) {
+        & qpm qmod build
         if ($LASTEXITCODE -ne 0) {
             exit $LASTEXITCODE
         }
-
-        $modJson = Get-Content $mod -Raw | ConvertFrom-Json
-        $destinationPath = "/sdcard/ModData/" + $modJson.packageId + "/Mods/" + $modJson.id
-
-        Get-ChildItem "./images/" | ForEach-Object {
-            $name = $_.NameString
-            $modJson.fileCopies += (ConvertFrom-Json -InputObject "{
-                `"name`": `"$name`",
-                `"destination`": `"$destinationPath/$name`"
-            }")
-        }
-
-        ConvertTo-Json -InputObject $modJson -Depth 32 | Set-Content $mod
     }
-    else {
-        Write-Output "Error: mod.json and mod.template.json were not present"
-        exit 1
-    }
+}
+elseif (-not (Test-Path -Path $mod)) {
+    Write-Output "Error: mod.json and mod.template.json were not present"
+    exit 1
 }
 
 $psVersion = $PSVersionTable.PSVersion.Major

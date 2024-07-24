@@ -7,14 +7,13 @@
 #include "GlobalNamespace/CutScoreBuffer.hpp"
 #include "GlobalNamespace/FlyingGameHUDRotation.hpp"
 #include "GlobalNamespace/GameEnergyCounter.hpp"
+#include "GlobalNamespace/LayerMasks.hpp"
 #include "GlobalNamespace/MultiplayerLocalActivePlayerGameplayManager.hpp"
 #include "GlobalNamespace/MultiplayerLocalActivePlayerInGameMenuViewController.hpp"
 #include "GlobalNamespace/MultiplayerSessionManager.hpp"
 #include "GlobalNamespace/NoteController.hpp"
 #include "GlobalNamespace/NoteCutInfo.hpp"
 #include "GlobalNamespace/PauseController.hpp"
-#include "GlobalNamespace/Saber.hpp"
-#include "GlobalNamespace/SaberManager.hpp"
 #include "GlobalNamespace/ScoreController.hpp"
 #include "GlobalNamespace/ScoreModel.hpp"
 #include "GlobalNamespace/ScoreMultiplierCounter.hpp"
@@ -39,12 +38,6 @@
 using namespace GlobalNamespace;
 using namespace VRUIControls;
 using namespace Qounters;
-
-SaberManager* saberManager = nullptr;
-float lastUpdated = 0;
-
-UnityEngine::Quaternion prevRotLeft;
-UnityEngine::Quaternion prevRotRight;
 
 UnityEngine::Transform* rotationalAnchor = nullptr;
 
@@ -216,26 +209,7 @@ MAKE_HOOK_MATCH(AudioTimeSyncController_Update, &AudioTimeSyncController::Update
 
     AudioTimeSyncController_Update(self);
 
-    lastUpdated += UnityEngine::Time::get_deltaTime();
-    if (lastUpdated > 1 / (float) SPEED_SAMPLES_PER_SEC) {
-        if (saberManager) {
-            leftSpeeds.emplace_back(saberManager->leftSaber->bladeSpeed);
-            rightSpeeds.emplace_back(saberManager->rightSaber->bladeSpeed);
-
-            auto rotLeft = saberManager->leftSaber->transform->rotation;
-            auto rotRight = saberManager->rightSaber->transform->rotation;
-            // use speeds array as tracker for if prevRots have accurate values
-            if (leftSpeeds.size() > 1) {
-                leftAngles.emplace_back(UnityEngine::Quaternion::Angle(rotLeft, prevRotLeft));
-                rightAngles.emplace_back(UnityEngine::Quaternion::Angle(rotRight, prevRotRight));
-            }
-            prevRotLeft = rotLeft;
-            prevRotRight = rotRight;
-        }
-        lastUpdated = 0;
-        BroadcastEvent((int) Events::SlowUpdate);
-    }
-
+    DoSlowUpdate();
     songTime = self->songTime;
     BroadcastEvent((int) Events::Update);
 }
@@ -245,7 +219,6 @@ MAKE_HOOK_MATCH(
 ) {
     logger.info("Qounters start");
     initData->advancedHUD = true;
-    saberManager = UnityEngine::Object::FindObjectOfType<SaberManager*>();
 
     DestroySignal::Create([]() {
         logger.info("Qounters end");
@@ -338,12 +311,15 @@ MAKE_HOOK_MATCH(
 ) {
     if (blockOtherRaycasts && !raycastCanvases.contains(self->_canvas))
         return;
+    auto mask = self->_blockingMask;
     if (InSettingsEnvironment() && Editor::GetPreviewMode()) {
         if (self->_canvas->name == "QounterGroup")
             return;
+        self->_blockingMask = mask.m_Mask & ~LayerMasks::getStaticF_saberLayerMask().m_Mask;
     }
 
     VRGraphicRaycaster_Raycast(self, eventData, resultAppendList);
+    self->_blockingMask = mask;
 }
 
 MAKE_HOOK_MATCH(
@@ -376,6 +352,20 @@ MAKE_HOOK_MATCH(UIKeyboardManager_HandleKeyboardOkButton, &UIKeyboardManager::Ha
     UIKeyboardManager_HandleKeyboardOkButton(self);
 }
 
+MAKE_HOOK_MATCH(
+    Screen_SetRootViewController,
+    &HMUI::Screen::SetRootViewController,
+    void,
+    HMUI::Screen* self,
+    HMUI::ViewController* newRootViewController,
+    HMUI::ViewController::AnimationType animationType
+) {
+    Screen_SetRootViewController(self, newRootViewController, animationType);
+
+    if (InSettingsEnvironment() && newRootViewController)
+        newRootViewController->rectTransform->anchoredPosition = {0, 0};
+}
+
 void Qounters::InstallHooks() {
     INSTALL_HOOK(logger, ScoreController_DespawnScoringElement);
     INSTALL_HOOK(logger, BeatmapObjectManager_HandleNoteControllerNoteWasCut);
@@ -396,4 +386,5 @@ void Qounters::InstallHooks() {
     INSTALL_HOOK(logger, InputFieldView_DeactivateKeyboard);
     INSTALL_HOOK(logger, UIKeyboardManager_OpenKeyboardFor);
     INSTALL_HOOK(logger, UIKeyboardManager_HandleKeyboardOkButton);
+    INSTALL_HOOK(logger, Screen_SetRootViewController);
 }

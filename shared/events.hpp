@@ -13,8 +13,8 @@ namespace Qounters {
         HealthChanged,
         Update,
         SlowUpdate,
-        PPInfo,
-        EventMax = PPInfo,
+        MapInfo,
+        EventMax = MapInfo,
     };
 
     int RegisterCustomEvent(std::string mod, int event);

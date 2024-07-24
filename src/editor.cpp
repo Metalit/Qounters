@@ -14,6 +14,7 @@
 #include "customtypes/editing.hpp"
 #include "customtypes/settings.hpp"
 #include "main.hpp"
+#include "playtest.hpp"
 #include "qounters.hpp"
 #include "sources.hpp"
 #include "utils.hpp"
@@ -184,6 +185,11 @@ namespace Qounters::Editor {
             obj->outline->enabled = !preview;
         Deselect();
         UpdateAllEnables();
+        if (preview)
+            SettingsFlowCoordinator::PresentPlaytest();
+        else
+            SettingsFlowCoordinator::PresentTemplates();
+        Playtest::SetEnabled(preview);
     }
 
     bool GetPreviewMode() {

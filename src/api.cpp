@@ -1,6 +1,7 @@
 #include "api.hpp"
 
 #include "editor.hpp"
+#include "environment.hpp"
 #include "main.hpp"
 #include "templates.hpp"
 #include "utils.hpp"
@@ -32,5 +33,9 @@ namespace Qounters::Shared {
     }
     void AddStringSettingOnClose(HMUI::InputFieldView* input, std::function<void(std::string)> onKeyboardClosed) {
         Utils::AddStringSettingOnClose(input, onKeyboardClosed);
+    }
+
+    bool InSettingsEnvironment() {
+        return Qounters::InSettingsEnvironment();
     }
 }

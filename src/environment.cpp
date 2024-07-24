@@ -75,6 +75,7 @@ SongPreviewPlayer* songPreview;
 VRUIControls::VRInputModule* vrInput;
 UIKeyboardManager* keyboardManager;
 GameObject* menuEnv;
+GameObject* localPlayer;
 bool inSettings = false;
 std::string currentEnvironment = "";
 std::string currentColors = "";
@@ -284,8 +285,8 @@ void Qounters::DismissSettingsEnvironment() {
 
     Reset();
 
-    inSettings = false;
     Editor::SetPreviewMode(false);
+    inSettings = false;
 
     DismissFlowCoordinator();
 
@@ -315,6 +316,10 @@ std::string Qounters::CurrentColorScheme() {
     return currentColors;
 }
 
+void Qounters::SetPlayerActive(bool active) {
+    localPlayer->active = active;
+}
+
 void OnMultiplayerSceneStart(MultiplayerController* multiplayerController) {
     auto fakeConnectedPlayers = ListW<IConnectedPlayer*>::New(1);
     auto settings = MockPlayerSettings::New_ctor();
@@ -337,12 +342,13 @@ void OnMultiplayerSceneStart(MultiplayerController* multiplayerController) {
     GameObject::Find("MultiplayerPositionHUD")->active = false;
 
     auto base = GameObject::Find("MultiplayerLocalActivePlayerController(Clone)/IsActiveObjects")->transform;
-    base->Find("LocalPlayerGameCore")->gameObject->active = false;
+    localPlayer = base->Find("LocalPlayerGameCore")->gameObject;
+    localPlayer->active = false;
 
-    Utils::FindRecursive(base, "MenuControllers")->gameObject->active = true;
-    auto wrapper = Utils::FindRecursive(base, "MenuWrapper");
-    wrapper->gameObject->active = true;
-    wrapper->Find("Canvas")->gameObject->active = false;
+    // Utils::FindRecursive(base, "MenuControllers")->gameObject->active = true;
+    // auto wrapper = Utils::FindRecursive(base, "MenuWrapper");
+    // wrapper->gameObject->active = true;
+    // wrapper->Find("Canvas")->gameObject->active = false;
 }
 
 void Qounters::OnSceneStart(EnvironmentInfoSO* environment) {
@@ -358,8 +364,16 @@ void Qounters::OnSceneStart(EnvironmentInfoSO* environment) {
     menuEnvironment->transform->root->gameObject->active = true;
     songPreview->CrossfadeToDefault();
 
-    if (auto gameplay = GameObject::Find("StandardGameplay"))
-        gameplay->active = false;
+    if (auto gameplay = GameObject::Find("StandardGameplay")) {
+        // disable all children so that we can easily reenable LocalPlayerGameCore later
+        auto transform = gameplay->transform;
+        // TODO: check in multiplayer
+        Utils::DisableAllBut(transform, {"LocalPlayerGameCore", "GameplayData", "BaseGameEffects"});
+        // disable local player, but not recursively
+        localPlayer = transform->Find("LocalPlayerGameCore")->gameObject;
+        localPlayer->active = false;
+        Utils::FindRecursive(localPlayer->transform, "MainCamera")->gameObject->active = false;
+    }
 
     auto newInput = Utils::GetCurrentInputModule();
     logger.debug("found input module {} (old was {})", fmt::ptr(newInput), fmt::ptr(vrInput));
@@ -379,7 +393,7 @@ void Qounters::OnSceneStart(EnvironmentInfoSO* environment) {
     if (!mainFlow->IsFlowCoordinatorInHierarchy(settingsFlow))
         mainFlow->PresentFlowCoordinator(settingsFlow, nullptr, HMUI::ViewController::AnimationDirection::Horizontal, true, false);
 
-    float height = environment->serializedName == "LinkinPark2Environment" ? 0.7 : 0;
+    float height = environment->serializedName == "LinkinPark2Environment" ? 0.8 : 0;
     GameObject::Find("MenuCore/UI/ScreenSystem")->transform->localPosition = {0, height, 0};
 
     logger.debug("Fixing environment lighting");
@@ -451,5 +465,6 @@ void Qounters::OnSceneEnd() {
     }
     menuEnv->active = true;
     Object::FindObjectOfType<FadeInOutController*>()->FadeIn();
+    localPlayer = nullptr;
     localFakeConnectedPlayer = nullptr;
 }

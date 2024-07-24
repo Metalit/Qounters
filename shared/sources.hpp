@@ -2,7 +2,6 @@
 
 #include "UnityEngine/GameObject.hpp"
 #include "config-utils/shared/config-utils.hpp"
-#include "main.hpp"
 #include "types.hpp"
 
 namespace Qounters {

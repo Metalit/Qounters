@@ -2,6 +2,7 @@
 
 #include "internals.hpp"
 #include "main.hpp"
+#include "pp.hpp"
 #include "sources.hpp"
 
 using namespace Qounters;
@@ -122,8 +123,13 @@ namespace Qounters::Game {
     int GetWallsHit() {
         return wallsHit;
     }
-    int GetSongNotes() {
-        return songNotes;
+    int GetSongNotes(int saber) {
+        int ret = 0;
+        if (IsLeft(saber))
+            ret += songNotesLeft;
+        if (IsRight(saber))
+            ret += songNotesRight;
+        return ret;
     }
     float GetPreSwing(int saber) {
         int notes = GetNotesCut(saber);
@@ -286,5 +292,29 @@ namespace Qounters::Game {
             fixed += rightMissedFixedScore;
         }
         return (missed * swingRatio) + fixed + GetScore(saber);
+    }
+    bool GetIsRanked(int leaderboards) {
+        switch ((EnableSource::Ranked::Leaderboards) leaderboards) {
+            case EnableSource::Ranked::Leaderboards::ScoreSaber:
+                return PP::IsRankedSS();
+            case EnableSource::Ranked::Leaderboards::BeatLeader:
+                return PP::IsRankedBL();
+            case EnableSource::Ranked::Leaderboards::Either:
+                return PP::IsRankedSS() || PP::IsRankedBL();
+            case EnableSource::Ranked::Leaderboards::Both:
+                return PP::IsRankedSS() && PP::IsRankedBL();
+        }
+    }
+    float GetRankedPP(int leaderboard) {
+        int score = leftScore + rightScore;
+        int max = leftMaxScore + rightMaxScore;
+        float percent = max > 0 ? score / (double) max : 0.95;
+        bool failed = health <= 0;
+
+        if (leaderboard == (int) TextSource::PP::Leaderboards::BeatLeader)
+            return Qounters::PP::CalculateBL(percent, modifiers, failed);
+        else if (leaderboard == (int) TextSource::PP::Leaderboards::ScoreSaber)
+            return Qounters::PP::CalculateSS(percent, modifiers, failed);
+        return 0;
     }
 }

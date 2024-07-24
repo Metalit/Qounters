@@ -11,27 +11,35 @@
 #include "HMUI/ScreenSystem.hpp"
 #include "System/Single.hpp"
 #include "UnityEngine/UI/ContentSizeFitter.hpp"
+#include "assets.hpp"
 #include "bsml/shared/BSML-Lite.hpp"
 #include "bsml/shared/BSML/Components/Backgroundable.hpp"
+#include "bsml/shared/BSML/Components/ScrollViewContent.hpp"
 #include "bsml/shared/BSML/MainThreadScheduler.hpp"
 #include "bsml/shared/Helpers/creation.hpp"
 #include "bsml/shared/Helpers/extension.hpp"
 #include "bsml/shared/Helpers/getters.hpp"
+#include "bsml/shared/Helpers/utilities.hpp"
 #include "config.hpp"
 #include "custom-types/shared/delegate.hpp"
 #include "customtypes/components.hpp"
 #include "customtypes/editing.hpp"
 #include "editor.hpp"
 #include "environment.hpp"
+#include "game.hpp"
 #include "main.hpp"
 #include "options.hpp"
+#include "playtest.hpp"
+#include "pp.hpp"
 #include "sources.hpp"
 #include "sourceui.hpp"
 #include "templates.hpp"
+#include "types.hpp"
 #include "utils.hpp"
 
 DEFINE_TYPE(Qounters, SettingsFlowCoordinator);
 DEFINE_TYPE(Qounters, SettingsViewController);
+DEFINE_TYPE(Qounters, PlaytestViewController);
 DEFINE_TYPE(Qounters, TemplatesViewController);
 DEFINE_TYPE(Qounters, OptionsViewController);
 DEFINE_TYPE(Qounters, CollapseController);
@@ -44,13 +52,18 @@ DEFINE_TYPE(Qounters, SpritesListSource);
 using namespace UnityEngine;
 using namespace Qounters;
 
+float settingsStarsBL = 10;
+float settingsStarsSS = 10;
+
 void AddBackground(HMUI::ViewController* self, Vector2 size) {
     auto bg = self->gameObject->AddComponent<BSML::Backgroundable*>();
     bg->ApplyBackground("round-rect-panel");
     bg->background->raycastTarget = true;
-    self->rectTransform->anchorMin = {0.5, 0.5};
-    self->rectTransform->anchorMax = {0.5, 0.5};
-    self->rectTransform->sizeDelta = size;
+    auto rect = self->rectTransform;
+    rect->anchorMin = {0.5, 1};
+    rect->anchorMax = {0.5, 1};
+    rect->pivot = {0.5, 1};
+    rect->sizeDelta = size;
 }
 
 // exponential function f(x) where f(-1) = min, f(0) = 1, f(1) = max
@@ -125,12 +138,20 @@ bool SettingsFlowCoordinator::IsSaved() {
     return getConfig().Presets.GetValue()[getConfig().Preset.GetValue()] == Editor::GetPreset();
 }
 
+void SettingsFlowCoordinator::PresentPlaytest() {
+    if (!instance)
+        return;
+    auto playtest = PlaytestViewController::GetInstance();
+    if (instance->rightScreenViewController != playtest)
+        instance->SetRightScreenViewController(playtest, HMUI::ViewController::AnimationType::None);
+}
+
 void SettingsFlowCoordinator::PresentTemplates() {
     if (!instance)
         return;
     auto templates = TemplatesViewController::GetInstance();
     if (instance->rightScreenViewController != templates)
-        instance->SetRightScreenViewController(templates, HMUI::ViewController::AnimationType::In);
+        instance->SetRightScreenViewController(templates, HMUI::ViewController::AnimationType::None);
 }
 
 void SettingsFlowCoordinator::PresentOptions() {
@@ -138,7 +159,7 @@ void SettingsFlowCoordinator::PresentOptions() {
         return;
     auto options = OptionsViewController::GetInstance();
     if (instance->rightScreenViewController != options)
-        instance->SetRightScreenViewController(options, HMUI::ViewController::AnimationType::In);
+        instance->SetRightScreenViewController(options, HMUI::ViewController::AnimationType::None);
 }
 
 void SettingsFlowCoordinator::DismissScene() {
@@ -299,7 +320,7 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
         }
     });
     auto parent = environmentDropdown->transform->parent;
-    parent->GetComponent<UI::LayoutElement*>()->preferredWidth = 87;
+    Utils::SetLayoutSize(parent, 87, 8);
 
     auto nested = Utils::CreateDropdownEnum(gameObject, "", getConfig().EnvironmentType.GetValue(), EnvironmentHUDTypeStrings, [this](int value) {
         getConfig().EnvironmentType.SetValue(value);
@@ -313,7 +334,7 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
     Object::Destroy(toDelete);
 
     auto apply = BSML::Lite::CreateUIButton(environment, "Apply", SettingsFlowCoordinator::RefreshScene);
-    Utils::SetButtonSize(apply, 14, 8);
+    Utils::SetLayoutSize(apply, 14, 8);
 
     BSML::Lite::CreateText(vertical, "Changes to the preset list are always saved!", {0, 0}, {50, 8})->alignment =
         TMPro::TextAlignmentOptions::Center;
@@ -327,17 +348,17 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
         nameInput->text = getConfig().Preset.GetValue();
         nameModal->Show(true, true, nullptr);
     });
-    Utils::SetButtonSize(renameButton, 24, 8);
+    Utils::SetLayoutSize(renameButton, 24, 8);
     auto dupeButton = BSML::Lite::CreateUIButton(buttons3, "Duplicate", [this]() {
         nameModalIsRename = false;
         nameInput->text = getConfig().Preset.GetValue();
         nameModal->Show(true, true, nullptr);
     });
-    Utils::SetButtonSize(dupeButton, 24, 8);
+    Utils::SetLayoutSize(dupeButton, 24, 8);
     deleteButton = BSML::Lite::CreateUIButton(buttons3, "Delete", SettingsFlowCoordinator::DeletePreset);
-    Utils::SetButtonSize(deleteButton, 24, 8);
+    Utils::SetLayoutSize(deleteButton, 24, 8);
     auto resetButton = BSML::Lite::CreateUIButton(buttons3, "Reset", SettingsFlowCoordinator::ResetPreset);
-    Utils::SetButtonSize(resetButton, 24, 8);
+    Utils::SetLayoutSize(resetButton, 24, 8);
 
     auto snapIncrement = AddConfigValueIncrementFloat(vertical, getConfig().SnapStep, 1, 0.5, 0.5, 5);
     auto incrementObject = snapIncrement->transform->GetChild(1)->gameObject;
@@ -469,13 +490,190 @@ void SettingsViewController::UpdateUI() {
     Utils::InstantSetToggle(previewToggle, Editor::GetPreviewMode());
 }
 
+void CreateSpacer(UI::HorizontalLayoutGroup* parent, float width) {
+    auto obj = GameObject::New_ctor("QountersSpacer");
+    auto layout = obj->AddComponent<UI::LayoutElement*>();
+    layout->preferredWidth = width;
+    obj->transform->SetParent(parent->transform, false);
+}
+
+BSML::ClickableImage*
+CreateLayeredImageButton(UI::HorizontalLayoutGroup* parent, Sprite* bg, Sprite* fg, Vector2 size, std::function<void()> onClick) {
+    auto ret = BSML::Lite::CreateClickableImage(parent, bg, onClick);
+    ret->preserveAspect = true;
+    Utils::SetLayoutSize(ret, size.x, size.y);
+    if (fg)
+        BSML::Lite::CreateImage(ret, fg, {0, 0}, size)->preserveAspect = true;
+    return ret;
+}
+
+void SetClickableImageColor(BSML::ClickableImage* image, Color color, bool wall = false) {
+    float h, s, v;
+    Color::RGBToHSV(color, byref(h), byref(s), byref(v));
+    if (wall)
+        SetClickableImageColor(image, Color::HSVToRGB(h, s, 1));
+    else if (v < 0.5) {
+        v += 0.3;
+        image->set_defaultColor(color);
+        image->set_highlightColor(Color::HSVToRGB(h, s, v));
+    } else {
+        v -= 0.3;
+        image->set_defaultColor(Color::HSVToRGB(h, s, v));
+        image->set_highlightColor(color);
+    }
+}
+
+void PlaytestViewController::Update() {
+    Playtest::Update();
+}
+
+void PlaytestViewController::DidActivate(bool firstActivation, bool addedToHierarchy, bool screenSystemEnabling) {
+    if (!firstActivation) {
+        UpdateUI();
+        return;
+    }
+
+    static auto percentFormat = [](float value) {
+        return fmt::format("{}%", (int) value);
+    };
+
+    AddBackground(this, {85, 75});
+
+    auto parent = BSML::Lite::CreateVerticalLayoutGroup(this);
+    parent->childForceExpandHeight = false;
+    parent->childControlHeight = false;
+    parent->rectTransform->anchoredPosition = {0, -4};
+
+    auto spawnButtons = BSML::Lite::CreateHorizontalLayoutGroup(parent);
+    spawnButtons->childForceExpandHeight = false;
+    spawnButtons->childForceExpandWidth = false;
+    spawnButtons->spacing = 1;
+    spawnButtons->childAlignment = TextAnchor::MiddleCenter;
+
+    auto note = PNG_SPRITE(Bloq);
+    auto arrow = PNG_SPRITE(Arrow);
+    auto chain = PNG_SPRITE(Chain);
+    auto chainArrow = PNG_SPRITE(ChainArrow);
+
+    lNote = CreateLayeredImageButton(spawnButtons, note, arrow, {8, 8}, []() { Playtest::SpawnNote(true, false); });
+    rNote = CreateLayeredImageButton(spawnButtons, note, arrow, {8, 8}, []() { Playtest::SpawnNote(false, false); });
+
+    CreateSpacer(spawnButtons, 3);
+
+    lChain = CreateLayeredImageButton(spawnButtons, chain, chainArrow, {8, 8}, []() { Playtest::SpawnNote(true, true); });
+    rChain = CreateLayeredImageButton(spawnButtons, chain, chainArrow, {8, 8}, []() { Playtest::SpawnNote(false, true); });
+
+    CreateSpacer(spawnButtons, 3);
+
+    wall = CreateLayeredImageButton(spawnButtons, PNG_SPRITE(Wall), PNG_SPRITE(Frame), {8, 16}, []() { Playtest::SpawnWall(); });
+
+    CreateSpacer(spawnButtons, 3);
+
+    auto bomb = CreateLayeredImageButton(spawnButtons, PNG_SPRITE(Bomb), nullptr, {8, 8}, []() { Playtest::SpawnBomb(); });
+    SetClickableImageColor(bomb, {0.2, 0.2, 0.2, 1});
+
+    pbToggle = BSML::Lite::CreateToggle(parent, "Personal Best", true, [this](bool enabled) {
+        Playtest::SetPersonalBest(enabled ? -1 : 0);
+        pbSlider->gameObject->active = enabled;
+    });
+
+    pbSlider = BSML::Lite::CreateSliderSetting(parent, "", 1, 1, 1, 120, 0, Playtest::SetPersonalBest);
+    pbSlider = Utils::ReparentSlider(pbSlider, pbToggle, 30);
+    pbSlider->GetComponent<RectTransform*>()->anchoredPosition = {-20, 0};
+    pbSlider->formatter = percentFormat;
+
+    // for now, the settings "song" is 24 seconds long
+    timeSlider = BSML::Lite::CreateSliderSetting(parent, "Song Progress", 1, 0, 0, 24, 0, true, {0, 0}, Playtest::SetSongTime);
+
+    posModsIncrement = BSML::Lite::CreateIncrementSetting(parent, "Positive Modifiers", 0, 5, 0, 0, 50, Playtest::SetPositiveModifiers);
+    posModsIncrement->formatter = percentFormat;
+    negModsIncrement = BSML::Lite::CreateIncrementSetting(parent, "Negative Modifiers", 0, 5, 0, -50, 0, Playtest::SetNegativeModifiers);
+    negModsIncrement->formatter = percentFormat;
+
+    blToggle = BSML::Lite::CreateToggle(parent, "BeatLeader Ranked", true, [this](bool enabled) {
+        Playtest::SetRankedBL(enabled);
+        blSlider->gameObject->active = enabled;
+    });
+
+    blSlider = BSML::Lite::CreateSliderSetting(parent, "", 0.1, 1, 1, 15, 0, Playtest::SetStarsBL);
+    blSlider = Utils::ReparentSlider(blSlider, blToggle, 28);
+    blSlider->GetComponent<RectTransform*>()->anchoredPosition = {-20, 0};
+
+    ssToggle = BSML::Lite::CreateToggle(parent, "ScoreSaber Ranked", true, [this](bool enabled) {
+        Playtest::SetRankedSS(enabled);
+        ssSlider->gameObject->active = enabled;
+    });
+
+    ssSlider = BSML::Lite::CreateSliderSetting(parent, "", 0.1, 1, 1, 15, 0, Playtest::SetStarsSS);
+    ssSlider = Utils::ReparentSlider(ssSlider, ssToggle, 28);
+    ssSlider->GetComponent<RectTransform*>()->anchoredPosition = {-20, 0};
+
+    auto resetLayout = BSML::Lite::CreateHorizontalLayoutGroup(parent);
+    resetLayout->childForceExpandWidth = false;
+    resetLayout->spacing = 3;
+    resetLayout->childAlignment = TextAnchor::MiddleCenter;
+    resetButton = BSML::Lite::CreateUIButton(resetLayout, "Reset Notes", Playtest::ResetNotes);
+    Utils::SetLayoutSize(resetButton, 30, 8);
+    auto resetAllButton = BSML::Lite::CreateUIButton(resetLayout, "Reset All", Playtest::ResetAll);
+    Utils::SetLayoutSize(resetAllButton, 30, 8);
+
+    Utils::SetChildrenWidth(parent->transform, 75);
+
+    uiInitialized = true;
+    UpdateUI();
+}
+
+void PlaytestViewController::UpdateUI() {
+    if (!uiInitialized)
+        return;
+
+    auto left = Game::GetColor((int) ColorSource::Player::ColorSettings::LeftSaber);
+    auto right = Game::GetColor((int) ColorSource::Player::ColorSettings::RightSaber);
+
+    SetClickableImageColor(lNote, left);
+    SetClickableImageColor(rNote, right);
+    SetClickableImageColor(lChain, left);
+    SetClickableImageColor(rChain, right);
+
+    SetClickableImageColor(wall, Game::GetColor((int) ColorSource::Player::ColorSettings::Walls));
+
+    Utils::InstantSetToggle(pbToggle, Game::GetBestScore() > 0);
+    pbSlider->gameObject->active = Game::GetBestScore() > 0;
+    pbSlider->set_Value(100 * Game::GetBestScore() / (float) Game::GetSongMaxScore());
+
+    timeSlider->set_Value(Game::GetSongTime());
+
+    int pos = (Game::GetModifierMultiplier(true, false) - 1) * 100;
+    Utils::SetIncrementValue(posModsIncrement, pos);
+    int neg = (Game::GetModifierMultiplier(false, true) - 1) * 100;
+    Utils::SetIncrementValue(negModsIncrement, neg);
+
+    Utils::InstantSetToggle(blToggle, PP::IsRankedBL());
+    blSlider->gameObject->active = PP::IsRankedBL();
+    blSlider->set_Value(1);
+
+    Utils::InstantSetToggle(ssToggle, PP::IsRankedSS());
+    ssSlider->gameObject->active = PP::IsRankedSS();
+    ssSlider->set_Value(1);
+}
+
+PlaytestViewController* PlaytestViewController::GetInstance() {
+    if (!instance)
+        instance = BSML::Helpers::CreateViewController<PlaytestViewController*>();
+    return instance;
+}
+
+void PlaytestViewController::OnDestroy() {
+    instance = nullptr;
+}
+
 void TemplatesViewController::DidActivate(bool firstActivation, bool addedToHierarchy, bool screenSystemEnabling) {
     if (!firstActivation)
         return;
 
     AddBackground(this, {50, 88});
 
-    list = BSML::Lite::CreateScrollableList(transform, {50, 80}, [this](int idx) {
+    list = BSML::Lite::CreateScrollableList(this, {50, 80}, [this](int idx) {
         list->tableView->ClearSelection();
         ShowTemplateModal(idx);
     });
@@ -751,7 +949,15 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
 
     cDeselectButton = BSML::Lite::CreateUIButton(cButtonsParent, "Deselect", Editor::Deselect);
 
-    Utils::FixScrollView(componentParent, 75);
+    Object::Destroy(componentParent->GetComponentInParent<BSML::ScrollViewContent*>(true));
+    auto componentTop = Utils::GetScrollViewTop(componentParent);
+    // kinda janky spacing for the delete/deselect buttons
+    componentTop->sizeDelta = {-5, -10};
+    componentTop->anchoredPosition = {0, 4};
+    componentParent->GetComponent<UnityEngine::UI::VerticalLayoutGroup*>()->spacing = 0;
+    float width = rectTransform->sizeDelta.x;
+    componentParent->GetComponent<UnityEngine::RectTransform*>()->sizeDelta = {width - 20, 0};
+    Utils::SetChildrenWidth(componentParent->transform, width - 20);
 
     uiInitialized = true;
     UpdateUI();
@@ -785,8 +991,12 @@ void OptionsViewController::UpdateSimpleUI() {
     if (!uiInitialized)
         return;
 
+    float height = 88;
+    if (group)
+        height = Editor::GetSelectedGroup(-1).Detached ? 70 : 47;
+    rectTransform->sizeDelta = {rectTransform->sizeDelta.x, height};
     groupParent->gameObject->active = group;
-    Utils::SetScrollViewActive(componentParent, component);
+    Utils::GetScrollViewTop(componentParent)->gameObject->active = component;
     cButtonsParent->gameObject->active = component;
 
     Editor::DisableActions();

@@ -38,7 +38,7 @@ namespace Qounters::Utils {
         return keys;
     }
 
-    void SetButtonSize(UnityEngine::UI::Button* button, int width, int height);
+    void SetLayoutSize(UnityEngine::Component* object, int width, int height);
     void InstantSetToggle(BSML::ToggleSetting* toggle, bool value);
     void SetIncrementValue(BSML::IncrementSetting* increment, float value);
     void SetDropdownValue(BSML::DropdownListSetting* dropdown, std::string value);
@@ -67,10 +67,10 @@ namespace Qounters::Utils {
     void AddStringSettingOnClose(HMUI::InputFieldView* input, std::function<void(std::string)> onKeyboardClosed);
     void AddIncrementIncrement(BSML::IncrementSetting* setting, float increment);
     void SetChildrenWidth(UnityEngine::Transform* parent, float width);
-    void FixScrollView(UnityEngine::GameObject* scrollView, float width);
-    void SetScrollViewActive(UnityEngine::GameObject* scrollView, bool active);
+    UnityEngine::RectTransform* GetScrollViewTop(UnityEngine::GameObject* scrollView);
     void RebuildWithScrollPosition(UnityEngine::GameObject* scrollView);
     void SetCanvasSorting(UnityEngine::GameObject* canvas, int value);
+    BSML::SliderSetting* ReparentSlider(BSML::SliderSetting* slider, BSML::Lite::TransformWrapper parent, float width);
 
     VRUIControls::VRInputModule* GetCurrentInputModule();
 }

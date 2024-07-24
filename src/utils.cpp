@@ -15,7 +15,6 @@
 #include "UnityEngine/Resources.hpp"
 #include "UnityEngine/UI/LayoutRebuilder.hpp"
 #include "bsml/shared/BSML-Lite.hpp"
-#include "bsml/shared/BSML/Components/ScrollViewContent.hpp"
 #include "bsml/shared/Helpers/delegates.hpp"
 #include "bsml/shared/Helpers/utilities.hpp"
 #include "customtypes/editing.hpp"
@@ -102,8 +101,8 @@ std::string Utils::GetTransformPath(UnityEngine::Transform* parent, UnityEngine:
     return GetTransformPath(parent, child->parent) + "/" + static_cast<std::string>(child->name);
 }
 
-void Utils::SetButtonSize(UnityEngine::UI::Button* button, int width, int height) {
-    auto layout = button->GetComponent<UnityEngine::UI::LayoutElement*>();
+void Utils::SetLayoutSize(UnityEngine::Component* object, int width, int height) {
+    auto layout = object->GetComponent<UnityEngine::UI::LayoutElement*>();
     layout->preferredWidth = width;
     layout->preferredHeight = height;
 }
@@ -231,9 +230,8 @@ MenuDragger* Utils::CreateMenuDragger(UnityEngine::GameObject* parent, bool isLe
     auto rect = padding->GetComponent<UnityEngine::RectTransform*>();
     rect->SetParent(parent->transform, false);
     rect->localScale = {1, 1, 1};
-    rect->anchorMin = {0.5, 0.5};
-    rect->anchorMax = {0.5, 0.5};
-    rect->anchoredPosition = {0, 44};
+    rect->anchorMin = {0.5, 1};
+    rect->anchorMax = {0.5, 1};
     rect->sizeDelta = {42, 3};
     SetCanvasSorting(padding, 5);
     auto drag = BSML::Lite::CreateCanvas();
@@ -325,23 +323,8 @@ void Utils::SetChildrenWidth(UnityEngine::Transform* parent, float width) {
     }
 }
 
-UnityEngine::RectTransform* GetScrollViewTop(UnityEngine::GameObject* scrollView) {
+UnityEngine::RectTransform* Utils::GetScrollViewTop(UnityEngine::GameObject* scrollView) {
     return scrollView->transform->parent->parent->parent->GetComponent<UnityEngine::RectTransform*>();
-}
-
-void Utils::FixScrollView(UnityEngine::GameObject* scrollView, float width) {
-    UnityEngine::Object::Destroy(scrollView->GetComponentInParent<BSML::ScrollViewContent*>(true));
-    scrollView->GetComponent<UnityEngine::UI::VerticalLayoutGroup*>()->spacing = 0;
-    GetScrollViewTop(scrollView)->sizeDelta = {width - 80, -10};
-    auto transform = scrollView->GetComponent<UnityEngine::RectTransform*>();
-    transform->sizeDelta = {width, 74};
-    SetChildrenWidth(transform, width);
-    auto content = transform->parent.cast<UnityEngine::RectTransform>();
-    content->sizeDelta = {0, 74};
-}
-
-void Utils::SetScrollViewActive(UnityEngine::GameObject* scrollView, bool active) {
-    GetScrollViewTop(scrollView)->gameObject->active = active;
 }
 
 void Utils::RebuildWithScrollPosition(UnityEngine::GameObject* scrollView) {
@@ -358,6 +341,26 @@ void Utils::SetCanvasSorting(UnityEngine::GameObject* canvas, int value) {
     auto comp = canvas->GetComponent<UnityEngine::Canvas*>();
     comp->overrideSorting = true;
     comp->sortingOrder = value;
+}
+
+BSML::SliderSetting* Utils::ReparentSlider(BSML::SliderSetting* slider, BSML::Lite::TransformWrapper parent, float width) {
+    auto newSlider = slider->slider->gameObject->AddComponent<BSML::SliderSetting*>();
+    newSlider->slider = slider->slider;
+    newSlider->onChange = std::move(slider->onChange);
+    newSlider->formatter = std::move(slider->formatter);
+    newSlider->isInt = slider->isInt;
+    newSlider->increments = slider->increments;
+    newSlider->slider->minValue = slider->slider->minValue;
+    newSlider->slider->maxValue = slider->slider->maxValue;
+    auto transform = newSlider->GetComponent<UnityEngine::RectTransform*>();
+    transform->sizeDelta = {width, 0};
+    transform->SetParent(parent->transform, false);
+    newSlider->slider->valueSize = newSlider->slider->_containerRect->rect.width / 2;
+    UnityEngine::Object::DestroyImmediate(slider->gameObject);
+    // due to the weird way bsml does string formatting for sliders,
+    // this needs to be called after destroying the old slider
+    newSlider->Setup();
+    return newSlider;
 }
 
 VRUIControls::VRInputModule* Utils::GetCurrentInputModule() {

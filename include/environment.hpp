@@ -21,6 +21,8 @@ namespace Qounters {
     std::string CurrentSettingsEnvironment();
     std::string CurrentColorScheme();
 
+    void SetPlayerActive(bool active);
+
     void OnSceneStart(GlobalNamespace::EnvironmentInfoSO* environment);
     void OnSceneEnd();
 }

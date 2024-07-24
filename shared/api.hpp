@@ -16,6 +16,8 @@ namespace Qounters::Shared {
 
     void AddSliderEndDrag(BSML::SliderSetting* slider, std::function<void(float)> onEndDrag);
     void AddStringSettingOnClose(HMUI::InputFieldView* input, std::function<void(std::string)> onKeyboardClosed);
+
+    bool InSettingsEnvironment();
 }
 
 // see README

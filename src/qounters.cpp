@@ -574,6 +574,17 @@ void Qounters::UpdateSource(Sources sourceType, std::string source) {
 }
 
 void Qounters::UpdateAllEnables() {
-    for (auto& [source, _] : enables)
+    for (auto& [source, _] : enableSources)
+        UpdateEnables(source);
+}
+
+void Qounters::UpdateAllSources() {
+    for (auto& [source, _] : textSources)
+        UpdateTexts(source);
+    for (auto& [source, _] : shapeSources)
+        UpdateShapes(source);
+    for (auto& [source, _] : colorSources)
+        UpdateColors(source);
+    for (auto& [source, _] : enableSources)
         UpdateEnables(source);
 }
