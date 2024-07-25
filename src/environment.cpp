@@ -152,11 +152,9 @@ EnvironmentInfoSO* GetEnvironment(SimpleLevelStarter* levelStarter) {
     }
 
     auto ret = listModel->GetFirstEnvironmentInfoWithType(EnvironmentType::Normal);
-    if (currentEnvironment != "Multiplayer") {
-        logger.warn("Environment {} not found, resetting to {}", currentEnvironment, ret->serializedName);
-        currentEnvironment = (std::string) ret->serializedName;
-        getConfig().Environment.SetValue(currentEnvironment);
-    }
+    logger.warn("Environment {} not found, resetting to {}", currentEnvironment, ret->serializedName);
+    currentEnvironment = (std::string) ret->serializedName;
+    getConfig().Environment.SetValue(currentEnvironment);
     return ret;
 }
 
@@ -247,7 +245,7 @@ void PresentScene(SimpleLevelStarter* levelStarter, bool refresh) {
 
     logger.debug("Presenting scene");
 
-    if (currentEnvironment == "Multiplayer")
+    if (currentEnvironment == "MultiplayerEnvironment")
         PresentMultiplayer(levelStarter, refresh, level, diff, colors);
     else
         PresentSingleplayer(levelStarter, refresh, level, diff, colors, environment);
@@ -341,14 +339,14 @@ void OnMultiplayerSceneStart(MultiplayerController* multiplayerController) {
     GameObject::Find("MultiplayerOtherPlayersScoreDiffTextManager")->active = false;
     GameObject::Find("MultiplayerPositionHUD")->active = false;
 
-    auto base = GameObject::Find("MultiplayerLocalActivePlayerController(Clone)/IsActiveObjects")->transform;
-    localPlayer = base->Find("LocalPlayerGameCore")->gameObject;
-    localPlayer->active = false;
+    auto objects = GameObject::Find("MultiplayerLocalActivePlayerController(Clone)/IsActiveObjects")->transform;
 
-    // Utils::FindRecursive(base, "MenuControllers")->gameObject->active = true;
-    // auto wrapper = Utils::FindRecursive(base, "MenuWrapper");
-    // wrapper->gameObject->active = true;
-    // wrapper->Find("Canvas")->gameObject->active = false;
+    objects->Find("MultiplayerLocalActivePlayerInGameMenuViewController")->gameObject->active = false;
+    Utils::DisableAllBut(objects->Find("GameplayCore"), {"GameplayData", "BaseGameEffects", "BeatmapObjectSpawnController"});
+
+    localPlayer = objects->Find("LocalPlayerGameCore")->gameObject;
+    localPlayer->active = false;
+    Utils::FindRecursive(localPlayer->transform, "MainCamera")->gameObject->active = false;
 }
 
 void Qounters::OnSceneStart(EnvironmentInfoSO* environment) {
@@ -357,7 +355,6 @@ void Qounters::OnSceneStart(EnvironmentInfoSO* environment) {
     if (auto multiplayerController = Object::FindObjectOfType<MultiplayerController*>())
         OnMultiplayerSceneStart(multiplayerController);
 
-    // Resources::FindObjectsOfTypeAll<CoreGameHUDController*>().First()->gameObject->active = true;
     Initialize();
     SetupObjects();
 
@@ -367,7 +364,6 @@ void Qounters::OnSceneStart(EnvironmentInfoSO* environment) {
     if (auto gameplay = GameObject::Find("StandardGameplay")) {
         // disable all children so that we can easily reenable LocalPlayerGameCore later
         auto transform = gameplay->transform;
-        // TODO: check in multiplayer
         Utils::DisableAllBut(transform, {"LocalPlayerGameCore", "GameplayData", "BaseGameEffects"});
         // disable local player, but not recursively
         localPlayer = transform->Find("LocalPlayerGameCore")->gameObject;
@@ -393,15 +389,16 @@ void Qounters::OnSceneStart(EnvironmentInfoSO* environment) {
     if (!mainFlow->IsFlowCoordinatorInHierarchy(settingsFlow))
         mainFlow->PresentFlowCoordinator(settingsFlow, nullptr, HMUI::ViewController::AnimationDirection::Horizontal, true, false);
 
-    float height = environment->serializedName == "LinkinPark2Environment" ? 0.8 : 0;
+    float height = environment && environment->serializedName == "LinkinPark2Environment" ? 0.8 : 0.1;
     GameObject::Find("MenuCore/UI/ScreenSystem")->transform->localPosition = {0, height, 0};
 
     logger.debug("Fixing environment lighting");
 
     // rendering order issues
-    auto env = GameObject::Find("Environment");
-    env->active = false;
-    env->active = true;
+    if (auto env = GameObject::Find("Environment")) {
+        env->active = false;
+        env->active = true;
+    }
 
     auto bcu = Object::FindObjectOfType<BeatmapCallbacksUpdater*>(true);
     if (environment && bcu) {

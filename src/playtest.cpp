@@ -14,6 +14,7 @@
 #include "GlobalNamespace/ScoringElement.hpp"
 #include "GlobalNamespace/SliderData.hpp"
 #include "HMUI/ImageView.hpp"
+#include "System/Action_1.hpp"
 #include "UnityEngine/Playables/PlayableDirector.hpp"
 #include "UnityEngine/Resources.hpp"
 #include "UnityEngine/Time.hpp"
@@ -97,7 +98,7 @@ void ResetEnergyBar() {
     auto fullIcon = energyBar->transform->Find("EnergyIconFull");
     fullIcon->localPosition = {59, 0, 0};
     fullIcon->GetComponent<HMUI::ImageView*>()->color = opacityColor;
-    energyBar->transform->Find("Laser")->get_gameObject()->active = false;
+    energyBar->transform->Find("Laser")->gameObject->active = false;
     // reregister HandleGameEnergyDidChange
     energyBar->Init();
 }
@@ -113,6 +114,7 @@ void Playtest::ResetGameControllers() {
     scoreController->_maxScoreMultiplierCounter->Reset();
     gameEnergyCounter->_didReach0Energy = false;
     gameEnergyCounter->energy = 0.5;
+    gameEnergyCounter->gameEnergyDidChangeEvent->Invoke(0.5);
     if (energyBar && !energyBar->_energyBar->enabled)
         ResetEnergyBar();
     comboController->_combo = 0;

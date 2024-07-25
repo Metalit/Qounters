@@ -177,9 +177,9 @@ namespace Qounters {
 }
 
 void Qounters::Initialize() {
-    auto beatmapCallbacksUpdater = UnityEngine::Object::FindObjectOfType<BeatmapCallbacksUpdater*>();
-    auto scoreController = UnityEngine::Object::FindObjectOfType<ScoreController*>();
-    auto playerDataModel = UnityEngine::Object::FindObjectOfType<PlayerDataModel*>();
+    auto beatmapCallbacksUpdater = UnityEngine::Object::FindObjectOfType<BeatmapCallbacksUpdater*>(true);
+    auto scoreController = UnityEngine::Object::FindObjectOfType<ScoreController*>(true);
+    auto playerDataModel = UnityEngine::Object::FindObjectOfType<PlayerDataModel*>(true);
 
     auto gameplayCoreInstallers = UnityEngine::Resources::FindObjectsOfTypeAll<GameplayCoreInstaller*>();
     GameplayCoreInstaller* gameplayCoreInstaller;
@@ -231,7 +231,7 @@ void Qounters::Initialize() {
     leftAngles = {};
     rightAngles = {};
     noFail = false;
-    modifiers = scoreController->_gameplayModifiers;
+    modifiers = scoreController ? scoreController->_gameplayModifiers : nullptr;
     // GetNegativeMods sets noFail
     positiveMods = GetPositiveMods(scoreController);
     negativeMods = GetNegativeMods(scoreController);

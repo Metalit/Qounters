@@ -8,6 +8,7 @@
 #include "GlobalNamespace/FlyingGameHUDRotation.hpp"
 #include "GlobalNamespace/GameEnergyCounter.hpp"
 #include "GlobalNamespace/LayerMasks.hpp"
+#include "GlobalNamespace/MultiplayerIntroAnimationController.hpp"
 #include "GlobalNamespace/MultiplayerLocalActivePlayerGameplayManager.hpp"
 #include "GlobalNamespace/MultiplayerLocalActivePlayerInGameMenuViewController.hpp"
 #include "GlobalNamespace/MultiplayerSessionManager.hpp"
@@ -40,6 +41,8 @@ using namespace VRUIControls;
 using namespace Qounters;
 
 UnityEngine::Transform* rotationalAnchor = nullptr;
+static bool wasHidden = false;
+static bool initialized = false;
 
 MAKE_HOOK_MATCH(
     ScoreController_DespawnScoringElement, &ScoreController::DespawnScoringElement, void, ScoreController* self, ScoringElement* scoringElement
@@ -217,25 +220,42 @@ MAKE_HOOK_MATCH(AudioTimeSyncController_Update, &AudioTimeSyncController::Update
 MAKE_HOOK_MATCH(
     CoreGameHUDController_Initialize, &CoreGameHUDController::Initialize, void, CoreGameHUDController* self, CoreGameHUDController::InitData* initData
 ) {
-    logger.info("Qounters start");
     initData->advancedHUD = true;
+    wasHidden = initData->hide;
 
     DestroySignal::Create([]() {
         logger.info("Qounters end");
+        initialized = false;
         Reset();
         saberManager = nullptr;
         rotationalAnchor = nullptr;
     });
 
-    if (!InSettingsEnvironment() && !initData->hide) {
+    if (!InSettingsEnvironment() && !wasHidden && self->isActiveAndEnabled) {
+        logger.info("Qounters start");
         if (self->name == "FlyingGameHUD")
             rotationalAnchor = UnityEngine::GameObject::New_ctor("QountersRotationalAnchor")->transform;
         Initialize();
         SetupObjects();
         CreateQounters();
+        initialized = true;
     }
 
     CoreGameHUDController_Initialize(self, initData);
+}
+
+MAKE_HOOK_MATCH(
+    MultiplayerIntroAnimationController_BindTimeline, &MultiplayerIntroAnimationController::BindTimeline, void, MultiplayerIntroAnimationController* self
+) {
+    MultiplayerIntroAnimationController_BindTimeline(self);
+
+    if (!InSettingsEnvironment() && !wasHidden && !initialized) {
+        logger.info("Qounters start");
+        Initialize();
+        SetupObjects();
+        CreateQounters();
+        initialized = true;
+    }
 }
 
 MAKE_HOOK_MATCH(FlyingGameHUDRotation_LateUpdate, &FlyingGameHUDRotation::LateUpdate, void, FlyingGameHUDRotation* self) {
@@ -375,6 +395,7 @@ void Qounters::InstallHooks() {
     INSTALL_HOOK(logger, GameEnergyCounter_ProcessEnergyChange);
     INSTALL_HOOK(logger, AudioTimeSyncController_Update);
     INSTALL_HOOK(logger, CoreGameHUDController_Initialize);
+    INSTALL_HOOK(logger, MultiplayerIntroAnimationController_BindTimeline);
     INSTALL_HOOK(logger, FlyingGameHUDRotation_LateUpdate);
     INSTALL_HOOK(logger, StandardLevelDetailView_SetContentForBeatmapData);
     INSTALL_HOOK(logger, PauseController_Pause);
