@@ -17,8 +17,10 @@
 namespace Qounters::Utils {
     std::string FormatDecimals(double num, int decimals);
     std::string SecondsToString(int seconds);
+
     std::tuple<std::string, std::string, int> GetBeatmapDetails(GlobalNamespace::BeatmapKey beatmap);
     std::string GetBeatmapIdentifier(GlobalNamespace::BeatmapKey beatmap);
+
     void DisableAllBut(UnityEngine::Transform* parent, std::set<std::string> enabled, std::set<std::string> disabled = {});
     UnityEngine::Transform* FindRecursive(UnityEngine::Transform* parent, std::string name);
     std::string GetTransformPath(UnityEngine::Transform* parent, UnityEngine::Transform* child);
@@ -39,9 +41,14 @@ namespace Qounters::Utils {
     }
 
     void SetLayoutSize(UnityEngine::Component* object, int width, int height);
+    void SetChildrenWidth(UnityEngine::Transform* parent, float width);
+    void SetCanvasSorting(UnityEngine::GameObject* canvas, int value);
     void InstantSetToggle(BSML::ToggleSetting* toggle, bool value);
     void SetIncrementValue(BSML::IncrementSetting* increment, float value);
     void SetDropdownValue(BSML::DropdownListSetting* dropdown, std::string value);
+    void SetIconButtonSprite(UnityEngine::UI::Button* button, UnityEngine::Sprite* sprite);
+
+    UnityEngine::UI::Button* CreateIconButton(UnityEngine::GameObject* parent, UnityEngine::Sprite* sprite, std::function<void()> onClick);
     BSML::DropdownListSetting* CreateDropdown(
         UnityEngine::GameObject* parent,
         std::string name,
@@ -62,15 +69,15 @@ namespace Qounters::Utils {
     Qounters::CollapseController*
     CreateCollapseArea(UnityEngine::GameObject* parent, std::string title, bool open, std::vector<UnityEngine::Component*> contents = {});
     Qounters::MenuDragger* CreateMenuDragger(UnityEngine::GameObject* parent, bool isLeftMenu);
+
     void AddModalAnimations(HMUI::SimpleTextDropdown* dropdown, HMUI::ModalView* behindModal);
     void AddSliderEndDrag(BSML::SliderSetting* slider, std::function<void(float)> onEndDrag);
     void AddStringSettingOnClose(HMUI::InputFieldView* input, std::function<void(std::string)> onKeyboardClosed);
     void AddIncrementIncrement(BSML::IncrementSetting* setting, float increment);
-    void SetChildrenWidth(UnityEngine::Transform* parent, float width);
-    UnityEngine::RectTransform* GetScrollViewTop(UnityEngine::GameObject* scrollView);
-    void RebuildWithScrollPosition(UnityEngine::GameObject* scrollView);
-    void SetCanvasSorting(UnityEngine::GameObject* canvas, int value);
-    BSML::SliderSetting* ReparentSlider(BSML::SliderSetting* slider, BSML::Lite::TransformWrapper parent, float width);
 
+    BSML::SliderSetting* ReparentSlider(BSML::SliderSetting* slider, BSML::Lite::TransformWrapper parent, float width);
+    void RebuildWithScrollPosition(UnityEngine::GameObject* scrollView);
+
+    UnityEngine::RectTransform* GetScrollViewTop(UnityEngine::GameObject* scrollView);
     VRUIControls::VRInputModule* GetCurrentInputModule();
 }

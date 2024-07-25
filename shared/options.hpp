@@ -91,7 +91,13 @@ namespace Qounters {
         VECTOR_DEFAULT(Component, Components, {});
         VALUE_DEFAULT(bool, Detached, false);
         VALUE_DEFAULT(ConfigUtils::Vector3, DetachedPosition, ConfigUtils::Vector3(0, 0, 0));
+        VALUE_DEFAULT(bool, LockPosX, false);
+        VALUE_DEFAULT(bool, LockPosY, false);
+        VALUE_DEFAULT(bool, LockPosZ, false);
         VALUE_DEFAULT(ConfigUtils::Vector3, DetachedRotation, ConfigUtils::Vector3(0, 0, 0));
+        VALUE_DEFAULT(bool, LockRotX, false);
+        VALUE_DEFAULT(bool, LockRotY, false);
+        VALUE_DEFAULT(bool, LockRotZ, false);
     };
 
     DECLARE_JSON_STRUCT(Preset) {

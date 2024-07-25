@@ -107,6 +107,25 @@ void Utils::SetLayoutSize(UnityEngine::Component* object, int width, int height)
     layout->preferredHeight = height;
 }
 
+void Utils::SetChildrenWidth(UnityEngine::Transform* parent, float width) {
+    for (int i = 0; i < parent->GetChildCount(); i++) {
+        bool first = true;
+        for (auto layout : parent->GetChild(i)->GetComponents<UnityEngine::UI::LayoutElement*>()) {
+            if (first)
+                layout->preferredWidth = width;
+            else
+                UnityEngine::Object::Destroy(layout);
+            first = false;
+        }
+    }
+}
+
+void Utils::SetCanvasSorting(UnityEngine::GameObject* canvas, int value) {
+    auto comp = canvas->GetComponent<UnityEngine::Canvas*>();
+    comp->overrideSorting = true;
+    comp->sortingOrder = value;
+}
+
 void Utils::InstantSetToggle(BSML::ToggleSetting* toggle, bool value) {
     if (toggle->toggle->m_IsOn == value)
         return;
@@ -131,6 +150,23 @@ void Utils::SetDropdownValue(BSML::DropdownListSetting* dropdown, std::string va
             break;
         }
     }
+}
+
+void Utils::SetIconButtonSprite(UnityEngine::UI::Button* button, UnityEngine::Sprite* sprite) {
+    auto icon = button->transform->Find("QountersButtonImage");
+    if (!icon)
+        return;
+    icon->GetComponent<HMUI::ImageView*>()->sprite = sprite;
+}
+
+UnityEngine::UI::Button* Utils::CreateIconButton(UnityEngine::GameObject* parent, UnityEngine::Sprite* sprite, std::function<void()> onClick) {
+    auto button = BSML::Lite::CreateUIButton(parent, "", onClick);
+    auto icon = BSML::Lite::CreateImage(button, sprite);
+    icon->name = "QountersButtonImage";
+    icon->preserveAspect = true;
+    icon->transform->localScale = {0.8, 0.8, 0.8};
+    SetLayoutSize(button, 8, 8);
+    return button;
 }
 
 BSML::DropdownListSetting* Utils::CreateDropdown(
@@ -297,7 +333,7 @@ void Utils::AddStringSettingOnClose(HMUI::InputFieldView* input, std::function<v
 }
 
 void Utils::AddIncrementIncrement(BSML::IncrementSetting* setting, float increment) {
-    auto transform = setting->get_transform()->Find("ValuePicker").cast<UnityEngine::RectTransform>();
+    auto transform = setting->transform->Find("ValuePicker").cast<UnityEngine::RectTransform>();
     transform->anchoredPosition = {-6, 0};
 
     auto leftButton = BSML::Lite::CreateUIButton(transform, "", "DecButton", {-20, 0}, {6, 8}, [setting, increment]() {
@@ -308,39 +344,6 @@ void Utils::AddIncrementIncrement(BSML::IncrementSetting* setting, float increme
         setting->currentValue += increment;
         setting->EitherPressed();
     });
-}
-
-void Utils::SetChildrenWidth(UnityEngine::Transform* parent, float width) {
-    for (int i = 0; i < parent->GetChildCount(); i++) {
-        bool first = true;
-        for (auto layout : parent->GetChild(i)->GetComponents<UnityEngine::UI::LayoutElement*>()) {
-            if (first)
-                layout->preferredWidth = width;
-            else
-                UnityEngine::Object::Destroy(layout);
-            first = false;
-        }
-    }
-}
-
-UnityEngine::RectTransform* Utils::GetScrollViewTop(UnityEngine::GameObject* scrollView) {
-    return scrollView->transform->parent->parent->parent->GetComponent<UnityEngine::RectTransform*>();
-}
-
-void Utils::RebuildWithScrollPosition(UnityEngine::GameObject* scrollView) {
-    auto scrollComponent = GetScrollViewTop(scrollView)->GetComponent<HMUI::ScrollView*>();
-    auto scroll = scrollComponent->position;
-    // ew
-    UnityEngine::UI::LayoutRebuilder::ForceRebuildLayoutImmediate(scrollComponent->_contentRectTransform);
-    UnityEngine::UI::LayoutRebuilder::ForceRebuildLayoutImmediate(scrollComponent->_contentRectTransform);
-    scrollComponent->UpdateContentSize();
-    scrollComponent->ScrollTo(std::min(scroll, scrollComponent->scrollableSize), false);
-}
-
-void Utils::SetCanvasSorting(UnityEngine::GameObject* canvas, int value) {
-    auto comp = canvas->GetComponent<UnityEngine::Canvas*>();
-    comp->overrideSorting = true;
-    comp->sortingOrder = value;
 }
 
 BSML::SliderSetting* Utils::ReparentSlider(BSML::SliderSetting* slider, BSML::Lite::TransformWrapper parent, float width) {
@@ -361,6 +364,20 @@ BSML::SliderSetting* Utils::ReparentSlider(BSML::SliderSetting* slider, BSML::Li
     // this needs to be called after destroying the old slider
     newSlider->Setup();
     return newSlider;
+}
+
+void Utils::RebuildWithScrollPosition(UnityEngine::GameObject* scrollView) {
+    auto scrollComponent = GetScrollViewTop(scrollView)->GetComponent<HMUI::ScrollView*>();
+    auto scroll = scrollComponent->position;
+    // ew
+    UnityEngine::UI::LayoutRebuilder::ForceRebuildLayoutImmediate(scrollComponent->_contentRectTransform);
+    UnityEngine::UI::LayoutRebuilder::ForceRebuildLayoutImmediate(scrollComponent->_contentRectTransform);
+    scrollComponent->UpdateContentSize();
+    scrollComponent->ScrollTo(std::min(scroll, scrollComponent->scrollableSize), false);
+}
+
+UnityEngine::RectTransform* Utils::GetScrollViewTop(UnityEngine::GameObject* scrollView) {
+    return scrollView->transform->parent->parent->parent->GetComponent<UnityEngine::RectTransform*>();
 }
 
 VRUIControls::VRInputModule* Utils::GetCurrentInputModule() {

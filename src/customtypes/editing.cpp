@@ -423,15 +423,15 @@ void EditingGroup::OnDragDetached(EventSystems::PointerEventData* eventData) {
     auto pointer = cachedInputModule->_vrPointer;
     auto controller = pointer->_lastSelectedVrController;
     if (!dragging) {
-        detachedGrabPos = controller->transform->InverseTransformPoint(transform->position);
-        detachedGrabRot = Quaternion::op_Multiply(Quaternion::Inverse(controller->transform->rotation), transform->rotation);
+        detachedGrabPos = controller->_viewAnchorTransform->InverseTransformPoint(transform->position);
+        detachedGrabRot = Quaternion::op_Multiply(Quaternion::Inverse(controller->_viewAnchorTransform->rotation), transform->rotation);
         Editor::EnableDetachedCanvas(true);
     }
 
     float unscaledDeltaTime = Time::get_unscaledDeltaTime();
     // thumbstick movement
     if (pointer->_lastSelectedControllerWasRight) {
-        float diff = controller->thumbstick.y * unscaledDeltaTime;
+        float diff = -controller->thumbstick.y * unscaledDeltaTime;
         // no movement if too close
         if (detachedGrabPos.magnitude < 0.5 && diff > 0)
             diff = 0;
@@ -447,11 +447,25 @@ void EditingGroup::OnDragDetached(EventSystems::PointerEventData* eventData) {
         detachedGrabRot = Quaternion::op_Multiply(detachedGrabRot, extraRot);
     }
 
-    auto pos = controller->transform->TransformPoint(detachedGrabPos);
-    auto rot = Quaternion::op_Multiply(controller->transform->rotation, detachedGrabRot);
+    auto pos = controller->_viewAnchorTransform->TransformPoint(detachedGrabPos);
+    auto rot = Quaternion::op_Multiply(controller->_viewAnchorTransform->rotation, detachedGrabRot);
 
-    group.DetachedPosition = Vector3::Lerp(group.DetachedPosition, pos, 10 * unscaledDeltaTime);
-    group.DetachedRotation = Quaternion::Slerp(Quaternion::Euler(group.DetachedRotation), rot, 5 * unscaledDeltaTime).eulerAngles;
+    auto currentPos = group.DetachedPosition;
+    group.DetachedPosition = Vector3::Lerp(currentPos, pos, 10 * unscaledDeltaTime);
+    if (group.LockPosX)
+        group.DetachedPosition.x = currentPos.x;
+    if (group.LockPosY)
+        group.DetachedPosition.y = currentPos.y;
+    if (group.LockPosZ)
+        group.DetachedPosition.z = currentPos.z;
+    auto currentRot = group.DetachedRotation;
+    group.DetachedRotation = Quaternion::Slerp(Quaternion::Euler(currentRot), rot, 5 * unscaledDeltaTime).eulerAngles;
+    if (group.LockRotX)
+        group.DetachedRotation.x = currentRot.x;
+    if (group.LockRotY)
+        group.DetachedRotation.y = currentRot.y;
+    if (group.LockRotZ)
+        group.DetachedRotation.z = currentRot.z;
     Editor::UpdatePosition();
 }
 

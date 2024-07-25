@@ -49,7 +49,9 @@ namespace IncludedAssets {
     DECLARE_FILE(ChainArrow_png)
     DECLARE_FILE(Default_png)
     DECLARE_FILE(Frame_png)
+    DECLARE_FILE(Lock_png)
     DECLARE_FILE(Scoresaber_png)
+    DECLARE_FILE(Unlock_png)
     DECLARE_FILE(Wall_png)
 }
 

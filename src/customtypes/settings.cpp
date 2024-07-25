@@ -741,6 +741,9 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
 
     AddBackground(this, {95, 88});
 
+    lockSprite = PNG_SPRITE(Lock);
+    unlockSprite = PNG_SPRITE(Unlock);
+
     groupParent = BSML::Lite::CreateVerticalLayoutGroup(this);
     groupParent->childForceExpandHeight = false;
     groupParent->childControlHeight = false;
@@ -760,27 +763,51 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
         Editor::FinalizeAction();
     });
     Utils::AddIncrementIncrement(gPosIncrementY, 5);
-    gDetPosIncrementX = BSML::Lite::CreateIncrementSetting(groupParent, "X Position", 2, 0.01, 0, [](float val) {
+
+    auto xPosLayout = BSML::Lite::CreateHorizontalLayoutGroup(groupParent);
+    xPosLayout->spacing = 2;
+    gDetPosIncrementX = BSML::Lite::CreateIncrementSetting(xPosLayout, "X Position", 2, 0.01, 0, [](float val) {
         static int id = Editor::GetActionId();
         Editor::GetSelectedGroup(id).DetachedPosition.x = val;
         Editor::UpdatePosition(true);
         Editor::FinalizeAction();
     });
     Utils::AddIncrementIncrement(gDetPosIncrementX, 0.25);
-    gDetPosIncrementY = BSML::Lite::CreateIncrementSetting(groupParent, "Y Position", 2, 0.01, 0, [](float val) {
+    gDetPosLockX = Utils::CreateIconButton(xPosLayout->gameObject, nullptr, [this]() {
+        auto& group = Editor::GetSelectedGroup(-1);
+        group.LockPosX = !group.LockPosX;
+        UpdateSimpleUI();
+    });
+
+    auto yPosLayout = BSML::Lite::CreateHorizontalLayoutGroup(groupParent);
+    yPosLayout->spacing = 2;
+    gDetPosIncrementY = BSML::Lite::CreateIncrementSetting(yPosLayout, "Y Position", 2, 0.01, 0, [](float val) {
         static int id = Editor::GetActionId();
         Editor::GetSelectedGroup(id).DetachedPosition.y = val;
         Editor::UpdatePosition(true);
         Editor::FinalizeAction();
     });
     Utils::AddIncrementIncrement(gDetPosIncrementY, 0.25);
-    gDetPosIncrementZ = BSML::Lite::CreateIncrementSetting(groupParent, "Z Position", 2, 0.01, 0, [](float val) {
+    gDetPosLockY = Utils::CreateIconButton(yPosLayout->gameObject, nullptr, [this]() {
+        auto& group = Editor::GetSelectedGroup(-1);
+        group.LockPosY = !group.LockPosY;
+        UpdateSimpleUI();
+    });
+
+    auto zPosLayout = BSML::Lite::CreateHorizontalLayoutGroup(groupParent);
+    zPosLayout->spacing = 2;
+    gDetPosIncrementZ = BSML::Lite::CreateIncrementSetting(zPosLayout, "Z Position", 2, 0.01, 0, [](float val) {
         static int id = Editor::GetActionId();
         Editor::GetSelectedGroup(id).DetachedPosition.z = val;
         Editor::UpdatePosition(true);
         Editor::FinalizeAction();
     });
     Utils::AddIncrementIncrement(gDetPosIncrementZ, 0.25);
+    gDetPosLockZ = Utils::CreateIconButton(zPosLayout->gameObject, nullptr, [this]() {
+        auto& group = Editor::GetSelectedGroup(-1);
+        group.LockPosZ = !group.LockPosZ;
+        UpdateSimpleUI();
+    });
 
     gRotSlider = BSML::Lite::CreateSliderSetting(groupParent, "Rotation", 1, 0, -180, 180, 0, true, {0, 0}, [](float val) {
         static int id = Editor::GetActionId();
@@ -788,29 +815,48 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
         Editor::UpdatePosition();
     });
     Utils::AddSliderEndDrag(gRotSlider, [](float _) { Editor::FinalizeAction(); });
-    gRotSlider->GetComponent<RectTransform*>()->sizeDelta = {0, 8};
 
-    gDetRotSliderX = BSML::Lite::CreateSliderSetting(groupParent, "X Rotation", 1, 0, -180, 180, 0, true, {0, 0}, [](float val) {
+    auto xRotLayout = BSML::Lite::CreateHorizontalLayoutGroup(groupParent);
+    xRotLayout->spacing = 1;
+    gDetRotSliderX = BSML::Lite::CreateSliderSetting(xRotLayout, "X Rotation", 1, 0, -180, 180, 0, true, {0, 0}, [](float val) {
         static int id = Editor::GetActionId();
         Editor::GetSelectedGroup(id).DetachedRotation.x = val;
         Editor::UpdatePosition();
     });
     Utils::AddSliderEndDrag(gDetRotSliderX, [](float _) { Editor::FinalizeAction(); });
-    gDetRotSliderX->GetComponent<RectTransform*>()->sizeDelta = {0, 8};
-    gDetRotSliderY = BSML::Lite::CreateSliderSetting(groupParent, "Y Rotation", 1, 0, -180, 180, 0, true, {0, 0}, [](float val) {
+    gDetRotLockX = Utils::CreateIconButton(xRotLayout->gameObject, nullptr, [this]() {
+        auto& group = Editor::GetSelectedGroup(-1);
+        group.LockRotX = !group.LockRotX;
+        UpdateSimpleUI();
+    });
+
+    auto yRotLayout = BSML::Lite::CreateHorizontalLayoutGroup(groupParent);
+    yRotLayout->spacing = 1;
+    gDetRotSliderY = BSML::Lite::CreateSliderSetting(yRotLayout, "Y Rotation", 1, 0, -180, 180, 0, true, {0, 0}, [](float val) {
         static int id = Editor::GetActionId();
         Editor::GetSelectedGroup(id).DetachedRotation.y = val;
         Editor::UpdatePosition();
     });
     Utils::AddSliderEndDrag(gDetRotSliderY, [](float _) { Editor::FinalizeAction(); });
-    gDetRotSliderY->GetComponent<RectTransform*>()->sizeDelta = {0, 8};
-    gDetRotSliderZ = BSML::Lite::CreateSliderSetting(groupParent, "Z Rotation", 1, 0, -180, 180, 0, true, {0, 0}, [](float val) {
+    gDetRotLockY = Utils::CreateIconButton(yRotLayout->gameObject, nullptr, [this]() {
+        auto& group = Editor::GetSelectedGroup(-1);
+        group.LockRotY = !group.LockRotY;
+        UpdateSimpleUI();
+    });
+
+    auto zRotLayout = BSML::Lite::CreateHorizontalLayoutGroup(groupParent);
+    zRotLayout->spacing = 1;
+    gDetRotSliderZ = BSML::Lite::CreateSliderSetting(zRotLayout, "Z Rotation", 1, 0, -180, 180, 0, true, {0, 0}, [](float val) {
         static int id = Editor::GetActionId();
         Editor::GetSelectedGroup(id).DetachedRotation.z = val;
         Editor::UpdatePosition();
     });
     Utils::AddSliderEndDrag(gDetRotSliderZ, [](float _) { Editor::FinalizeAction(); });
-    gDetRotSliderZ->GetComponent<RectTransform*>()->sizeDelta = {0, 8};
+    gDetRotLockZ = Utils::CreateIconButton(zRotLayout->gameObject, nullptr, [this]() {
+        auto& group = Editor::GetSelectedGroup(-1);
+        group.LockRotZ = !group.LockRotZ;
+        UpdateSimpleUI();
+    });
 
     auto gButtonsParent1 = BSML::Lite::CreateHorizontalLayoutGroup(groupParent);
     gButtonsParent1->spacing = 3;
@@ -1005,11 +1051,17 @@ void OptionsViewController::UpdateSimpleUI() {
         auto& state = Editor::GetSelectedGroup(-1);
         if (state.Detached) {
             Utils::SetIncrementValue(gDetPosIncrementX, state.DetachedPosition.x);
+            Utils::SetIconButtonSprite(gDetPosLockX, state.LockPosX ? lockSprite : unlockSprite);
             Utils::SetIncrementValue(gDetPosIncrementY, state.DetachedPosition.y);
+            Utils::SetIconButtonSprite(gDetPosLockY, state.LockPosY ? lockSprite : unlockSprite);
             Utils::SetIncrementValue(gDetPosIncrementZ, state.DetachedPosition.z);
+            Utils::SetIconButtonSprite(gDetPosLockZ, state.LockPosZ ? lockSprite : unlockSprite);
             gDetRotSliderX->set_Value(state.DetachedRotation.x);
+            Utils::SetIconButtonSprite(gDetRotLockX, state.LockRotX ? lockSprite : unlockSprite);
             gDetRotSliderY->set_Value(state.DetachedRotation.y);
+            Utils::SetIconButtonSprite(gDetRotLockY, state.LockRotY ? lockSprite : unlockSprite);
             gDetRotSliderZ->set_Value(state.DetachedRotation.z);
+            Utils::SetIconButtonSprite(gDetRotLockZ, state.LockRotZ ? lockSprite : unlockSprite);
         } else {
             Utils::SetIncrementValue(gPosIncrementX, state.Position.x);
             Utils::SetIncrementValue(gPosIncrementY, state.Position.y);

@@ -172,6 +172,9 @@ DECLARE_CLASS_CODEGEN(Qounters, OptionsViewController, HMUI::ViewController,
     DECLARE_INSTANCE_FIELD_DEFAULT(bool, group, false);
     DECLARE_INSTANCE_FIELD_DEFAULT(bool, component, false);
 
+    DECLARE_INSTANCE_FIELD(UnityEngine::Sprite*, lockSprite);
+    DECLARE_INSTANCE_FIELD(UnityEngine::Sprite*, unlockSprite);
+
     DECLARE_INSTANCE_FIELD(UnityEngine::UI::VerticalLayoutGroup*, groupParent);
     DECLARE_INSTANCE_FIELD(UnityEngine::GameObject*, componentParent);
     DECLARE_INSTANCE_FIELD(UnityEngine::UI::HorizontalLayoutGroup*, cButtonsParent);
@@ -179,12 +182,18 @@ DECLARE_CLASS_CODEGEN(Qounters, OptionsViewController, HMUI::ViewController,
     DECLARE_INSTANCE_FIELD(BSML::IncrementSetting*, gPosIncrementX);
     DECLARE_INSTANCE_FIELD(BSML::IncrementSetting*, gPosIncrementY);
     DECLARE_INSTANCE_FIELD(BSML::IncrementSetting*, gDetPosIncrementX);
+    DECLARE_INSTANCE_FIELD(UnityEngine::UI::Button*, gDetPosLockX);
     DECLARE_INSTANCE_FIELD(BSML::IncrementSetting*, gDetPosIncrementY);
+    DECLARE_INSTANCE_FIELD(UnityEngine::UI::Button*, gDetPosLockY);
     DECLARE_INSTANCE_FIELD(BSML::IncrementSetting*, gDetPosIncrementZ);
+    DECLARE_INSTANCE_FIELD(UnityEngine::UI::Button*, gDetPosLockZ);
     DECLARE_INSTANCE_FIELD(BSML::SliderSetting*, gRotSlider);
     DECLARE_INSTANCE_FIELD(BSML::SliderSetting*, gDetRotSliderX);
+    DECLARE_INSTANCE_FIELD(UnityEngine::UI::Button*, gDetRotLockX);
     DECLARE_INSTANCE_FIELD(BSML::SliderSetting*, gDetRotSliderY);
+    DECLARE_INSTANCE_FIELD(UnityEngine::UI::Button*, gDetRotLockY);
     DECLARE_INSTANCE_FIELD(BSML::SliderSetting*, gDetRotSliderZ);
+    DECLARE_INSTANCE_FIELD(UnityEngine::UI::Button*, gDetRotLockZ);
     DECLARE_INSTANCE_FIELD(UnityEngine::UI::Button*, gComponentButton);
     DECLARE_INSTANCE_FIELD(UnityEngine::UI::Button*, gDetachButton);
     DECLARE_INSTANCE_FIELD(UnityEngine::UI::Button*, gDeleteButton);
