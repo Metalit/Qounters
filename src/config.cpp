@@ -7,6 +7,7 @@
 #include "editor.hpp"
 #include "main.hpp"
 #include "options.hpp"
+#include "qounters.hpp"
 #include "sources.hpp"
 #include "sourceui.hpp"
 #include "utils.hpp"
@@ -15,7 +16,7 @@ std::vector<std::string_view> const Qounters::TypeStrings = {
     "Text",
     "Shape",
     "Image",
-    "Base Game",
+    "Premade",
 };
 std::vector<std::string_view> const Qounters::AnchorStrings = {
     "Left",
@@ -41,8 +42,8 @@ std::vector<std::string_view> const Qounters::FillStrings = {
     "Vertical",
     "Circle",
 };
-std::vector<std::string_view> const Qounters::ComponentStrings = {
-    "Multiplier", "Song Time",
+std::vector<std::string_view> const Qounters::BaseGameObjectStrings = {
+    "Multiplier Ring", "Song Time Panel",
     // "Health Bar",
 };
 std::vector<std::string_view> const Qounters::SaberStrings = {
@@ -67,7 +68,7 @@ namespace Qounters {
             Editor::FinalizeAction();
         });
 
-        auto inc = BSML::Lite::CreateIncrementSetting(parent, "Font Size", 1, 0.5, options.Size, true, false, 0, -1, Vector2(), [](float val) {
+        auto inc = BSML::Lite::CreateIncrementSetting(parent, "Font Size", 1, 0.5, options.Size, true, false, 0, -1, {0, 0}, [](float val) {
             static int id = Editor::GetActionId();
             auto opts = Editor::GetOptions<TextOptions>(id);
             opts.Size = val;
@@ -125,7 +126,7 @@ namespace Qounters {
         });
 
         borderIncrement =
-            BSML::Lite::CreateIncrementSetting(parent, "Border Width", 1, 0.1, options.OutlineWidth, true, false, 0.1, -1, Vector2(), [](float val) {
+            BSML::Lite::CreateIncrementSetting(parent, "Border Width", 1, 0.1, options.OutlineWidth, true, false, 0.1, -1, {0, 0}, [](float val) {
                 static int id = Editor::GetActionId();
                 auto opts = Editor::GetOptions<ShapeOptions>(id);
                 opts.OutlineWidth = val;
@@ -215,14 +216,23 @@ namespace Qounters {
         BSML::Lite::CreateUIButton(horizontal, "Select Image", []() { modal->Show(); });
     }
 
-    void CreateBaseGameOptionsUI(GameObject* parent, BaseGameOptions const& options) {
-        Utils::CreateDropdownEnum(parent, "Component", options.Component, ComponentStrings, [](int val) {
+    void CreatePremadeOptionsUI(GameObject* parent, PremadeOptions const& options) {
+        std::vector<std::string_view> names = {};
+        for (auto& [_, infos] : premadeRegistry) {
+            for (auto& info : infos)
+                names.emplace_back(info.name);
+        }
+        Utils::CreateDropdown(parent, "Object", options.Name, names, [](std::string val) {
             static int id = Editor::GetActionId();
-            auto opts = Editor::GetOptions<BaseGameOptions>(id);
-            opts.Component = val;
+            auto opts = Editor::GetOptions<PremadeOptions>(id);
+            opts.Name = val;
             Editor::SetOptions(id, opts);
             Editor::FinalizeAction();
         });
+        // TODO: UI for missing mod?
+        auto info = GetPremadeInfo(options.SourceMod, options.Name);
+        if (info && info->uiFunction)
+            info->uiFunction(parent, options.Options);
     }
 
     void CreateTypeOptionsUI(Transform* parent, int type, Component::OptionsTypes const& options) {
@@ -241,8 +251,8 @@ namespace Qounters {
             case Component::Types::Image:
                 CreateImageOptionsUI(parentGO, options.GetValue<ImageOptions>().value_or(ImageOptions{}));
                 break;
-            case Component::Types::BaseGame:
-                CreateBaseGameOptionsUI(parentGO, options.GetValue<BaseGameOptions>().value_or(BaseGameOptions{}));
+            case Component::Types::Premade:
+                CreatePremadeOptionsUI(parentGO, options.GetValue<PremadeOptions>().value_or(PremadeOptions{}));
                 break;
         }
 
@@ -334,10 +344,10 @@ namespace Qounters {
         ret.Anchor = (int) Group::Anchors::Right;
         ret.Position = Vector2(0, 65 - 37.5);
         Component component;
-        component.Type = (int) Component::Types::BaseGame;
-        BaseGameOptions baseOptions;
-        baseOptions.Component = (int) BaseGameOptions::Components::Multiplier;
-        component.Options = baseOptions;
+        component.Type = (int) Component::Types::Premade;
+        PremadeOptions premadeOptions;
+        premadeOptions.Name = BaseGameObjectStrings[(int) BaseGameGraphic::Objects::Multiplier];
+        component.Options = premadeOptions;
         ret.Components.push_back(component);
         return ret;
     }
@@ -348,10 +358,10 @@ namespace Qounters {
         ret.Anchor = (int) Group::Anchors::Right;
         ret.Position = Vector2(0, 20 - 37.5);
         Component component;
-        component.Type = (int) Component::Types::BaseGame;
-        BaseGameOptions baseOptions;
-        baseOptions.Component = (int) BaseGameOptions::Components::ProgressBar;
-        component.Options = baseOptions;
+        component.Type = (int) Component::Types::Premade;
+        PremadeOptions premadeOptions;
+        premadeOptions.Name = BaseGameObjectStrings[(int) BaseGameGraphic::Objects::ProgressBar];
+        component.Options = premadeOptions;
         ret.Components.push_back(component);
         return ret;
     }
@@ -361,10 +371,10 @@ namespace Qounters {
         ret.Anchor = (int) Group::Anchors::Bottom;
         ret.Position = Vector2(0, 10);
         Component component;
-        component.Type = (int) Component::Types::BaseGame;
-        BaseGameOptions baseOptions;
-        baseOptions.Component = (int) BaseGameOptions::Components::HealthBar;
-        component.Options = baseOptions;
+        component.Type = (int) Component::Types::Premade;
+        PremadeOptions premadeOptions;
+        premadeOptions.Name = BaseGameObjectStrings[(int) BaseGameGraphic::Objects::HealthBar];
+        component.Options = premadeOptions;
         ret.Components.push_back(component);
         return ret;
     }

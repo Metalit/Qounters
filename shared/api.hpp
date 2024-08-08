@@ -5,6 +5,7 @@
 
 namespace Qounters::Shared {
     void RegisterTemplate(std::string title, TemplateUIFn function);
+    void RegisterPremade(std::string mod, std::string name, PremadeFn creation, PremadeUIFn uiFunction = nullptr, PremadeUpdateFn update = nullptr);
 
     void CloseTemplateModal();
     void AddGroup(Group group);
@@ -12,6 +13,7 @@ namespace Qounters::Shared {
     int GetActionId();
     void SetSourceOptions(int actionId, UnparsedJSON options);
     void SetColorOptions(int actionId, UnparsedJSON options);
+    void SetEnableOptions(int actionId, UnparsedJSON options);
     void FinalizeAction();
 
     void AddSliderEndDrag(BSML::SliderSetting* slider, std::function<void(float)> onEndDrag);

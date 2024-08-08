@@ -11,6 +11,21 @@ namespace Qounters {
         Unsupported,
     };
 
+    struct PremadeInfo {
+        std::string name;
+        PremadeFn creation;
+        PremadeUIFn uiFunction;
+        PremadeUpdateFn update;
+        PremadeInfo(std::string_view name, PremadeFn creation, PremadeUIFn uiFunction = nullptr, PremadeUpdateFn update = nullptr) :
+            name(name),
+            creation(creation),
+            uiFunction(uiFunction),
+            update(update) {}
+    };
+    // map with mod name for ordering purposes
+    extern std::map<std::string, std::vector<PremadeInfo>> premadeRegistry;
+    PremadeInfo* GetPremadeInfo(std::string const& mod, std::string const& name);
+
     void UpdateComponentOptions(int componentType, UnityEngine::Component* component, Component::OptionsTypes newOptions);
     void UpdateComponentColor(UnityEngine::UI::Graphic* component, std::string newSource, UnparsedJSON newOptions);
     void UpdateComponentEnabled(UnityEngine::GameObject* component, std::string newSource, UnparsedJSON newOptions, bool invert);

@@ -10,11 +10,43 @@
 #include "editor.hpp"
 #include "environment.hpp"
 #include "main.hpp"
+#include "options.hpp"
 #include "sources.hpp"
 #include "utils.hpp"
 
 using namespace Qounters;
 using namespace UnityEngine;
+
+UI::Graphic* CreateMultiplier(UnityEngine::GameObject*, UnparsedJSON);
+UI::Graphic* CreateProgressBar(UnityEngine::GameObject*, UnparsedJSON);
+
+std::map<std::string, std::vector<PremadeInfo>> Qounters::premadeRegistry = {
+    {"",
+     {{BaseGameObjectStrings[(int) BaseGameGraphic::Objects::Multiplier], CreateMultiplier},
+      {BaseGameObjectStrings[(int) BaseGameGraphic::Objects::ProgressBar], CreateProgressBar}}},
+};
+
+UI::Graphic* CreateMultiplier(UnityEngine::GameObject* parent, UnparsedJSON) {
+    auto ret = BaseGameGraphic::Create(parent->transform);
+    ret->SetComponent((int) BaseGameGraphic::Objects::Multiplier);
+    return ret;
+}
+UI::Graphic* CreateProgressBar(UnityEngine::GameObject* parent, UnparsedJSON) {
+    auto ret = BaseGameGraphic::Create(parent->transform);
+    ret->SetComponent((int) BaseGameGraphic::Objects::ProgressBar);
+    return ret;
+}
+
+PremadeInfo* Qounters::GetPremadeInfo(std::string const& mod, std::string const& name) {
+    auto itr = premadeRegistry.find(mod);
+    if (itr != premadeRegistry.end()) {
+        for (auto& info : itr->second) {
+            if (info.name == name)
+                return &info;
+        }
+    }
+    return nullptr;
+}
 
 std::map<std::string, std::vector<std::pair<TMPro::TextMeshProUGUI*, UnparsedJSON>>> texts;
 std::map<std::string, std::vector<std::pair<Shape*, UnparsedJSON>>> shapes;
@@ -57,6 +89,12 @@ void RemoveFromMap(std::map<std::string, std::vector<std::pair<TComp, TOpts>>>& 
             }
         }
     }
+}
+
+void AddEditingComponent(UI::Graphic* component, int componentIndex) {
+    auto edit = component->gameObject->AddComponent<EditingComponent*>();
+    edit->Init(component, componentIndex);
+    Editor::RegisterEditingComponent(edit, edit->GetEditingGroup()->GetGroupIdx(), componentIndex);
 }
 
 void UpdateTextOptions(TMPro::TextMeshProUGUI* text, Qounters::Component::OptionsTypes newOptions, bool creation) {
@@ -135,10 +173,27 @@ void UpdateImageOptions(HMUI::ImageView* image, Qounters::Component::OptionsType
     image->sprite = sprite;
 }
 
-void UpdateBaseGameOptions(BaseGameGraphic* base, Qounters::Component::OptionsTypes newOptions, bool creation) {
-    auto options = newOptions.GetValue<BaseGameOptions>().value_or(BaseGameOptions{});
+PremadeParent* UpdatePremadeOptions(PremadeParent* premade, Qounters::Component::OptionsTypes newOptions, bool creation) {
+    auto options = newOptions.GetValue<PremadeOptions>().value_or(PremadeOptions{});
 
-    base->SetComponent(options.Component);
+    auto info = GetPremadeInfo(options.SourceMod, options.Name);
+    if (!info) {
+        logger.error("premade {}.{} not found!", options.SourceMod, options.Name);
+        return nullptr;
+    }
+
+    if (!creation) {
+        if (!info->update || premade->options.SourceMod != options.SourceMod || premade->options.Name != options.Name) {
+            Object::Destroy(premade->GetGraphic()->gameObject);
+            premade->graphic = nullptr;
+            creation = true;
+        } else
+            info->update(premade->GetGraphic()->GetComponent<UI::Graphic*>(), options.Options);
+    }
+    if (creation)
+        info->creation(premade->gameObject, options.Options);
+    premade->options = options;
+    return premade;
 }
 
 void Qounters::UpdateComponentOptions(int componentType, UnityEngine::Component* component, Qounters::Component::OptionsTypes newOptions) {
@@ -152,8 +207,8 @@ void Qounters::UpdateComponentOptions(int componentType, UnityEngine::Component*
         case Component::Types::Image:
             UpdateImageOptions((HMUI::ImageView*) component, newOptions, false);
             break;
-        case Component::Types::BaseGame:
-            UpdateBaseGameOptions((BaseGameGraphic*) component, newOptions, false);
+        case Component::Types::Premade:
+            UpdatePremadeOptions((PremadeParent*) component, newOptions, false);
             break;
     }
 }
@@ -201,7 +256,7 @@ void Qounters::UpdateComponentPosition(RectTransform* component, Component const
         case Component::Types::Image:
             component->sizeDelta = {25, 25};
             break;
-        case Component::Types::BaseGame:
+        case Component::Types::Premade:
             break;
     }
     component->anchorMin = {0.5, 0.5};
@@ -253,11 +308,11 @@ void Qounters::RemoveComponent(int componentType, UnityEngine::Component* compon
             RemoveFromMap(shapes, component);
             break;
         case Component::Types::Image:
-        case Component::Types::BaseGame:
+        case Component::Types::Premade:
             break;
     }
     RemoveFromMap(colors, component);
-    RemoveFromMap(enables, component->get_gameObject());
+    RemoveFromMap(enables, component->gameObject);
 }
 
 template <class T>
@@ -276,7 +331,7 @@ void Qounters::SetSourceOptions(Component& component, UnparsedJSON newOptions) {
             SetSourceOptions<ShapeOptions>(component.Options, newOptions);
             break;
         case Component::Types::Image:
-        case Component::Types::BaseGame:
+        case Component::Types::Premade:
             break;
     }
 }
@@ -292,8 +347,8 @@ void Qounters::SetDefaultOptions(Component& component) {
         case Component::Types::Image:
             component.Options = ImageOptions();
             break;
-        case Component::Types::BaseGame:
-            component.Options = BaseGameOptions();
+        case Component::Types::Premade:
+            component.Options = PremadeOptions();
             break;
     }
 }
@@ -419,10 +474,10 @@ void Qounters::CreateQounterComponent(Component const& qounterComponent, int com
             UpdateImageOptions(image, qounterComponent.Options, true);
             break;
         }
-        case Component::Types::BaseGame: {
-            auto base = BaseGameGraphic::Create(parent);
-            component = base;
-            UpdateBaseGameOptions(base, qounterComponent.Options, true);
+        case Component::Types::Premade: {
+            auto premade = GameObject::New_ctor("QountersPremade")->AddComponent<PremadeParent*>();
+            component = premade;
+            UpdatePremadeOptions(premade, qounterComponent.Options, true);
             break;
         }
     }

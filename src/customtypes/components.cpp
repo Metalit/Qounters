@@ -18,6 +18,7 @@
 
 DEFINE_TYPE(Qounters, Shape);
 DEFINE_TYPE(Qounters, BaseGameGraphic);
+DEFINE_TYPE(Qounters, PremadeParent);
 DEFINE_TYPE(Qounters, SongTimeSource);
 DEFINE_TYPE(Qounters, ImageSpriteCache);
 DEFINE_TYPE(Qounters, DestroySignal);
@@ -190,20 +191,20 @@ Shape* Shape::Create(Transform* parent) {
 }
 
 void CopyFields(Transform* base, Transform* target, int component) {
-    switch ((BaseGameOptions::Components) component) {
-        case BaseGameOptions::Components::Multiplier: {
+    switch ((BaseGameGraphic::Objects) component) {
+        case BaseGameGraphic::Objects::Multiplier: {
             auto baseComp = base->GetComponent<ScoreMultiplierUIController*>();
             auto targetComp = target->GetComponent<ScoreMultiplierUIController*>();
             targetComp->_scoreController = baseComp->_scoreController;
             break;
         }
-        case BaseGameOptions::Components::ProgressBar: {
+        case BaseGameGraphic::Objects::ProgressBar: {
             auto baseComp = base->GetComponent<SongProgressUIController*>();
             auto targetComp = target->GetComponent<SongProgressUIController*>();
             targetComp->_audioTimeSource = (IAudioTimeSource*) CRASH_UNLESS(il2cpp_utils::New<SongTimeSource*>());
             break;
         }
-        case BaseGameOptions::Components::HealthBar: {
+        case BaseGameGraphic::Objects::HealthBar: {
             auto baseComp = base->GetComponent<GameEnergyUIPanel*>();
             auto targetComp = target->GetComponent<GameEnergyUIPanel*>();
             targetComp->_gameEnergyCounter = baseComp->_gameEnergyCounter;
@@ -249,16 +250,16 @@ void BaseGameGraphic::SetComponent(int comp) {
     rect->anchorMax = {0.5, 0.5};
     rect->anchoredPosition = {0, 0};
 
-    switch ((BaseGameOptions::Components) component) {
-        case BaseGameOptions::Components::Multiplier:
+    switch ((Objects) component) {
+        case Objects::Multiplier:
             rectTransform->sizeDelta = {50, 50};
             instance->localScale = {0.5, 0.5, 0.5};
             break;
-        case BaseGameOptions::Components::ProgressBar:
+        case Objects::ProgressBar:
             rectTransform->sizeDelta = {GetTimerWidth(instance), 20};
             instance->localScale = {1, 1, 1};
             break;
-        case BaseGameOptions::Components::HealthBar:
+        case Objects::HealthBar:
             rectTransform->sizeDelta = {125, 10};
             instance->localScale = {1, 1, 1};
             break;
@@ -300,18 +301,18 @@ Transform* GetBase(int component) {
     auto hud = GetHUD().first;
     if (!hud)
         return nullptr;
-    switch ((BaseGameOptions::Components) component) {
-        case BaseGameOptions::Components::Multiplier:
+    switch ((BaseGameGraphic::Objects) component) {
+        case BaseGameGraphic::Objects::Multiplier:
             return Utils::FindRecursive(hud, "MultiplierCanvas");
-        case BaseGameOptions::Components::ProgressBar:
+        case BaseGameGraphic::Objects::ProgressBar:
             return Utils::FindRecursive(hud, "SongProgressCanvas");
-        case BaseGameOptions::Components::HealthBar:
+        case BaseGameGraphic::Objects::HealthBar:
             return Utils::FindRecursive(hud, "EnergyPanel");
     }
 }
 
 void BaseGameGraphic::MakeClones() {
-    for (int i = 0; i <= (int) BaseGameOptions::Components::ComponentsMax; i++) {
+    for (int i = 0; i <= (int) Objects::ComponentsMax; i++) {
         auto base = GetBase(i);
         if (!base) {
             logger.error("Failed to find base component {}", i);
@@ -326,7 +327,7 @@ void BaseGameGraphic::MakeClones() {
         if (auto qounters = clones[i]->Find("QountersCanvas"))
             Object::Destroy(qounters->gameObject);
 
-        if (i == (int) BaseGameOptions::Components::Multiplier)
+        if (i == (int) Objects::Multiplier)
             clones[i]->Find("BGCircle")->gameObject->active = true;
 
         // non SerializeField fields don't get copied on instantiate
@@ -343,8 +344,29 @@ void BaseGameGraphic::MakeClones() {
 }
 
 void BaseGameGraphic::Reset() {
-    for (int i = 0; i <= (int) BaseGameOptions::Components::ComponentsMax; i++)
+    for (int i = 0; i <= (int) Objects::ComponentsMax; i++)
         clones[i] = nullptr;
+}
+
+void PremadeParent::Update() {
+    if (!GetGraphic())
+        return;
+    if (!rectTransform)
+        rectTransform = Utils::GetOrAddComponent<RectTransform*>(this);
+    rectTransform->sizeDelta = graphic->rectTransform->sizeDelta;
+    if (updateColor)
+        graphic->color = color;
+}
+
+void PremadeParent::OnPopulateMesh(UI::VertexHelper* vh) {
+    vh->Clear();
+    updateColor = true;
+}
+
+UI::Graphic* PremadeParent::GetGraphic() {
+    if (!graphic && transform->GetChildCount() > 0)
+        graphic = transform->GetChild(0)->GetComponent<UI::Graphic*>();
+    return graphic;
 }
 
 float SongTimeSource::get_songTime() {

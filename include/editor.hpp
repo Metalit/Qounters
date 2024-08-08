@@ -17,6 +17,7 @@ namespace Qounters::Editor {
 
     void RegisterEditingGroup(EditingGroup* object, int groupIdx);
     void RegisterEditingComponent(EditingComponent* object, int groupIdx, int componentIdx);
+    void UnregisterEditing(EditingBase* object);
 
     void SelectEditing(EditingBase* object);
     void Deselect();

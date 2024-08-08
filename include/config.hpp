@@ -8,7 +8,7 @@ namespace Qounters {
     void CreateTextOptionsUI(UnityEngine::GameObject* parent, TextOptions const& options);
     void CreateShapeOptionsUI(UnityEngine::GameObject* parent, ShapeOptions const& options);
     void CreateImageOptionsUI(UnityEngine::GameObject* parent, ImageOptions const& options);
-    void CreateBaseGameOptionsUI(UnityEngine::GameObject* parent, BaseGameOptions const& options);
+    void CreatePremadeOptionsUI(UnityEngine::GameObject* parent, PremadeOptions const& options);
     void CreateTypeOptionsUI(UnityEngine::Transform* parent, int type, Component::OptionsTypes const& options);
 }
 

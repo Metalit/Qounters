@@ -3,6 +3,14 @@
 #include "sources.hpp"
 
 namespace Qounters {
+    extern std::vector<std::string_view> const TypeStrings;
+    extern std::vector<std::string_view> const AnchorStrings;
+    extern std::vector<std::string_view> const AlignStrings;
+    extern std::vector<std::string_view> const ShapeStrings;
+    extern std::vector<std::string_view> const FillStrings;
+    extern std::vector<std::string_view> const BaseGameObjectStrings;
+    extern std::vector<std::string_view> const SaberStrings;
+
     DECLARE_JSON_STRUCT(TextOptions) {
         enum class Aligns {
             Left,
@@ -46,14 +54,10 @@ namespace Qounters {
         VALUE_DEFAULT(std::string, Path, "Default.png");
     };
 
-    DECLARE_JSON_STRUCT(BaseGameOptions) {
-        enum class Components {
-            Multiplier,
-            ProgressBar,
-            HealthBar,
-            ComponentsMax = HealthBar,
-        };
-        VALUE(int, Component);
+    DECLARE_JSON_STRUCT(PremadeOptions) {
+        VALUE_DEFAULT(std::string, SourceMod, "");
+        VALUE_DEFAULT(std::string, Name, std::string(BaseGameObjectStrings[0]));
+        VALUE_DEFAULT(UnparsedJSON, Options, {});
     };
 
     DECLARE_JSON_STRUCT(Component) {
@@ -61,9 +65,9 @@ namespace Qounters {
             Text,
             Shape,
             Image,
-            BaseGame,
+            Premade,
         };
-        using OptionsTypes = TypeOptions<TextOptions, ShapeOptions, ImageOptions, BaseGameOptions>;
+        using OptionsTypes = TypeOptions<TextOptions, ShapeOptions, ImageOptions, PremadeOptions>;
         VALUE_DEFAULT(ConfigUtils::Vector2, Position, ConfigUtils::Vector2(0, 0));
         VALUE_DEFAULT(float, Rotation, 0);
         VALUE_DEFAULT(ConfigUtils::Vector2, Scale, ConfigUtils::Vector2(1, 1));
@@ -106,12 +110,4 @@ namespace Qounters {
     };
 
     Preset GetDefaultHUDPreset();
-
-    extern std::vector<std::string_view> const TypeStrings;
-    extern std::vector<std::string_view> const AnchorStrings;
-    extern std::vector<std::string_view> const AlignStrings;
-    extern std::vector<std::string_view> const ShapeStrings;
-    extern std::vector<std::string_view> const FillStrings;
-    extern std::vector<std::string_view> const ComponentStrings;
-    extern std::vector<std::string_view> const SaberStrings;
 }

@@ -245,14 +245,20 @@ namespace Qounters::Editor {
     void RegisterEditingGroup(EditingGroup* object, int groupIdx) {
         editing[{groupIdx, -1}] = object;
         removedGroupIdxs.erase(groupIdx);
+        if (selectedGroupIdx == groupIdx && selectedComponentIdx == -1)
+            SelectEditing(object);
     }
     void RegisterEditingComponent(EditingComponent* object, int groupIdx, int componentIdx) {
         editing[{groupIdx, componentIdx}] = object;
         if (removedComponentIdxs.contains(groupIdx))
             removedComponentIdxs[groupIdx].erase(componentIdx);
+        if (selectedGroupIdx == groupIdx && selectedComponentIdx == componentIdx)
+            SelectEditing(object);
     }
 
     void UnregisterEditing(EditingBase* object) {
+        if (object == selected)
+            selected = nullptr;
         for (auto it = editing.begin(); it != editing.end(); it++) {
             if (it->second == object) {
                 editing.erase(it);
@@ -426,8 +432,6 @@ namespace Qounters::Editor {
         }
         UnregisterEditing(remove);
         UnityEngine::Object::Destroy(remove->gameObject);
-        if (remove == selected)
-            selected = nullptr;
     }
 
     void Remove() {

@@ -7,6 +7,7 @@
 #include "config.hpp"
 #include "custom-types/shared/macros.hpp"
 #include "main.hpp"
+#include "options.hpp"
 
 #define UUI UnityEngine::UI
 
@@ -39,6 +40,14 @@ DECLARE_CLASS_CODEGEN(Qounters, Shape, UUI::MaskableGraphic,
 )
 
 DECLARE_CLASS_CODEGEN(Qounters, BaseGameGraphic, UUI::Graphic,
+   public:
+    enum class Objects {
+        Multiplier,
+        ProgressBar,
+        HealthBar,
+        ComponentsMax = HealthBar,
+    };
+
     DECLARE_INSTANCE_FIELD_DEFAULT(UnityEngine::Transform*, instance, nullptr);
     DECLARE_INSTANCE_FIELD_DEFAULT(ArrayW<UUI::Graphic*>, graphics, nullptr);
 
@@ -50,18 +59,34 @@ DECLARE_CLASS_CODEGEN(Qounters, BaseGameGraphic, UUI::Graphic,
 
     DECLARE_INSTANCE_METHOD(void, SetComponent, int component);
     DECLARE_INSTANCE_METHOD(void, SetChildColors);
-    DECLARE_OVERRIDE_METHOD_MATCH(void, OnPopulateMesh, CAST_METHOD(UUI::Graphic, OnPopulateMesh, UUI::VertexHelper*), UUI::VertexHelper* vh);
+    DECLARE_OVERRIDE_METHOD_MATCH(void, OnPopulateMesh, CAST_METHOD(UUI::Graphic, OnPopulateMesh, UUI::VertexHelper*), UUI::VertexHelper*);
 
     DECLARE_STATIC_METHOD(BaseGameGraphic*, Create, UnityEngine::Transform* parent);
     DECLARE_STATIC_METHOD(void, MakeClones);
     DECLARE_STATIC_METHOD(void, Reset);
 
    private:
-    static constexpr int cloneCount = (int) BaseGameOptions::Components::ComponentsMax + 1;
+    static constexpr int cloneCount = (int) Objects::ComponentsMax + 1;
     static std::array<UnityEngine::Transform*, cloneCount> clones;
     static std::array<std::map<std::string, float>, cloneCount> alphaIndex;
 
     bool updateChildren = false;
+)
+
+DECLARE_CLASS_CODEGEN(Qounters, PremadeParent, UUI::Graphic,
+    DECLARE_DEFAULT_CTOR();
+
+    DECLARE_INSTANCE_METHOD(void, Update);
+    DECLARE_OVERRIDE_METHOD_MATCH(void, OnPopulateMesh, CAST_METHOD(UUI::Graphic, OnPopulateMesh, UUI::VertexHelper*), UUI::VertexHelper*);
+
+    DECLARE_INSTANCE_METHOD(UUI::Graphic*, GetGraphic);
+
+    DECLARE_INSTANCE_FIELD(UUI::Graphic*, graphic);
+    DECLARE_INSTANCE_FIELD(UnityEngine::RectTransform*, rectTransform);
+    DECLARE_INSTANCE_FIELD(bool, updateColor);
+
+   public:
+    PremadeOptions options;
 )
 
 DECLARE_CLASS_CODEGEN_INTERFACES(Qounters, SongTimeSource, Il2CppObject, classof(GlobalNamespace::IAudioTimeSource*),

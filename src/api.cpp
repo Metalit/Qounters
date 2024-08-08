@@ -3,12 +3,18 @@
 #include "editor.hpp"
 #include "environment.hpp"
 #include "main.hpp"
+#include "qounters.hpp"
 #include "templates.hpp"
 #include "utils.hpp"
 
 namespace Qounters::Shared {
     void RegisterTemplate(std::string title, TemplateUIFn function) {
         templates.emplace_back(title, function);
+    }
+    void RegisterPremade(std::string mod, std::string name, PremadeFn creation, PremadeUIFn uiFunction, PremadeUpdateFn update) {
+        if (!premadeRegistry.contains(mod))
+            premadeRegistry[mod] = {};
+        premadeRegistry[mod].emplace_back(name, creation, uiFunction, update);
     }
 
     void CloseTemplateModal() {
@@ -23,6 +29,12 @@ namespace Qounters::Shared {
     }
     void SetSourceOptions(int actionId, UnparsedJSON options) {
         Editor::SetSourceOptions(actionId, options);
+    }
+    void SetColorOptions(int actionId, UnparsedJSON options) {
+        Editor::SetColorOptions(actionId, options);
+    }
+    void SetEnableOptions(int actionId, UnparsedJSON options) {
+        Editor::SetEnableOptions(actionId, options);
     }
     void FinalizeAction() {
         Editor::FinalizeAction();

@@ -2,9 +2,11 @@
 
 #include "bsml/shared/BSML-Lite.hpp"
 #include "config.hpp"
+#include "customtypes/components.hpp"
 #include "customtypes/settings.hpp"
 #include "editor.hpp"
 #include "main.hpp"
+#include "options.hpp"
 #include "sources.hpp"
 #include "utils.hpp"
 
@@ -201,10 +203,10 @@ namespace Qounters::Templates {
         switch (display) {
             case 0: {  // Base Game
                 auto& comp = group.Components.emplace_back();
-                comp.Type = (int) Component::Types::BaseGame;
-                BaseGameOptions opts;
-                opts.Component = (int) BaseGameOptions::Components::ProgressBar;
-                comp.Options = opts;
+                comp.Type = (int) Component::Types::Premade;
+                PremadeOptions premade;
+                premade.Name = BaseGameObjectStrings[(int) BaseGameGraphic::Objects::ProgressBar];
+                comp.Options = premade;
                 break;
             }
             case 1: {  // Ring
