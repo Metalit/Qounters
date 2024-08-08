@@ -29,7 +29,7 @@ namespace Qounters::Utils {
     T GetOrAddComponent(UnityEngine::Component* self) {
         if (T existing = self->GetComponent<T>())
             return existing;
-        return self->get_gameObject()->AddComponent<T>();
+        return self->gameObject->AddComponent<T>();
     }
 
     template <class T>

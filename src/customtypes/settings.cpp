@@ -1069,13 +1069,13 @@ void OptionsViewController::UpdateSimpleUI() {
         }
         gPosIncrementX->gameObject->active = !state.Detached;
         gPosIncrementY->gameObject->active = !state.Detached;
-        gDetPosIncrementX->gameObject->active = state.Detached;
-        gDetPosIncrementY->gameObject->active = state.Detached;
-        gDetPosIncrementZ->gameObject->active = state.Detached;
+        gDetPosIncrementX->transform->parent->gameObject->active = state.Detached;
+        gDetPosIncrementY->transform->parent->gameObject->active = state.Detached;
+        gDetPosIncrementZ->transform->parent->gameObject->active = state.Detached;
         gRotSlider->gameObject->active = !state.Detached;
-        gDetRotSliderX->gameObject->active = state.Detached;
-        gDetRotSliderY->gameObject->active = state.Detached;
-        gDetRotSliderZ->gameObject->active = state.Detached;
+        gDetRotSliderX->transform->parent->gameObject->active = state.Detached;
+        gDetRotSliderY->transform->parent->gameObject->active = state.Detached;
+        gDetRotSliderZ->transform->parent->gameObject->active = state.Detached;
         BSML::Lite::SetButtonText(gDetachButton, state.Detached ? "Attach" : "Detach");
     } else if (component) {
         auto& state = Editor::GetSelectedComponent(-1);

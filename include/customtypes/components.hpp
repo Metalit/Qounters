@@ -81,9 +81,9 @@ DECLARE_CLASS_CODEGEN(Qounters, PremadeParent, UUI::Graphic,
 
     DECLARE_INSTANCE_METHOD(UUI::Graphic*, GetGraphic);
 
-    DECLARE_INSTANCE_FIELD(UUI::Graphic*, graphic);
-    DECLARE_INSTANCE_FIELD(UnityEngine::RectTransform*, rectTransform);
-    DECLARE_INSTANCE_FIELD(bool, updateColor);
+    DECLARE_INSTANCE_FIELD_DEFAULT(UUI::Graphic*, graphic, nullptr);
+    DECLARE_INSTANCE_FIELD_DEFAULT(UnityEngine::RectTransform*, rectTransform, nullptr);
+    DECLARE_INSTANCE_FIELD_DEFAULT(bool, updateColor, false);
 
    public:
     PremadeOptions options;

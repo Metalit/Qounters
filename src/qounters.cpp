@@ -191,7 +191,7 @@ PremadeParent* UpdatePremadeOptions(PremadeParent* premade, Qounters::Component:
             info->update(premade->GetGraphic()->GetComponent<UI::Graphic*>(), options.Options);
     }
     if (creation)
-        info->creation(premade->gameObject, options.Options);
+        premade->graphic = info->creation(premade->gameObject, options.Options);
     premade->options = options;
     return premade;
 }
@@ -476,6 +476,7 @@ void Qounters::CreateQounterComponent(Component const& qounterComponent, int com
         }
         case Component::Types::Premade: {
             auto premade = GameObject::New_ctor("QountersPremade")->AddComponent<PremadeParent*>();
+            premade->transform->SetParent(parent, false);
             component = premade;
             UpdatePremadeOptions(premade, qounterComponent.Options, true);
             break;
