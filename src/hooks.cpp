@@ -372,20 +372,6 @@ MAKE_HOOK_MATCH(UIKeyboardManager_HandleKeyboardOkButton, &UIKeyboardManager::Ha
     UIKeyboardManager_HandleKeyboardOkButton(self);
 }
 
-MAKE_HOOK_MATCH(
-    Screen_SetRootViewController,
-    &HMUI::Screen::SetRootViewController,
-    void,
-    HMUI::Screen* self,
-    HMUI::ViewController* newRootViewController,
-    HMUI::ViewController::AnimationType animationType
-) {
-    Screen_SetRootViewController(self, newRootViewController, animationType);
-
-    if (InSettingsEnvironment() && newRootViewController)
-        newRootViewController->rectTransform->anchoredPosition = {0, 0};
-}
-
 void Qounters::InstallHooks() {
     INSTALL_HOOK(logger, ScoreController_DespawnScoringElement);
     INSTALL_HOOK(logger, BeatmapObjectManager_HandleNoteControllerNoteWasCut);
@@ -407,5 +393,4 @@ void Qounters::InstallHooks() {
     INSTALL_HOOK(logger, InputFieldView_DeactivateKeyboard);
     INSTALL_HOOK(logger, UIKeyboardManager_OpenKeyboardFor);
     INSTALL_HOOK(logger, UIKeyboardManager_HandleKeyboardOkButton);
-    INSTALL_HOOK(logger, Screen_SetRootViewController);
 }

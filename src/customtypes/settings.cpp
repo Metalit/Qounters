@@ -55,15 +55,21 @@ using namespace Qounters;
 float settingsStarsBL = 10;
 float settingsStarsSS = 10;
 
-void AddBackground(HMUI::ViewController* self, Vector2 size) {
-    auto bg = self->gameObject->AddComponent<BSML::Backgroundable*>();
+GameObject* AddBackground(HMUI::ViewController* self, Vector2 size) {
+    auto object = GameObject::New_ctor("QountersBackground");
+    object->transform->SetParent(self->transform, false);
+    auto bg = object->AddComponent<BSML::Backgroundable*>();
     bg->ApplyBackground("round-rect-panel");
     bg->background->raycastTarget = true;
     auto rect = self->rectTransform;
+    rect->anchorMin = {0, 0};
+    rect->anchorMax = {1, 1};
+    rect = object->GetComponent<RectTransform*>();
     rect->anchorMin = {0.5, 1};
     rect->anchorMax = {0.5, 1};
     rect->pivot = {0.5, 1};
     rect->sizeDelta = size;
+    return object;
 }
 
 // exponential function f(x) where f(-1) = min, f(0) = 1, f(1) = max
@@ -289,10 +295,10 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
 
     environments = BSML::Helpers::GetMainFlowCoordinator()->_playerDataModel->_playerDataFileModel->_environmentsListModel->_envInfos;
 
-    AddBackground(this, {110, 88});
+    auto background = AddBackground(this, {110, 88});
     Utils::SetCanvasSorting(gameObject, 4);
 
-    auto vertical = BSML::Lite::CreateVerticalLayoutGroup(this);
+    auto vertical = BSML::Lite::CreateVerticalLayoutGroup(background);
     vertical->childControlHeight = false;
     vertical->childForceExpandHeight = false;
     vertical->spacing = 1;
@@ -537,9 +543,9 @@ void PlaytestViewController::DidActivate(bool firstActivation, bool addedToHiera
         return fmt::format("{}%", (int) value);
     };
 
-    AddBackground(this, {85, 75});
+    auto background = AddBackground(this, {85, 75});
 
-    auto parent = BSML::Lite::CreateVerticalLayoutGroup(this);
+    auto parent = BSML::Lite::CreateVerticalLayoutGroup(background);
     parent->childForceExpandHeight = false;
     parent->childControlHeight = false;
     parent->rectTransform->anchoredPosition = {0, -4};
@@ -671,9 +677,9 @@ void TemplatesViewController::DidActivate(bool firstActivation, bool addedToHier
     if (!firstActivation)
         return;
 
-    AddBackground(this, {50, 88});
+    auto background = AddBackground(this, {50, 88});
 
-    list = BSML::Lite::CreateScrollableList(this, {50, 80}, [this](int idx) {
+    list = BSML::Lite::CreateScrollableList(background, {50, 80}, [this](int idx) {
         list->tableView->ClearSelection();
         ShowTemplateModal(idx);
     });
@@ -739,12 +745,12 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
         return;
     }
 
-    AddBackground(this, {95, 88});
+    auto background = AddBackground(this, {95, 88});
 
     lockSprite = PNG_SPRITE(Lock);
     unlockSprite = PNG_SPRITE(Unlock);
 
-    groupParent = BSML::Lite::CreateVerticalLayoutGroup(this);
+    groupParent = BSML::Lite::CreateVerticalLayoutGroup(background);
     groupParent->childForceExpandHeight = false;
     groupParent->childControlHeight = false;
     groupParent->rectTransform->anchoredPosition = {0, -4};
@@ -874,7 +880,7 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
 
     Utils::SetChildrenWidth(groupParent->transform, 85);
 
-    componentParent = BSML::Lite::CreateScrollView(this);
+    componentParent = BSML::Lite::CreateScrollView(background);
 
     auto positionCollapse = Utils::CreateCollapseArea(componentParent, "Position Options", true);
 
@@ -984,7 +990,7 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
     enableCollapse->SetContents({cEnableSourceDropdown->transform->parent, cInvertEnableToggle, cEnableSourceOptions});
     enableCollapse->onUpdate = OptionsViewController::UpdateScrollViewStatic;
 
-    cButtonsParent = BSML::Lite::CreateHorizontalLayoutGroup(this);
+    cButtonsParent = BSML::Lite::CreateHorizontalLayoutGroup(background);
     cButtonsParent->spacing = 3;
     cButtonsParent->childControlWidth = false;
     cButtonsParent->childForceExpandWidth = false;
@@ -1000,9 +1006,9 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
     // kinda janky spacing for the delete/deselect buttons
     componentTop->sizeDelta = {-5, -10};
     componentTop->anchoredPosition = {0, 4};
-    componentParent->GetComponent<UnityEngine::UI::VerticalLayoutGroup*>()->spacing = 0;
-    float width = rectTransform->sizeDelta.x;
-    componentParent->GetComponent<UnityEngine::RectTransform*>()->sizeDelta = {width - 20, 0};
+    componentParent->GetComponent<UI::VerticalLayoutGroup*>()->spacing = 0;
+    float width = background->GetComponent<RectTransform*>()->sizeDelta.x;
+    componentParent->GetComponent<RectTransform*>()->sizeDelta = {width - 20, 0};
     Utils::SetChildrenWidth(componentParent->transform, width - 20);
 
     uiInitialized = true;
@@ -1040,7 +1046,8 @@ void OptionsViewController::UpdateSimpleUI() {
     float height = 88;
     if (group)
         height = Editor::GetSelectedGroup(-1).Detached ? 70 : 47;
-    rectTransform->sizeDelta = {rectTransform->sizeDelta.x, height};
+    auto background = transform->GetChild(0)->GetComponent<RectTransform*>();
+    background->sizeDelta = {background->sizeDelta.x, height};
     groupParent->gameObject->active = group;
     Utils::GetScrollViewTop(componentParent)->gameObject->active = component;
     cButtonsParent->gameObject->active = component;
