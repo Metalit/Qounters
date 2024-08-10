@@ -324,7 +324,7 @@ namespace Qounters::Editor {
     bool UpdateDrag(EditingGroup* dragged) {
         using RaycastResult = VRUIControls::VRGraphicRaycaster::VRGraphicRaycastResult;
 
-        auto controller = vrInput->_vrPointer->_lastSelectedVrController;
+        auto controller = vrInput->_vrPointer->_lastSelectedVrController->_viewAnchorTransform;
         auto ray = UnityEngine::Ray(controller->position, controller->forward);
 
         auto results = ListW<RaycastResult>::New();
