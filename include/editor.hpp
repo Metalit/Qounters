@@ -26,6 +26,7 @@ namespace Qounters::Editor {
     bool UpdateDrag(EditingGroup* dragged);
     void EndDrag();
     void EnableDetachedCanvas(bool enabled);
+    void UpdateDetachedDrag(UnityEngine::Vector3 const& pos, UnityEngine::Vector3 const& controller);
 
     // adds an undo every time, no action ID or FinalizeAction
     void AddComponent();

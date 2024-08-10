@@ -417,7 +417,6 @@ void EditingGroup::OnDragDetached(EventSystems::PointerEventData* eventData) {
         cachedInputModule = eventData->currentInputModule.try_cast<VRUIControls::VRInputModule>().value_or(nullptr);
     if (!cachedInputModule)
         return;
-    auto position = eventData->worldPosition;
     auto& group = GetGroup();
 
     auto pointer = cachedInputModule->_vrPointer;
@@ -427,6 +426,7 @@ void EditingGroup::OnDragDetached(EventSystems::PointerEventData* eventData) {
         detachedGrabRot = Quaternion::op_Multiply(Quaternion::Inverse(controller->_viewAnchorTransform->rotation), transform->rotation);
         Editor::EnableDetachedCanvas(true);
     }
+    Editor::UpdateDetachedDrag(eventData->worldPosition, controller->_viewAnchorTransform->position);
 
     float unscaledDeltaTime = Time::get_unscaledDeltaTime();
     // thumbstick movement

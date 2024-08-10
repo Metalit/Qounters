@@ -371,6 +371,11 @@ namespace Qounters::Editor {
             raycastCanvases.emplace(detachedDragCanvas->GetComponent<UnityEngine::Canvas*>());
         }
     }
+    void UpdateDetachedDrag(UnityEngine::Vector3 const& pos, UnityEngine::Vector3 const& controller) {
+        auto transform = detachedDragCanvas->transform;
+        transform->position = pos;
+        transform->LookAt(controller);
+    }
 
     void AddComponent() {
         auto& vec = GetSelectedGroup(-1).Components;
