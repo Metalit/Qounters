@@ -27,7 +27,7 @@ namespace Qounters {
     PremadeInfo* GetPremadeInfo(std::string const& mod, std::string const& name);
 
     void UpdateComponentOptions(int componentType, UnityEngine::Component* component, Component::OptionsTypes newOptions);
-    void UpdateComponentColor(UnityEngine::UI::Graphic* component, std::string newSource, UnparsedJSON newOptions);
+    void UpdateComponentColor(UnityEngine::UI::Graphic* component, std::string newSource, UnparsedJSON newOptions, GradientOptions gradientOptions);
     void UpdateComponentEnabled(UnityEngine::GameObject* component, std::string newSource, UnparsedJSON newOptions, bool invert);
 
     void UpdateComponentPosition(UnityEngine::RectTransform* component, Component const& qounterComponent);

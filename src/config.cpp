@@ -12,18 +12,14 @@
 #include "sourceui.hpp"
 #include "utils.hpp"
 
-std::vector<std::string_view> const Qounters::TypeStrings = {
-    "Text",
-    "Shape",
-    "Image",
-    "Premade",
-};
-std::vector<std::string_view> const Qounters::AnchorStrings = {
+std::vector<std::string_view> const Qounters::SaberStrings = {
     "Left",
     "Right",
-    "Top",
-    "Bottom",
-    "Center",
+    "Both",
+};
+std::vector<std::string_view> const Qounters::DirectionStrings = {
+    "Horizontal",
+    "Vertical",
 };
 std::vector<std::string_view> const Qounters::AlignStrings = {
     "Left",
@@ -42,14 +38,22 @@ std::vector<std::string_view> const Qounters::FillStrings = {
     "Vertical",
     "Circle",
 };
+std::vector<std::string_view> const Qounters::TypeStrings = {
+    "Text",
+    "Shape",
+    "Image",
+    "Premade",
+};
+std::vector<std::string_view> const Qounters::AnchorStrings = {
+    "Left",
+    "Right",
+    "Top",
+    "Bottom",
+    "Center",
+};
 std::vector<std::string_view> const Qounters::BaseGameObjectStrings = {
     "Multiplier Ring", "Song Time Panel",
     // "Health Bar",
-};
-std::vector<std::string_view> const Qounters::SaberStrings = {
-    "Left",
-    "Right",
-    "Both",
 };
 
 using namespace UnityEngine;
@@ -102,7 +106,7 @@ namespace Qounters {
         sourceOptions = BSML::Lite::CreateVerticalLayoutGroup(parent);
         TextSource::CreateUI(sourceOptions->gameObject, options.TextSource, options.SourceOptions);
 
-        sourceCollapse->SetContents({sourceDropdown->transform->parent, sourceOptions});
+        sourceCollapse->AddContents({sourceDropdown->transform->parent, sourceOptions});
         sourceCollapse->onUpdate = [sourceCollapse]() {
             Qounters::OptionsViewController::UpdateScrollViewStatic();
             collapseOpen = sourceCollapse->open;
@@ -168,7 +172,7 @@ namespace Qounters {
         sourceOptions = BSML::Lite::CreateVerticalLayoutGroup(parent);
         ShapeSource::CreateUI(sourceOptions->gameObject, options.FillSource, options.SourceOptions);
 
-        fillCollapse->SetContents({directionDropdown->transform->parent, inverseToggle, sourceDropdown->transform->parent, sourceOptions});
+        fillCollapse->AddContents({directionDropdown->transform->parent, inverseToggle, sourceDropdown->transform->parent, sourceOptions});
         fillCollapse->onUpdate = [fillCollapse]() {
             Qounters::OptionsViewController::UpdateScrollViewStatic();
             collapseOpen = fillCollapse->open;
@@ -200,7 +204,7 @@ namespace Qounters {
         };
         list->tableView->ReloadData();
 
-        auto rect = list->transform->parent.try_cast<RectTransform>().value_or(nullptr);
+        auto rect = list->transform->parent.cast<RectTransform>();
         rect->anchorMin = {0.5, 0.5};
         rect->anchorMax = {0.5, 0.5};
         rect->sizeDelta = listSize;

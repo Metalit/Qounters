@@ -42,6 +42,8 @@ DEFINE_TYPE(Qounters, SettingsViewController);
 DEFINE_TYPE(Qounters, PlaytestViewController);
 DEFINE_TYPE(Qounters, TemplatesViewController);
 DEFINE_TYPE(Qounters, OptionsViewController);
+DEFINE_TYPE(Qounters, HSVGradientImage);
+DEFINE_TYPE(Qounters, HSVController);
 DEFINE_TYPE(Qounters, CollapseController);
 DEFINE_TYPE(Qounters, MenuDragger);
 DEFINE_TYPE(Qounters, EndDragHandler);
@@ -328,7 +330,7 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
     auto parent = environmentDropdown->transform->parent;
     Utils::SetLayoutSize(parent, 87, 8);
 
-    auto nested = Utils::CreateDropdownEnum(gameObject, "", getConfig().EnvironmentType.GetValue(), EnvironmentHUDTypeStrings, [this](int value) {
+    auto nested = Utils::CreateDropdownEnum(background, "", getConfig().EnvironmentType.GetValue(), EnvironmentHUDTypeStrings, [this](int value) {
         getConfig().EnvironmentType.SetValue(value);
         UpdateUI();
     });
@@ -924,7 +926,7 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
     cScaleSliderY->formatter = ScaleFormat;
     cScaleSliderY->GetComponent<RectTransform*>()->sizeDelta = {0, 8};
 
-    positionCollapse->SetContents({cPosIncrementX, cPosIncrementY, cRotSlider, cScaleSliderX, cScaleSliderY});
+    positionCollapse->AddContents({cPosIncrementX, cPosIncrementY, cRotSlider, cScaleSliderX, cScaleSliderY});
     positionCollapse->onUpdate = OptionsViewController::UpdateScrollViewStatic;
 
     auto typeCollapse = Utils::CreateCollapseArea(componentParent, "Text Options", true);
@@ -942,10 +944,11 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
     cTypeOptions = BSML::Lite::CreateVerticalLayoutGroup(componentParent);
     cTypeOptions->GetComponent<UI::ContentSizeFitter*>()->verticalFit = UI::ContentSizeFitter::FitMode::PreferredSize;
 
-    typeCollapse->SetContents({cTypeDropdown->transform->parent, cTypeOptions});
+    typeCollapse->AddContents({cTypeDropdown->transform->parent, cTypeOptions});
     typeCollapse->onUpdate = OptionsViewController::UpdateScrollViewStatic;
 
     auto colorCollapse = Utils::CreateCollapseArea(componentParent, "Color Options", false);
+    colorCollapseComponent = colorCollapse;
 
     cColorSourceDropdown = Utils::CreateDropdown(componentParent, "Color Source", "", Utils::GetKeys(colorSources), [this](std::string val) {
         static int id = Editor::GetActionId();
@@ -961,7 +964,63 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
     cColorSourceOptions = BSML::Lite::CreateVerticalLayoutGroup(componentParent);
     cColorSourceOptions->GetComponent<UI::ContentSizeFitter*>()->verticalFit = UI::ContentSizeFitter::FitMode::PreferredSize;
 
-    colorCollapse->SetContents({cColorSourceDropdown->transform->parent, cColorSourceOptions});
+    cGradientToggle = BSML::Lite::CreateToggle(componentParent, "Gradient", false, [](bool value) {
+        static int id = Editor::GetActionId();
+        auto& gradient = Editor::GetSelectedComponent(id).Gradient;
+        if (value != gradient.Enabled) {
+            gradient.Enabled = value;
+            Editor::UpdateGradientOptions();
+        }
+        Editor::FinalizeAction();
+        GetInstance()->UpdateUI();
+    });
+
+    auto gradientCollapse = Utils::CreateCollapseArea(componentParent, "Gradient Options", true);
+    gradientCollapseComponent = gradientCollapse;
+
+    auto directionAndSwap = BSML::Lite::CreateHorizontalLayoutGroup(componentParent);
+    directionAndSwap->spacing = 1;
+
+    cGradientDirectionDropdown = Utils::CreateDropdownEnum(directionAndSwap->gameObject, "Direction", 0, DirectionStrings, [](int value) {
+        static int id = Editor::GetActionId();
+        Editor::GetSelectedComponent(id).Gradient.Direction = value;
+        Editor::UpdateGradientOptions();
+        Editor::FinalizeAction();
+    });
+    auto parent = cGradientDirectionDropdown->transform->parent;
+    Utils::SetLayoutSize(parent, 50, 8);
+
+    auto swap = BSML::Lite::CreateUIButton(directionAndSwap, "Swap Colors", Editor::SwapGradientColors);
+    Utils::SetLayoutSize(swap, 24, 8);
+
+    auto startHsvController = Utils::CreateHSVModifierPicker(
+        componentParent,
+        "Start Modifier",
+        [](Vector3 hsv) {
+            static int id = Editor::GetActionId();
+            Editor::GetSelectedComponent(id).Gradient.StartModifierHSV = hsv;
+            Editor::UpdateGradientOptions();
+        },
+        Editor::FinalizeAction
+    );
+    startHsvComponent = startHsvController;
+
+    auto endHsvController = Utils::CreateHSVModifierPicker(
+        componentParent,
+        "End Modifier",
+        [](Vector3 hsv) {
+            static int id = Editor::GetActionId();
+            Editor::GetSelectedComponent(id).Gradient.EndModifierHSV = hsv;
+            Editor::UpdateGradientOptions();
+        },
+        Editor::FinalizeAction
+    );
+    endHsvComponent = endHsvController;
+
+    gradientCollapse->AddContents({directionAndSwap, startHsvController, endHsvController});
+    gradientCollapse->onUpdate = OptionsViewController::UpdateScrollViewStatic;
+
+    colorCollapse->AddContents({cGradientToggle, gradientCollapse, cColorSourceDropdown->transform->parent, cColorSourceOptions});
     colorCollapse->onUpdate = OptionsViewController::UpdateScrollViewStatic;
 
     auto enableCollapse = Utils::CreateCollapseArea(componentParent, "Visibility Options", false);
@@ -987,7 +1046,7 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
     cEnableSourceOptions = BSML::Lite::CreateVerticalLayoutGroup(componentParent);
     cEnableSourceOptions->GetComponent<UI::ContentSizeFitter*>()->verticalFit = UI::ContentSizeFitter::FitMode::PreferredSize;
 
-    enableCollapse->SetContents({cEnableSourceDropdown->transform->parent, cInvertEnableToggle, cEnableSourceOptions});
+    enableCollapse->AddContents({cEnableSourceDropdown->transform->parent, cInvertEnableToggle, cEnableSourceOptions});
     enableCollapse->onUpdate = OptionsViewController::UpdateScrollViewStatic;
 
     cButtonsParent = BSML::Lite::CreateHorizontalLayoutGroup(background);
@@ -1095,6 +1154,21 @@ void OptionsViewController::UpdateSimpleUI() {
         typeCollapse->title = std::string(TypeStrings[state.Type]) + " Options";
         typeCollapse->UpdateOpen();
         cTypeDropdown->dropdown->SelectCellWithIdx(state.Type);
+        Utils::InstantSetToggle(cGradientToggle, state.Gradient.Enabled);
+        auto colorCollapse = (CollapseController*) colorCollapseComponent;
+        colorCollapse->SetContentActive(gradientCollapseComponent, state.Gradient.Enabled);
+        cGradientDirectionDropdown->dropdown->SelectCellWithIdx(state.Gradient.Direction);
+        // update hsv panels
+        auto startHsvController = (HSVController*) startHsvComponent;
+        startHsvController->SetHSV(state.Gradient.StartModifierHSV);
+        auto endHsvController = (HSVController*) endHsvComponent;
+        endHsvController->SetHSV(state.Gradient.EndModifierHSV);
+        auto sourceFn = GetSource(colorSources, state.ColorSource).first;
+        if (sourceFn) {
+            auto color = sourceFn(state.ColorOptions);
+            startHsvController->baseColor = color;
+            endHsvController->baseColor = color;
+        }
         Utils::SetDropdownValue(cColorSourceDropdown, state.ColorSource);
         Utils::SetDropdownValue(cEnableSourceDropdown, state.EnableSource);
         Utils::InstantSetToggle(cInvertEnableToggle, state.InvertEnable);
@@ -1153,6 +1227,82 @@ void OptionsViewController::OnDestroy() {
     instance = nullptr;
 }
 
+void HSVController::Show() {
+    if (!modal)
+        return;
+    modal->Show(true, true, nullptr);
+    UpdateVisuals();
+}
+
+void HSVController::Hide() {
+    if (onClose)
+        onClose();
+    if (!modal)
+        return;
+    modal->Hide(true, nullptr);
+}
+
+void HSVController::SetHue(float hue) {
+    hsv.x = hue / 2;
+    if (onChange)
+        onChange(hsv);
+    UpdateVisuals();
+}
+
+void HSVController::SetSat(float saturation) {
+    hsv.y = saturation;
+    if (onChange)
+        onChange(hsv);
+    UpdateVisuals();
+}
+
+void HSVController::SetVal(float value) {
+    hsv.z = value;
+    if (onChange)
+        onChange(hsv);
+    UpdateVisuals();
+}
+
+void HSVController::UpdateVisuals() {
+    UpdateButton();
+    if (!hSlider || !sSlider || !vSlider)
+        return;
+    float h, s, v;
+    Color::RGBToHSV(baseColor, byref(h), byref(s), byref(v));
+    Color color = Utils::GetClampedColor({h + hsv.x, s + hsv.y, v + hsv.z});
+    hSlider->SetColors(color, color);
+    sSlider->SetColors(color, color);
+    vSlider->SetColors(color, color);
+    color = Utils::GetClampedColor({h, s + hsv.y, v + hsv.z});
+    for (auto img : hSlider->_gradientImages)
+        img->color = color;
+    // prevent losing hue at 0 sat
+    color = Utils::GetClampedColor({h + hsv.x, std::max(s, 0.01f), v + hsv.z});
+    for (auto img : sSlider->_gradientImages)
+        img->color = color;
+    color = Utils::GetClampedColor({h + hsv.x, s + hsv.y, v});
+    for (auto img : vSlider->_gradientImages)
+        img->color = color;
+    // (-0.5, 0.5) -> (0, 1)
+    hSlider->normalizedValue = hsv.x + 0.5;
+    // (-1, 1) -> (0, 1)
+    sSlider->normalizedValue = (hsv.y + 1) / 2;
+    vSlider->normalizedValue = (hsv.z + 1) / 2;
+    hSlider->_valueText->text = fmt::format("H: {:+.1f}", hsv.x);
+    sSlider->_valueText->text = fmt::format("S: {:+.1f}", hsv.y);
+    vSlider->_valueText->text = fmt::format("V: {:+.1f}", hsv.z);
+}
+
+void HSVController::UpdateButton() {
+    if (openButton)
+        BSML::Lite::SetButtonText(openButton, fmt::format("H{:+.1f} S{:+.1f} V{:+.1f}", hsv.x, hsv.y, hsv.z));
+}
+
+void HSVController::SetHSV(Vector3 value) {
+    hsv = value;
+    UpdateButton();
+}
+
 void CollapseController::OnPointerEnter(EventSystems::PointerEventData* eventData) {
     text->color = {0.6, 0.6, 0.6, 1};
     line->color = {0.5, 0.5, 0.5, 1};
@@ -1168,17 +1318,57 @@ void CollapseController::OnPointerClick(EventSystems::PointerEventData* eventDat
     UpdateOpen();
 }
 
+void CollapseController::OnEnable() {
+    UpdateOpen();
+    if (text && line)
+        OnPointerExit(nullptr);
+}
+
+void CollapseController::OnDisable() {
+    UpdateOpen();
+}
+
 void CollapseController::UpdateOpen() {
-    text->text = StringW(open ? u"▼  " : u"▶  ") + title;
-    for (auto& obj : contents)
-        obj->gameObject->active = open;
-    if (onUpdate)
+    if (text)
+        text->text = StringW(open ? u"▼  " : u"▶  ") + title;
+    for (auto& [obj, active] : contents) {
+        if (wasOpen)
+            active = obj->gameObject->activeSelf;
+        if (!open || !isActiveAndEnabled)
+            obj->gameObject->active = false;
+        else
+            obj->gameObject->active = active;
+    }
+    if (onUpdate && isActiveAndEnabled)
+        onUpdate();
+    wasOpen = open && isActiveAndEnabled;
+}
+
+void CollapseController::AddContents(std::set<Component*> const& add) {
+    for (auto comp : add) {
+        if (contents.contains(comp))
+            continue;
+        contents.emplace(comp, comp->gameObject->activeSelf);
+    }
+    UpdateOpen();
+}
+
+void CollapseController::RemoveContents(std::set<Component*> const& remove) {
+    for (auto comp : remove) {
+        if (!contents.contains(comp))
+            continue;
+        comp->gameObject->active = contents[comp];
+        contents.erase(comp);
+    }
+    if (onUpdate && isActiveAndEnabled)
         onUpdate();
 }
 
-void CollapseController::SetContents(std::vector<Component*> const& newContents) {
-    contents = newContents;
-    UpdateOpen();
+void CollapseController::SetContentActive(Component* component, bool active) {
+    if (open || !contents.contains(component))
+        component->gameObject->active = active;
+    else
+        contents[component] = active;
 }
 
 inline float ClampInRadius(float pos) {

@@ -3,20 +3,25 @@
 #include "GlobalNamespace/GameEnergyUIPanel.hpp"
 #include "GlobalNamespace/ScoreMultiplierUIController.hpp"
 #include "GlobalNamespace/SongProgressUIController.hpp"
+#include "TMPro/TMP_TextInfo.hpp"
+#include "TMPro/TMP_VertexDataUpdateFlags.hpp"
 #include "UnityEngine/Rect.hpp"
 #include "UnityEngine/RectTransform.hpp"
 #include "UnityEngine/Time.hpp"
 #include "UnityEngine/UI/Image.hpp"
 #include "UnityEngine/UI/Mask.hpp"
 #include "bsml/shared/BSML-Lite.hpp"
+#include "bsml/shared/Helpers/delegates.hpp"
 #include "bsml/shared/Helpers/utilities.hpp"
 #include "config.hpp"
 #include "internals.hpp"
 #include "main.hpp"
+#include "options.hpp"
 #include "qounters.hpp"
 #include "utils.hpp"
 
 DEFINE_TYPE(Qounters, Shape);
+DEFINE_TYPE(Qounters, TextGradient);
 DEFINE_TYPE(Qounters, BaseGameGraphic);
 DEFINE_TYPE(Qounters, PremadeParent);
 DEFINE_TYPE(Qounters, SongTimeSource);
@@ -135,6 +140,18 @@ std::vector<std::tuple<int, int, int>> GetHollowTriangles(std::vector<Vector2> p
 }
 
 // curved ui can probably be done as simple as {curvedCanvasRadius, 0} in AddVert uv2
+void Shape::AddColoredVertex(UI::VertexHelper* vh, Vector3 pos, Rect bounds) {
+    Color32 color32;
+    if (gradient) {
+        // start should be left/top imo
+        float lerpValue = gradientDirection == (int) GradientOptions::Directions::Horizontal ? (pos.x - bounds.m_XMin) / bounds.m_Width
+                                                                                             : (1 - pos.y + bounds.m_YMin) / bounds.m_Height;
+        color32 = Color32::op_Implicit___UnityEngine__Color32(Color::Lerp(startColor, endColor, lerpValue));
+    } else
+        color32 = Color32::op_Implicit___UnityEngine__Color32(color);
+    vh->AddVert(pos, color32, {0, 0, 0, 0});
+}
+
 void Shape::OnPopulateMesh(UI::VertexHelper* vh) {
     auto bounds = GetPixelAdjustedRect();
     auto scale = transform->lossyScale;
@@ -149,7 +166,7 @@ void Shape::OnPopulateMesh(UI::VertexHelper* vh) {
 
     vh->Clear();
     for (auto& [x, y] : GetCircumferencePoints(sideCount, bounds)) {
-        vh->AddVert({x, y, 0}, color32, {0, 0, 0, 0});
+        AddColoredVertex(vh, {x, y, 0}, bounds);
         points.emplace_back(x, y);
     }
     if (hollowAndSpace) {
@@ -159,7 +176,7 @@ void Shape::OnPopulateMesh(UI::VertexHelper* vh) {
         innerBounds.m_Width -= borderX;
         innerBounds.m_Height -= borderY;
         for (auto& [x, y] : GetCircumferencePoints(sideCount, innerBounds)) {
-            vh->AddVert({x, y, 0}, color32, {0, 0, 0, 0});
+            AddColoredVertex(vh, {x, y, 0}, bounds);
             points.emplace_back(x, y);
         }
     }
@@ -188,6 +205,56 @@ Shape* Shape::Create(Transform* parent) {
     transform->sizeDelta = {0, 0};
 
     return ret;
+}
+
+void TextGradient::OnEnable() {
+    if (!delegate) {
+        delegate = BSML::MakeSystemAction<TMPro::TMP_TextInfo*>((std::function<void(TMPro::TMP_TextInfo*)>) [this](TMPro::TMP_TextInfo*) {
+            UpdateGradient();
+        });
+    }
+    text = GetComponent<TMPro::TextMeshProUGUI*>();
+    if (text) {
+        text->remove_OnPreRenderText(delegate);
+        text->add_OnPreRenderText(delegate);
+        UpdateGradient();
+    }
+}
+
+void TextGradient::OnDisable() {
+    if (text) {
+        if (delegate)
+            text->remove_OnPreRenderText(delegate);
+        text->SetVerticesDirty();
+    }
+}
+
+Color32 TextGradient::GetColor(Bounds bounds, Vector3 vertex) {
+    float lerpAmount = gradientDirection == (int) GradientOptions::Directions::Horizontal ? (vertex.x - bounds.m_Center.x) / bounds.m_Extents.x
+                                                                                          : (vertex.y - bounds.m_Center.y) / -bounds.m_Extents.y;
+    // (-1, 1) -> (0, 1)
+    lerpAmount = (lerpAmount + 1) * 0.5;
+    return Color32::op_Implicit___UnityEngine__Color32(Color::Lerp(startColor, endColor, lerpAmount));
+}
+
+void TextGradient::UpdateGradient() {
+    if (!text || text->text == "" || !text->textInfo)
+        return;
+    auto bounds = text->bounds;
+    auto info = text->textInfo;
+    int chars = info->characterCount;
+    for (auto& charInfo : info->characterInfo) {
+        if (!charInfo.isVisible)
+            continue;
+        auto& colors = info->meshInfo[charInfo.materialReferenceIndex].colors32;
+        int startVertex = charInfo.vertexIndex;
+        // idk if this is the right order but it works
+        colors[startVertex] = GetColor(bounds, charInfo.bottomLeft);
+        colors[startVertex + 1] = GetColor(bounds, charInfo.topLeft);
+        colors[startVertex + 2] = GetColor(bounds, charInfo.topRight);
+        colors[startVertex + 3] = GetColor(bounds, charInfo.bottomRight);
+    }
+    text->UpdateVertexData(TMPro::TMP_VertexDataUpdateFlags::Colors32);
 }
 
 void CopyFields(Transform* base, Transform* target, int component) {

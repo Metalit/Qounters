@@ -27,6 +27,7 @@
 #include "main.hpp"
 #include "pp.hpp"
 #include "qounters.hpp"
+#include "utils.hpp"
 
 using namespace Qounters;
 using namespace GlobalNamespace;
@@ -42,7 +43,7 @@ SafePtr<ScoreMultiplierCounter> maxMultiplier;
 
 void FindObjects() {
     auto hasOtherObjects = UnityEngine::Resources::FindObjectsOfTypeAll<PrepareLevelCompletionResults*>()->First();
-    scoreController = il2cpp_utils::try_cast<ScoreController>(hasOtherObjects->_scoreController).value_or(nullptr);
+    scoreController = Utils::ptr_cast<ScoreController>(hasOtherObjects->_scoreController);
     if (!scoreController) {
         logger.error(
             "score controller was wrong type! {}", il2cpp_utils::ClassStandardName(((Il2CppObject*) hasOtherObjects->_scoreController)->klass, true)
@@ -77,7 +78,7 @@ void Playtest::SetEnabled(bool enabled) {
         FindObjects();
     if (!spawner)
         return;
-    if (auto cast = il2cpp_utils::try_cast<BeatmapObjectManager>(spawner->_beatmapObjectSpawner).value_or(nullptr))
+    if (auto cast = Utils::ptr_cast<BeatmapObjectManager>(spawner->_beatmapObjectSpawner))
         cast->DissolveAllObjects();
 }
 

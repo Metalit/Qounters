@@ -18,18 +18,26 @@ namespace Qounters::Utils {
     std::string FormatDecimals(double num, int decimals);
     std::string SecondsToString(int seconds);
 
+    UnityEngine::Color GetClampedColor(std::tuple<float, float, float> hsv);
+
     std::tuple<std::string, std::string, int> GetBeatmapDetails(GlobalNamespace::BeatmapKey beatmap);
     std::string GetBeatmapIdentifier(GlobalNamespace::BeatmapKey beatmap);
 
     void DisableAllBut(UnityEngine::Transform* parent, std::set<std::string> enabled, std::set<std::string> disabled = {});
     UnityEngine::Transform* FindRecursive(UnityEngine::Transform* parent, std::string name);
     std::string GetTransformPath(UnityEngine::Transform* parent, UnityEngine::Transform* child);
+    void SetRelativeSiblingIndex(UnityEngine::Transform* child, UnityEngine::Transform* ref, int amount);
 
     template <class T>
     T GetOrAddComponent(UnityEngine::Component* self) {
         if (T existing = self->GetComponent<T>())
             return existing;
         return self->gameObject->AddComponent<T>();
+    }
+
+    template <class U, class T>
+    U* ptr_cast(T* inst) {
+        return il2cpp_utils::try_cast<U>(inst).value_or(nullptr);
     }
 
     template <class T>
@@ -66,8 +74,11 @@ namespace Qounters::Utils {
         std::function<void(UnityEngine::Color)> onChange,
         std::function<void()> onClose
     );
+    Qounters::HSVController* CreateHSVModifierPicker(
+        UnityEngine::GameObject* parent, std::string name, std::function<void(UnityEngine::Vector3)> onChange, std::function<void()> onClose
+    );
     Qounters::CollapseController*
-    CreateCollapseArea(UnityEngine::GameObject* parent, std::string title, bool open, std::vector<UnityEngine::Component*> contents = {});
+    CreateCollapseArea(UnityEngine::GameObject* parent, std::string title, bool open, std::set<UnityEngine::Component*> contents = {});
     Qounters::MenuDragger* CreateMenuDragger(UnityEngine::GameObject* parent, bool isLeftMenu);
 
     void AddModalAnimations(HMUI::SimpleTextDropdown* dropdown, HMUI::ModalView* behindModal);

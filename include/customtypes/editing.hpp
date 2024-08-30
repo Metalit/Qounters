@@ -81,8 +81,6 @@ DECLARE_CLASS_CODEGEN_INTERFACES(Qounters, TextOutlineSizer, UES::UIBehaviour, I
     Outline* outline = nullptr;
 )
 
-#undef INTERFACES
-
 DECLARE_CLASS_CODEGEN(Qounters, GroupOutlineSizer, UnityEngine::MonoBehaviour,
     DECLARE_INSTANCE_METHOD(void, OnEnable);
     DECLARE_INSTANCE_METHOD(void, Update);
@@ -99,6 +97,8 @@ DECLARE_CLASS_CODEGEN(Qounters, GroupOutlineSizer, UnityEngine::MonoBehaviour,
     Outline* outline = nullptr;
 )
 
+#undef INTERFACES
+
 #define INTERFACES std::vector<Il2CppClass*>({ \
     classof(UES::IEventSystemHandler*), \
     classof(UES::IInitializePotentialDragHandler*), \
@@ -112,8 +112,9 @@ DECLARE_CLASS_CODEGEN_INTERFACES(Qounters, EditingBase, UnityEngine::MonoBehavio
     DECLARE_INSTANCE_METHOD(void, BasePointerEnter);
     DECLARE_INSTANCE_METHOD(void, BasePointerExit);
 
-    DECLARE_OVERRIDE_METHOD_MATCH(void, OnInitializePotentialDrag, &UES::IInitializePotentialDragHandler::OnInitializePotentialDrag,
-    UES::PointerEventData* eventData);
+    DECLARE_OVERRIDE_METHOD_MATCH(
+        void, OnInitializePotentialDrag, &UES::IInitializePotentialDragHandler::OnInitializePotentialDrag, UES::PointerEventData* eventData
+    );
 
     DECLARE_INSTANCE_FIELD_DEFAULT(UnityEngine::RectTransform*, rectTransform, nullptr);
     DECLARE_INSTANCE_FIELD_DEFAULT(Qounters::Outline*, outline, nullptr);

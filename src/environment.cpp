@@ -427,8 +427,8 @@ void Qounters::OnSceneStart(EnvironmentInfoSO* environment) {
         auto currentEvent = events->First;
         auto bcc = bcu->_beatmapCallbacksController;
         while (currentEvent != events->Last) {
-            if (auto event = il2cpp_utils::try_cast<BeatmapEventData>(currentEvent->Value))
-                bcc->TriggerBeatmapEvent(*event);
+            if (auto event = Utils::ptr_cast<BeatmapEventData>(currentEvent->Value))
+                bcc->TriggerBeatmapEvent(event);
             currentEvent = currentEvent->Next;
         }
     }

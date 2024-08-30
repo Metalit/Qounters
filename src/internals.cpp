@@ -44,7 +44,7 @@ int GetNoteCount(BeatmapCallbacksUpdater* updater, bool left) {
     int noteCount = 0;
     auto bcc = updater->_beatmapCallbacksController;
     auto songTime = bcc->_startFilterTime;
-    auto data = il2cpp_utils::try_cast<BeatmapData>(bcc->_beatmapData).value_or(nullptr);
+    auto data = Utils::ptr_cast<BeatmapData>(bcc->_beatmapData);
     if (!data) {
         logger.warn("IReadonlyBeatmapData was {} not BeatmapData", il2cpp_functions::class_get_name(((Il2CppObject*) bcc->_beatmapData)->klass));
         return 0;

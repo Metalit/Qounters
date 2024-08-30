@@ -3,13 +3,25 @@
 #include "sources.hpp"
 
 namespace Qounters {
-    extern std::vector<std::string_view> const TypeStrings;
-    extern std::vector<std::string_view> const AnchorStrings;
+    extern std::vector<std::string_view> const SaberStrings;
+    extern std::vector<std::string_view> const DirectionStrings;
     extern std::vector<std::string_view> const AlignStrings;
     extern std::vector<std::string_view> const ShapeStrings;
     extern std::vector<std::string_view> const FillStrings;
+    extern std::vector<std::string_view> const TypeStrings;
+    extern std::vector<std::string_view> const AnchorStrings;
     extern std::vector<std::string_view> const BaseGameObjectStrings;
-    extern std::vector<std::string_view> const SaberStrings;
+
+    DECLARE_JSON_STRUCT(GradientOptions) {
+        enum class Directions {
+            Horizontal,
+            Vertical,
+        };
+        VALUE_DEFAULT(bool, Enabled, false);
+        VALUE_DEFAULT(int, Direction, (int) Directions::Horizontal);
+        VALUE_DEFAULT(ConfigUtils::Vector3, StartModifierHSV, ConfigUtils::Vector3(0, 0, 0));
+        VALUE_DEFAULT(ConfigUtils::Vector3, EndModifierHSV, ConfigUtils::Vector3(0, 0, 0));
+    };
 
     DECLARE_JSON_STRUCT(TextOptions) {
         enum class Aligns {
@@ -78,6 +90,7 @@ namespace Qounters {
         VALUE_DEFAULT(std::string, EnableSource, EnableSource::StaticName);
         VALUE_DEFAULT(bool, InvertEnable, false);
         VALUE_DEFAULT(UnparsedJSON, EnableOptions, EnableSource::Static());
+        VALUE_DEFAULT(GradientOptions, Gradient, {});
     };
 
     DECLARE_JSON_STRUCT(Group) {

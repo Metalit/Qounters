@@ -343,7 +343,7 @@ void EditingBase::UpdateColor() {
         outline->color = selectColor;
     else
         outline->color = offColor;
-    if (auto group = il2cpp_utils::try_cast<EditingGroup>(this).value_or(nullptr))
+    if (auto group = Utils::ptr_cast<EditingGroup>(this))
         group->UpdateColorChildren();
 }
 

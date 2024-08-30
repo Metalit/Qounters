@@ -48,6 +48,47 @@ PremadeInfo* Qounters::GetPremadeInfo(std::string const& mod, std::string const&
     return nullptr;
 }
 
+void DisableGradient(UI::Graphic* component) {
+    if (auto image = Utils::ptr_cast<HMUI::ImageView>(component)) {
+        image->gradient = false;
+    } else if (auto shape = Utils::ptr_cast<Shape>(component)) {
+        shape->gradient = false;
+        shape->SetVerticesDirty();
+    } else if (auto text = Utils::ptr_cast<TMPro::TextMeshProUGUI>(component)) {
+        if (auto gradient = text->GetComponent<TextGradient*>())
+            gradient->enabled = false;
+    }
+}
+
+void SetGradient(UI::Graphic* component, GradientOptions::Directions direction, Vector3 startHsvMod, Vector3 endHsvMod) {
+    float h, s, v;
+    Color::RGBToHSV(component->color, byref(h), byref(s), byref(v));
+    auto startColor = Utils::GetClampedColor({h + startHsvMod.x, s + startHsvMod.y, v + startHsvMod.z});
+    auto endColor = Utils::GetClampedColor({h + endHsvMod.x, s + endHsvMod.y, v + endHsvMod.z});
+
+    if (auto image = Utils::ptr_cast<HMUI::ImageView>(component)) {
+        image->_gradientDirection = (int) direction;  // same enum values
+        image->color0 = startColor;
+        image->color1 = endColor;
+        image->gradient = true;
+    } else if (auto shape = Utils::ptr_cast<Shape>(component)) {
+        shape->gradient = true;
+        shape->gradientDirection = (int) direction;
+        shape->startColor = startColor;
+        shape->endColor = endColor;
+        shape->SetVerticesDirty();
+    } else if (auto text = Utils::ptr_cast<TMPro::TextMeshProUGUI>(component)) {
+        auto gradient = Utils::GetOrAddComponent<TextGradient*>(text);
+        gradient->gradientDirection = (int) direction;
+        gradient->startColor = startColor;
+        gradient->endColor = endColor;
+        if (gradient->enabled)
+            gradient->UpdateGradient();
+        else
+            gradient->enabled = true;
+    }
+}
+
 std::map<std::string, std::vector<std::pair<TMPro::TextMeshProUGUI*, UnparsedJSON>>> texts;
 std::map<std::string, std::vector<std::pair<Shape*, UnparsedJSON>>> shapes;
 std::map<std::string, std::vector<std::pair<UI::Graphic*, UnparsedJSON>>> colors;
@@ -213,17 +254,24 @@ void Qounters::UpdateComponentOptions(int componentType, UnityEngine::Component*
     }
 }
 
-void UpdateColorOptions(UI::Graphic* component, std::string colorSource, UnparsedJSON options, bool creation) {
+void UpdateColorOptions(UI::Graphic* component, std::string colorSource, UnparsedJSON options, GradientOptions gradientOptions, bool creation) {
     auto sourceFn = GetSource(colorSources, colorSource).first;
     if (!sourceFn)
         return;
     component->color = sourceFn(options);
 
+    if (gradientOptions.Enabled)
+        SetGradient(
+            component, (GradientOptions::Directions) gradientOptions.Direction, gradientOptions.StartModifierHSV, gradientOptions.EndModifierHSV
+        );
+    else
+        DisableGradient(component);
+
     UpdatePair(colors, component, colorSource, options, creation);
 }
 
-void Qounters::UpdateComponentColor(UI::Graphic* component, std::string newSource, UnparsedJSON newOptions) {
-    UpdateColorOptions(component, newSource, newOptions, false);
+void Qounters::UpdateComponentColor(UI::Graphic* component, std::string newSource, UnparsedJSON newOptions, GradientOptions gradientOptions) {
+    UpdateColorOptions(component, newSource, newOptions, gradientOptions, false);
 }
 
 void UpdateEnableOptions(GameObject* component, std::string enableSource, UnparsedJSON options, bool creation, bool invert) {
@@ -483,7 +531,7 @@ void Qounters::CreateQounterComponent(Component const& qounterComponent, int com
         }
     }
 
-    UpdateColorOptions(component, qounterComponent.ColorSource, qounterComponent.ColorOptions, true);
+    UpdateColorOptions(component, qounterComponent.ColorSource, qounterComponent.ColorOptions, qounterComponent.Gradient, true);
     UpdateEnableOptions(component->gameObject, qounterComponent.EnableSource, qounterComponent.EnableOptions, true, qounterComponent.InvertEnable);
 
     UpdateComponentPosition(component->rectTransform, qounterComponent);

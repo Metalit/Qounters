@@ -285,11 +285,11 @@ namespace Qounters::Editor {
 
         auto options = OptionsViewController::GetInstance();
 
-        if (auto group = il2cpp_utils::try_cast<EditingGroup>(object).value_or(nullptr)) {
+        if (auto group = Utils::ptr_cast<EditingGroup>(object)) {
             selectedGroupIdx = group->GetGroupIdx();
             selectedComponentIdx = -1;
             options->GroupSelected();
-        } else if (auto component = il2cpp_utils::try_cast<EditingComponent>(object).value_or(nullptr)) {
+        } else if (auto component = Utils::ptr_cast<EditingComponent>(object)) {
             selectedGroupIdx = component->GetEditingGroup()->GetGroupIdx();
             selectedComponentIdx = component->GetComponentIdx();
             options->ComponentSelected();
@@ -416,6 +416,19 @@ namespace Qounters::Editor {
             OptionsViewController::GetInstance()->UpdateSimpleUI();
     }
 
+    void SwapGradientColors() {
+        AddUndo(SwapGradientColors);
+
+        auto& comp = GetSelectedComponent(-1);
+        std::swap(comp.Gradient.StartModifierHSV, comp.Gradient.EndModifierHSV);
+
+        auto editingComponent = (EditingComponent*) selected;
+        UpdateComponentColor(editingComponent->typeComponent, comp.ColorSource, comp.ColorOptions, comp.Gradient);
+
+        if (!runningUndo)
+            OptionsViewController::GetInstance()->UpdateUI();
+    }
+
     void RemoveWithoutDeselect(int groupIdx, int componentIdx) {
         auto remove = editing[{groupIdx, componentIdx}];
         if (componentIdx != -1) {
@@ -513,7 +526,7 @@ namespace Qounters::Editor {
         } else {
             auto& component = GetSelectedComponent(-1);
             auto editingComponent = (EditingComponent*) selected;
-            UpdateComponentColor(editingComponent->typeComponent, component.ColorSource, component.ColorOptions);
+            UpdateComponentColor(editingComponent->typeComponent, component.ColorSource, component.ColorOptions, component.Gradient);
         }
     }
 
@@ -557,8 +570,11 @@ namespace Qounters::Editor {
     void UpdateColorOptions() {
         auto& component = GetSelectedComponent(-1);
         auto editingComponent = (EditingComponent*) selected;
-        UpdateComponentColor(editingComponent->typeComponent, component.ColorSource, component.ColorOptions);
+        UpdateComponentColor(editingComponent->typeComponent, component.ColorSource, component.ColorOptions, component.Gradient);
         AddUpdate(UpdateColorOptions);
+    }
+    void UpdateGradientOptions() {
+        UpdateColorOptions();
     }
     void SetColorOptions(int actionId, UnparsedJSON options) {
         auto& component = GetSelectedComponent(actionId);
@@ -617,7 +633,7 @@ namespace Qounters::Editor {
         lastActionId = currentActionId;
         currentActionId = -1;
         if (!nextUndoUpdates.empty()) {
-            if (merge && !runningUndo && !disableActions && !undos.empty()) {
+            if (merge && !runningUndo && !undos.empty()) {
                 std::set<void (*)()> newUpdates = {};
                 for (auto& update : nextUndoUpdates) {
                     if (!lastUndoUpdates.contains(update))

@@ -1,14 +1,15 @@
 #pragma once
 
 #include "GlobalNamespace/EnvironmentInfoSO.hpp"
+#include "HMUI/ColorGradientSlider.hpp"
 #include "HMUI/FlowCoordinator.hpp"
 #include "HMUI/TableCell.hpp"
 #include "HMUI/TableView.hpp"
 #include "HMUI/ViewController.hpp"
 #include "System/Action.hpp"
-#include "UnityEngine/EventSystems/IInitializePotentialDragHandler.hpp"
 #include "UnityEngine/EventSystems/IDragHandler.hpp"
 #include "UnityEngine/EventSystems/IEndDragHandler.hpp"
+#include "UnityEngine/EventSystems/IInitializePotentialDragHandler.hpp"
 #include "bsml/shared/BSML/Components/ClickableImage.hpp"
 #include "bsml/shared/BSML/Components/CustomListTableData.hpp"
 #include "bsml/shared/BSML/Components/Settings/DropdownListSetting.hpp"
@@ -58,9 +59,9 @@ DECLARE_CLASS_CODEGEN(Qounters, SettingsFlowCoordinator, HMUI::FlowCoordinator,
    private:
     static inline Qounters::SettingsFlowCoordinator* instance = nullptr;
 
-    static void ConfirmAction(std::function<void ()> action, std::function<void ()> cancel = nullptr);
-    static inline std::function<void ()> nextModalAction = nullptr;
-    static inline std::function<void ()> nextModalCancel = nullptr;
+    static void ConfirmAction(std::function<void()> action, std::function<void()> cancel = nullptr);
+    static inline std::function<void()> nextModalAction = nullptr;
+    static inline std::function<void()> nextModalCancel = nullptr;
 
     static void MakeNewPreset(std::string name, bool removeOld);
 )
@@ -206,7 +207,13 @@ DECLARE_CLASS_CODEGEN(Qounters, OptionsViewController, HMUI::ViewController,
     DECLARE_INSTANCE_FIELD(BSML::SliderSetting*, cScaleSliderY);
     DECLARE_INSTANCE_FIELD(UnityEngine::Component*, typeCollapseComponent);
     DECLARE_INSTANCE_FIELD(BSML::DropdownListSetting*, cTypeDropdown);
+    DECLARE_INSTANCE_FIELD(UnityEngine::Component*, colorCollapseComponent);
     DECLARE_INSTANCE_FIELD(BSML::DropdownListSetting*, cColorSourceDropdown);
+    DECLARE_INSTANCE_FIELD(UnityEngine::Component*, gradientCollapseComponent);
+    DECLARE_INSTANCE_FIELD(BSML::ToggleSetting*, cGradientToggle);
+    DECLARE_INSTANCE_FIELD(BSML::DropdownListSetting*, cGradientDirectionDropdown);
+    DECLARE_INSTANCE_FIELD(UnityEngine::Component*, startHsvComponent);
+    DECLARE_INSTANCE_FIELD(UnityEngine::Component*, endHsvComponent);
     DECLARE_INSTANCE_FIELD(BSML::DropdownListSetting*, cEnableSourceDropdown);
     DECLARE_INSTANCE_FIELD(BSML::ToggleSetting*, cInvertEnableToggle);
     DECLARE_INSTANCE_FIELD(UnityEngine::UI::Button*, cDeleteButton);
@@ -225,6 +232,39 @@ DECLARE_CLASS_CODEGEN(Qounters, OptionsViewController, HMUI::ViewController,
     static inline Qounters::OptionsViewController* instance = nullptr;
 )
 
+DECLARE_CLASS_CODEGEN(Qounters, HSVGradientImage, UnityEngine::MonoBehaviour,
+    DECLARE_DEFAULT_CTOR();
+    DECLARE_INSTANCE_FIELD(int, modified);
+    DECLARE_INSTANCE_FIELD(float, modifier);
+    DECLARE_INSTANCE_FIELD_DEFAULT(int, elements, 10);
+)
+
+DECLARE_CLASS_CODEGEN(Qounters, HSVController, UnityEngine::MonoBehaviour,
+    DECLARE_DEFAULT_CTOR();
+
+    DECLARE_INSTANCE_FIELD(UnityEngine::Color, baseColor);
+    DECLARE_INSTANCE_FIELD(UnityEngine::Vector3, hsv);
+    DECLARE_INSTANCE_FIELD(TMPro::TextMeshProUGUI*, nameText);
+    DECLARE_INSTANCE_FIELD(UnityEngine::UI::Button*, openButton);
+    DECLARE_INSTANCE_FIELD(HMUI::ModalView*, modal);
+    DECLARE_INSTANCE_FIELD(HMUI::ColorGradientSlider*, hSlider);
+    DECLARE_INSTANCE_FIELD(HMUI::ColorGradientSlider*, sSlider);
+    DECLARE_INSTANCE_FIELD(HMUI::ColorGradientSlider*, vSlider);
+
+    DECLARE_INSTANCE_METHOD(void, Show);
+    DECLARE_INSTANCE_METHOD(void, Hide);
+    DECLARE_INSTANCE_METHOD(void, SetHue, float hue);
+    DECLARE_INSTANCE_METHOD(void, SetSat, float saturation);
+    DECLARE_INSTANCE_METHOD(void, SetVal, float value);
+    DECLARE_INSTANCE_METHOD(void, UpdateVisuals);
+    DECLARE_INSTANCE_METHOD(void, UpdateButton);
+    DECLARE_INSTANCE_METHOD(void, SetHSV, UnityEngine::Vector3 value);
+
+   public:
+    std::function<void(UnityEngine::Vector3)> onChange = nullptr;
+    std::function<void()> onClose = nullptr;
+)
+
 #define INTERFACES std::vector<Il2CppClass*>({ \
     classof(UES::IEventSystemHandler*), \
     classof(UES::IPointerEnterHandler*), \
@@ -237,6 +277,7 @@ DECLARE_CLASS_CODEGEN_INTERFACES(Qounters, CollapseController, UnityEngine::Mono
 
     DECLARE_INSTANCE_FIELD(StringW, title);
     DECLARE_INSTANCE_FIELD(bool, open);
+    DECLARE_INSTANCE_FIELD(bool, wasOpen);
     DECLARE_INSTANCE_FIELD(TMPro::TextMeshProUGUI*, text);
     DECLARE_INSTANCE_FIELD(HMUI::ImageView*, line);
 
@@ -244,13 +285,18 @@ DECLARE_CLASS_CODEGEN_INTERFACES(Qounters, CollapseController, UnityEngine::Mono
     DECLARE_OVERRIDE_METHOD_MATCH(void, OnPointerExit, &UES::IPointerExitHandler::OnPointerExit, UES::PointerEventData* eventData);
     DECLARE_OVERRIDE_METHOD_MATCH(void, OnPointerClick, &UES::IPointerClickHandler::OnPointerClick, UES::PointerEventData* eventData);
 
+    DECLARE_INSTANCE_METHOD(void, OnEnable);
+    DECLARE_INSTANCE_METHOD(void, OnDisable);
+
     DECLARE_INSTANCE_METHOD(void, UpdateOpen);
 
    public:
-    std::vector<UnityEngine::Component*> contents;
-    void SetContents(std::vector<UnityEngine::Component*> const& newContents);
+    std::map<UnityEngine::Component*, bool> contents;
+    void AddContents(std::set<UnityEngine::Component*> const& add);
+    void RemoveContents(std::set<UnityEngine::Component*> const& remove);
+    void SetContentActive(UnityEngine::Component* content, bool active);
 
-    std::function<void ()> onUpdate = nullptr;
+    std::function<void()> onUpdate = nullptr;
 )
 
 #undef INTERFACES
@@ -272,7 +318,9 @@ DECLARE_CLASS_CODEGEN_INTERFACES(Qounters, MenuDragger, UnityEngine::MonoBehavio
 
     DECLARE_OVERRIDE_METHOD_MATCH(void, OnPointerEnter, &UES::IPointerEnterHandler::OnPointerEnter, UES::PointerEventData* eventData);
     DECLARE_OVERRIDE_METHOD_MATCH(void, OnPointerExit, &UES::IPointerExitHandler::OnPointerExit, UES::PointerEventData* eventData);
-    DECLARE_OVERRIDE_METHOD_MATCH(void, OnInitializePotentialDrag, &UES::IInitializePotentialDragHandler::OnInitializePotentialDrag, UES::PointerEventData* eventData);
+    DECLARE_OVERRIDE_METHOD_MATCH(
+        void, OnInitializePotentialDrag, &UES::IInitializePotentialDragHandler::OnInitializePotentialDrag, UES::PointerEventData* eventData
+    );
     DECLARE_OVERRIDE_METHOD_MATCH(void, OnDrag, &UES::IDragHandler::OnDrag, UES::PointerEventData* eventData);
     DECLARE_OVERRIDE_METHOD_MATCH(void, OnEndDrag, &UES::IEndDragHandler::OnEndDrag, UES::PointerEventData* eventData);
 
@@ -299,18 +347,17 @@ DECLARE_CLASS_CODEGEN_INTERFACES(Qounters, EndDragHandler, UnityEngine::MonoBeha
     DECLARE_OVERRIDE_METHOD_MATCH(void, OnEndDrag, &UES::IEndDragHandler::OnEndDrag, UES::PointerEventData* eventData);
 
     DECLARE_DEFAULT_CTOR();
+
    public:
-    std::function<void ()> callback = nullptr;
+    std::function<void()> callback = nullptr;
 )
 
-#undef INTERFACES
-
-DECLARE_CLASS_CODEGEN(Qounters, KeyboardCloseHandler,  UnityEngine::MonoBehaviour,
+DECLARE_CLASS_CODEGEN(Qounters, KeyboardCloseHandler, UnityEngine::MonoBehaviour,
     DECLARE_DEFAULT_CTOR();
 
    public:
-    std::function<void ()> closeCallback = nullptr;
-    std::function<void ()> okCallback = nullptr;
+    std::function<void()> closeCallback = nullptr;
+    std::function<void()> okCallback = nullptr;
 )
 
 DECLARE_CLASS_CODEGEN(Qounters, SpritesListCell, HMUI::TableCell,
@@ -322,10 +369,7 @@ DECLARE_CLASS_CODEGEN(Qounters, SpritesListCell, HMUI::TableCell,
 
     DECLARE_INSTANCE_METHOD(void, OnImageClicked, int imageIdx);
 
-    // DECLARE_INSTANCE_METHOD(void, RefreshVisuals);
     DECLARE_INSTANCE_METHOD(void, SetImageStartIdx, int idx);
-    // DECLARE_OVERRIDE_METHOD_MATCH(void, SelectionDidChange, &HMUI::SelectableCell::SelectionDidChange, HMUI::SelectableCell::TransitionType transitionType);
-    // DECLARE_OVERRIDE_METHOD_MATCH(void, HighlightDidChange, &HMUI::SelectableCell::HighlightDidChange, HMUI::SelectableCell::TransitionType transitionType);
 
     DECLARE_STATIC_METHOD(SpritesListCell*, CreateNew, int imagesStartIdx, StringW reuseIdentifier);
 
@@ -334,6 +378,8 @@ DECLARE_CLASS_CODEGEN(Qounters, SpritesListCell, HMUI::TableCell,
     static constexpr float imageSpacing = 2;
     static constexpr float cellSize = 10;
 )
+
+#undef INTERFACES
 
 #define INTERFACES std::vector<Il2CppClass*>({ \
     classof(HMUI::TableView::IDataSource*), \
@@ -350,10 +396,12 @@ DECLARE_CLASS_CODEGEN_INTERFACES(Qounters, SpritesListSource, UnityEngine::MonoB
     DECLARE_OVERRIDE_METHOD_MATCH(int, NumberOfCells, &HMUI::TableView::IDataSource::NumberOfCells);
 
     DECLARE_INSTANCE_METHOD(void, OnImageClicked, int imageIdx);
+
    public:
-    std::function<void (int)> imageClickedCallback;
+    std::function<void(int)> imageClickedCallback;
+
    private:
-    static const inline std::string reuseIdentifier = "QountersCustomListSource";
+    static inline std::string const reuseIdentifier = "QountersCustomListSource";
 )
 
 #undef INTERFACES

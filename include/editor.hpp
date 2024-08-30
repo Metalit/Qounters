@@ -31,6 +31,7 @@ namespace Qounters::Editor {
     // adds an undo every time, no action ID or FinalizeAction
     void AddComponent();
     void ToggleAttachment();
+    void SwapGradientColors();
     void Remove();
     // use GetSelectedX, modify the reference, call these, then call FinalizeAction
     void UpdatePosition(bool neverSnap = false);
@@ -40,6 +41,7 @@ namespace Qounters::Editor {
     void UpdateOptions();
     void UpdateSourceOptions();
     void UpdateColorOptions();
+    void UpdateGradientOptions();
     void UpdateEnableOptions();
     // GetSelectedX optional, but still needs FinalizeAction
     void SetOptions(int actionId, Component::OptionsTypes options);

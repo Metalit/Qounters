@@ -14,6 +14,8 @@
 #include "UnityEngine/GameObject.hpp"
 #include "UnityEngine/Resources.hpp"
 #include "UnityEngine/UI/LayoutRebuilder.hpp"
+#include "UnityEngine/UI/Mask.hpp"
+#include "assets.hpp"
 #include "bsml/shared/BSML-Lite.hpp"
 #include "bsml/shared/Helpers/delegates.hpp"
 #include "bsml/shared/Helpers/utilities.hpp"
@@ -42,6 +44,16 @@ std::string Utils::SecondsToString(int value) {
         secondsString = "0" + secondsString;
 
     return minutesString + ":" + secondsString;
+}
+
+UnityEngine::Color Utils::GetClampedColor(std::tuple<float, float, float> hsv) {
+    auto [h, s, v] = hsv;
+    h = fmod(h, 1);
+    if (h < 0)
+        h += 1;
+    s = std::clamp(s, 0.f, 1.f);
+    v = std::clamp(v, 0.f, 1.f);
+    return UnityEngine::Color::HSVToRGB(h, s, v);
 }
 
 std::tuple<std::string, std::string, int> Utils::GetBeatmapDetails(BeatmapKey beatmap) {
@@ -99,6 +111,20 @@ std::string Utils::GetTransformPath(UnityEngine::Transform* parent, UnityEngine:
     if (parent == child || !child->IsChildOf(parent))
         return "";
     return GetTransformPath(parent, child->parent) + "/" + static_cast<std::string>(child->name);
+}
+
+void Utils::SetRelativeSiblingIndex(UnityEngine::Transform* child, UnityEngine::Transform* ref, int amount) {
+    if (!child->IsChildOf(ref->parent))
+        return;
+    int currentIndex = child->GetSiblingIndex();
+    int otherIndex = ref->GetSiblingIndex();
+    // adjust for moving around if after -> before or before -> after
+    // (unity child order is weird and I don't like it)
+    if (currentIndex < otherIndex && amount > 0)
+        amount--;
+    else if (currentIndex > otherIndex && amount < 0)
+        amount++;
+    child->SetSiblingIndex(otherIndex + amount);
 }
 
 void Utils::SetLayoutSize(UnityEngine::Component* object, int width, int height) {
@@ -221,7 +247,7 @@ BSML::ColorSetting* Utils::CreateColorPicker(
     rgb->anchorMin = {0.5, 0.5};
     rgb->anchorMax = {0.5, 0.5};
     rgb->anchoredPosition = {-24, 10};
-    wheel->localScale = {0.9, 0.9, 0.9};
+    wheel->localScale = {0.8, 0.8, 0.8};
     wheel->anchorMin = {0.5, 0.5};
     wheel->anchorMax = {0.5, 0.5};
     wheel->anchoredPosition = {0, -10};
@@ -235,9 +261,63 @@ BSML::ColorSetting* Utils::CreateColorPicker(
     return ret;
 }
 
-CollapseController*
-Utils::CreateCollapseArea(UnityEngine::GameObject* parent, std::string title, bool open, std::vector<UnityEngine::Component*> contents) {
+HMUI::ColorGradientSlider* CreateGradientSlider(
+    UnityEngine::Component* parent, UnityEngine::Vector2 anchoredPosition, std::function<void(float)> onChange, int modified, float modifier
+) {
+    static SafePtrUnity<HMUI::ColorGradientSlider> sliderTemplate;
+    if (!sliderTemplate) {
+        sliderTemplate = UnityEngine::Resources::FindObjectsOfTypeAll<HMUI::ColorGradientSlider*>()->FirstOrDefault([](auto x) {
+            return x->name == StringW("GGradientSlider");
+        });
+    }
+    auto ret = UnityEngine::Object::Instantiate(sliderTemplate.ptr(), parent->transform, false);
+    ret->gameObject->name = "QountersGradientSlider";
+    ret->normalizedValueDidChangeEvent =
+        BSML::MakeSystemAction((std::function<void(UnityW<HMUI::TextSlider>, float)>) [onChange](UnityW<HMUI::TextSlider>, float val) {
+            onChange(val * 2 - 1);  // (0, 1) -> (-1, 1)
+        });
+    ret->SetColors({1, 1, 1, 1}, {1, 1, 1, 1});
+    for (auto& img : ret->_gradientImages) {
+        auto hsv = img->gameObject->AddComponent<HSVGradientImage*>();
+        hsv->modified = modified;
+        hsv->modifier = modifier;
+    }
+    auto rect = ret->GetComponent<UnityEngine::RectTransform*>();
+    rect->anchorMin = {0.5, 0.5};
+    rect->anchorMax = {0.5, 0.5};
+    rect->pivot = {0.5, 0.5};
+    rect->sizeDelta = {40, 10};
+    rect->anchoredPosition = anchoredPosition;
+    return ret;
+}
+
+HSVController* Utils::CreateHSVModifierPicker(
+    UnityEngine::GameObject* parent, std::string name, std::function<void(UnityEngine::Vector3)> onChange, std::function<void()> onClose
+) {
     auto layout = BSML::Lite::CreateHorizontalLayoutGroup(parent);
+    layout->gameObject->name = "QountersHSVPicker";
+    auto ret = layout->gameObject->AddComponent<HSVController*>();
+    ret->onChange = onChange;
+    ret->onClose = onClose;
+    ret->nameText = BSML::Lite::CreateText(layout, name);
+    auto dims = ret->nameText->GetComponent<UnityEngine::UI::LayoutElement*>();
+    dims->flexibleWidth = 999;
+    ret->openButton = BSML::Lite::CreateUIButton(layout, "H+0 S+0 V+0", [ret]() { ret->Show(); });
+    auto modal = BSML::Lite::CreateModal(parent, false);
+    modal->add_blockerClickedEvent(BSML::MakeSystemAction([ret]() { ret->Hide(); }));
+    modal->GetComponent<UnityEngine::RectTransform*>()->sizeDelta = {50, 40};
+    ret->modal = modal;
+    // go a little extra on the sides because of the padding
+    ret->hSlider = CreateGradientSlider(modal, {0, 12}, [ret](float val) { ret->SetHue(val); }, 0, 0.55);
+    ret->sSlider = CreateGradientSlider(modal, {0, 0}, [ret](float val) { ret->SetSat(val); }, 1, 1.1);
+    ret->vSlider = CreateGradientSlider(modal, {0, -12}, [ret](float val) { ret->SetVal(val); }, 2, 1.1);
+    return ret;
+}
+
+CollapseController*
+Utils::CreateCollapseArea(UnityEngine::GameObject* parent, std::string title, bool open, std::set<UnityEngine::Component*> contents) {
+    auto layout = BSML::Lite::CreateHorizontalLayoutGroup(parent);
+    layout->gameObject->name = "QountersCollapseArea";
     layout->spacing = 2;
     layout->childAlignment = UnityEngine::TextAnchor::MiddleCenter;
     layout->childForceExpandHeight = false;
@@ -245,6 +325,8 @@ Utils::CreateCollapseArea(UnityEngine::GameObject* parent, std::string title, bo
     layout->gameObject->AddComponent<CanvasHighlight*>();
     auto ret = layout->gameObject->AddComponent<CollapseController*>();
     ret->open = open;
+    // assume that the current state is what it should remember when open
+    ret->wasOpen = true;
     ret->title = title;
     ret->text = BSML::Lite::CreateText(layout, "", TMPro::FontStyles::Normal, 3.5);
     ret->line = BSML::Lite::CreateImage(layout, BSML::Utilities::ImageResources::GetWhitePixel());
@@ -252,8 +334,7 @@ Utils::CreateCollapseArea(UnityEngine::GameObject* parent, std::string title, bo
     dims->preferredWidth = 0;
     dims->preferredHeight = 0.4;
     dims->flexibleWidth = 999;
-    ret->contents = contents;
-    ret->UpdateOpen();
+    ret->AddContents(contents);
     // update colors
     ret->OnPointerExit(nullptr);
     return ret;

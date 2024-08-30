@@ -4,6 +4,8 @@
 #include "UnityEngine/Transform.hpp"
 #include "UnityEngine/UI/MaskableGraphic.hpp"
 #include "UnityEngine/UI/VertexHelper.hpp"
+#include "System/Action_1.hpp"
+#include "TMPro/TMP_TextInfo.hpp"
 #include "config.hpp"
 #include "custom-types/shared/macros.hpp"
 #include "main.hpp"
@@ -20,9 +22,15 @@ DECLARE_CLASS_CODEGEN(Qounters, Shape, UUI::MaskableGraphic,
         Triangle,
     };
 
+    DECLARE_DEFAULT_CTOR();
+
     DECLARE_INSTANCE_FIELD(bool, filled);
     DECLARE_INSTANCE_FIELD(int, sideCount);
     DECLARE_INSTANCE_FIELD(float, border);
+    DECLARE_INSTANCE_FIELD(bool, gradient);
+    DECLARE_INSTANCE_FIELD(int, gradientDirection);
+    DECLARE_INSTANCE_FIELD(UnityEngine::Color, startColor);
+    DECLARE_INSTANCE_FIELD(UnityEngine::Color, endColor);
 
     DECLARE_INSTANCE_METHOD(void, SetFilled, bool value);
     DECLARE_INSTANCE_METHOD(void, SetSideCount, int value);
@@ -31,12 +39,29 @@ DECLARE_CLASS_CODEGEN(Qounters, Shape, UUI::MaskableGraphic,
     DECLARE_INSTANCE_METHOD(void, SetMaskOptions, int type, bool inverse);
     DECLARE_INSTANCE_METHOD(void, SetMaskAmount, float value);
 
+    DECLARE_INSTANCE_METHOD(void, AddColoredVertex, UUI::VertexHelper* vh, UnityEngine::Vector3 pos, UnityEngine::Rect bounds);
     DECLARE_OVERRIDE_METHOD_MATCH(void, OnPopulateMesh, CAST_METHOD(UUI::Graphic, OnPopulateMesh, UUI::VertexHelper*), UUI::VertexHelper* vh);
 
     DECLARE_STATIC_METHOD(Shape*, Create, UnityEngine::Transform* parent);
 
    private:
     HMUI::ImageView* mask = nullptr;
+)
+
+DECLARE_CLASS_CODEGEN(Qounters, TextGradient, UnityEngine::MonoBehaviour,
+    DECLARE_DEFAULT_CTOR();
+
+    DECLARE_INSTANCE_FIELD(int, gradientDirection);
+    DECLARE_INSTANCE_FIELD(UnityEngine::Color, startColor);
+    DECLARE_INSTANCE_FIELD(UnityEngine::Color, endColor);
+    DECLARE_INSTANCE_FIELD_DEFAULT(TMPro::TextMeshProUGUI*, text, nullptr);
+    DECLARE_INSTANCE_FIELD_DEFAULT(System::Action_1<TMPro::TMP_TextInfo*>*, delegate, nullptr);
+
+    DECLARE_INSTANCE_METHOD(void, OnEnable);
+    DECLARE_INSTANCE_METHOD(void, OnDisable);
+
+    DECLARE_INSTANCE_METHOD(UnityEngine::Color32, GetColor, UnityEngine::Bounds bounds, UnityEngine::Vector3 vertex);
+    DECLARE_INSTANCE_METHOD(void, UpdateGradient);
 )
 
 DECLARE_CLASS_CODEGEN(Qounters, BaseGameGraphic, UUI::Graphic,
