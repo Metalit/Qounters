@@ -145,7 +145,7 @@ void Shape::AddColoredVertex(UI::VertexHelper* vh, Vector3 pos, Rect bounds) {
     if (gradient) {
         // start should be left/top imo
         float lerpValue = gradientDirection == (int) GradientOptions::Directions::Horizontal ? (pos.x - bounds.m_XMin) / bounds.m_Width
-                                                                                             : (1 - pos.y + bounds.m_YMin) / bounds.m_Height;
+                                                                                             : 1 - (pos.y - bounds.m_YMin) / bounds.m_Height;
         color32 = Color32::op_Implicit___UnityEngine__Color32(Color::Lerp(startColor, endColor, lerpValue));
     } else
         color32 = Color32::op_Implicit___UnityEngine__Color32(color);
