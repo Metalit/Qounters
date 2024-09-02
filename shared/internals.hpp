@@ -2,6 +2,7 @@
 
 #include "GlobalNamespace/BeatmapData.hpp"
 #include "GlobalNamespace/ColorScheme.hpp"
+#include "GlobalNamespace/EnvironmentInfoSO.hpp"
 #include "GlobalNamespace/GameplayModifiers.hpp"
 #include "GlobalNamespace/NoteData.hpp"
 #include "GlobalNamespace/SaberManager.hpp"
@@ -52,6 +53,7 @@ namespace Qounters {
     extern int restarts;
     extern GlobalNamespace::ColorScheme* colors;
     extern GlobalNamespace::BeatmapData* beatmapData;
+    extern GlobalNamespace::EnvironmentInfoSO* environment;
     extern int leftMissedMaxScore;
     extern int rightMissedMaxScore;
     extern int leftMissedFixedScore;

@@ -1,13 +1,19 @@
 #include "hooks.hpp"
 
 #include "GlobalNamespace/AudioTimeSyncController.hpp"
+#include "GlobalNamespace/BeatmapLevelsModel.hpp"
 #include "GlobalNamespace/BeatmapObjectExecutionRatingsRecorder.hpp"
 #include "GlobalNamespace/BeatmapObjectManager.hpp"
 #include "GlobalNamespace/CoreGameHUDController.hpp"
 #include "GlobalNamespace/CutScoreBuffer.hpp"
+#include "GlobalNamespace/EnvironmentOverrideSettingsPanelController.hpp"
 #include "GlobalNamespace/FlyingGameHUDRotation.hpp"
 #include "GlobalNamespace/GameEnergyCounter.hpp"
 #include "GlobalNamespace/LayerMasks.hpp"
+#include "GlobalNamespace/LevelBar.hpp"
+#include "GlobalNamespace/MissionDataSO.hpp"
+#include "GlobalNamespace/MissionLevelDetailViewController.hpp"
+#include "GlobalNamespace/MissionNode.hpp"
 #include "GlobalNamespace/MultiplayerIntroAnimationController.hpp"
 #include "GlobalNamespace/MultiplayerLocalActivePlayerGameplayManager.hpp"
 #include "GlobalNamespace/MultiplayerLocalActivePlayerInGameMenuViewController.hpp"
@@ -34,6 +40,7 @@
 #include "environment.hpp"
 #include "events.hpp"
 #include "game.hpp"
+#include "gameplay.hpp"
 #include "internals.hpp"
 #include "main.hpp"
 #include "pp.hpp"
@@ -227,7 +234,7 @@ MAKE_HOOK_MATCH(
     initData->advancedHUD = true;
     wasHidden = initData->hide;
 
-    DestroySignal::Create([]() {
+    ObjectSignal::CreateDestroySignal([]() {
         logger.info("Qounters end");
         initialized = false;
         Reset();
@@ -276,14 +283,66 @@ MAKE_HOOK_MATCH(FlyingGameHUDRotation_LateUpdate, &FlyingGameHUDRotation::LateUp
 MAKE_HOOK_MATCH(
     StandardLevelDetailView_SetContentForBeatmapData, &StandardLevelDetailView::SetContentForBeatmapData, void, StandardLevelDetailView* self
 ) {
-    if (self->beatmapKey.IsValid())
+    if (self->beatmapKey.IsValid()) {
         PP::GetMapInfo(self->beatmapKey);
+        SetLevel(self->_beatmapLevel, self->beatmapKey, true);
+    }
+    if (auto signal = self->gameObject->AddComponent<ObjectSignal*>()) {
+        signal->onEnable = [self]() {
+            SetLevel(self->_beatmapLevel, self->beatmapKey, true);
+        };
+        signal->onDisable = ClearLevel;
+    }
 
     StandardLevelDetailView_SetContentForBeatmapData(self);
 }
 
-MAKE_HOOK_MATCH(PauseController_Pause, &PauseController::Pause, void, PauseController* self) {
+MAKE_HOOK_MATCH(
+    MissionLevelDetailViewController_RefreshContent, &MissionLevelDetailViewController::RefreshContent, void, MissionLevelDetailViewController* self
+) {
+    auto key = self->missionNode->missionData->beatmapKey;
+    if (key.IsValid()) {
+        PP::GetMapInfo(key);
+        if (auto level = self->_levelBar->_beatmapLevelsModel->GetBeatmapLevel(key.levelId))
+            SetLevel(level, key, false);
+    }
+    if (auto signal = self->gameObject->AddComponent<ObjectSignal*>()) {
+        signal->onEnable = [model = self->_levelBar->_beatmapLevelsModel, key]() {
+            if (auto level = model->GetBeatmapLevel(key.levelId))
+                SetLevel(level, key, false);
+        };
+        signal->onDisable = ClearLevel;
+    }
 
+    MissionLevelDetailViewController_RefreshContent(self);
+}
+
+MAKE_HOOK_MATCH(
+    EnvironmentOverrideSettingsPanelController_HandleDropDownDidSelectCellWithIdx,
+    &EnvironmentOverrideSettingsPanelController::HandleDropDownDidSelectCellWithIdx,
+    void,
+    EnvironmentOverrideSettingsPanelController* self,
+    HMUI::DropdownWithTableView* dropdown,
+    int idx
+) {
+    EnvironmentOverrideSettingsPanelController_HandleDropDownDidSelectCellWithIdx(self, dropdown, idx);
+
+    UpdateEnvironment();
+}
+
+MAKE_HOOK_MATCH(
+    EnvironmentOverrideSettingsPanelController_HandleOverrideEnvironmentsToggleValueChanged,
+    &EnvironmentOverrideSettingsPanelController::HandleOverrideEnvironmentsToggleValueChanged,
+    void,
+    EnvironmentOverrideSettingsPanelController* self,
+    bool isOn
+) {
+    EnvironmentOverrideSettingsPanelController_HandleOverrideEnvironmentsToggleValueChanged(self, isOn);
+
+    UpdateEnvironment();
+}
+
+MAKE_HOOK_MATCH(PauseController_Pause, &PauseController::Pause, void, PauseController* self) {
     if (!InSettingsEnvironment())
         PauseController_Pause(self);
 }
@@ -360,7 +419,6 @@ MAKE_HOOK_MATCH(
 }
 
 MAKE_HOOK_MATCH(UIKeyboardManager_OpenKeyboardFor, &UIKeyboardManager::OpenKeyboardFor, void, UIKeyboardManager* self, HMUI::InputFieldView* input) {
-
     if (auto inputModal = input->GetComponentInParent<HMUI::ModalView*>()) {
         auto inputModalCanvas = inputModal->GetComponent<UnityEngine::Canvas*>();
         auto keyboardModalCanvas = self->_keyboardModalView->GetComponent<UnityEngine::Canvas*>();
@@ -371,7 +429,6 @@ MAKE_HOOK_MATCH(UIKeyboardManager_OpenKeyboardFor, &UIKeyboardManager::OpenKeybo
 }
 
 MAKE_HOOK_MATCH(UIKeyboardManager_HandleKeyboardOkButton, &UIKeyboardManager::HandleKeyboardOkButton, void, UIKeyboardManager* self) {
-
     auto handler = self->_selectedInput->GetComponent<KeyboardCloseHandler*>();
     if (handler && handler->okCallback)
         handler->okCallback();
@@ -495,6 +552,9 @@ void Qounters::InstallHooks() {
     INSTALL_HOOK(logger, MultiplayerIntroAnimationController_BindTimeline);
     INSTALL_HOOK(logger, FlyingGameHUDRotation_LateUpdate);
     INSTALL_HOOK(logger, StandardLevelDetailView_SetContentForBeatmapData);
+    INSTALL_HOOK(logger, MissionLevelDetailViewController_RefreshContent);
+    INSTALL_HOOK(logger, EnvironmentOverrideSettingsPanelController_HandleDropDownDidSelectCellWithIdx);
+    INSTALL_HOOK(logger, EnvironmentOverrideSettingsPanelController_HandleOverrideEnvironmentsToggleValueChanged);
     INSTALL_HOOK(logger, PauseController_Pause);
     INSTALL_HOOK(logger, MultiplayerLocalActivePlayerInGameMenuViewController_ShowMenu);
     INSTALL_HOOK(logger, MultiplayerLocalActivePlayerInGameMenuViewController_HideMenu);

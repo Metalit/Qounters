@@ -166,6 +166,7 @@ namespace Qounters {
     int restarts;
     ColorScheme* colors;
     BeatmapData* beatmapData;
+    EnvironmentInfoSO* environment;
     int leftMissedMaxScore;
     int rightMissedMaxScore;
     int leftMissedFixedScore;
@@ -246,6 +247,7 @@ void Qounters::Initialize() {
 
     colors = gameplayCoreInstaller && gameplayCoreInstaller->_sceneSetupData ? gameplayCoreInstaller->_sceneSetupData->colorScheme : nullptr;
     beatmapData = beatmapCallbacksUpdater ? (BeatmapData*) beatmapCallbacksUpdater->_beatmapCallbacksController->_beatmapData : nullptr;
+    environment = gameplayCoreInstaller && gameplayCoreInstaller->_sceneSetupData ? gameplayCoreInstaller->_sceneSetupData->environmentInfo : nullptr;
 
     leftMissedMaxScore = 0;
     rightMissedMaxScore = 0;

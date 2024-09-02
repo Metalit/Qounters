@@ -4,6 +4,7 @@
 #include "bsml/shared/BSML.hpp"
 #include "config.hpp"
 #include "environment.hpp"
+#include "gameplay.hpp"
 #include "hooks.hpp"
 #include "migration.hpp"
 #include "scotland2/shared/modloader.h"
@@ -38,9 +39,11 @@ extern "C" void setup(CModInfo* info) {
 
 extern "C" void late_load() {
     il2cpp_functions::Init();
+    custom_types::Register::AutoRegister();
     BSML::Init();
 
     BSML::Register::RegisterMenuButton("Qounters++", "Qounters++ Settings", Qounters::PresentSettingsEnvironment);
+    BSML::Register::RegisterGameplaySetupTab("Qounters++", Qounters::GameplaySetupMenu, BSML::MenuType::All);
 
     logger.info("Installing hooks");
     Qounters::InstallHooks();

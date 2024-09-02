@@ -9,6 +9,7 @@
 #include "customtypes/editing.hpp"
 #include "editor.hpp"
 #include "environment.hpp"
+#include "internals.hpp"
 #include "main.hpp"
 #include "options.hpp"
 #include "sources.hpp"
@@ -267,7 +268,7 @@ void UpdateColorOptions(UI::Graphic* component, std::string colorSource, Unparse
     else
         DisableGradient(component);
 
-    UpdatePair(colors, component, colorSource, options, creation);
+    UpdatePair(::colors, component, colorSource, options, creation);
 }
 
 void Qounters::UpdateComponentColor(UI::Graphic* component, std::string newSource, UnparsedJSON newOptions, GradientOptions gradientOptions) {
@@ -359,7 +360,7 @@ void Qounters::RemoveComponent(int componentType, UnityEngine::Component* compon
         case Component::Types::Premade:
             break;
     }
-    RemoveFromMap(colors, component);
+    RemoveFromMap(::colors, component);
     RemoveFromMap(enables, component->gameObject);
 }
 
@@ -564,20 +565,44 @@ void Qounters::CreateQounterGroup(Group const& qounterGroup, int groupIdx, bool 
         CreateQounterComponent(qounterGroup.Components[i], i, parentTransform, editing);
 }
 
+Preset GetPreset() {
+    auto presets = getConfig().Presets.GetValue();
+
+    if (environment) {
+        std::string serializedName = environment->serializedName;
+        auto specificPresets = getConfig().SpecificPresets.GetValue();
+        if (specificPresets.contains(serializedName) && specificPresets[serializedName].Enabled) {
+            auto ret = specificPresets[serializedName].Preset;
+            if (presets.contains(ret))
+                return presets[ret];
+            specificPresets[serializedName].Enabled = false;
+            specificPresets[serializedName].Preset = presets.begin()->first;
+        }
+
+        std::string hudTypeString = std::to_string((int) GetHUDType(environment->serializedName));
+        auto typePresets = getConfig().TypePresets.GetValue();
+        if (typePresets.contains(hudTypeString) && typePresets[hudTypeString].Enabled) {
+            auto ret = typePresets[hudTypeString].Preset;
+            if (presets.contains(ret))
+                return presets[ret];
+            typePresets[hudTypeString].Enabled = false;
+            typePresets[hudTypeString].Preset = presets.begin()->first;
+        }
+    }
+
+    auto ret = getConfig().Preset.GetValue();
+    if (!presets.contains(ret)) {
+        ret = presets.begin()->first;
+        getConfig().Preset.SetValue(ret);
+    }
+    return presets[ret];
+}
+
 void Qounters::CreateQounters() {
     if (GetHUD().second == HUDType::Unsupported)
         return;
 
-    auto presets = getConfig().Presets.GetValue();
-    auto presetName = getConfig().Preset.GetValue();
-
-    if (!presets.contains(presetName)) {
-        presetName = presets.begin()->first;
-        getConfig().Preset.SetValue(presetName);
-    }
-
-    auto& preset = presets[presetName];
-
+    auto preset = GetPreset();
     for (int i = 0; i < preset.Qounters.size(); i++)
         CreateQounterGroup(preset.Qounters[i], i, false);
 }
@@ -585,7 +610,8 @@ void Qounters::CreateQounters() {
 void Qounters::Reset(bool sceneEnd) {
     texts.clear();
     shapes.clear();
-    colors.clear();
+    // namespace fix later
+    ::colors.clear();
     enables.clear();
     if (sceneEnd)
         BaseGameGraphic::Reset();
@@ -632,10 +658,10 @@ void UpdateShapes(std::string source) {
 void UpdateColors(std::string source) {
     auto sourceFn = GetSource(colorSources, source).first;
 
-    if (!colors.contains(source) || !sourceFn)
+    if (!::colors.contains(source) || !sourceFn)
         return;
 
-    auto& elements = colors[source];
+    auto& elements = ::colors[source];
 
     for (auto& [element, options] : elements)
         element->color = sourceFn(options);

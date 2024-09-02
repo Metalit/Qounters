@@ -127,10 +127,11 @@ void Utils::SetRelativeSiblingIndex(UnityEngine::Transform* child, UnityEngine::
     child->SetSiblingIndex(otherIndex + amount);
 }
 
-void Utils::SetLayoutSize(UnityEngine::Component* object, int width, int height) {
+void Utils::SetLayoutSize(UnityEngine::Component* object, float width, float height, float flex) {
     auto layout = object->GetComponent<UnityEngine::UI::LayoutElement*>();
     layout->preferredWidth = width;
     layout->preferredHeight = height;
+    layout->flexibleWidth = flex;
 }
 
 void Utils::SetChildrenWidth(UnityEngine::Transform* parent, float width) {
@@ -178,11 +179,30 @@ void Utils::SetDropdownValue(BSML::DropdownListSetting* dropdown, std::string va
     }
 }
 
+void Utils::SetDropdownValues(
+    BSML::DropdownListSetting* dropdown, std::vector<std::string> values, std::string selected, std::function<void()> notPresent
+) {
+    auto texts = ListW<System::Object*>::New(values.size());
+    int idx = -1;
+    for (int i = 0; i < values.size(); i++) {
+        texts->Add((System::Object*) StringW(values[i]).convert());
+        if (values[i] == selected)
+            idx = i;
+    }
+    if (idx == -1) {
+        idx = 0;
+        if (notPresent)
+            notPresent();
+    }
+    dropdown->values = texts;
+    dropdown->UpdateChoices();
+    if (!texts.empty())
+        dropdown->set_Value(texts[idx]);
+}
+
 void Utils::SetIconButtonSprite(UnityEngine::UI::Button* button, UnityEngine::Sprite* sprite) {
-    auto icon = button->transform->Find("QountersButtonImage");
-    if (!icon)
-        return;
-    icon->GetComponent<HMUI::ImageView*>()->sprite = sprite;
+    if (auto icon = button->transform->Find("QountersButtonImage"))
+        icon->GetComponent<HMUI::ImageView*>()->sprite = sprite;
 }
 
 UnityEngine::UI::Button* Utils::CreateIconButton(UnityEngine::GameObject* parent, UnityEngine::Sprite* sprite, std::function<void()> onClick) {
@@ -300,8 +320,7 @@ HSVController* Utils::CreateHSVModifierPicker(
     ret->onChange = onChange;
     ret->onClose = onClose;
     ret->nameText = BSML::Lite::CreateText(layout, name);
-    auto dims = ret->nameText->GetComponent<UnityEngine::UI::LayoutElement*>();
-    dims->flexibleWidth = 999;
+    SetLayoutSize(ret->nameText, -1, -1, 999);
     ret->openButton = BSML::Lite::CreateUIButton(layout, "H+0 S+0 V+0", [ret]() { ret->Show(); });
     auto modal = BSML::Lite::CreateModal(parent, false);
     modal->add_blockerClickedEvent(BSML::MakeSystemAction([ret]() { ret->Hide(); }));
@@ -330,10 +349,7 @@ Utils::CreateCollapseArea(UnityEngine::GameObject* parent, std::string title, bo
     ret->title = title;
     ret->text = BSML::Lite::CreateText(layout, "", TMPro::FontStyles::Normal, 3.5);
     ret->line = BSML::Lite::CreateImage(layout, BSML::Utilities::ImageResources::GetWhitePixel());
-    auto dims = ret->line->GetComponent<UnityEngine::UI::LayoutElement*>();
-    dims->preferredWidth = 0;
-    dims->preferredHeight = 0.4;
-    dims->flexibleWidth = 999;
+    SetLayoutSize(ret->line, 0, 0.4, 999);
     ret->AddContents(contents);
     // update colors
     ret->OnPointerExit(nullptr);

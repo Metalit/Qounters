@@ -13,10 +13,18 @@ namespace Qounters {
 }
 
 DECLARE_CONFIG(Config) {
-    CONFIG_VALUE(Enabled, bool, "Enabled", true);
+    DECLARE_JSON_STRUCT(PresetOverride) {
+        VALUE_DEFAULT(bool, Enabled, false);
+        VALUE_DEFAULT(std::string, Preset, "");
+    };
+    CONFIG_VALUE(Enabled, bool, "Enable Qounters++", true, "Turn this off to disable all ingame GUI modifications");
+    CONFIG_VALUE(Noodle, bool, "Disable On Chroma/Noodle", true, "Enable or disable the mod for noodle maps specifically");
     CONFIG_VALUE(Migrated, bool, "Migrated", false);
     CONFIG_VALUE(Presets, StringKeyedMap<Qounters::Preset>, "Presets", {});
+    CONFIG_VALUE(SettingsPreset, std::string, "Settings Preset", "Default");
     CONFIG_VALUE(Preset, std::string, "Preset", "Default");
+    CONFIG_VALUE(TypePresets, StringKeyedMap<PresetOverride>, "Type Presets", {});
+    CONFIG_VALUE(SpecificPresets, StringKeyedMap<PresetOverride>, "Environment Specific Presets", {});
     CONFIG_VALUE(EnvironmentType, int, "Settings Environment Type", 0);
     CONFIG_VALUE(Environment, std::string, "Settings Environment", "The First");
     CONFIG_VALUE(ColorScheme, std::string, "Color Scheme", "User Override / Environment");

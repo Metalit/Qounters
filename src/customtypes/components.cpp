@@ -26,7 +26,7 @@ DEFINE_TYPE(Qounters, BaseGameGraphic);
 DEFINE_TYPE(Qounters, PremadeParent);
 DEFINE_TYPE(Qounters, SongTimeSource);
 DEFINE_TYPE(Qounters, ImageSpriteCache);
-DEFINE_TYPE(Qounters, DestroySignal);
+DEFINE_TYPE(Qounters, ObjectSignal);
 
 using namespace GlobalNamespace;
 using namespace UnityEngine;
@@ -503,11 +503,23 @@ Sprite* ImageSpriteCache::GetSpriteIdx(int spriteIdx) {
     return GetInstance()->sprites[spriteIdx];
 }
 
-void DestroySignal::OnDestroy() {
-    callback();
+void ObjectSignal::OnEnable() {
+    if (onEnable)
+        onEnable();
 }
 
-void DestroySignal::Create(std::function<void()> callback) {
-    auto go = GameObject::New_ctor("QountersDestroySignal");
-    go->AddComponent<DestroySignal*>()->callback = callback;
+void ObjectSignal::OnDisable() {
+    if (onDisable)
+        onDisable();
+}
+
+void ObjectSignal::OnDestroy() {
+    if (onDestroy)
+        onDestroy();
+}
+
+ObjectSignal* ObjectSignal::CreateDestroySignal(std::function<void()> onDestroy) {
+    auto ret = GameObject::New_ctor("QountersDestroySignal")->AddComponent<ObjectSignal*>();
+    ret->onDestroy = onDestroy;
+    return ret;
 }

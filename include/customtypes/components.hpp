@@ -141,15 +141,18 @@ DECLARE_CLASS_CODEGEN(Qounters, ImageSpriteCache, UnityEngine::MonoBehaviour,
     static ImageSpriteCache* instance;
 )
 
-DECLARE_CLASS_CODEGEN(Qounters, DestroySignal, UnityEngine::MonoBehaviour,
+DECLARE_CLASS_CODEGEN(Qounters, ObjectSignal, UnityEngine::MonoBehaviour,
     DECLARE_DEFAULT_CTOR();
+    DECLARE_INSTANCE_METHOD(void, OnEnable);
+    DECLARE_INSTANCE_METHOD(void, OnDisable);
     DECLARE_INSTANCE_METHOD(void, OnDestroy);
 
    public:
-    static void Create(std::function<void()> callback);
+    static ObjectSignal* CreateDestroySignal(std::function<void()> onDestroy);
 
-   private:
-    std::function<void()> callback = nullptr;
+    std::function<void()> onEnable = nullptr;
+    std::function<void()> onDisable = nullptr;
+    std::function<void()> onDestroy = nullptr;
 )
 
 #undef UUI

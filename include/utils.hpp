@@ -48,12 +48,15 @@ namespace Qounters::Utils {
         return keys;
     }
 
-    void SetLayoutSize(UnityEngine::Component* object, int width, int height);
+    void SetLayoutSize(UnityEngine::Component* object, float width, float height, float flex = -1);
     void SetChildrenWidth(UnityEngine::Transform* parent, float width);
     void SetCanvasSorting(UnityEngine::GameObject* canvas, int value);
     void InstantSetToggle(BSML::ToggleSetting* toggle, bool value);
     void SetIncrementValue(BSML::IncrementSetting* increment, float value);
     void SetDropdownValue(BSML::DropdownListSetting* dropdown, std::string value);
+    void SetDropdownValues(
+        BSML::DropdownListSetting* dropdown, std::vector<std::string> values, std::string selected, std::function<void()> notPresent = nullptr
+    );
     void SetIconButtonSprite(UnityEngine::UI::Button* button, UnityEngine::Sprite* sprite);
 
     UnityEngine::UI::Button* CreateIconButton(UnityEngine::GameObject* parent, UnityEngine::Sprite* sprite, std::function<void()> onClick);

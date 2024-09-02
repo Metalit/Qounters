@@ -95,10 +95,10 @@ StringW ScaleFormat(float val) {
 void SettingsFlowCoordinator::DidActivate(bool firstActivation, bool addedToHierarchy, bool screenSystemEnabling) {
     if (addedToHierarchy) {
         auto presets = getConfig().Presets.GetValue();
-        auto presetName = getConfig().Preset.GetValue();
+        auto presetName = getConfig().SettingsPreset.GetValue();
         if (!presets.contains(presetName)) {
             presetName = presets.begin()->first;
-            getConfig().Preset.SetValue(presetName);
+            getConfig().SettingsPreset.SetValue(presetName);
         }
         auto& preset = presets[presetName];
 
@@ -138,12 +138,12 @@ void SettingsFlowCoordinator::DidDeactivate(bool removedFromHierarchy, bool scre
 
 void SettingsFlowCoordinator::Save() {
     auto presets = getConfig().Presets.GetValue();
-    presets[getConfig().Preset.GetValue()] = Editor::GetPreset();
+    presets[getConfig().SettingsPreset.GetValue()] = Editor::GetPreset();
     getConfig().Presets.SetValue(presets);
 }
 
 bool SettingsFlowCoordinator::IsSaved() {
-    return getConfig().Presets.GetValue()[getConfig().Preset.GetValue()] == Editor::GetPreset();
+    return getConfig().Presets.GetValue()[getConfig().SettingsPreset.GetValue()] == Editor::GetPreset();
 }
 
 void SettingsFlowCoordinator::PresentPlaytest() {
@@ -199,7 +199,7 @@ void SettingsFlowCoordinator::SelectPreset(StringW name) {
                 SettingsViewController::GetInstance()->UpdateUI();
                 return;
             }
-            getConfig().Preset.SetValue(name);
+            getConfig().SettingsPreset.SetValue(name);
             Editor::LoadPreset(presets[name]);
         },
         []() { SettingsViewController::GetInstance()->UpdateUI(); }
@@ -219,19 +219,19 @@ void SettingsFlowCoordinator::DeletePreset() {
     if (presets.size() < 2)
         return;
 
-    auto name = getConfig().Preset.GetValue();
+    auto name = getConfig().SettingsPreset.GetValue();
     presets.erase(name);
     getConfig().Presets.SetValue(presets);
 
     name = presets.begin()->first;
-    getConfig().Preset.SetValue(name);
+    getConfig().SettingsPreset.SetValue(name);
 
     Editor::LoadPreset(presets[name]);
 }
 
 void SettingsFlowCoordinator::ResetPreset() {
     auto presets = getConfig().Presets.GetValue();
-    auto name = getConfig().Preset.GetValue();
+    auto name = getConfig().SettingsPreset.GetValue();
     if (!presets.contains(name))
         return;
 
@@ -273,7 +273,7 @@ void SettingsFlowCoordinator::MakeNewPreset(std::string name, bool removeOld) {
     if (presets.contains(name))
         return;
 
-    auto currentName = getConfig().Preset.GetValue();
+    auto currentName = getConfig().SettingsPreset.GetValue();
     if (removeOld) {
         presets[name] = std::move(presets[currentName]);
         presets.erase(currentName);
@@ -282,7 +282,7 @@ void SettingsFlowCoordinator::MakeNewPreset(std::string name, bool removeOld) {
         Editor::LoadPreset(presets[name]);
     }
 
-    getConfig().Preset.SetValue(name);
+    getConfig().SettingsPreset.SetValue(name);
     getConfig().Presets.SetValue(presets);
     SettingsViewController::GetInstance()->UpdateUI();
 }
@@ -330,7 +330,9 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
     auto parent = environmentDropdown->transform->parent;
     Utils::SetLayoutSize(parent, 87, 8);
 
-    auto nested = Utils::CreateDropdownEnum(background, "", getConfig().EnvironmentType.GetValue(), EnvironmentHUDTypeStrings, [this](int value) {
+    std::vector<std::string_view> append = {"Any"};
+    append.insert(append.begin(), EnvironmentHUDTypeStrings.begin(), EnvironmentHUDTypeStrings.end());
+    auto nested = Utils::CreateDropdownEnum(background, "", getConfig().EnvironmentType.GetValue(), append, [this](int value) {
         getConfig().EnvironmentType.SetValue(value);
         UpdateUI();
     });
@@ -353,13 +355,13 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
     buttons3->spacing = 1;
     auto renameButton = BSML::Lite::CreateUIButton(buttons3, "Rename", [this]() {
         nameModalIsRename = true;
-        nameInput->text = getConfig().Preset.GetValue();
+        nameInput->text = getConfig().SettingsPreset.GetValue();
         nameModal->Show(true, true, nullptr);
     });
     Utils::SetLayoutSize(renameButton, 24, 8);
     auto dupeButton = BSML::Lite::CreateUIButton(buttons3, "Duplicate", [this]() {
         nameModalIsRename = false;
-        nameInput->text = getConfig().Preset.GetValue();
+        nameInput->text = getConfig().SettingsPreset.GetValue();
         nameModal->Show(true, true, nullptr);
     });
     Utils::SetLayoutSize(dupeButton, 24, 8);
@@ -459,39 +461,26 @@ void SettingsViewController::UpdateUI() {
     undoButton->interactable = !Editor::GetPreviewMode() && Editor::HasUndo();
 
     auto presets = getConfig().Presets.GetValue();
-    auto preset = getConfig().Preset.GetValue();
-    auto texts = ListW<System::Object*>::New(presets.size());
-    int selectedIdx = 0;
-    int i = 0;
-    for (auto& [name, _] : presets) {
-        texts->Add((System::Object*) StringW(name).convert());
-        if (name == preset)
-            selectedIdx = i;
-        i++;
-    }
-    presetDropdown->values = texts;
-    presetDropdown->UpdateChoices();
-    presetDropdown->set_Value(texts[selectedIdx]);
+    auto preset = getConfig().SettingsPreset.GetValue();
+    std::vector<std::string> names;
+    for (auto& [name, _] : presets)
+        names.emplace_back(name);
+    Utils::SetDropdownValues(presetDropdown, names, preset);
 
-    auto envs = ListW<System::Object*>::New();
+    int selectedType = getConfig().EnvironmentType.GetValue();
     GlobalNamespace::EnvironmentInfoSO* first = nullptr;
-    int selectedEnv = 0;
-    i = 0;
+    names.clear();
     for (auto& env : environments) {
-        if ((int) GetHUDType(env->serializedName) == getConfig().EnvironmentType.GetValue()) {
+        if (selectedType == (int) EnvironmentHUDType::Max + 1 || (int) GetHUDType(env->serializedName) == selectedType) {
             if (!first)
                 first = env;
-            envs->Add((System::Object*) env->environmentName.convert());
-            if (env->serializedName == getConfig().Environment.GetValue())
-                selectedEnv = i;
-            i++;
+            names.emplace_back(env->environmentName);
         }
     }
-    if (selectedEnv == 0)
+    Utils::SetDropdownValues(environmentDropdown, names, getConfig().Environment.GetValue(), [first]() {
+        // set to the first environment in the filtered type when it changes
         getConfig().Environment.SetValue(first->serializedName);
-    environmentDropdown->values = envs;
-    environmentDropdown->UpdateChoices();
-    environmentDropdown->set_Value(envs[selectedEnv]);
+    });
 
     deleteButton->interactable = presets.size() > 1;
 

@@ -10,6 +10,7 @@ namespace Qounters {
         Close,
         Sunken,
         Circle,
+        Max = Circle,
     };
     extern std::vector<std::string_view> EnvironmentHUDTypeStrings;
     EnvironmentHUDType GetHUDType(std::string serializedName);

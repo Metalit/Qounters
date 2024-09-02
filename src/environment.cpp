@@ -42,6 +42,7 @@
 #include "GlobalNamespace/StandardLevelScenesTransitionSetupDataSO.hpp"
 #include "GlobalNamespace/UIKeyboardManager.hpp"
 #include "GlobalNamespace/VRRenderingParamsSetup.hpp"
+#include "HMUI/ScreenSystem.hpp"
 #include "HMUI/ViewController.hpp"
 #include "System/Action_1.hpp"
 #include "System/Collections/Generic/Dictionary_2.hpp"
@@ -261,6 +262,11 @@ void Qounters::PresentSettingsEnvironment() {
 
     inSettings = true;
 
+    // idk if this is beatleader's fault or what
+    auto mainFlow = GameObject::Find("MainFlowCoordinator")->GetComponent<HMUI::FlowCoordinator*>();
+    if (auto rightView = mainFlow->_screenSystem->rightScreen->_rootViewController)
+        rightView->gameObject->active = false;
+
     menuEnvironment = Object::FindObjectOfType<MenuEnvironmentManager*>();
     songPreview = Object::FindObjectOfType<SongPreviewPlayer*>();
     vrInput = Utils::GetCurrentInputModule();
@@ -384,10 +390,10 @@ void Qounters::OnSceneStart(EnvironmentInfoSO* environment) {
 
     menuEnv->active = false;
 
-    auto mainFlow = GameObject::Find("MainFlowCoordinator")->GetComponent<HMUI::FlowCoordinator*>();
+    auto currentFlow = GameObject::Find("MainFlowCoordinator")->GetComponent<HMUI::FlowCoordinator*>()->YoungestChildFlowCoordinatorOrSelf();
     auto settingsFlow = Qounters::SettingsFlowCoordinator::GetInstance();
-    if (!mainFlow->IsFlowCoordinatorInHierarchy(settingsFlow))
-        mainFlow->PresentFlowCoordinator(settingsFlow, nullptr, HMUI::ViewController::AnimationDirection::Horizontal, true, false);
+    if (!currentFlow->IsFlowCoordinatorInHierarchy(settingsFlow))
+        currentFlow->PresentFlowCoordinator(settingsFlow, nullptr, HMUI::ViewController::AnimationDirection::Horizontal, true, false);
 
     float height = environment && environment->serializedName == "LinkinPark2Environment" ? 0.8 : 0.1;
     GameObject::Find("MenuCore/UI/ScreenSystem")->transform->localPosition = {0, height, 0};
