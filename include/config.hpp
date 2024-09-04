@@ -18,7 +18,7 @@ DECLARE_CONFIG(Config) {
         VALUE_DEFAULT(std::string, Preset, "");
     };
     CONFIG_VALUE(Enabled, bool, "Enable Qounters++", true, "Turn this off to disable all ingame GUI modifications");
-    CONFIG_VALUE(Noodle, bool, "Disable On Chroma/Noodle", true, "Enable or disable the mod for noodle maps specifically");
+    CONFIG_VALUE(Noodle, bool, "Disable On Chroma/Noodle", false, "Enable or disable the mod for noodle maps specifically");
     CONFIG_VALUE(Migrated, bool, "Migrated", false);
     CONFIG_VALUE(Presets, StringKeyedMap<Qounters::Preset>, "Presets", {});
     CONFIG_VALUE(SettingsPreset, std::string, "Settings Preset", "Default");

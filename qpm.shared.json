@@ -98,6 +98,11 @@
         "id": "web-utils",
         "versionRange": "^0.6.6",
         "additionalData": {}
+      },
+      {
+        "id": "songcore",
+        "versionRange": "^1.1.15",
+        "additionalData": {}
       }
     ]
   },
@@ -145,6 +150,82 @@
     },
     {
       "dependency": {
+        "id": "libil2cpp",
+        "versionRange": "=0.3.2",
+        "additionalData": {
+          "headersOnly": true,
+          "cmake": false
+        }
+      },
+      "version": "0.3.2"
+    },
+    {
+      "dependency": {
+        "id": "songcore",
+        "versionRange": "=1.1.15",
+        "additionalData": {
+          "soLink": "https://github.com/raineio/Quest-SongCore/releases/download/v1.1.15/libsongcore.so",
+          "debugSoLink": "https://github.com/raineio/Quest-SongCore/releases/download/v1.1.15/debug_libsongcore.so",
+          "overrideSoName": "libsongcore.so",
+          "modLink": "https://github.com/raineio/Quest-SongCore/releases/download/v1.1.15/SongCore.qmod",
+          "branchName": "version/v1_1_15",
+          "cmake": true
+        }
+      },
+      "version": "1.1.15"
+    },
+    {
+      "dependency": {
+        "id": "song-details",
+        "versionRange": "=0.3.4",
+        "additionalData": {
+          "soLink": "https://github.com/RedBrumbler/SongDetails/releases/download/v0.3.4/libsongdetails.so",
+          "debugSoLink": "https://github.com/RedBrumbler/SongDetails/releases/download/v0.3.4/debug_libsongdetails.so",
+          "overrideSoName": "libsongdetails.so",
+          "modLink": "https://github.com/RedBrumbler/SongDetails/releases/download/v0.3.4/SongDetails.qmod",
+          "branchName": "version/v0_3_4",
+          "cmake": false
+        }
+      },
+      "version": "0.3.4"
+    },
+    {
+      "dependency": {
+        "id": "tinyxml2",
+        "versionRange": "=10.0.0",
+        "additionalData": {
+          "soLink": "https://github.com/MillzyDev/NDK-tinyxml2/releases/download/v10.0.0/libtinyxml2.so",
+          "debugSoLink": "https://github.com/MillzyDev/NDK-tinyxml2/releases/download/v10.0.0/debug_libtinyxml2.so",
+          "overrideSoName": "libtinyxml2.so",
+          "modLink": "https://github.com/MillzyDev/NDK-tinyxml2/releases/download/v10.0.0/tinyxml2.qmod",
+          "branchName": "version/v10_0_0",
+          "cmake": true
+        }
+      },
+      "version": "10.0.0"
+    },
+    {
+      "dependency": {
+        "id": "paper",
+        "versionRange": "=3.6.4",
+        "additionalData": {
+          "soLink": "https://github.com/Fernthedev/paperlog/releases/download/v3.6.4/libpaperlog.so",
+          "debugSoLink": "https://github.com/Fernthedev/paperlog/releases/download/v3.6.4/debug_libpaperlog.so",
+          "overrideSoName": "libpaperlog.so",
+          "modLink": "https://github.com/Fernthedev/paperlog/releases/download/v3.6.4/paperlog.qmod",
+          "branchName": "version/v3_6_4",
+          "compileOptions": {
+            "systemIncludes": [
+              "shared/utfcpp/source"
+            ]
+          },
+          "cmake": false
+        }
+      },
+      "version": "3.6.4"
+    },
+    {
+      "dependency": {
         "id": "config-utils",
         "versionRange": "=1.5.0",
         "additionalData": {
@@ -177,37 +258,6 @@
     },
     {
       "dependency": {
-        "id": "paper",
-        "versionRange": "=3.6.4",
-        "additionalData": {
-          "soLink": "https://github.com/Fernthedev/paperlog/releases/download/v3.6.4/libpaperlog.so",
-          "debugSoLink": "https://github.com/Fernthedev/paperlog/releases/download/v3.6.4/debug_libpaperlog.so",
-          "overrideSoName": "libpaperlog.so",
-          "modLink": "https://github.com/Fernthedev/paperlog/releases/download/v3.6.4/paperlog.qmod",
-          "branchName": "version/v3_6_4",
-          "compileOptions": {
-            "systemIncludes": [
-              "shared/utfcpp/source"
-            ]
-          },
-          "cmake": false
-        }
-      },
-      "version": "3.6.4"
-    },
-    {
-      "dependency": {
-        "id": "libil2cpp",
-        "versionRange": "=0.3.2",
-        "additionalData": {
-          "headersOnly": true,
-          "cmake": false
-        }
-      },
-      "version": "0.3.2"
-    },
-    {
-      "dependency": {
         "id": "bs-cordl",
         "versionRange": "=3700.0.0",
         "additionalData": {
@@ -228,25 +278,6 @@
         }
       },
       "version": "3700.0.0"
-    },
-    {
-      "dependency": {
-        "id": "fmt",
-        "versionRange": "=10.0.0",
-        "additionalData": {
-          "headersOnly": true,
-          "branchName": "version/v10_0_0",
-          "compileOptions": {
-            "systemIncludes": [
-              "fmt/include/"
-            ],
-            "cppFlags": [
-              "-DFMT_HEADER_ONLY"
-            ]
-          }
-        }
-      },
-      "version": "10.0.0"
     },
     {
       "dependency": {
@@ -276,33 +307,22 @@
     },
     {
       "dependency": {
-        "id": "tinyxml2",
+        "id": "fmt",
         "versionRange": "=10.0.0",
         "additionalData": {
-          "soLink": "https://github.com/MillzyDev/NDK-tinyxml2/releases/download/v10.0.0/libtinyxml2.so",
-          "debugSoLink": "https://github.com/MillzyDev/NDK-tinyxml2/releases/download/v10.0.0/debug_libtinyxml2.so",
-          "overrideSoName": "libtinyxml2.so",
-          "modLink": "https://github.com/MillzyDev/NDK-tinyxml2/releases/download/v10.0.0/tinyxml2.qmod",
+          "headersOnly": true,
           "branchName": "version/v10_0_0",
-          "cmake": true
+          "compileOptions": {
+            "systemIncludes": [
+              "fmt/include/"
+            ],
+            "cppFlags": [
+              "-DFMT_HEADER_ONLY"
+            ]
+          }
         }
       },
       "version": "10.0.0"
-    },
-    {
-      "dependency": {
-        "id": "song-details",
-        "versionRange": "=0.3.4",
-        "additionalData": {
-          "soLink": "https://github.com/RedBrumbler/SongDetails/releases/download/v0.3.4/libsongdetails.so",
-          "debugSoLink": "https://github.com/RedBrumbler/SongDetails/releases/download/v0.3.4/debug_libsongdetails.so",
-          "overrideSoName": "libsongdetails.so",
-          "modLink": "https://github.com/RedBrumbler/SongDetails/releases/download/v0.3.4/SongDetails.qmod",
-          "branchName": "version/v0_3_4",
-          "cmake": false
-        }
-      },
-      "version": "0.3.4"
     }
   ]
 }

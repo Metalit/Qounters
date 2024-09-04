@@ -97,6 +97,11 @@
       "id": "web-utils",
       "versionRange": "^0.6.6",
       "additionalData": {}
+    },
+    {
+      "id": "songcore",
+      "versionRange": "^1.1.15",
+      "additionalData": {}
     }
   ]
 }

@@ -32,10 +32,9 @@
 #include "utils.hpp"
 
 using namespace Qounters;
+using namespace GlobalNamespace;
 
 std::string lastBeatmap;
-
-using namespace GlobalNamespace;
 
 int GetNoteCount(BeatmapCallbacksUpdater* updater, bool left) {
     if (!updater)
@@ -165,6 +164,8 @@ namespace Qounters {
     int fails;
     int restarts;
     ColorScheme* colors;
+    BeatmapLevel* beatmapLevel;
+    BeatmapKey beatmapKey;
     BeatmapData* beatmapData;
     EnvironmentInfoSO* environment;
     int leftMissedMaxScore;
@@ -192,10 +193,7 @@ void Qounters::Initialize() {
     }
     if (!gameplayCoreInstaller)
         gameplayCoreInstaller = gameplayCoreInstallers[0];
-
-    std::string beatmap = "Unknown";
-    if (gameplayCoreInstaller && gameplayCoreInstaller->_sceneSetupData)
-        beatmap = Utils::GetBeatmapIdentifier(gameplayCoreInstaller->_sceneSetupData->beatmapKey);
+    auto setupData = gameplayCoreInstaller && gameplayCoreInstaller->_sceneSetupData ? gameplayCoreInstaller->_sceneSetupData : nullptr;
 
     leftScore = 0;
     rightScore = 0;
@@ -241,13 +239,20 @@ void Qounters::Initialize() {
 
     logger.debug("modifiers {} -{}", positiveMods, negativeMods);
 
+    std::string beatmap = "Unknown";
+    if (setupData)
+        beatmap = Utils::GetBeatmapIdentifier(setupData->beatmapKey);
     if (beatmap != lastBeatmap || InSettingsEnvironment())
         restarts = 0;
+    else
+        restarts++;
     lastBeatmap = beatmap;
 
-    colors = gameplayCoreInstaller && gameplayCoreInstaller->_sceneSetupData ? gameplayCoreInstaller->_sceneSetupData->colorScheme : nullptr;
+    colors = setupData ? setupData->colorScheme : nullptr;
+    beatmapLevel = setupData ? setupData->beatmapLevel : nullptr;
+    beatmapKey = setupData ? setupData->beatmapKey : BeatmapKey();
     beatmapData = beatmapCallbacksUpdater ? (BeatmapData*) beatmapCallbacksUpdater->_beatmapCallbacksController->_beatmapData : nullptr;
-    environment = gameplayCoreInstaller && gameplayCoreInstaller->_sceneSetupData ? gameplayCoreInstaller->_sceneSetupData->environmentInfo : nullptr;
+    environment = setupData ? setupData->environmentInfo : nullptr;
 
     leftMissedMaxScore = 0;
     rightMissedMaxScore = 0;

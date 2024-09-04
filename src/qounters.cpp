@@ -601,6 +601,8 @@ Preset GetPreset() {
 void Qounters::CreateQounters() {
     if (GetHUD().second == HUDType::Unsupported)
         return;
+    if (getConfig().Noodle.GetValue() && !Utils::GetSimplifiedRequirements(beatmapKey).empty())
+        return;
 
     auto preset = GetPreset();
     for (int i = 0; i < preset.Qounters.size(); i++)

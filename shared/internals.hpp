@@ -1,6 +1,8 @@
 #pragma once
 
 #include "GlobalNamespace/BeatmapData.hpp"
+#include "GlobalNamespace/BeatmapKey.hpp"
+#include "GlobalNamespace/BeatmapLevel.hpp"
 #include "GlobalNamespace/ColorScheme.hpp"
 #include "GlobalNamespace/EnvironmentInfoSO.hpp"
 #include "GlobalNamespace/GameplayModifiers.hpp"
@@ -52,6 +54,8 @@ namespace Qounters {
     extern int fails;
     extern int restarts;
     extern GlobalNamespace::ColorScheme* colors;
+    extern GlobalNamespace::BeatmapLevel* beatmapLevel;
+    extern GlobalNamespace::BeatmapKey beatmapKey;
     extern GlobalNamespace::BeatmapData* beatmapData;
     extern GlobalNamespace::EnvironmentInfoSO* environment;
     extern int leftMissedMaxScore;

@@ -22,6 +22,8 @@
 #include "customtypes/editing.hpp"
 #include "customtypes/settings.hpp"
 #include "main.hpp"
+#include "songcore/shared/SongCore.hpp"
+#include "songcore/shared/SongLoader/CustomBeatmapLevel.hpp"
 
 using namespace GlobalNamespace;
 using namespace Qounters;
@@ -68,6 +70,32 @@ std::string Utils::GetBeatmapIdentifier(BeatmapKey beatmap) {
         return "Unknown";
     auto [id, characteristic, difficulty] = GetBeatmapDetails(beatmap);
     return fmt::format("{}_{}_{}", id, characteristic, difficulty);
+}
+
+std::map<std::string, std::string> const RequirementsMap = {
+    {"Noodle Extensions", "<color=#ffb73b>+Noodle</color>"},
+    {"Chroma", "<color=#45f3ff>+Chroma</color>"},
+};
+
+std::vector<std::string> Utils::GetSimplifiedRequirements(BeatmapKey beatmap) {
+    auto level = SongCore::API::Loading::GetLevelByLevelID((std::string) beatmap.levelId);
+    if (!level)
+        return {};
+    auto custom = level->CustomSaveDataInfo;
+    if (!custom)
+        return {};
+    auto diff = custom->get().TryGetCharacteristicAndDifficulty(beatmap.beatmapCharacteristic->serializedName, beatmap.difficulty);
+    if (!diff)
+        return {};
+    std::set<std::string> all;
+    all.insert(diff->get().requirements.begin(), diff->get().requirements.end());
+    all.insert(diff->get().suggestions.begin(), diff->get().suggestions.end());
+    std::vector<std::string> ret;
+    for (auto& req : all) {
+        if (RequirementsMap.contains(req))
+            ret.emplace_back(RequirementsMap.at(req));
+    }
+    return ret;
 }
 
 void DisableAllBut(UnityEngine::Transform* original, UnityEngine::Transform* source, std::set<std::string> enabled, std::set<std::string> disabled) {

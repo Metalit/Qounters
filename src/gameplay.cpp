@@ -167,6 +167,8 @@ void Qounters::ClearLevel() {
 }
 
 void Qounters::UpdateEnvironment() {
+    if (!beatmapLevel)
+        return;
     auto beatmapEnv = beatmapLevel->GetEnvironmentName(beatmapKey.beatmapCharacteristic, beatmapKey.difficulty);
     auto data = BSML::Helpers::GetMainFlowCoordinator()->_playerDataModel;
     if (IsMultiplayer()) {
@@ -204,7 +206,8 @@ void Qounters::UpdateUI() {
     if (lastEnvironment) {
         int hudType = (int) GetHUDType(lastEnvironment->serializedName);
         auto type = EnvironmentHUDTypeStrings[hudType];
-        auto name = lastEnvironment->environmentName;
+        std::string name = lastEnvironment->environmentName;
+        auto reqs = Utils::GetSimplifiedRequirements(beatmapKey);
 
         std::string hudTypeString = std::to_string(hudType);
         std::string serializedName = lastEnvironment->serializedName;
@@ -224,7 +227,7 @@ void Qounters::UpdateUI() {
             Utils::SetDropdownValues(specificPresetDropdown, names, specificPresets[serializedName].Preset);
 
         environmentText->text = name;
-        environmentTypeText->text = type;
+        environmentTypeText->text = reqs.empty() ? type : fmt::format("{}    <size=66%>{}", type, fmt::join(reqs, ", "));;
         if (hasTypeOverride)
             SetNameText(typeOverrideToggle, fmt::format("Override for {}...", type));
         else
