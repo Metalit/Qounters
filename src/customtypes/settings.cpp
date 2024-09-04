@@ -1143,21 +1143,26 @@ void OptionsViewController::UpdateSimpleUI() {
         typeCollapse->title = std::string(Options::TypeStrings[state.Type]) + " Options";
         typeCollapse->UpdateOpen();
         cTypeDropdown->dropdown->SelectCellWithIdx(state.Type);
-        Utils::InstantSetToggle(cGradientToggle, state.GradientOptions.Enabled);
+        bool supportsGradient = state.Type != (int) Options::Component::Types::Premade;
         auto colorCollapse = (CollapseController*) colorCollapseComponent;
-        colorCollapse->SetContentActive(gradientCollapseComponent, state.GradientOptions.Enabled);
-        cGradientDirectionDropdown->dropdown->SelectCellWithIdx(state.GradientOptions.Direction);
-        // update hsv panels
-        auto startHsvController = (HSVController*) startHsvComponent;
-        startHsvController->SetHSV(state.GradientOptions.StartModifierHSV);
-        auto endHsvController = (HSVController*) endHsvComponent;
-        endHsvController->SetHSV(state.GradientOptions.EndModifierHSV);
-        auto sourceFn = Sources::GetSource(Sources::colors, state.ColorSource).first;
-        if (sourceFn) {
-            auto color = sourceFn(state.ColorOptions);
-            startHsvController->baseColor = color;
-            endHsvController->baseColor = color;
-        }
+        colorCollapse->SetContentActive(cGradientToggle, supportsGradient);
+        if (supportsGradient) {
+            Utils::InstantSetToggle(cGradientToggle, state.GradientOptions.Enabled);
+            colorCollapse->SetContentActive(gradientCollapseComponent, state.GradientOptions.Enabled);
+            cGradientDirectionDropdown->dropdown->SelectCellWithIdx(state.GradientOptions.Direction);
+            // update hsv panels
+            auto startHsvController = (HSVController*) startHsvComponent;
+            startHsvController->SetHSV(state.GradientOptions.StartModifierHSV);
+            auto endHsvController = (HSVController*) endHsvComponent;
+            endHsvController->SetHSV(state.GradientOptions.EndModifierHSV);
+            auto sourceFn = Sources::GetSource(Sources::colors, state.ColorSource).first;
+            if (sourceFn) {
+                auto color = sourceFn(state.ColorOptions);
+                startHsvController->baseColor = color;
+                endHsvController->baseColor = color;
+            }
+        } else
+            colorCollapse->SetContentActive(gradientCollapseComponent, false);
         Utils::SetDropdownValue(cColorSourceDropdown, state.ColorSource);
         Utils::SetDropdownValue(cEnableSourceDropdown, state.EnableSource);
         Utils::InstantSetToggle(cInvertEnableToggle, state.InvertEnable);
