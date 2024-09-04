@@ -467,7 +467,7 @@ RectTransform* GetCanvas(std::string parentName, Transform* hud, Vector3 fallbac
     auto ret = canvas->GetComponent<RectTransform*>();
     ret->localScale = {0.02, 0.02, 0.02};
     ret->SetParent(parent, true);
-    ret->localPosition = {0, 0, -0.5};
+    ret->localPosition = {0, 0, -0.01};
     ret->localEulerAngles = {0, 0, 0};
     ret->anchorMin = {0.5, 0.5};
     ret->anchorMax = {0.5, 0.5};
