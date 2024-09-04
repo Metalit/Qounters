@@ -9,6 +9,8 @@
 #include "migration.hpp"
 #include "scotland2/shared/modloader.h"
 
+using namespace Qounters;
+
 static modloader::ModInfo modInfo = {MOD_ID, VERSION, 0};
 
 GlobalNamespace::IConnectedPlayer* localFakeConnectedPlayer = nullptr;
@@ -25,7 +27,7 @@ extern "C" void setup(CModInfo* info) {
     auto presets = getConfig().Presets.GetValue();
     auto defaultPreset = getConfig().Preset.GetDefaultValue();
     if (!presets.contains(defaultPreset)) {
-        presets[defaultPreset] = Qounters::GetDefaultHUDPreset();
+        presets[defaultPreset] = Options::GetDefaultHUDPreset();
         getConfig().Presets.SetValue(presets);
     }
 
@@ -42,11 +44,11 @@ extern "C" void late_load() {
     custom_types::Register::AutoRegister();
     BSML::Init();
 
-    BSML::Register::RegisterMenuButton("Qounters++", "Qounters++ Settings", Qounters::PresentSettingsEnvironment);
-    BSML::Register::RegisterGameplaySetupTab("Qounters++", Qounters::GameplaySetupMenu, BSML::MenuType::All);
+    BSML::Register::RegisterMenuButton("Qounters++", "Qounters++ Settings", Environment::PresentSettings);
+    BSML::Register::RegisterGameplaySetupTab("Qounters++", Gameplay::GameplaySetupMenu, BSML::MenuType::All);
 
     logger.info("Installing hooks");
-    Qounters::InstallHooks();
+    Hooks::Install();
 
     logger.info("Writing default images");
     writefile(IMAGE_DIRECTORY "Beatleader.png", IncludedAssets::Beatleader_png);

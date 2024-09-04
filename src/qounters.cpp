@@ -18,38 +18,7 @@
 using namespace Qounters;
 using namespace UnityEngine;
 
-UI::Graphic* CreateMultiplier(UnityEngine::GameObject*, UnparsedJSON);
-UI::Graphic* CreateProgressBar(UnityEngine::GameObject*, UnparsedJSON);
-
-std::map<std::string, std::vector<PremadeInfo>> Qounters::premadeRegistry = {
-    {"",
-     {{BaseGameObjectStrings[(int) BaseGameGraphic::Objects::Multiplier], CreateMultiplier},
-      {BaseGameObjectStrings[(int) BaseGameGraphic::Objects::ProgressBar], CreateProgressBar}}},
-};
-
-UI::Graphic* CreateMultiplier(UnityEngine::GameObject* parent, UnparsedJSON) {
-    auto ret = BaseGameGraphic::Create(parent->transform);
-    ret->SetComponent((int) BaseGameGraphic::Objects::Multiplier);
-    return ret;
-}
-UI::Graphic* CreateProgressBar(UnityEngine::GameObject* parent, UnparsedJSON) {
-    auto ret = BaseGameGraphic::Create(parent->transform);
-    ret->SetComponent((int) BaseGameGraphic::Objects::ProgressBar);
-    return ret;
-}
-
-PremadeInfo* Qounters::GetPremadeInfo(std::string const& mod, std::string const& name) {
-    auto itr = premadeRegistry.find(mod);
-    if (itr != premadeRegistry.end()) {
-        for (auto& info : itr->second) {
-            if (info.name == name)
-                return &info;
-        }
-    }
-    return nullptr;
-}
-
-void DisableGradient(UI::Graphic* component) {
+static void DisableGradient(UI::Graphic* component) {
     if (auto image = Utils::ptr_cast<HMUI::ImageView>(component)) {
         image->gradient = false;
     } else if (auto shape = Utils::ptr_cast<Shape>(component)) {
@@ -61,7 +30,7 @@ void DisableGradient(UI::Graphic* component) {
     }
 }
 
-void SetGradient(UI::Graphic* component, GradientOptions::Directions direction, Vector3 startHsvMod, Vector3 endHsvMod) {
+static void SetGradient(UI::Graphic* component, Options::Gradient::Directions direction, Vector3 startHsvMod, Vector3 endHsvMod) {
     float h, s, v;
     Color::RGBToHSV(component->color, byref(h), byref(s), byref(v));
     auto startColor = Utils::GetClampedColor({h + startHsvMod.x, s + startHsvMod.y, v + startHsvMod.z});
@@ -90,13 +59,14 @@ void SetGradient(UI::Graphic* component, GradientOptions::Directions direction, 
     }
 }
 
-std::map<std::string, std::vector<std::pair<TMPro::TextMeshProUGUI*, UnparsedJSON>>> texts;
-std::map<std::string, std::vector<std::pair<Shape*, UnparsedJSON>>> shapes;
-std::map<std::string, std::vector<std::pair<UI::Graphic*, UnparsedJSON>>> colors;
-std::map<std::string, std::vector<std::pair<GameObject*, std::pair<UnparsedJSON, bool>>>> enables;
+static std::map<std::string, std::vector<std::pair<TMPro::TextMeshProUGUI*, UnparsedJSON>>> texts;
+static std::map<std::string, std::vector<std::pair<Shape*, UnparsedJSON>>> shapes;
+static std::map<std::string, std::vector<std::pair<UI::Graphic*, UnparsedJSON>>> colors;
+static std::map<std::string, std::vector<std::pair<GameObject*, std::pair<UnparsedJSON, bool>>>> enables;
 
 template <class TComp, class TOpts>
-void UpdatePair(std::map<std::string, std::vector<std::pair<TComp, TOpts>>>& map, TComp update, std::string source, TOpts value, bool forceAdd) {
+static void
+UpdatePair(std::map<std::string, std::vector<std::pair<TComp, TOpts>>>& map, TComp update, std::string source, TOpts value, bool forceAdd) {
     if (!map.contains(source))
         map[source] = {};
 
@@ -120,7 +90,7 @@ void UpdatePair(std::map<std::string, std::vector<std::pair<TComp, TOpts>>>& map
 }
 
 template <class TComp, class TOpts>
-void RemoveFromMap(std::map<std::string, std::vector<std::pair<TComp, TOpts>>>& map, void* remove) {
+static void RemoveFromMap(std::map<std::string, std::vector<std::pair<TComp, TOpts>>>& map, void* remove) {
     auto cast = (TComp) remove;
 
     for (auto& [mapSource, vec] : map) {
@@ -133,31 +103,31 @@ void RemoveFromMap(std::map<std::string, std::vector<std::pair<TComp, TOpts>>>& 
     }
 }
 
-void AddEditingComponent(UI::Graphic* component, int componentIndex) {
+static void AddEditingComponent(UI::Graphic* component, int componentIndex) {
     auto edit = component->gameObject->AddComponent<EditingComponent*>();
     edit->Init(component, componentIndex);
     Editor::RegisterEditingComponent(edit, edit->GetEditingGroup()->GetGroupIdx(), componentIndex);
 }
 
-void UpdateTextOptions(TMPro::TextMeshProUGUI* text, Qounters::Component::OptionsTypes newOptions, bool creation) {
-    auto options = newOptions.GetValue<TextOptions>().value_or(TextOptions{});
+static void UpdateTextOptions(TMPro::TextMeshProUGUI* text, Options::Component::OptionsTypes newOptions, bool creation) {
+    auto options = newOptions.GetValue<Options::Text>().value_or(Options::Text{});
 
     text->fontStyle = options.Italic ? TMPro::FontStyles::Italic : TMPro::FontStyles::Normal;
     text->fontSize = options.Size;
-    switch ((TextOptions::Aligns) options.Align) {
-        case TextOptions::Aligns::Left:
+    switch ((Options::Text::Aligns) options.Align) {
+        case Options::Text::Aligns::Left:
             text->alignment = TMPro::TextAlignmentOptions::Left;
             break;
-        case TextOptions::Aligns::Center:
+        case Options::Text::Aligns::Center:
             text->alignment = TMPro::TextAlignmentOptions::Center;
             break;
-        case TextOptions::Aligns::Right:
+        case Options::Text::Aligns::Right:
             text->alignment = TMPro::TextAlignmentOptions::Right;
             break;
     }
 
     std::string source = options.TextSource;
-    auto sourceFn = GetSource(textSources, source).first;
+    auto sourceFn = Sources::GetSource(Sources::texts, source).first;
     if (!sourceFn)
         return;
     text->text = sourceFn(options.SourceOptions);
@@ -168,26 +138,26 @@ void UpdateTextOptions(TMPro::TextMeshProUGUI* text, Qounters::Component::Option
         outline->SetDirty();
 }
 
-void UpdateShapeOptions(Shape* shape, Qounters::Component::OptionsTypes newOptions, bool creation) {
-    auto options = newOptions.GetValue<ShapeOptions>().value_or(ShapeOptions{});
+static void UpdateShapeOptions(Shape* shape, Options::Component::OptionsTypes newOptions, bool creation) {
+    auto options = newOptions.GetValue<Options::Shape>().value_or(Options::Shape{});
 
     bool filled = false;
     int sideCount = 4;
 
-    switch ((ShapeOptions::Shapes) options.Shape) {
-        case ShapeOptions::Shapes::Square:
+    switch ((Options::Shape::Shapes) options.Shape) {
+        case Options::Shape::Shapes::Square:
             filled = true;
-        case ShapeOptions::Shapes::SquareOutline:
+        case Options::Shape::Shapes::SquareOutline:
             sideCount = 4;
             break;
-        case ShapeOptions::Shapes::Circle:
+        case Options::Shape::Shapes::Circle:
             filled = true;
-        case ShapeOptions::Shapes::CircleOutline:
+        case Options::Shape::Shapes::CircleOutline:
             sideCount = 50;
             break;
-        case ShapeOptions::Shapes::Triangle:
+        case Options::Shape::Shapes::Triangle:
             filled = true;
-        case ShapeOptions::Shapes::TriangleOutline:
+        case Options::Shape::Shapes::TriangleOutline:
             sideCount = 3;
             break;
     }
@@ -198,7 +168,7 @@ void UpdateShapeOptions(Shape* shape, Qounters::Component::OptionsTypes newOptio
     shape->SetMaskOptions(options.Fill, options.Inverse);
 
     std::string source = options.FillSource;
-    auto sourceFn = GetSource(shapeSources, source).first;
+    auto sourceFn = Sources::GetSource(Sources::shapes, source).first;
     if (!sourceFn)
         return;
     shape->SetMaskAmount(sourceFn(options.SourceOptions));
@@ -206,8 +176,8 @@ void UpdateShapeOptions(Shape* shape, Qounters::Component::OptionsTypes newOptio
     UpdatePair(shapes, shape, source, options.SourceOptions, creation);
 }
 
-void UpdateImageOptions(HMUI::ImageView* image, Qounters::Component::OptionsTypes newOptions, bool creation) {
-    auto options = newOptions.GetValue<ImageOptions>().value_or(ImageOptions{});
+static void UpdateImageOptions(HMUI::ImageView* image, Options::Component::OptionsTypes newOptions, bool creation) {
+    auto options = newOptions.GetValue<Options::Image>().value_or(Options::Image{});
 
     Sprite* sprite = nullptr;
     if (fileexists(IMAGE_DIRECTORY + options.Path))
@@ -215,10 +185,10 @@ void UpdateImageOptions(HMUI::ImageView* image, Qounters::Component::OptionsType
     image->sprite = sprite;
 }
 
-PremadeParent* UpdatePremadeOptions(PremadeParent* premade, Qounters::Component::OptionsTypes newOptions, bool creation) {
-    auto options = newOptions.GetValue<PremadeOptions>().value_or(PremadeOptions{});
+static PremadeParent* UpdatePremadeOptions(PremadeParent* premade, Options::Component::OptionsTypes newOptions, bool creation) {
+    auto options = newOptions.GetValue<Options::Premade>().value_or(Options::Premade{});
 
-    auto info = GetPremadeInfo(options.SourceMod, options.Name);
+    auto info = Sources::GetPremadeInfo(options.SourceMod, options.Name);
     if (!info) {
         logger.error("premade {}.{} not found!", options.SourceMod, options.Name);
         return nullptr;
@@ -238,74 +208,75 @@ PremadeParent* UpdatePremadeOptions(PremadeParent* premade, Qounters::Component:
     return premade;
 }
 
-void Qounters::UpdateComponentOptions(int componentType, UnityEngine::Component* component, Qounters::Component::OptionsTypes newOptions) {
-    switch ((Component::Types) componentType) {
-        case Component::Types::Text:
+void HUD::UpdateComponentOptions(int componentType, UnityEngine::Component* component, Options::Component::OptionsTypes newOptions) {
+    switch ((Options::Component::Types) componentType) {
+        case Options::Component::Types::Text:
             UpdateTextOptions((TMPro::TextMeshProUGUI*) component, newOptions, false);
             break;
-        case Component::Types::Shape:
+        case Options::Component::Types::Shape:
             UpdateShapeOptions((Shape*) component, newOptions, false);
             break;
-        case Component::Types::Image:
+        case Options::Component::Types::Image:
             UpdateImageOptions((HMUI::ImageView*) component, newOptions, false);
             break;
-        case Component::Types::Premade:
+        case Options::Component::Types::Premade:
             UpdatePremadeOptions((PremadeParent*) component, newOptions, false);
             break;
     }
 }
 
-void UpdateColorOptions(UI::Graphic* component, std::string colorSource, UnparsedJSON options, GradientOptions gradientOptions, bool creation) {
-    auto sourceFn = GetSource(colorSources, colorSource).first;
+static void
+UpdateColorOptions(UI::Graphic* component, std::string colorSource, UnparsedJSON options, Options::Gradient gradientOptions, bool creation) {
+    auto sourceFn = Sources::GetSource(Sources::colors, colorSource).first;
     if (!sourceFn)
         return;
     component->color = sourceFn(options);
 
     if (gradientOptions.Enabled)
         SetGradient(
-            component, (GradientOptions::Directions) gradientOptions.Direction, gradientOptions.StartModifierHSV, gradientOptions.EndModifierHSV
+            component, (Options::Gradient::Directions) gradientOptions.Direction, gradientOptions.StartModifierHSV, gradientOptions.EndModifierHSV
         );
     else
         DisableGradient(component);
 
-    UpdatePair(::colors, component, colorSource, options, creation);
+    UpdatePair(colors, component, colorSource, options, creation);
 }
 
-void Qounters::UpdateComponentColor(UI::Graphic* component, std::string newSource, UnparsedJSON newOptions, GradientOptions gradientOptions) {
+void HUD::UpdateComponentColor(UI::Graphic* component, std::string newSource, UnparsedJSON newOptions, Options::Gradient gradientOptions) {
     UpdateColorOptions(component, newSource, newOptions, gradientOptions, false);
 }
 
 void UpdateEnableOptions(GameObject* component, std::string enableSource, UnparsedJSON options, bool creation, bool invert) {
-    auto sourceFn = GetSource(enableSources, enableSource).first;
+    auto sourceFn = Sources::GetSource(Sources::enables, enableSource).first;
     if (!sourceFn)
         return;
     bool enable = sourceFn(options);
     if (invert)
         enable = !enable;
-    if (InSettingsEnvironment() && !Editor::GetPreviewMode())
+    if (Environment::InSettings() && !Editor::GetPreviewMode())
         enable = true;
     component->active = enable;
 
     UpdatePair(enables, component, enableSource, {options, invert}, creation);
 }
 
-void Qounters::UpdateComponentEnabled(GameObject* component, std::string newSource, UnparsedJSON newOptions, bool invert) {
+void HUD::UpdateComponentEnabled(GameObject* component, std::string newSource, UnparsedJSON newOptions, bool invert) {
     UpdateEnableOptions(component, newSource, newOptions, false, invert);
 }
 
-void Qounters::UpdateComponentPosition(RectTransform* component, Component const& qounterComponent) {
+void HUD::UpdateComponentPosition(RectTransform* component, Options::Component const& qounterComponent) {
     Shape* shape = nullptr;
-    switch ((Component::Types) qounterComponent.Type) {
-        case Component::Types::Text:
+    switch ((Options::Component::Types) qounterComponent.Type) {
+        case Options::Component::Types::Text:
             component->sizeDelta = {0, 0};
             break;
-        case Component::Types::Shape:
+        case Options::Component::Types::Shape:
             shape = component->GetComponent<Shape*>();
             component = component->parent.cast<RectTransform>();
-        case Component::Types::Image:
+        case Options::Component::Types::Image:
             component->sizeDelta = {25, 25};
             break;
-        case Component::Types::Premade:
+        case Options::Component::Types::Premade:
             break;
     }
     component->anchorMin = {0.5, 0.5};
@@ -319,7 +290,7 @@ void Qounters::UpdateComponentPosition(RectTransform* component, Component const
         editing->outline->UpdateSize();
 }
 
-void Qounters::UpdateGroupPosition(RectTransform* group, Group const& qounterGroup) {
+void HUD::UpdateGroupPosition(RectTransform* group, Options::Group const& qounterGroup) {
     if (qounterGroup.Detached) {
         // parent to our own object instead of FlyingGameHUDRotation for more control
         if (auto parent = GameObject::Find("QountersRotationalAnchor"))
@@ -348,99 +319,99 @@ void Qounters::UpdateGroupPosition(RectTransform* group, Group const& qounterGro
     //     editing->outline->UpdateSize();
 }
 
-void Qounters::RemoveComponent(int componentType, UnityEngine::Component* component) {
-    switch ((Component::Types) componentType) {
-        case Component::Types::Text:
+void HUD::RemoveComponent(int componentType, UnityEngine::Component* component) {
+    switch ((Options::Component::Types) componentType) {
+        case Options::Component::Types::Text:
             RemoveFromMap(texts, component);
             break;
-        case Component::Types::Shape:
+        case Options::Component::Types::Shape:
             RemoveFromMap(shapes, component);
             break;
-        case Component::Types::Image:
-        case Component::Types::Premade:
+        case Options::Component::Types::Image:
+        case Options::Component::Types::Premade:
             break;
     }
-    RemoveFromMap(::colors, component);
+    RemoveFromMap(colors, component);
     RemoveFromMap(enables, component->gameObject);
 }
 
 template <class T>
-inline void SetSourceOptions(Qounters::Component::OptionsTypes& options, UnparsedJSON newOptions) {
+static inline void SetSourceOptions(Options::Component::OptionsTypes& options, UnparsedJSON newOptions) {
     auto opts = options.GetValue<T>().value_or(T());
     opts.SourceOptions = newOptions;
     options.SetValue(opts);
 }
 
-void Qounters::SetSourceOptions(Component& component, UnparsedJSON newOptions) {
-    switch ((Component::Types) component.Type) {
-        case Component::Types::Text:
-            SetSourceOptions<TextOptions>(component.Options, newOptions);
+void HUD::SetSourceOptions(Options::Component& component, UnparsedJSON newOptions) {
+    switch ((Options::Component::Types) component.Type) {
+        case Options::Component::Types::Text:
+            SetSourceOptions<Options::Text>(component.Options, newOptions);
             break;
-        case Component::Types::Shape:
-            SetSourceOptions<ShapeOptions>(component.Options, newOptions);
+        case Options::Component::Types::Shape:
+            SetSourceOptions<Options::Shape>(component.Options, newOptions);
             break;
-        case Component::Types::Image:
-        case Component::Types::Premade:
-            break;
-    }
-}
-
-void Qounters::SetDefaultOptions(Component& component) {
-    switch ((Component::Types) component.Type) {
-        case Component::Types::Text:
-            component.Options = TextOptions();
-            break;
-        case Component::Types::Shape:
-            component.Options = ShapeOptions();
-            break;
-        case Component::Types::Image:
-            component.Options = ImageOptions();
-            break;
-        case Component::Types::Premade:
-            component.Options = PremadeOptions();
+        case Options::Component::Types::Image:
+        case Options::Component::Types::Premade:
             break;
     }
 }
 
-std::map<std::string, HUDType> const supportedHUDs = {
-    {"BasicGameHUD", HUDType::Basic},
-    {"NarrowGameHUD", HUDType::Basic},
-    {"NarrowGameHUDVariant", HUDType::Basic},
-    {"LatticeHUD", HUDType::Basic},
-    {"RockGameHUD", HUDType::Basic},
-    {"FlyingGameHUD/Container", HUDType::Rotational},
-    {"MultiplayerLocalActivePlayerController(Clone)/IsActiveObjects/HUD", HUDType::Multiplayer},
-    {"MultiplayerDuelLocalActivePlayerController(Clone)/IsActiveObjects/HUD", HUDType::Multiplayer},
+void HUD::SetDefaultOptions(Options::Component& component) {
+    switch ((Options::Component::Types) component.Type) {
+        case Options::Component::Types::Text:
+            component.Options = Options::Text();
+            break;
+        case Options::Component::Types::Shape:
+            component.Options = Options::Shape();
+            break;
+        case Options::Component::Types::Image:
+            component.Options = Options::Image();
+            break;
+        case Options::Component::Types::Premade:
+            component.Options = Options::Premade();
+            break;
+    }
+}
+
+static std::map<std::string, HUD::Type> const SupportedHUDs = {
+    {"BasicGameHUD", HUD::Type::Basic},
+    {"NarrowGameHUD", HUD::Type::Basic},
+    {"NarrowGameHUDVariant", HUD::Type::Basic},
+    {"LatticeHUD", HUD::Type::Basic},
+    {"RockGameHUD", HUD::Type::Basic},
+    {"FlyingGameHUD/Container", HUD::Type::Rotational},
+    {"MultiplayerLocalActivePlayerController(Clone)/IsActiveObjects/HUD", HUD::Type::Multiplayer},
+    {"MultiplayerDuelLocalActivePlayerController(Clone)/IsActiveObjects/HUD", HUD::Type::Multiplayer},
 };
 
-std::map<HUDType, std::map<Group::Anchors, std::tuple<std::string, Vector3, Vector3, Vector2, Vector2>>> const hudPanels = {
-    {HUDType::Basic,
+static std::map<HUD::Type, std::map<Options::Group::Anchors, std::tuple<std::string, Vector3, Vector3, Vector2, Vector2>>> const HudPanels = {
+    {HUD::Type::Basic,
      {
-         {Group::Anchors::Left, {"LeftPanel", {-3, 0.4, 7}, {0, 0, 0}, {50, 125}, {0, 0.75}}},
-         {Group::Anchors::Right, {"RightPanel", {3, 0.4, 7}, {0, 0, 0}, {50, 125}, {0, 0.75}}},
-         {Group::Anchors::Bottom, {"EnergyPanel", {0, -0.64, 7}, {0, 0, 0}, {125, 50}, {0, -10}}},
-         {Group::Anchors::Top, {"QountersTopPanel", {0, 3.2, 7}, {0, 0, 0}, {125, 50}, {0, 0}}},
-         {Group::Anchors::Center, {"QountersCenterPanel", {0, 1.5, 7}, {0, 0, 0}, {125, 80}, {0, 0}}},
+         {Options::Group::Anchors::Left, {"LeftPanel", {-3, 0.4, 7}, {0, 0, 0}, {50, 125}, {0, 0.75}}},
+         {Options::Group::Anchors::Right, {"RightPanel", {3, 0.4, 7}, {0, 0, 0}, {50, 125}, {0, 0.75}}},
+         {Options::Group::Anchors::Bottom, {"EnergyPanel", {0, -0.64, 7}, {0, 0, 0}, {125, 50}, {0, -10}}},
+         {Options::Group::Anchors::Top, {"QountersTopPanel", {0, 3.2, 7}, {0, 0, 0}, {125, 50}, {0, 0}}},
+         {Options::Group::Anchors::Center, {"QountersCenterPanel", {0, 1.5, 7}, {0, 0, 0}, {125, 80}, {0, 0}}},
      }},
-    {HUDType::Rotational,
+    {HUD::Type::Rotational,
      {
-         {Group::Anchors::Left, {"ComboPanel", {-1.6, 4, 12}, {345, 0, 0}, {50, 125}, {0, 0}}},
-         {Group::Anchors::Right, {"MultiplierCanvas", {1.6, 4, 12}, {345, 0, 0}, {50, 125}, {0, 0}}},
-         {Group::Anchors::Bottom, {"EnergyPanel", {0, 3.266, 12.197}, {345, 0, 0}, {100, 50}, {0, -5}}},
-         {Group::Anchors::Top, {"SongProgressCanvas", {0.05, 4.58, 11.845}, {345, 0, 0}, {100, 50}, {-2.5, 15}}},
-         {Group::Anchors::Center, {"QountersCenterPanel", {0, 1.5, 7}, {0, 0, 0}, {125, 80}, {0, 0}}},
+         {Options::Group::Anchors::Left, {"ComboPanel", {-1.6, 4, 12}, {345, 0, 0}, {50, 125}, {0, 0}}},
+         {Options::Group::Anchors::Right, {"MultiplierCanvas", {1.6, 4, 12}, {345, 0, 0}, {50, 125}, {0, 0}}},
+         {Options::Group::Anchors::Bottom, {"EnergyPanel", {0, 3.266, 12.197}, {345, 0, 0}, {100, 50}, {0, -5}}},
+         {Options::Group::Anchors::Top, {"SongProgressCanvas", {0.05, 4.58, 11.845}, {345, 0, 0}, {100, 50}, {-2.5, 15}}},
+         {Options::Group::Anchors::Center, {"QountersCenterPanel", {0, 1.5, 7}, {0, 0, 0}, {125, 80}, {0, 0}}},
      }},
-    {HUDType::Multiplayer,
+    {HUD::Type::Multiplayer,
      {
-         {Group::Anchors::Left, {"QountersLeftPanel", {-3, 0.4, 7}, {0, 0, 0}, {50, 125}, {0, 0.75}}},
-         {Group::Anchors::Right, {"QountersRightPanel", {3, 0.4, 7}, {0, 0, 0}, {50, 125}, {0, 0.75}}},
-         {Group::Anchors::Bottom, {"EnergyPanel", {0, 0, 2.3}, {90, 0, 0}, {125, 50}, {0, 0}}},
-         {Group::Anchors::Top, {"QountersTopPanel", {0, 3.2, 7}, {0, 0, 0}, {125, 50}, {0, 0}}},
-         {Group::Anchors::Center, {"QountersCenterPanel", {0, 1.5, 7}, {0, 0, 0}, {125, 80}, {0, 0}}},
+         {Options::Group::Anchors::Left, {"QountersLeftPanel", {-3, 0.4, 7}, {0, 0, 0}, {50, 125}, {0, 0.75}}},
+         {Options::Group::Anchors::Right, {"QountersRightPanel", {3, 0.4, 7}, {0, 0, 0}, {50, 125}, {0, 0.75}}},
+         {Options::Group::Anchors::Bottom, {"EnergyPanel", {0, 0, 2.3}, {90, 0, 0}, {125, 50}, {0, 0}}},
+         {Options::Group::Anchors::Top, {"QountersTopPanel", {0, 3.2, 7}, {0, 0, 0}, {125, 50}, {0, 0}}},
+         {Options::Group::Anchors::Center, {"QountersCenterPanel", {0, 1.5, 7}, {0, 0, 0}, {125, 80}, {0, 0}}},
      }},
 };
 
-RectTransform* GetCanvas(std::string parentName, Transform* hud, Vector3 fallback, Vector3 fallbackRot) {
+static RectTransform* GetCanvas(std::string parentName, Transform* hud, Vector3 fallback, Vector3 fallbackRot) {
     static ConstString name("QountersCanvas");
 
     auto parent = Utils::FindRecursive(hud, parentName);
@@ -475,34 +446,34 @@ RectTransform* GetCanvas(std::string parentName, Transform* hud, Vector3 fallbac
     return ret;
 }
 
-std::pair<Transform*, HUDType> Qounters::GetHUD() {
-    for (auto& [name, type] : supportedHUDs) {
+std::pair<Transform*, HUD::Type> HUD::GetHUD() {
+    for (auto& [name, type] : SupportedHUDs) {
         if (auto hud = GameObject::Find(name))
             return {hud->transform, type};
     }
     logger.error("Unable to find HUD object");
-    return {nullptr, HUDType::Unsupported};
+    return {nullptr, HUD::Type::Unsupported};
 }
 
-Transform* Qounters::GetAnchor(int anchor) {
+Transform* HUD::GetAnchor(int anchor) {
     auto [hud, type] = GetHUD();
-    if (type == HUDType::Unsupported)
+    if (type == HUD::Type::Unsupported)
         return nullptr;
 
-    auto [name, fallback, fallbackRot, size, pos] = hudPanels.at(type).at((Group::Anchors) anchor);
+    auto [name, fallback, fallbackRot, size, pos] = HudPanels.at(type).at((Options::Group::Anchors) anchor);
     auto ret = GetCanvas(name, hud, fallback, fallbackRot);
     ret->sizeDelta = size;
     ret->anchoredPosition = pos;
     return ret;
 }
 
-void Qounters::CreateQounterComponent(Component const& qounterComponent, int componentIdx, Transform* parent, bool editing) {
+void HUD::CreateQounterComponent(Options::Component const& qounterComponent, int componentIdx, Transform* parent, bool editing) {
     logger.debug("Creating qounter component of type {}", qounterComponent.Type);
 
     UI::Graphic* component;
 
-    switch ((Component::Types) qounterComponent.Type) {
-        case Component::Types::Text: {
+    switch ((Options::Component::Types) qounterComponent.Type) {
+        case Options::Component::Types::Text: {
             auto text = BSML::Lite::CreateText(parent, "");
             text->enableWordWrapping = false;
             if (editing)
@@ -511,19 +482,19 @@ void Qounters::CreateQounterComponent(Component const& qounterComponent, int com
             UpdateTextOptions(text, qounterComponent.Options, true);
             break;
         }
-        case Component::Types::Shape: {
+        case Options::Component::Types::Shape: {
             auto shape = Shape::Create(parent);
             component = shape;
             UpdateShapeOptions(shape, qounterComponent.Options, true);
             break;
         }
-        case Component::Types::Image: {
+        case Options::Component::Types::Image: {
             auto image = BSML::Lite::CreateImage(parent, nullptr);
             component = image;
             UpdateImageOptions(image, qounterComponent.Options, true);
             break;
         }
-        case Component::Types::Premade: {
+        case Options::Component::Types::Premade: {
             auto premade = GameObject::New_ctor("QountersPremade")->AddComponent<PremadeParent*>();
             premade->transform->SetParent(parent, false);
             component = premade;
@@ -532,7 +503,7 @@ void Qounters::CreateQounterComponent(Component const& qounterComponent, int com
         }
     }
 
-    UpdateColorOptions(component, qounterComponent.ColorSource, qounterComponent.ColorOptions, qounterComponent.Gradient, true);
+    UpdateColorOptions(component, qounterComponent.ColorSource, qounterComponent.ColorOptions, qounterComponent.GradientOptions, true);
     UpdateEnableOptions(component->gameObject, qounterComponent.EnableSource, qounterComponent.EnableOptions, true, qounterComponent.InvertEnable);
 
     UpdateComponentPosition(component->rectTransform, qounterComponent);
@@ -544,7 +515,7 @@ void Qounters::CreateQounterComponent(Component const& qounterComponent, int com
     }
 }
 
-void Qounters::CreateQounterGroup(Group const& qounterGroup, int groupIdx, bool editing) {
+void HUD::CreateQounterGroup(Options::Group const& qounterGroup, int groupIdx, bool editing) {
     logger.debug("Creating qounter group");
 
     auto parent = BSML::Lite::CreateCanvas();
@@ -565,11 +536,11 @@ void Qounters::CreateQounterGroup(Group const& qounterGroup, int groupIdx, bool 
         CreateQounterComponent(qounterGroup.Components[i], i, parentTransform, editing);
 }
 
-Preset GetPreset() {
+static Options::Preset GetPreset() {
     auto presets = getConfig().Presets.GetValue();
 
-    if (environment) {
-        std::string serializedName = environment->serializedName;
+    if (Internals::environment) {
+        std::string serializedName = Internals::environment->serializedName;
         auto specificPresets = getConfig().SpecificPresets.GetValue();
         if (specificPresets.contains(serializedName) && specificPresets[serializedName].Enabled) {
             auto ret = specificPresets[serializedName].Preset;
@@ -579,7 +550,7 @@ Preset GetPreset() {
             specificPresets[serializedName].Preset = presets.begin()->first;
         }
 
-        std::string hudTypeString = std::to_string((int) GetHUDType(environment->serializedName));
+        std::string hudTypeString = std::to_string((int) Environment::GetHUDType(Internals::environment->serializedName));
         auto typePresets = getConfig().TypePresets.GetValue();
         if (typePresets.contains(hudTypeString) && typePresets[hudTypeString].Enabled) {
             auto ret = typePresets[hudTypeString].Preset;
@@ -598,10 +569,10 @@ Preset GetPreset() {
     return presets[ret];
 }
 
-void Qounters::CreateQounters() {
-    if (GetHUD().second == HUDType::Unsupported)
+void HUD::CreateQounters() {
+    if (GetHUD().second == HUD::Type::Unsupported)
         return;
-    if (getConfig().Noodle.GetValue() && !Utils::GetSimplifiedRequirements(beatmapKey).empty())
+    if (getConfig().Noodle.GetValue() && !Utils::GetSimplifiedRequirements(Internals::beatmapKey).empty())
         return;
 
     auto preset = GetPreset();
@@ -609,32 +580,31 @@ void Qounters::CreateQounters() {
         CreateQounterGroup(preset.Qounters[i], i, false);
 }
 
-void Qounters::Reset(bool sceneEnd) {
+void HUD::Reset(bool sceneEnd) {
     texts.clear();
     shapes.clear();
-    // namespace fix later
-    ::colors.clear();
+    colors.clear();
     enables.clear();
     if (sceneEnd)
         BaseGameGraphic::Reset();
 }
 
-void Qounters::SetupObjects() {
+void HUD::SetupObjects() {
     Reset();
 
     auto [hud, type] = GetHUD();
-    if (type == HUDType::Unsupported)
+    if (type == HUD::Type::Unsupported)
         return;
 
     BaseGameGraphic::MakeClones();
 
-    for (int i = 0; i <= (int) Group::Anchors::AnchorMax; i++)
+    for (int i = 0; i <= (int) Options::Group::Anchors::AnchorMax; i++)
         GetAnchor(i);
     Utils::DisableAllBut(hud, {"QountersCanvas", "EnergyPanel"});
 }
 
 void UpdateTexts(std::string source) {
-    auto sourceFn = GetSource(textSources, source).first;
+    auto sourceFn = Sources::GetSource(Sources::texts, source).first;
 
     if (!texts.contains(source) || !sourceFn)
         return;
@@ -646,7 +616,7 @@ void UpdateTexts(std::string source) {
 }
 
 void UpdateShapes(std::string source) {
-    auto sourceFn = GetSource(shapeSources, source).first;
+    auto sourceFn = Sources::GetSource(Sources::shapes, source).first;
 
     if (!shapes.contains(source) || !sourceFn)
         return;
@@ -658,19 +628,19 @@ void UpdateShapes(std::string source) {
 }
 
 void UpdateColors(std::string source) {
-    auto sourceFn = GetSource(colorSources, source).first;
+    auto sourceFn = Sources::GetSource(Sources::colors, source).first;
 
-    if (!::colors.contains(source) || !sourceFn)
+    if (!colors.contains(source) || !sourceFn)
         return;
 
-    auto& elements = ::colors[source];
+    auto& elements = colors[source];
 
     for (auto& [element, options] : elements)
         element->color = sourceFn(options);
 }
 
 void UpdateEnables(std::string source) {
-    auto sourceFn = GetSource(enableSources, source).first;
+    auto sourceFn = Sources::GetSource(Sources::enables, source).first;
 
     if (!enables.contains(source) || !sourceFn)
         return;
@@ -682,41 +652,41 @@ void UpdateEnables(std::string source) {
         bool enable = sourceFn(json);
         if (invert)
             enable = !enable;
-        if (InSettingsEnvironment() && !Editor::GetPreviewMode())
+        if (Environment::InSettings() && !Editor::GetPreviewMode())
             enable = true;
         element->active = enable;
     }
 }
 
-void Qounters::UpdateSource(Sources sourceType, std::string source) {
+void HUD::UpdateSource(Types::Sources sourceType, std::string source) {
     switch (sourceType) {
-        case Sources::Text:
+        case Types::Sources::Text:
             UpdateTexts(source);
             break;
-        case Sources::Shape:
+        case Types::Sources::Shape:
             UpdateShapes(source);
             break;
-        case Sources::Color:
+        case Types::Sources::Color:
             UpdateColors(source);
             break;
-        case Sources::Enable:
+        case Types::Sources::Enable:
             UpdateEnables(source);
             break;
     }
 }
 
-void Qounters::UpdateAllEnables() {
-    for (auto& [source, _] : enableSources)
+void HUD::UpdateAllEnables() {
+    for (auto& [source, _] : Sources::enables)
         UpdateEnables(source);
 }
 
-void Qounters::UpdateAllSources() {
-    for (auto& [source, _] : textSources)
+void HUD::UpdateAllSources() {
+    for (auto& [source, _] : Sources::texts)
         UpdateTexts(source);
-    for (auto& [source, _] : shapeSources)
+    for (auto& [source, _] : Sources::shapes)
         UpdateShapes(source);
-    for (auto& [source, _] : colorSources)
+    for (auto& [source, _] : Sources::colors)
         UpdateColors(source);
-    for (auto& [source, _] : enableSources)
+    for (auto& [source, _] : Sources::enables)
         UpdateEnables(source);
 }

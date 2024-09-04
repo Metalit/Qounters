@@ -4,7 +4,7 @@
 #include "UnityEngine/UI/Graphic.hpp"
 #include "rapidjson-macros/shared/macros.hpp"
 
-namespace Qounters {
+namespace Qounters::Types {
     enum class Sabers {
         Left,
         Right,

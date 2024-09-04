@@ -67,64 +67,64 @@
 #include "qounters.hpp"
 #include "utils.hpp"
 
+using namespace Qounters;
 using namespace GlobalNamespace;
 using namespace UnityEngine;
-using namespace Qounters;
 
-MenuEnvironmentManager* menuEnvironment;
-SongPreviewPlayer* songPreview;
-VRUIControls::VRInputModule* vrInput;
-UIKeyboardManager* keyboardManager;
-GameObject* menuEnv;
-GameObject* localPlayer;
-bool inSettings = false;
-std::string currentEnvironment = "";
-std::string currentColors = "";
+static MenuEnvironmentManager* menuEnvironment;
+static SongPreviewPlayer* songPreview;
+static VRUIControls::VRInputModule* vrInput;
+static UIKeyboardManager* keyboardManager;
+static GameObject* menuEnv;
+static GameObject* localPlayer;
+static bool inSettings = false;
+static std::string currentEnvironment = "";
+static std::string currentColors = "";
 
-std::map<std::string, EnvironmentHUDType> const hudTypes = {
-    {"DefaultEnvironment", EnvironmentHUDType::Wide},
-    {"TriangleEnvironment", EnvironmentHUDType::Wide},
-    {"NiceEnvironment", EnvironmentHUDType::Wide},
-    {"BigMirrorEnvironment", EnvironmentHUDType::Wide},
-    {"DragonsEnvironment", EnvironmentHUDType::Wide},
-    {"KDAEnvironment", EnvironmentHUDType::Wide},
-    {"MonstercatEnvironment", EnvironmentHUDType::Wide},
-    {"CrabRaveEnvironment", EnvironmentHUDType::Wide},
-    {"PanicEnvironment", EnvironmentHUDType::Wide},
-    {"TimbalandEnvironment", EnvironmentHUDType::Wide},
-    {"SkrillexEnvironment", EnvironmentHUDType::Wide},
-    {"TheSecondEnvironment", EnvironmentHUDType::Wide},
-    {"LizzoEnvironment", EnvironmentHUDType::Wide},
-    {"TheWeekndEnvironment", EnvironmentHUDType::Wide},
-    {"Dragons2Environment", EnvironmentHUDType::Wide},
-    {"Panic2Environment", EnvironmentHUDType::Wide},
-    {"TheRollingStonesEnvironment", EnvironmentHUDType::Wide},
-    {"LatticeEnvironment", EnvironmentHUDType::Wide},
-    {"DaftPunkEnvironment", EnvironmentHUDType::Wide},
-    {"HipHopEnvironment", EnvironmentHUDType::Wide},  // could be Close instead
-    {"ColliderEnvironment", EnvironmentHUDType::Wide},
-    {"OriginsEnvironment", EnvironmentHUDType::Narrow},
-    {"RocketEnvironment", EnvironmentHUDType::Narrow},
-    {"GreenDayGrenadeEnvironment", EnvironmentHUDType::Narrow},
-    {"GreenDayEnvironment", EnvironmentHUDType::Narrow},
-    {"FitBeatEnvironment", EnvironmentHUDType::Narrow},
-    {"LinkinParkEnvironment", EnvironmentHUDType::Narrow},
-    {"BTSEnvironment", EnvironmentHUDType::Narrow},
-    {"KaleidoscopeEnvironment", EnvironmentHUDType::Narrow},
-    {"InterscopeEnvironment", EnvironmentHUDType::Narrow},
-    {"BillieEnvironment", EnvironmentHUDType::Narrow},
-    {"HalloweenEnvironment", EnvironmentHUDType::Narrow},
-    {"GagaEnvironment", EnvironmentHUDType::Narrow},
-    {"LinkinPark2Environment", EnvironmentHUDType::Narrow},
-    {"WeaveEnvironment", EnvironmentHUDType::Close},
-    {"EDMEnvironment", EnvironmentHUDType::Close},
-    {"PyroEnvironment", EnvironmentHUDType::Sunken},
-    {"RockMixtapeEnvironment", EnvironmentHUDType::Sunken},
-    {"GlassDesertEnvironment", EnvironmentHUDType::Circle},
-    {"MultiplayerEnvironment", EnvironmentHUDType::Wide},
+static std::map<std::string, Environment::HUDType> const hudTypes = {
+    {"DefaultEnvironment", Environment::HUDType::Wide},
+    {"TriangleEnvironment", Environment::HUDType::Wide},
+    {"NiceEnvironment", Environment::HUDType::Wide},
+    {"BigMirrorEnvironment", Environment::HUDType::Wide},
+    {"DragonsEnvironment", Environment::HUDType::Wide},
+    {"KDAEnvironment", Environment::HUDType::Wide},
+    {"MonstercatEnvironment", Environment::HUDType::Wide},
+    {"CrabRaveEnvironment", Environment::HUDType::Wide},
+    {"PanicEnvironment", Environment::HUDType::Wide},
+    {"TimbalandEnvironment", Environment::HUDType::Wide},
+    {"SkrillexEnvironment", Environment::HUDType::Wide},
+    {"TheSecondEnvironment", Environment::HUDType::Wide},
+    {"LizzoEnvironment", Environment::HUDType::Wide},
+    {"TheWeekndEnvironment", Environment::HUDType::Wide},
+    {"Dragons2Environment", Environment::HUDType::Wide},
+    {"Panic2Environment", Environment::HUDType::Wide},
+    {"TheRollingStonesEnvironment", Environment::HUDType::Wide},
+    {"LatticeEnvironment", Environment::HUDType::Wide},
+    {"DaftPunkEnvironment", Environment::HUDType::Wide},
+    {"HipHopEnvironment", Environment::HUDType::Wide},  // could be Close instead
+    {"ColliderEnvironment", Environment::HUDType::Wide},
+    {"OriginsEnvironment", Environment::HUDType::Narrow},
+    {"RocketEnvironment", Environment::HUDType::Narrow},
+    {"GreenDayGrenadeEnvironment", Environment::HUDType::Narrow},
+    {"GreenDayEnvironment", Environment::HUDType::Narrow},
+    {"FitBeatEnvironment", Environment::HUDType::Narrow},
+    {"LinkinParkEnvironment", Environment::HUDType::Narrow},
+    {"BTSEnvironment", Environment::HUDType::Narrow},
+    {"KaleidoscopeEnvironment", Environment::HUDType::Narrow},
+    {"InterscopeEnvironment", Environment::HUDType::Narrow},
+    {"BillieEnvironment", Environment::HUDType::Narrow},
+    {"HalloweenEnvironment", Environment::HUDType::Narrow},
+    {"GagaEnvironment", Environment::HUDType::Narrow},
+    {"LinkinPark2Environment", Environment::HUDType::Narrow},
+    {"WeaveEnvironment", Environment::HUDType::Close},
+    {"EDMEnvironment", Environment::HUDType::Close},
+    {"PyroEnvironment", Environment::HUDType::Sunken},
+    {"RockMixtapeEnvironment", Environment::HUDType::Sunken},
+    {"GlassDesertEnvironment", Environment::HUDType::Circle},
+    {"MultiplayerEnvironment", Environment::HUDType::Wide},
 };
 
-std::vector<std::string_view> Qounters::EnvironmentHUDTypeStrings = {
+std::vector<std::string_view> Environment::HUDTypeStrings = {
     "Wide",
     "Narrow",
     "Close",
@@ -132,18 +132,18 @@ std::vector<std::string_view> Qounters::EnvironmentHUDTypeStrings = {
     "360",
 };
 
-EnvironmentHUDType Qounters::GetHUDType(std::string serializedName) {
+Environment::HUDType Environment::GetHUDType(std::string serializedName) {
     auto itr = hudTypes.find(serializedName);
     if (itr != hudTypes.end())
         return itr->second;
-    return EnvironmentHUDType::Wide;
+    return HUDType::Wide;
 }
 
-SimpleLevelStarter* GetLevelStarter() {
+static SimpleLevelStarter* GetLevelStarter() {
     return Resources::FindObjectsOfTypeAll<SimpleLevelStarter*>()->Last();
 }
 
-EnvironmentInfoSO* GetEnvironment(SimpleLevelStarter* levelStarter) {
+static EnvironmentInfoSO* GetEnvironment(SimpleLevelStarter* levelStarter) {
     currentEnvironment = getConfig().Environment.GetValue();
 
     auto listModel = levelStarter->_playerDataModel->playerDataFileModel->_environmentsListModel;
@@ -159,12 +159,13 @@ EnvironmentInfoSO* GetEnvironment(SimpleLevelStarter* levelStarter) {
     return ret;
 }
 
-inline System::Action_1<Zenject::DiContainer*>* MakeAction(std::function<void(Zenject::DiContainer*)> callback) {
+static inline System::Action_1<Zenject::DiContainer*>* MakeAction(std::function<void(Zenject::DiContainer*)> callback) {
     return custom_types::MakeDelegate<System::Action_1<Zenject::DiContainer*>*>(callback);
 }
 
-void Present(SimpleLevelStarter* levelStarter, bool refresh, ScenesTransitionSetupDataSO* setupData, EnvironmentInfoSO* environment = nullptr) {
-    auto startDelegate = MakeAction([environment](Zenject::DiContainer*) { Qounters::OnSceneStart(environment); });
+static void
+Present(SimpleLevelStarter* levelStarter, bool refresh, ScenesTransitionSetupDataSO* setupData, EnvironmentInfoSO* environment = nullptr) {
+    auto startDelegate = MakeAction([environment](Zenject::DiContainer*) { Environment::OnSceneStart(environment); });
 
     if (refresh)
         levelStarter->_gameScenesManager->ReplaceScenes(setupData, nullptr, 0.25, nullptr, startDelegate);
@@ -172,7 +173,7 @@ void Present(SimpleLevelStarter* levelStarter, bool refresh, ScenesTransitionSet
         levelStarter->_gameScenesManager->PushScenes(setupData, 0.25, nullptr, startDelegate);
 }
 
-void PresentMultiplayer(SimpleLevelStarter* levelStarter, bool refresh, BeatmapLevel* level, BeatmapKey diff, ColorScheme* colors) {
+static void PresentMultiplayer(SimpleLevelStarter* levelStarter, bool refresh, BeatmapLevel* level, BeatmapKey diff, ColorScheme* colors) {
     auto setupData = levelStarter->_menuTransitionsHelper->_multiplayerLevelScenesTransitionSetupData;
     setupData->Init(
         "Settings",
@@ -195,7 +196,7 @@ void PresentMultiplayer(SimpleLevelStarter* levelStarter, bool refresh, BeatmapL
     Present(levelStarter, refresh, setupData);
 }
 
-void PresentSingleplayer(
+static void PresentSingleplayer(
     SimpleLevelStarter* levelStarter, bool refresh, BeatmapLevel* level, BeatmapKey diff, ColorScheme* colors, EnvironmentInfoSO* environment
 ) {
     if (colors == nullptr)
@@ -226,7 +227,7 @@ void PresentSingleplayer(
     Present(levelStarter, refresh, setupData, environment);
 }
 
-void PresentScene(SimpleLevelStarter* levelStarter, bool refresh) {
+static void PresentScene(SimpleLevelStarter* levelStarter, bool refresh) {
     auto levelSO = !levelStarter->_beatmapLevel->IsValid() ? levelStarter->_beatmapLevel->LoadAssetAsync().WaitForCompletion().ptr()
                                                            : (BeatmapLevelSO*) levelStarter->_beatmapLevel->Asset.ptr();
     auto level = BeatmapLevelExtensions::ToRuntime(levelSO);
@@ -252,7 +253,7 @@ void PresentScene(SimpleLevelStarter* levelStarter, bool refresh) {
         PresentSingleplayer(levelStarter, refresh, level, diff, colors, environment);
 }
 
-void Qounters::PresentSettingsEnvironment() {
+void Environment::PresentSettings() {
     logger.debug("Presenting environment");
 
     if (getConfig().Presets.GetValue().empty()) {
@@ -279,52 +280,52 @@ void Qounters::PresentSettingsEnvironment() {
     PresentScene(levelStarter, false);
 }
 
-void DismissFlowCoordinator() {
+static void DismissFlowCoordinator() {
     auto settingsFlow = Qounters::SettingsFlowCoordinator::GetInstance();
     settingsFlow->_parentFlowCoordinator->DismissFlowCoordinator(settingsFlow, HMUI::ViewController::AnimationDirection::Horizontal, nullptr, true);
 }
 
-void Qounters::DismissSettingsEnvironment() {
+void Environment::DismissSettings() {
     logger.debug("Dismissing environment");
 
-    Reset();
+    HUD::Reset();
 
     Editor::SetPreviewMode(false);
     inSettings = false;
 
     DismissFlowCoordinator();
 
-    auto endDelegate = MakeAction([](Zenject::DiContainer*) { Qounters::OnSceneEnd(); });
+    auto endDelegate = MakeAction([](Zenject::DiContainer*) { OnSceneEnd(); });
     GetLevelStarter()->_gameScenesManager->PopScenes(0.25, nullptr, endDelegate);
 }
 
-void Qounters::RefreshSettingsEnvironment() {
+void Environment::RefreshSettings() {
     logger.debug("Refreshing environment");
 
-    Reset();
+    HUD::Reset();
 
     DismissFlowCoordinator();
 
     PresentScene(GetLevelStarter(), true);
 }
 
-bool Qounters::InSettingsEnvironment() {
+bool Environment::InSettings() {
     return inSettings;
 }
 
-std::string Qounters::CurrentSettingsEnvironment() {
+std::string Environment::CurrentSettingsEnvironment() {
     return currentEnvironment;
 }
 
-std::string Qounters::CurrentColorScheme() {
+std::string Environment::CurrentColorScheme() {
     return currentColors;
 }
 
-void Qounters::SetPlayerActive(bool active) {
+void Environment::SetPlayerActive(bool active) {
     localPlayer->active = active;
 }
 
-void OnMultiplayerSceneStart(MultiplayerController* multiplayerController) {
+static void OnMultiplayerSceneStart(MultiplayerController* multiplayerController) {
     auto fakeConnectedPlayers = ListW<IConnectedPlayer*>::New(1);
     auto settings = MockPlayerSettings::New_ctor();
     settings->userId = "qounters_settings_player";
@@ -355,14 +356,14 @@ void OnMultiplayerSceneStart(MultiplayerController* multiplayerController) {
     Utils::FindRecursive(localPlayer->transform, "MainCamera")->gameObject->active = false;
 }
 
-void Qounters::OnSceneStart(EnvironmentInfoSO* environment) {
+void Environment::OnSceneStart(EnvironmentInfoSO* environment) {
     logger.info("Settings scene start");
 
     if (auto multiplayerController = Object::FindObjectOfType<MultiplayerController*>())
         OnMultiplayerSceneStart(multiplayerController);
 
-    Initialize();
-    SetupObjects();
+    Internals::Initialize();
+    HUD::SetupObjects();
 
     menuEnvironment->transform->root->gameObject->active = true;
     songPreview->CrossfadeToDefault();
@@ -449,7 +450,7 @@ void Qounters::OnSceneStart(EnvironmentInfoSO* environment) {
         bts->active = false;  // the game literally just freezes
 }
 
-void Qounters::OnSceneEnd() {
+void Environment::OnSceneEnd() {
     logger.info("Settings scene end");
 
     GameObject::Find("MenuCore/UI/ScreenSystem")->transform->localPosition = {0, 0, 0};

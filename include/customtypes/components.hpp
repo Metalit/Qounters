@@ -111,7 +111,7 @@ DECLARE_CLASS_CODEGEN(Qounters, PremadeParent, UUI::Graphic,
     DECLARE_INSTANCE_FIELD_DEFAULT(bool, updateColor, false);
 
    public:
-    PremadeOptions options;
+    Options::Premade options;
 )
 
 DECLARE_CLASS_CODEGEN_INTERFACES(Qounters, SongTimeSource, Il2CppObject, classof(GlobalNamespace::IAudioTimeSource*),

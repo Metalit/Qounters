@@ -51,13 +51,13 @@ DEFINE_TYPE(Qounters, KeyboardCloseHandler);
 DEFINE_TYPE(Qounters, SpritesListCell);
 DEFINE_TYPE(Qounters, SpritesListSource);
 
-using namespace UnityEngine;
 using namespace Qounters;
+using namespace UnityEngine;
 
 float settingsStarsBL = 10;
 float settingsStarsSS = 10;
 
-GameObject* AddBackground(HMUI::ViewController* self, Vector2 size) {
+static GameObject* AddBackground(HMUI::ViewController* self, Vector2 size) {
     auto object = GameObject::New_ctor("QountersBackground");
     object->transform->SetParent(self->transform, false);
     auto bg = object->AddComponent<BSML::Backgroundable*>();
@@ -79,16 +79,16 @@ GameObject* AddBackground(HMUI::ViewController* self, Vector2 size) {
 // https://math.stackexchange.com/a/2244310 + wolfram alpha
 static constexpr float min = 0.1, max = 5;
 static constexpr float coeff = (1 - max) / (min - 1);
-constexpr float CalculateScale(float input) {
+static constexpr float CalculateScale(float input) {
     return (std::pow(coeff, input) - 1 / coeff) * (max - min) / (coeff - 1 / coeff) + min;
 }
-float CalculateScaleInverse(float scale) {
+static float CalculateScaleInverse(float scale) {
     static float const coeffLog = std::log(coeff);  // no constexpr :(
     float const expr1 = (coeff * coeff * (min - scale) - max + scale) / (min - max);
     return (std::log(expr1) - coeffLog) / coeffLog;
 }
 
-StringW ScaleFormat(float val) {
+static StringW ScaleFormat(float val) {
     return Utils::FormatDecimals(CalculateScale(val), 2);
 }
 
@@ -171,12 +171,12 @@ void SettingsFlowCoordinator::PresentOptions() {
 }
 
 void SettingsFlowCoordinator::DismissScene() {
-    ConfirmAction(DismissSettingsEnvironment);
+    ConfirmAction(Environment::DismissSettings);
 }
 
 void SettingsFlowCoordinator::RefreshScene() {
-    if (CurrentSettingsEnvironment() != getConfig().Environment.GetValue())
-        ConfirmAction(RefreshSettingsEnvironment);
+    if (Environment::CurrentSettingsEnvironment() != getConfig().Environment.GetValue())
+        ConfirmAction(Environment::RefreshSettings);
 }
 
 void SettingsFlowCoordinator::OnModalConfirm() {
@@ -235,7 +235,7 @@ void SettingsFlowCoordinator::ResetPreset() {
     if (!presets.contains(name))
         return;
 
-    presets[name] = GetDefaultHUDPreset();
+    presets[name] = Options::GetDefaultHUDPreset();
 
     getConfig().Presets.SetValue(presets);
     Editor::LoadPreset(presets[name]);
@@ -331,7 +331,7 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
     Utils::SetLayoutSize(parent, 87, 8);
 
     std::vector<std::string_view> append = {"Any"};
-    append.insert(append.begin(), EnvironmentHUDTypeStrings.begin(), EnvironmentHUDTypeStrings.end());
+    append.insert(append.begin(), Environment::HUDTypeStrings.begin(), Environment::HUDTypeStrings.end());
     auto nested = Utils::CreateDropdownEnum(background, "", getConfig().EnvironmentType.GetValue(), append, [this](int value) {
         getConfig().EnvironmentType.SetValue(value);
         UpdateUI();
@@ -471,7 +471,7 @@ void SettingsViewController::UpdateUI() {
     GlobalNamespace::EnvironmentInfoSO* first = nullptr;
     names.clear();
     for (auto& env : environments) {
-        if (selectedType == (int) EnvironmentHUDType::Max + 1 || (int) GetHUDType(env->serializedName) == selectedType) {
+        if (selectedType == (int) Environment::HUDType::Max + 1 || (int) Environment::GetHUDType(env->serializedName) == selectedType) {
             if (!first)
                 first = env;
             names.emplace_back(env->environmentName);
@@ -487,7 +487,7 @@ void SettingsViewController::UpdateUI() {
     Utils::InstantSetToggle(previewToggle, Editor::GetPreviewMode());
 }
 
-void CreateSpacer(UI::HorizontalLayoutGroup* parent, float width) {
+static void CreateSpacer(UI::HorizontalLayoutGroup* parent, float width) {
     auto obj = GameObject::New_ctor("QountersSpacer");
     auto layout = obj->AddComponent<UI::LayoutElement*>();
     layout->preferredWidth = width;
@@ -504,7 +504,7 @@ CreateLayeredImageButton(UI::HorizontalLayoutGroup* parent, Sprite* bg, Sprite* 
     return ret;
 }
 
-void SetClickableImageColor(BSML::ClickableImage* image, Color color, bool wall = false) {
+static void SetClickableImageColor(BSML::ClickableImage* image, Color color, bool wall = false) {
     float h, s, v;
     Color::RGBToHSV(color, byref(h), byref(s), byref(v));
     if (wall)
@@ -624,15 +624,15 @@ void PlaytestViewController::UpdateUI() {
     if (!uiInitialized)
         return;
 
-    auto left = Game::GetColor((int) ColorSource::Player::ColorSettings::LeftSaber);
-    auto right = Game::GetColor((int) ColorSource::Player::ColorSettings::RightSaber);
+    auto left = Game::GetColor((int) Sources::Color::Player::ColorSettings::LeftSaber);
+    auto right = Game::GetColor((int) Sources::Color::Player::ColorSettings::RightSaber);
 
     SetClickableImageColor(lNote, left);
     SetClickableImageColor(rNote, right);
     SetClickableImageColor(lChain, left);
     SetClickableImageColor(rChain, right);
 
-    SetClickableImageColor(wall, Game::GetColor((int) ColorSource::Player::ColorSettings::Walls));
+    SetClickableImageColor(wall, Game::GetColor((int) Sources::Color::Player::ColorSettings::Walls));
 
     Utils::InstantSetToggle(pbToggle, Game::GetBestScore() > 0);
     pbSlider->gameObject->active = Game::GetBestScore() > 0;
@@ -679,7 +679,7 @@ void TemplatesViewController::DidActivate(bool firstActivation, bool addedToHier
     rect->anchorMin = {0.5, 0.5};
     rect->anchorMax = {0.5, 0.5};
 
-    for (auto templateName : Utils::GetKeys(templates))
+    for (auto templateName : Utils::GetKeys(Templates::registration))
         list->data->Add(BSML::CustomCellInfo::construct(templateName));
 
     list->tableView->ReloadData();
@@ -704,7 +704,7 @@ void TemplatesViewController::ShowTemplateModal(int idx) {
     while (modalLayout->GetChildCount() > 0)
         Object::DestroyImmediate(modalLayout->GetChild(0)->gameObject);
 
-    templates[idx].second(modalLayout->gameObject);
+    Templates::registration[idx].second(modalLayout->gameObject);
     Utils::SetChildrenWidth(modalLayout, 75);
 
     modal->Show(true, true, nullptr);
@@ -921,8 +921,8 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
     auto typeCollapse = Utils::CreateCollapseArea(componentParent, "Text Options", true);
     typeCollapseComponent = typeCollapse;
 
-    cTypeDropdown = Utils::CreateDropdownEnum(componentParent, "Type", 0, TypeStrings, [typeCollapse](int val) {
-        typeCollapse->title = std::string(TypeStrings[val]) + " Options";
+    cTypeDropdown = Utils::CreateDropdownEnum(componentParent, "Type", 0, Options::TypeStrings, [typeCollapse](int val) {
+        typeCollapse->title = std::string(Options::TypeStrings[val]) + " Options";
         typeCollapse->UpdateOpen();
         static int id = Editor::GetActionId();
         Editor::GetSelectedComponent(id).Type = val;
@@ -939,7 +939,7 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
     auto colorCollapse = Utils::CreateCollapseArea(componentParent, "Color Options", false);
     colorCollapseComponent = colorCollapse;
 
-    cColorSourceDropdown = Utils::CreateDropdown(componentParent, "Color Source", "", Utils::GetKeys(colorSources), [this](std::string val) {
+    cColorSourceDropdown = Utils::CreateDropdown(componentParent, "Color Source", "", Utils::GetKeys(Sources::colors), [this](std::string val) {
         static int id = Editor::GetActionId();
         auto& comp = Editor::GetSelectedComponent(id);
         if (comp.ColorSource != val) {
@@ -955,7 +955,7 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
 
     cGradientToggle = BSML::Lite::CreateToggle(componentParent, "Gradient", false, [](bool value) {
         static int id = Editor::GetActionId();
-        auto& gradient = Editor::GetSelectedComponent(id).Gradient;
+        auto& gradient = Editor::GetSelectedComponent(id).GradientOptions;
         if (value != gradient.Enabled) {
             gradient.Enabled = value;
             Editor::UpdateGradientOptions();
@@ -970,9 +970,9 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
     auto directionAndSwap = BSML::Lite::CreateHorizontalLayoutGroup(componentParent);
     directionAndSwap->spacing = 1;
 
-    cGradientDirectionDropdown = Utils::CreateDropdownEnum(directionAndSwap->gameObject, "Direction", 0, DirectionStrings, [](int value) {
+    cGradientDirectionDropdown = Utils::CreateDropdownEnum(directionAndSwap->gameObject, "Direction", 0, Options::DirectionStrings, [](int value) {
         static int id = Editor::GetActionId();
-        Editor::GetSelectedComponent(id).Gradient.Direction = value;
+        Editor::GetSelectedComponent(id).GradientOptions.Direction = value;
         Editor::UpdateGradientOptions();
         Editor::FinalizeAction();
     });
@@ -987,7 +987,7 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
         "Start Modifier",
         [](Vector3 hsv) {
             static int id = Editor::GetActionId();
-            Editor::GetSelectedComponent(id).Gradient.StartModifierHSV = hsv;
+            Editor::GetSelectedComponent(id).GradientOptions.StartModifierHSV = hsv;
             Editor::UpdateGradientOptions();
         },
         Editor::FinalizeAction
@@ -999,7 +999,7 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
         "End Modifier",
         [](Vector3 hsv) {
             static int id = Editor::GetActionId();
-            Editor::GetSelectedComponent(id).Gradient.EndModifierHSV = hsv;
+            Editor::GetSelectedComponent(id).GradientOptions.EndModifierHSV = hsv;
             Editor::UpdateGradientOptions();
         },
         Editor::FinalizeAction
@@ -1014,7 +1014,7 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
 
     auto enableCollapse = Utils::CreateCollapseArea(componentParent, "Visibility Options", false);
 
-    cEnableSourceDropdown = Utils::CreateDropdown(componentParent, "Visible If", "", Utils::GetKeys(enableSources), [this](std::string val) {
+    cEnableSourceDropdown = Utils::CreateDropdown(componentParent, "Visible If", "", Utils::GetKeys(Sources::enables), [this](std::string val) {
         static int id = Editor::GetActionId();
         auto& comp = Editor::GetSelectedComponent(id);
         if (comp.EnableSource != val) {
@@ -1140,19 +1140,19 @@ void OptionsViewController::UpdateSimpleUI() {
         cScaleSliderX->set_Value(CalculateScaleInverse(state.Scale.x));
         cScaleSliderY->set_Value(CalculateScaleInverse(state.Scale.y));
         auto typeCollapse = (CollapseController*) typeCollapseComponent;
-        typeCollapse->title = std::string(TypeStrings[state.Type]) + " Options";
+        typeCollapse->title = std::string(Options::TypeStrings[state.Type]) + " Options";
         typeCollapse->UpdateOpen();
         cTypeDropdown->dropdown->SelectCellWithIdx(state.Type);
-        Utils::InstantSetToggle(cGradientToggle, state.Gradient.Enabled);
+        Utils::InstantSetToggle(cGradientToggle, state.GradientOptions.Enabled);
         auto colorCollapse = (CollapseController*) colorCollapseComponent;
-        colorCollapse->SetContentActive(gradientCollapseComponent, state.Gradient.Enabled);
-        cGradientDirectionDropdown->dropdown->SelectCellWithIdx(state.Gradient.Direction);
+        colorCollapse->SetContentActive(gradientCollapseComponent, state.GradientOptions.Enabled);
+        cGradientDirectionDropdown->dropdown->SelectCellWithIdx(state.GradientOptions.Direction);
         // update hsv panels
         auto startHsvController = (HSVController*) startHsvComponent;
-        startHsvController->SetHSV(state.Gradient.StartModifierHSV);
+        startHsvController->SetHSV(state.GradientOptions.StartModifierHSV);
         auto endHsvController = (HSVController*) endHsvComponent;
-        endHsvController->SetHSV(state.Gradient.EndModifierHSV);
-        auto sourceFn = GetSource(colorSources, state.ColorSource).first;
+        endHsvController->SetHSV(state.GradientOptions.EndModifierHSV);
+        auto sourceFn = Sources::GetSource(Sources::colors, state.ColorSource).first;
         if (sourceFn) {
             auto color = sourceFn(state.ColorOptions);
             startHsvController->baseColor = color;
@@ -1188,17 +1188,17 @@ void OptionsViewController::UpdateUI() {
 
 void OptionsViewController::UpdateTypeOptions() {
     auto& state = Editor::GetSelectedComponent(-1);
-    CreateTypeOptionsUI(cTypeOptions->transform, state.Type, state.Options);
+    Options::CreateTypeUI(cTypeOptions->transform, state.Type, state.Options);
 }
 
 void OptionsViewController::UpdateColorSourceOptions() {
     auto& state = Editor::GetSelectedComponent(-1);
-    ColorSource::CreateUI(cColorSourceOptions->gameObject, state.ColorSource, state.ColorOptions);
+    Sources::Color::CreateUI(cColorSourceOptions->gameObject, state.ColorSource, state.ColorOptions);
 }
 
 void OptionsViewController::UpdateEnableSourceOptions() {
     auto& state = Editor::GetSelectedComponent(-1);
-    EnableSource::CreateUI(cEnableSourceOptions->gameObject, state.EnableSource, state.EnableOptions);
+    Sources::Enable::CreateUI(cEnableSourceOptions->gameObject, state.EnableSource, state.EnableOptions);
 }
 
 OptionsViewController* OptionsViewController::GetInstance() {

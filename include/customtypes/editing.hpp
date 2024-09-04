@@ -171,7 +171,7 @@ DECLARE_CLASS_CUSTOM_INTERFACES(Qounters, EditingGroup, EditingBase, INTERFACES,
     void OnEndDragNormal(UES::PointerEventData* eventData);
     void OnDragDetached(UES::PointerEventData* eventData);
     void OnEndDragDetached(UES::PointerEventData* eventData);
-    Group& GetGroup();
+    Options::Group& GetGroup();
 
     UnityEngine::Vector3 detachedGrabPos;
     UnityEngine::Quaternion detachedGrabRot;
@@ -199,8 +199,8 @@ DECLARE_CLASS_CUSTOM_INTERFACES(Qounters, EditingComponent, EditingBase, INTERFA
    private:
     int component = -1;
 
-    Group& GetGroup();
-    Qounters::Component& GetComponent();
+    Options::Group& GetGroup();
+    Options::Component& GetComponent();
 
    public:
     void Init(UUI::Graphic* typeComponent, int componentIdx);

@@ -3,8 +3,8 @@
 #include "GlobalNamespace/EnvironmentInfoSO.hpp"
 #include "main.hpp"
 
-namespace Qounters {
-    enum class EnvironmentHUDType {
+namespace Qounters::Environment {
+    enum class HUDType {
         Wide,
         Narrow,
         Close,
@@ -12,13 +12,13 @@ namespace Qounters {
         Circle,
         Max = Circle,
     };
-    extern std::vector<std::string_view> EnvironmentHUDTypeStrings;
-    EnvironmentHUDType GetHUDType(std::string serializedName);
+    extern std::vector<std::string_view> HUDTypeStrings;
+    HUDType GetHUDType(std::string serializedName);
 
-    void PresentSettingsEnvironment();
-    void DismissSettingsEnvironment();
-    void RefreshSettingsEnvironment();
-    bool InSettingsEnvironment();
+    void PresentSettings();
+    void DismissSettings();
+    void RefreshSettings();
+    bool InSettings();
     std::string CurrentSettingsEnvironment();
     std::string CurrentColorScheme();
 

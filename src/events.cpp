@@ -4,114 +4,114 @@
 #include "qounters.hpp"
 #include "sources.hpp"
 
-namespace Qounters {
-    std::map<int, std::vector<std::pair<Sources, std::string>>> eventSourceRegistry = {
-        {(int) Events::ScoreChanged,
-         {
-             {Sources::Text, TextSource::ScoreName},
-             {Sources::Text, TextSource::RankName},
-             {Sources::Text, TextSource::PPName},
-             {Sources::Text, TextSource::FCPercentName},
-             {Sources::Shape, ShapeSource::ScoreName},
-             {Sources::Color, ColorSource::RankName},
-             {Sources::Color, ColorSource::PersonalBestName},
-             {Sources::Enable, EnableSource::PercentageName},
-         }},
-        {(int) Events::NoteCut,
-         {
-             {Sources::Text, TextSource::AverageCutName},
-             {Sources::Text, TextSource::TimeDependenceName},
-             {Sources::Text, TextSource::MistakesName},
-             {Sources::Text, TextSource::NotesName},
-             {Sources::Text, TextSource::FCPercentName},
-             {Sources::Shape, ShapeSource::AverageCutName},
-             {Sources::Shape, ShapeSource::NotesName},
-         }},
-        {(int) Events::NoteMissed,
-         {
-             {Sources::Text, TextSource::MistakesName},
-             {Sources::Text, TextSource::NotesName},
-             {Sources::Shape, ShapeSource::NotesName},
-         }},
-        {(int) Events::BombCut,
-         {
-             {Sources::Text, TextSource::MistakesName},
-             {Sources::Text, TextSource::NotesName},
-             {Sources::Shape, ShapeSource::NotesName},
-         }},
-        {(int) Events::WallHit,
-         {
-             {Sources::Text, TextSource::MistakesName},
-         }},
-        {(int) Events::ComboChanged,
-         {
-             {Sources::Text, TextSource::ComboName},
-             {Sources::Text, TextSource::MultiplierName},
-             {Sources::Shape, ShapeSource::MultiplierName},
-             {Sources::Color, ColorSource::ComboName},
-             {Sources::Color, ColorSource::MultiplierName},
-             {Sources::Enable, EnableSource::FullComboName},
-         }},
-        {(int) Events::HealthChanged,
-         {
-             {Sources::Text, TextSource::HealthName},
-             {Sources::Text, TextSource::FailsName},
-             {Sources::Shape, ShapeSource::HealthName},
-             {Sources::Color, ColorSource::HealthName},
-             {Sources::Enable, EnableSource::FailedName},
-         }},
-        {(int) Events::Update,
-         {
-             {Sources::Text, TextSource::TimeName},
-             {Sources::Shape, ShapeSource::TimeName},
-         }},
-        {(int) Events::SlowUpdate,
-         {
-             {Sources::Text, TextSource::SaberSpeedName},
-             {Sources::Text, TextSource::SpinometerName},
-         }},
-        {(int) Events::MapInfo,
-         {
-             {Sources::Text, TextSource::RankName},
-             {Sources::Text, TextSource::PersonalBestName},
-             {Sources::Text, TextSource::NotesName},
-             {Sources::Text, TextSource::PPName},
-             {Sources::Enable, EnableSource::RankedName},
-         }},
-    };
+using namespace Qounters;
 
-    std::map<std::string, std::map<int, int>> customEvents = {};
+static std::map<int, std::vector<std::pair<Types::Sources, std::string>>> eventSourceRegistry = {
+    {(int) Events::ScoreChanged,
+     {
+         {Types::Sources::Text, Sources::Text::ScoreName},
+         {Types::Sources::Text, Sources::Text::RankName},
+         {Types::Sources::Text, Sources::Text::PPName},
+         {Types::Sources::Text, Sources::Text::FCPercentName},
+         {Types::Sources::Shape, Sources::Shape::ScoreName},
+         {Types::Sources::Color, Sources::Color::RankName},
+         {Types::Sources::Color, Sources::Color::PersonalBestName},
+         {Types::Sources::Enable, Sources::Enable::PercentageName},
+     }},
+    {(int) Events::NoteCut,
+     {
+         {Types::Sources::Text, Sources::Text::AverageCutName},
+         {Types::Sources::Text, Sources::Text::TimeDependenceName},
+         {Types::Sources::Text, Sources::Text::MistakesName},
+         {Types::Sources::Text, Sources::Text::NotesName},
+         {Types::Sources::Text, Sources::Text::FCPercentName},
+         {Types::Sources::Shape, Sources::Shape::AverageCutName},
+         {Types::Sources::Shape, Sources::Shape::NotesName},
+     }},
+    {(int) Events::NoteMissed,
+     {
+         {Types::Sources::Text, Sources::Text::MistakesName},
+         {Types::Sources::Text, Sources::Text::NotesName},
+         {Types::Sources::Shape, Sources::Shape::NotesName},
+     }},
+    {(int) Events::BombCut,
+     {
+         {Types::Sources::Text, Sources::Text::MistakesName},
+         {Types::Sources::Text, Sources::Text::NotesName},
+         {Types::Sources::Shape, Sources::Shape::NotesName},
+     }},
+    {(int) Events::WallHit,
+     {
+         {Types::Sources::Text, Sources::Text::MistakesName},
+     }},
+    {(int) Events::ComboChanged,
+     {
+         {Types::Sources::Text, Sources::Text::ComboName},
+         {Types::Sources::Text, Sources::Text::MultiplierName},
+         {Types::Sources::Shape, Sources::Shape::MultiplierName},
+         {Types::Sources::Color, Sources::Color::ComboName},
+         {Types::Sources::Color, Sources::Color::MultiplierName},
+         {Types::Sources::Enable, Sources::Enable::FullComboName},
+     }},
+    {(int) Events::HealthChanged,
+     {
+         {Types::Sources::Text, Sources::Text::HealthName},
+         {Types::Sources::Text, Sources::Text::FailsName},
+         {Types::Sources::Shape, Sources::Shape::HealthName},
+         {Types::Sources::Color, Sources::Color::HealthName},
+         {Types::Sources::Enable, Sources::Enable::FailedName},
+     }},
+    {(int) Events::Update,
+     {
+         {Types::Sources::Text, Sources::Text::TimeName},
+         {Types::Sources::Shape, Sources::Shape::TimeName},
+     }},
+    {(int) Events::SlowUpdate,
+     {
+         {Types::Sources::Text, Sources::Text::SaberSpeedName},
+         {Types::Sources::Text, Sources::Text::SpinometerName},
+     }},
+    {(int) Events::MapInfo,
+     {
+         {Types::Sources::Text, Sources::Text::RankName},
+         {Types::Sources::Text, Sources::Text::PersonalBestName},
+         {Types::Sources::Text, Sources::Text::NotesName},
+         {Types::Sources::Text, Sources::Text::PPName},
+         {Types::Sources::Enable, Sources::Enable::RankedName},
+     }},
+};
 
-    int RegisterCustomEvent(std::string mod, int event) {
-        int maxEvent = (int) Events::EventMax;
-        for (auto& [_, idMap] : customEvents) {
-            for (auto& [_, realId] : idMap)
-                maxEvent = std::max(realId, maxEvent);
-        }
-        if (!customEvents.contains(mod))
-            customEvents[mod] = {};
-        customEvents[mod][event] = maxEvent + 1;
-        return maxEvent + 1;
+static std::map<std::string, std::map<int, int>> customEvents = {};
+
+int RegisterCustomEvent(std::string mod, int event) {
+    int maxEvent = (int) Events::EventMax;
+    for (auto& [_, idMap] : customEvents) {
+        for (auto& [_, realId] : idMap)
+            maxEvent = std::max(realId, maxEvent);
     }
+    if (!customEvents.contains(mod))
+        customEvents[mod] = {};
+    customEvents[mod][event] = maxEvent + 1;
+    return maxEvent + 1;
+}
 
-    void RegisterToEvent(Sources sourceType, std::string source, int event) {
-        if (!eventSourceRegistry.contains(event))
-            eventSourceRegistry[event] = {};
-        eventSourceRegistry[event].emplace_back(sourceType, source);
-    }
+void RegisterToEvent(Types::Sources sourceType, std::string source, int event) {
+    if (!eventSourceRegistry.contains(event))
+        eventSourceRegistry[event] = {};
+    eventSourceRegistry[event].emplace_back(sourceType, source);
+}
 
-    void BroadcastEvent(int event) {
-        if (!eventSourceRegistry.contains(event))
-            return;
-        for (auto& [sourceType, source] : eventSourceRegistry[event])
-            UpdateSource(sourceType, source);
-    }
+void Events::Broadcast(int event) {
+    if (!eventSourceRegistry.contains(event))
+        return;
+    for (auto& [sourceType, source] : eventSourceRegistry[event])
+        HUD::UpdateSource(sourceType, source);
+}
 
-    void BroadcastEvent(std::string mod, int event) {
-        if (!customEvents.contains(mod))
-            return;
-        if (!customEvents[mod].contains(event))
-            return;
-        BroadcastEvent(customEvents[mod][event]);
-    }
+void Events::Broadcast(std::string mod, int event) {
+    if (!customEvents.contains(mod))
+        return;
+    if (!customEvents[mod].contains(event))
+        return;
+    Broadcast(customEvents[mod][event]);
 }

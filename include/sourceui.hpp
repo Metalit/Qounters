@@ -5,7 +5,7 @@
 #include "types.hpp"
 
 namespace Qounters {
-    namespace TextSource {
+    namespace Sources::Text {
         void StaticUI(UnityEngine::GameObject* parent, UnparsedJSON options);
         void ScoreUI(UnityEngine::GameObject* parent, UnparsedJSON options);
         void RankUI(UnityEngine::GameObject* parent, UnparsedJSON options);
@@ -26,7 +26,7 @@ namespace Qounters {
 
         void CreateUI(UnityEngine::GameObject* parent, std::string source, UnparsedJSON options);
     }
-    namespace ShapeSource {
+    namespace Sources::Shape {
         void StaticUI(UnityEngine::GameObject* parent, UnparsedJSON options);
         void ScoreUI(UnityEngine::GameObject* parent, UnparsedJSON options);
         void MultiplierUI(UnityEngine::GameObject* parent, UnparsedJSON options);
@@ -37,7 +37,7 @@ namespace Qounters {
 
         void CreateUI(UnityEngine::GameObject* parent, std::string source, UnparsedJSON options);
     }
-    namespace ColorSource {
+    namespace Sources::Color {
         void StaticUI(UnityEngine::GameObject* parent, UnparsedJSON options);
         void PlayerUI(UnityEngine::GameObject* parent, UnparsedJSON options);
         void RankUI(UnityEngine::GameObject* parent, UnparsedJSON options);
@@ -48,7 +48,7 @@ namespace Qounters {
 
         void CreateUI(UnityEngine::GameObject* parent, std::string source, UnparsedJSON options);
     }
-    namespace EnableSource {
+    namespace Sources::Enable {
         void StaticUI(UnityEngine::GameObject* parent, UnparsedJSON options);
         void RankedUI(UnityEngine::GameObject* parent, UnparsedJSON options);
         void FullComboUI(UnityEngine::GameObject* parent, UnparsedJSON options);

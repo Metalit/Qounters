@@ -28,9 +28,9 @@ DEFINE_TYPE(Qounters, SongTimeSource);
 DEFINE_TYPE(Qounters, ImageSpriteCache);
 DEFINE_TYPE(Qounters, ObjectSignal);
 
+using namespace Qounters;
 using namespace GlobalNamespace;
 using namespace UnityEngine;
-using namespace Qounters;
 
 void Shape::SetFilled(bool value) {
     filled = value;
@@ -51,20 +51,20 @@ void Shape::SetMaskOptions(int type, bool inverse) {
     if (!mask)
         return;
 
-    switch ((ShapeOptions::Fills) type) {
-        case ShapeOptions::Fills::None:
+    switch ((Options::Shape::Fills) type) {
+        case Options::Shape::Fills::None:
             // could remove it from the source shapes map as well, but it's probably insignificant
             mask->type = UI::Image::Type::Simple;
             return;
-        case ShapeOptions::Fills::Horizontal:
+        case Options::Shape::Fills::Horizontal:
             mask->fillMethod = UI::Image::FillMethod::Horizontal;
             mask->fillOrigin = (int) (inverse ? UI::Image::OriginHorizontal::Right : UI::Image::OriginHorizontal::Left);
             break;
-        case ShapeOptions::Fills::Vertical:
+        case Options::Shape::Fills::Vertical:
             mask->fillMethod = UI::Image::FillMethod::Vertical;
             mask->fillOrigin = (int) (inverse ? UI::Image::OriginVertical::Bottom : UI::Image::OriginVertical::Top);
             break;
-        case ShapeOptions::Fills::Circle:
+        case Options::Shape::Fills::Circle:
             mask->fillMethod = UI::Image::FillMethod::Radial360;
             mask->fillOrigin = (int) UI::Image::Origin360::Top;
             mask->fillClockwise = !inverse;
@@ -86,7 +86,7 @@ void Shape::SetMaskAmount(float value) {
 // average of centered circumcircle and regular triangle is ((2/sqrt(3) - 1)/2 + 1 + sqrt(3)/2)/2 ~ 0.97169
 // height of base is that - sqrt(3)/2 ~ 0.10566
 
-std::map<int, std::vector<Vector2>> const fixedPoints = {
+static std::map<int, std::vector<Vector2>> const FixedPoints = {
     {3, {{0, 0.10566}, {0.5, 0.97169}, {1, 0.10566}}},  // doesn't work with outline T-T
     {4, {{0, 0}, {0, 1}, {1, 1}, {1, 0}}},
 };
@@ -94,8 +94,8 @@ std::map<int, std::vector<Vector2>> const fixedPoints = {
 std::vector<Vector2> GetCircumferencePoints(int sides, Rect& bounds) {
     std::vector<Vector2> ret = {};
 
-    if (fixedPoints.contains(sides)) {
-        auto& base = fixedPoints.at(sides);
+    if (FixedPoints.contains(sides)) {
+        auto& base = FixedPoints.at(sides);
         for (auto& [x, y] : base)
             ret.emplace_back(bounds.m_XMin + x * bounds.m_Width, bounds.m_YMin + y * bounds.m_Height);
         return ret;
@@ -144,8 +144,8 @@ void Shape::AddColoredVertex(UI::VertexHelper* vh, Vector3 pos, Rect bounds) {
     Color32 color32;
     if (gradient) {
         // start should be left/top imo
-        float lerpValue = gradientDirection == (int) GradientOptions::Directions::Horizontal ? (pos.x - bounds.m_XMin) / bounds.m_Width
-                                                                                             : 1 - (pos.y - bounds.m_YMin) / bounds.m_Height;
+        float lerpValue = gradientDirection == (int) Options::Gradient::Directions::Horizontal ? (pos.x - bounds.m_XMin) / bounds.m_Width
+                                                                                               : 1 - (pos.y - bounds.m_YMin) / bounds.m_Height;
         color32 = Color32::op_Implicit___UnityEngine__Color32(Color::Lerp(startColor, endColor, lerpValue));
     } else
         color32 = Color32::op_Implicit___UnityEngine__Color32(color);
@@ -230,8 +230,8 @@ void TextGradient::OnDisable() {
 }
 
 Color32 TextGradient::GetColor(Bounds bounds, Vector3 vertex) {
-    float lerpAmount = gradientDirection == (int) GradientOptions::Directions::Horizontal ? (vertex.x - bounds.m_Center.x) / bounds.m_Extents.x
-                                                                                          : (vertex.y - bounds.m_Center.y) / -bounds.m_Extents.y;
+    float lerpAmount = gradientDirection == (int) Options::Gradient::Directions::Horizontal ? (vertex.x - bounds.m_Center.x) / bounds.m_Extents.x
+                                                                                            : (vertex.y - bounds.m_Center.y) / -bounds.m_Extents.y;
     // (-1, 1) -> (0, 1)
     lerpAmount = (lerpAmount + 1) * 0.5;
     return Color32::op_Implicit___UnityEngine__Color32(Color::Lerp(startColor, endColor, lerpAmount));
@@ -257,7 +257,7 @@ void TextGradient::UpdateGradient() {
     text->UpdateVertexData(TMPro::TMP_VertexDataUpdateFlags::Colors32);
 }
 
-void CopyFields(Transform* base, Transform* target, int component) {
+static void CopyFields(Transform* base, Transform* target, int component) {
     switch ((BaseGameGraphic::Objects) component) {
         case BaseGameGraphic::Objects::Multiplier: {
             auto baseComp = base->GetComponent<ScoreMultiplierUIController*>();
@@ -289,7 +289,7 @@ void BaseGameGraphic::Update() {
     updateChildren = false;
 }
 
-float GetTimerWidth(Transform* songTimeInstance) {
+static float GetTimerWidth(Transform* songTimeInstance) {
     auto slider = songTimeInstance->Find("Slider").cast<RectTransform>();
     auto handle = slider->Find("Handle Slide Area/Handle").cast<RectTransform>();
     return slider->rect.m_Width + handle->rect.m_Width;
@@ -364,8 +364,8 @@ BaseGameGraphic* BaseGameGraphic::Create(Transform* parent) {
     return obj->AddComponent<BaseGameGraphic*>();
 }
 
-Transform* GetBase(int component) {
-    auto hud = GetHUD().first;
+static Transform* GetBase(int component) {
+    auto hud = HUD::GetHUD().first;
     if (!hud)
         return nullptr;
     switch ((BaseGameGraphic::Objects) component) {
@@ -437,7 +437,7 @@ UI::Graphic* PremadeParent::GetGraphic() {
 }
 
 float SongTimeSource::get_songTime() {
-    return songTime;
+    return Internals::songTime;
 }
 
 float SongTimeSource::get_lastFrameDeltaSongTime() {
@@ -445,11 +445,11 @@ float SongTimeSource::get_lastFrameDeltaSongTime() {
 }
 
 float SongTimeSource::get_songEndTime() {
-    return songLength;
+    return Internals::songLength;
 }
 
 float SongTimeSource::get_songLength() {
-    return songLength;
+    return Internals::songLength;
 }
 
 bool SongTimeSource::get_isReady() {

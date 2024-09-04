@@ -4,12 +4,13 @@
 #include "options.hpp"
 #include "sources.hpp"
 
-namespace Qounters {
-    void CreateTextOptionsUI(UnityEngine::GameObject* parent, TextOptions const& options);
-    void CreateShapeOptionsUI(UnityEngine::GameObject* parent, ShapeOptions const& options);
-    void CreateImageOptionsUI(UnityEngine::GameObject* parent, ImageOptions const& options);
-    void CreatePremadeOptionsUI(UnityEngine::GameObject* parent, PremadeOptions const& options);
-    void CreateTypeOptionsUI(UnityEngine::Transform* parent, int type, Component::OptionsTypes const& options);
+// not in shared
+namespace Qounters::Options {
+    void CreateTextUI(UnityEngine::GameObject* parent, Text const& options);
+    void CreateShapeUI(UnityEngine::GameObject* parent, Shape const& options);
+    void CreateImageUI(UnityEngine::GameObject* parent, Image const& options);
+    void CreatePremadeUI(UnityEngine::GameObject* parent, Premade const& options);
+    void CreateTypeUI(UnityEngine::Transform* parent, int type, Component::OptionsTypes const& options);
 }
 
 DECLARE_CONFIG(Config) {
@@ -20,7 +21,7 @@ DECLARE_CONFIG(Config) {
     CONFIG_VALUE(Enabled, bool, "Enable Qounters++", true, "Turn this off to disable all ingame GUI modifications");
     CONFIG_VALUE(Noodle, bool, "Disable On Chroma/Noodle", false, "Enable or disable the mod for noodle maps specifically");
     CONFIG_VALUE(Migrated, bool, "Migrated", false);
-    CONFIG_VALUE(Presets, StringKeyedMap<Qounters::Preset>, "Presets", {});
+    CONFIG_VALUE(Presets, StringKeyedMap<Qounters::Options::Preset>, "Presets", {});
     CONFIG_VALUE(SettingsPreset, std::string, "Settings Preset", "Default");
     CONFIG_VALUE(Preset, std::string, "Preset", "Default");
     CONFIG_VALUE(TypePresets, StringKeyedMap<PresetOverride>, "Type Presets", {});

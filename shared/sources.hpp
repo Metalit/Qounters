@@ -4,11 +4,28 @@
 #include "config-utils/shared/config-utils.hpp"
 #include "types.hpp"
 
-namespace Qounters {
-    extern std::vector<std::pair<std::string, std::pair<SourceFn<std::string>, SourceUIFn>>> textSources;
-    extern std::vector<std::pair<std::string, std::pair<SourceFn<float>, SourceUIFn>>> shapeSources;
-    extern std::vector<std::pair<std::string, std::pair<SourceFn<UnityEngine::Color>, SourceUIFn>>> colorSources;
-    extern std::vector<std::pair<std::string, std::pair<SourceFn<bool>, SourceUIFn>>> enableSources;
+namespace Qounters::Sources {
+    extern std::vector<std::pair<std::string, std::pair<Types::SourceFn<std::string>, Types::SourceUIFn>>> texts;
+    extern std::vector<std::pair<std::string, std::pair<Types::SourceFn<float>, Types::SourceUIFn>>> shapes;
+    extern std::vector<std::pair<std::string, std::pair<Types::SourceFn<UnityEngine::Color>, Types::SourceUIFn>>> colors;
+    extern std::vector<std::pair<std::string, std::pair<Types::SourceFn<bool>, Types::SourceUIFn>>> enables;
+
+    struct PremadeInfo {
+        std::string name;
+        Types::PremadeFn creation;
+        Types::PremadeUIFn uiFunction;
+        Types::PremadeUpdateFn update;
+        PremadeInfo(
+            std::string_view name, Types::PremadeFn creation, Types::PremadeUIFn uiFunction = nullptr, Types::PremadeUpdateFn update = nullptr
+        ) :
+            name(name),
+            creation(creation),
+            uiFunction(uiFunction),
+            update(update) {}
+    };
+    // map with mod name for ordering purposes
+    extern std::map<std::string, std::vector<PremadeInfo>> premades;
+    PremadeInfo* GetPremadeInfo(std::string const& mod, std::string const& name);
 
     template <class T>
     T GetSource(std::vector<std::pair<std::string, T>> sourceVec, std::string source) {
@@ -20,22 +37,23 @@ namespace Qounters {
     }
 
     template <class T>
-    void
-    RegisterSource(std::vector<std::pair<std::string, std::pair<T, SourceUIFn>>> sourceVec, std::string source, T sourceFn, SourceUIFn sourceUIFn) {
+    inline void Register(
+        std::vector<std::pair<std::string, std::pair<T, Types::SourceUIFn>>> sourceVec, std::string source, T sourceFn, Types::SourceUIFn sourceUIFn
+    ) {
         sourceVec.emplace_back(source, std::make_pair(sourceFn, sourceUIFn));
     }
 
-    inline void RegisterTextSource(std::string sourceName, SourceFn<std::string> sourceFn, SourceUIFn sourceUIFn) {
-        RegisterSource(textSources, sourceName, sourceFn, sourceUIFn);
+    inline void RegisterText(std::string sourceName, Types::SourceFn<std::string> sourceFn, Types::SourceUIFn sourceUIFn) {
+        Register(texts, sourceName, sourceFn, sourceUIFn);
     }
-    inline void RegisterShapeSource(std::string sourceName, SourceFn<float> sourceFn, SourceUIFn sourceUIFn) {
-        RegisterSource(shapeSources, sourceName, sourceFn, sourceUIFn);
+    inline void RegisterShape(std::string sourceName, Types::SourceFn<float> sourceFn, Types::SourceUIFn sourceUIFn) {
+        Register(shapes, sourceName, sourceFn, sourceUIFn);
     }
-    inline void RegisterColorSource(std::string sourceName, SourceFn<UnityEngine::Color> sourceFn, SourceUIFn sourceUIFn) {
-        RegisterSource(colorSources, sourceName, sourceFn, sourceUIFn);
+    inline void RegisterColor(std::string sourceName, Types::SourceFn<UnityEngine::Color> sourceFn, Types::SourceUIFn sourceUIFn) {
+        Register(colors, sourceName, sourceFn, sourceUIFn);
     }
-    inline void RegisterEnableSource(std::string sourceName, SourceFn<bool> sourceFn, SourceUIFn sourceUIFn) {
-        RegisterSource(enableSources, sourceName, sourceFn, sourceUIFn);
+    inline void RegisterEnable(std::string sourceName, Types::SourceFn<bool> sourceFn, Types::SourceUIFn sourceUIFn) {
+        Register(enables, sourceName, sourceFn, sourceUIFn);
     }
 
     extern std::vector<std::string_view> const AverageCutPartStrings;
@@ -45,7 +63,7 @@ namespace Qounters {
     extern std::vector<std::string_view> const SpinometerModeStrings;
     extern std::vector<std::string_view> const RankedStatusLeaderboardStrings;
 
-    namespace TextSource {
+    namespace Text {
         inline std::string const StaticName = "Static";
         inline std::string const ScoreName = "Score";
         inline std::string const RankName = "Rank";
@@ -68,12 +86,12 @@ namespace Qounters {
             VALUE_DEFAULT(std::string, Input, "");
         };
         DECLARE_JSON_STRUCT(Score) {
-            VALUE_DEFAULT(int, Saber, (int) Sabers::Both);
+            VALUE_DEFAULT(int, Saber, (int) Types::Sabers::Both);
             VALUE_DEFAULT(int, Decimals, 1);
             VALUE_DEFAULT(bool, Percentage, true);
         };
         DECLARE_JSON_STRUCT(Rank) {
-            VALUE_DEFAULT(int, Saber, (int) Sabers::Both);
+            VALUE_DEFAULT(int, Saber, (int) Types::Sabers::Both);
             VALUE_DEFAULT(bool, PositiveModifiers, false);
             VALUE_DEFAULT(bool, NegativeModifiers, true);
         };
@@ -84,7 +102,7 @@ namespace Qounters {
             VALUE_DEFAULT(bool, Label, true);
         };
         DECLARE_JSON_STRUCT(Combo) {
-            VALUE_DEFAULT(int, Saber, (int) Sabers::Both);
+            VALUE_DEFAULT(int, Saber, (int) Types::Sabers::Both);
         };
         DECLARE_JSON_STRUCT(Multiplier){};
         DECLARE_JSON_STRUCT(Health) {
@@ -102,12 +120,12 @@ namespace Qounters {
                 Acc,
                 All,
             };
-            VALUE_DEFAULT(int, Saber, (int) Sabers::Both);
+            VALUE_DEFAULT(int, Saber, (int) Types::Sabers::Both);
             VALUE_DEFAULT(int, Decimals, 1);
             VALUE_DEFAULT(int, Part, (int) Parts::All);
         };
         DECLARE_JSON_STRUCT(TimeDependence) {
-            VALUE_DEFAULT(int, Saber, (int) Sabers::Both);
+            VALUE_DEFAULT(int, Saber, (int) Types::Sabers::Both);
             VALUE_DEFAULT(int, Decimals, 1);
             VALUE_DEFAULT(int, DecimalOffset, 0);
         };
@@ -115,7 +133,7 @@ namespace Qounters {
             VALUE_DEFAULT(bool, Restarts, false);
         };
         DECLARE_JSON_STRUCT(Mistakes) {
-            VALUE_DEFAULT(int, Saber, (int) Sabers::Both);
+            VALUE_DEFAULT(int, Saber, (int) Types::Sabers::Both);
             VALUE_DEFAULT(bool, Misses, true);
             VALUE_DEFAULT(bool, BadCuts, true);
             VALUE_DEFAULT(bool, Bombs, false);
@@ -128,7 +146,7 @@ namespace Qounters {
                 Ratio,
                 Percent,
             };
-            VALUE_DEFAULT(int, Saber, (int) Sabers::Both);
+            VALUE_DEFAULT(int, Saber, (int) Types::Sabers::Both);
             VALUE_DEFAULT(int, Display, (int) Displays::Remaining);
             VALUE_DEFAULT(int, Decimals, 1);
         };
@@ -145,7 +163,7 @@ namespace Qounters {
                 Average,
                 Best5Seconds,
             };
-            VALUE_DEFAULT(int, Saber, (int) Sabers::Both);
+            VALUE_DEFAULT(int, Saber, (int) Types::Sabers::Both);
             VALUE_DEFAULT(int, Decimals, 1);
             VALUE_DEFAULT(int, Mode, (int) Modes::Average);
         };
@@ -154,11 +172,11 @@ namespace Qounters {
                 Average,
                 Highest,
             };
-            VALUE_DEFAULT(int, Saber, (int) Sabers::Both);
+            VALUE_DEFAULT(int, Saber, (int) Types::Sabers::Both);
             VALUE_DEFAULT(int, Mode, (int) Modes::Average);
         };
         DECLARE_JSON_STRUCT(FCPercent) {
-            VALUE_DEFAULT(int, Saber, (int) Sabers::Both);
+            VALUE_DEFAULT(int, Saber, (int) Types::Sabers::Both);
             VALUE_DEFAULT(int, Decimals, 1);
         };
 
@@ -181,7 +199,7 @@ namespace Qounters {
         std::string GetFCPercent(UnparsedJSON options);
     }
 
-    namespace ShapeSource {
+    namespace Shape {
         inline std::string const StaticName = "Static";
         inline std::string const ScoreName = "Score";
         inline std::string const MultiplierName = "Multiplier";
@@ -194,7 +212,7 @@ namespace Qounters {
             VALUE_DEFAULT(float, Input, 1);
         };
         DECLARE_JSON_STRUCT(Score) {
-            VALUE_DEFAULT(int, Saber, (int) Sabers::Both);
+            VALUE_DEFAULT(int, Saber, (int) Types::Sabers::Both);
         };
         DECLARE_JSON_STRUCT(Multiplier) {
             VALUE_DEFAULT(bool, Absolute, false);
@@ -209,11 +227,11 @@ namespace Qounters {
                 Acc,
                 All,
             };
-            VALUE_DEFAULT(int, Saber, (int) Sabers::Both);
+            VALUE_DEFAULT(int, Saber, (int) Types::Sabers::Both);
             VALUE_DEFAULT(int, Part, (int) Parts::All);
         };
         DECLARE_JSON_STRUCT(Notes) {
-            VALUE_DEFAULT(int, Saber, (int) Sabers::Both);
+            VALUE_DEFAULT(int, Saber, (int) Types::Sabers::Both);
         };
 
         float GetStatic(UnparsedJSON options);
@@ -225,7 +243,7 @@ namespace Qounters {
         float GetNotes(UnparsedJSON options);
     }
 
-    namespace ColorSource {
+    namespace Color {
         inline std::string const StaticName = "Static";
         inline std::string const PlayerName = "Player";
         inline std::string const RankName = "Rank";
@@ -250,7 +268,7 @@ namespace Qounters {
             VALUE_DEFAULT(int, Setting, (int) ColorSettings::LeftSaber);
         };
         DECLARE_JSON_STRUCT(Rank) {
-            VALUE_DEFAULT(int, Saber, (int) Sabers::Both);
+            VALUE_DEFAULT(int, Saber, (int) Types::Sabers::Both);
             VALUE_DEFAULT(bool, PositiveModifiers, false);
             VALUE_DEFAULT(bool, NegativeModifiers, true);
             VALUE_DEFAULT(ConfigUtils::Color, SS, ConfigUtils::Color(0, 1, 1, 1));
@@ -266,7 +284,7 @@ namespace Qounters {
             VALUE_DEFAULT(ConfigUtils::Color, Worse, ConfigUtils::Color(1, 0.647, 0, 1));
         };
         DECLARE_JSON_STRUCT(Combo) {
-            VALUE_DEFAULT(int, Saber, (int) Sabers::Both);
+            VALUE_DEFAULT(int, Saber, (int) Types::Sabers::Both);
             VALUE_DEFAULT(ConfigUtils::Color, Full, ConfigUtils::Color(1, 1, 1, 1));
             VALUE_DEFAULT(ConfigUtils::Color, NonFull, ConfigUtils::Color(1, 1, 1, 1));
         };
@@ -291,7 +309,7 @@ namespace Qounters {
         UnityEngine::Color GetHealth(UnparsedJSON options);
     }
 
-    namespace EnableSource {
+    namespace Enable {
         inline std::string const StaticName = "Always";
         inline std::string const RankedName = "Ranked";
         inline std::string const FullComboName = "Full Combo";
@@ -309,10 +327,10 @@ namespace Qounters {
             VALUE_DEFAULT(int, Leaderboard, (int) Leaderboards::Either);
         };
         DECLARE_JSON_STRUCT(FullCombo) {
-            VALUE_DEFAULT(int, Saber, (int) Sabers::Both);
+            VALUE_DEFAULT(int, Saber, (int) Types::Sabers::Both);
         };
         DECLARE_JSON_STRUCT(Percentage) {
-            VALUE_DEFAULT(int, Saber, (int) Sabers::Both);
+            VALUE_DEFAULT(int, Saber, (int) Types::Sabers::Both);
             VALUE_DEFAULT(float, Percent, 90);
         };
         DECLARE_JSON_STRUCT(Failed){};

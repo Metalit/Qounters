@@ -16,69 +16,69 @@
 
 using namespace Qounters;
 
-bool initialized = false;
+static bool initialized = false;
 
-UnityEngine::UI::VerticalLayoutGroup* vertical;
-TMPro::TextMeshProUGUI* environmentText;
-TMPro::TextMeshProUGUI* environmentTypeText;
-BSML::DropdownListSetting* presetDropdown;
-BSML::DropdownListSetting* typePresetDropdown;
-BSML::ToggleSetting* typeOverrideToggle;
-BSML::DropdownListSetting* specificPresetDropdown;
-BSML::ToggleSetting* specificOverrideToggle;
-UnityEngine::UI::Button* settingsButton;
+static UnityEngine::UI::VerticalLayoutGroup* vertical;
+static TMPro::TextMeshProUGUI* environmentText;
+static TMPro::TextMeshProUGUI* environmentTypeText;
+static BSML::DropdownListSetting* presetDropdown;
+static BSML::DropdownListSetting* typePresetDropdown;
+static BSML::ToggleSetting* typeOverrideToggle;
+static BSML::DropdownListSetting* specificPresetDropdown;
+static BSML::ToggleSetting* specificOverrideToggle;
+static UnityEngine::UI::Button* settingsButton;
 
-GlobalNamespace::BeatmapLevel* beatmapLevel = nullptr;
-GlobalNamespace::BeatmapKey beatmapKey;
-bool canOverrideEnvironment;
-GlobalNamespace::EnvironmentInfoSO* lastEnvironment = nullptr;
-bool environmentIsOverride;
+static GlobalNamespace::BeatmapLevel* beatmapLevel = nullptr;
+static GlobalNamespace::BeatmapKey beatmapKey;
+static bool canOverrideEnvironment;
+static GlobalNamespace::EnvironmentInfoSO* lastEnvironment = nullptr;
+static bool environmentIsOverride;
 
-bool IsMultiplayer() {
+static bool IsMultiplayer() {
     auto flowCoordinator = BSML::Helpers::GetMainFlowCoordinator()->YoungestChildFlowCoordinatorOrSelf();
     return Utils::ptr_cast<GlobalNamespace::GameServerLobbyFlowCoordinator>(flowCoordinator.ptr());
 }
 
-void SetNameText(UnityEngine::Component* setting, std::string text) {
+static void SetNameText(UnityEngine::Component* setting, std::string text) {
     if (auto textObj = setting->transform->Find("NameText"))
         textObj->GetComponent<TMPro::TextMeshProUGUI*>()->text = text;
 }
 
-void OnDestroy() {
+static void OnDestroy() {
     initialized = false;
     lastEnvironment = nullptr;
 }
 
-void SelectPreset(StringW name) {
+static void SelectPreset(StringW name) {
     auto presets = getConfig().Presets.GetValue();
     if (!presets.contains(name))
-        UpdateUI();
+        Gameplay::UpdateUI();
     else
         getConfig().Preset.SetValue(name);
 }
 
-void TypeOverrideToggled(bool enabled) {
+static void TypeOverrideToggled(bool enabled) {
     if (!lastEnvironment)
         return;
     auto typePresets = getConfig().TypePresets.GetValue();
-    std::string hudTypeString = std::to_string((int) GetHUDType(lastEnvironment->serializedName));
+    std::string hudTypeString = std::to_string((int) Environment::GetHUDType(lastEnvironment->serializedName));
     if (!typePresets.contains(hudTypeString))
         typePresets[hudTypeString].Preset = getConfig().Preset.GetValue();
     typePresets[hudTypeString].Enabled = enabled;
     getConfig().TypePresets.SetValue(typePresets);
-    UpdateUI();
+    Gameplay::UpdateUI();
 }
 
-void SelectTypePreset(StringW name) {
+static void SelectTypePreset(StringW name) {
     if (!lastEnvironment)
         return;
     auto typePresets = getConfig().TypePresets.GetValue();
-    std::string hudTypeString = std::to_string((int) GetHUDType(lastEnvironment->serializedName));
+    std::string hudTypeString = std::to_string((int) Environment::GetHUDType(lastEnvironment->serializedName));
     typePresets[hudTypeString].Preset = std::string(name);
     getConfig().TypePresets.SetValue(typePresets);
 }
 
-void SpecificOverrideToggled(bool enabled) {
+static void SpecificOverrideToggled(bool enabled) {
     if (!lastEnvironment)
         return;
     auto specificPresets = getConfig().SpecificPresets.GetValue();
@@ -87,10 +87,10 @@ void SpecificOverrideToggled(bool enabled) {
         specificPresets[serializedName].Preset = getConfig().Preset.GetValue();
     specificPresets[serializedName].Enabled = enabled;
     getConfig().SpecificPresets.SetValue(specificPresets);
-    UpdateUI();
+    Gameplay::UpdateUI();
 }
 
-void SelectSpecificPreset(StringW name) {
+static void SelectSpecificPreset(StringW name) {
     if (!lastEnvironment)
         return;
     auto specificPresets = getConfig().SpecificPresets.GetValue();
@@ -99,7 +99,7 @@ void SelectSpecificPreset(StringW name) {
     getConfig().SpecificPresets.SetValue(specificPresets);
 }
 
-void Qounters::GameplaySetupMenu(UnityEngine::GameObject* parent, bool firstActivation) {
+void Gameplay::GameplaySetupMenu(UnityEngine::GameObject* parent, bool firstActivation) {
     if (!firstActivation) {
         UpdateUI();
         return;
@@ -146,27 +146,27 @@ void Qounters::GameplaySetupMenu(UnityEngine::GameObject* parent, bool firstActi
 
     Utils::SetChildrenWidth(vertical->transform, 85);
 
-    settingsButton = BSML::Lite::CreateUIButton(vertical, "Open Settings", PresentSettingsEnvironment);
+    settingsButton = BSML::Lite::CreateUIButton(vertical, "Open Settings", Environment::PresentSettings);
 
     initialized = true;
     UpdateUI();
 }
 
-void Qounters::SetLevel(GlobalNamespace::BeatmapLevel* level, GlobalNamespace::BeatmapKey key, bool enableOverride) {
+void Gameplay::SetLevel(GlobalNamespace::BeatmapLevel* level, GlobalNamespace::BeatmapKey key, bool enableOverride) {
     beatmapLevel = level;
     beatmapKey = key;
     canOverrideEnvironment = enableOverride;
     UpdateEnvironment();
 }
 
-void Qounters::ClearLevel() {
+void Gameplay::ClearLevel() {
     beatmapLevel = nullptr;
     beatmapKey = {};
     lastEnvironment = nullptr;
     UpdateUI();
 }
 
-void Qounters::UpdateEnvironment() {
+void Gameplay::UpdateEnvironment() {
     if (!beatmapLevel)
         return;
     auto beatmapEnv = beatmapLevel->GetEnvironmentName(beatmapKey.beatmapCharacteristic, beatmapKey.difficulty);
@@ -187,7 +187,7 @@ void Qounters::UpdateEnvironment() {
     UpdateUI();
 }
 
-void Qounters::UpdateUI() {
+void Gameplay::UpdateUI() {
     if (!initialized)
         return;
 
@@ -204,8 +204,8 @@ void Qounters::UpdateUI() {
     environmentTypeText->transform->parent->gameObject->active = lastEnvironment;
 
     if (lastEnvironment) {
-        int hudType = (int) GetHUDType(lastEnvironment->serializedName);
-        auto type = EnvironmentHUDTypeStrings[hudType];
+        int hudType = (int) Environment::GetHUDType(lastEnvironment->serializedName);
+        auto type = Environment::HUDTypeStrings[hudType];
         std::string name = lastEnvironment->environmentName;
         auto reqs = Utils::GetSimplifiedRequirements(beatmapKey);
 
@@ -227,7 +227,8 @@ void Qounters::UpdateUI() {
             Utils::SetDropdownValues(specificPresetDropdown, names, specificPresets[serializedName].Preset);
 
         environmentText->text = name;
-        environmentTypeText->text = reqs.empty() ? type : fmt::format("{}    <size=66%>{}", type, fmt::join(reqs, ", "));;
+        environmentTypeText->text = reqs.empty() ? type : fmt::format("{}    <size=66%>{}", type, fmt::join(reqs, ", "));
+        ;
         if (hasTypeOverride)
             SetNameText(typeOverrideToggle, fmt::format("Override for {}...", type));
         else

@@ -4,16 +4,16 @@
 #include "customtypes/editing.hpp"
 
 namespace Qounters::Editor {
-    void Initialize(Preset const& preset);
-    void LoadPreset(Preset const& preset);
+    void Initialize(Options::Preset const& preset);
+    void LoadPreset(Options::Preset const& preset);
 
     void SetPreviewMode(bool preview);
     bool GetPreviewMode();
 
-    void SetPresetForMigrating(Preset preset);
-    Preset GetPreset();
-    Group& GetGroup(int idx);
-    void AddGroup(Group group);
+    void SetPresetForMigrating(Options::Preset preset);
+    Options::Preset GetPreset();
+    Options::Group& GetGroup(int idx);
+    void AddGroup(Options::Group group);
 
     void RegisterEditingGroup(EditingGroup* object, int groupIdx);
     void RegisterEditingComponent(EditingComponent* object, int groupIdx, int componentIdx);
@@ -44,7 +44,7 @@ namespace Qounters::Editor {
     void UpdateGradientOptions();
     void UpdateEnableOptions();
     // GetSelectedX optional, but still needs FinalizeAction
-    void SetOptions(int actionId, Component::OptionsTypes options);
+    void SetOptions(int actionId, Options::Component::OptionsTypes options);
     void SetSourceOptions(int actionId, UnparsedJSON options);
     void SetColorOptions(int actionId, UnparsedJSON options);
     void SetEnableOptions(int actionId, UnparsedJSON options);
@@ -58,8 +58,8 @@ namespace Qounters::Editor {
     void DisableActions();
     void EnableActions();
 
-    Group& GetSelectedGroup(int actionId);
-    Component& GetSelectedComponent(int actionId);
+    Options::Group& GetSelectedGroup(int actionId);
+    Options::Component& GetSelectedComponent(int actionId);
     template <class T>
     T GetOptions(int actionId) {
         return GetSelectedComponent(actionId).Options.GetValue<T>().value_or(T());

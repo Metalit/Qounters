@@ -25,8 +25,8 @@
 #include "songcore/shared/SongCore.hpp"
 #include "songcore/shared/SongLoader/CustomBeatmapLevel.hpp"
 
-using namespace GlobalNamespace;
 using namespace Qounters;
+using namespace GlobalNamespace;
 
 std::string Utils::FormatDecimals(double num, int decimals) {
     if (decimals < 0)

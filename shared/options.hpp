@@ -2,7 +2,7 @@
 
 #include "sources.hpp"
 
-namespace Qounters {
+namespace Qounters::Options {
     extern std::vector<std::string_view> const SaberStrings;
     extern std::vector<std::string_view> const DirectionStrings;
     extern std::vector<std::string_view> const AlignStrings;
@@ -12,7 +12,7 @@ namespace Qounters {
     extern std::vector<std::string_view> const AnchorStrings;
     extern std::vector<std::string_view> const BaseGameObjectStrings;
 
-    DECLARE_JSON_STRUCT(GradientOptions) {
+    DECLARE_JSON_STRUCT(Gradient) {
         enum class Directions {
             Horizontal,
             Vertical,
@@ -23,7 +23,7 @@ namespace Qounters {
         VALUE_DEFAULT(ConfigUtils::Vector3, EndModifierHSV, ConfigUtils::Vector3(0, 0, 0));
     };
 
-    DECLARE_JSON_STRUCT(TextOptions) {
+    DECLARE_JSON_STRUCT(Text) {
         enum class Aligns {
             Left,
             Right,
@@ -32,11 +32,11 @@ namespace Qounters {
         VALUE_DEFAULT(int, Align, (int) Aligns::Center);
         VALUE_DEFAULT(float, Size, 15);
         VALUE_DEFAULT(bool, Italic, false);
-        VALUE_DEFAULT(std::string, TextSource, TextSource::StaticName);
-        VALUE_DEFAULT(UnparsedJSON, SourceOptions, TextSource::Static());
+        VALUE_DEFAULT(std::string, TextSource, Sources::Text::StaticName);
+        VALUE_DEFAULT(UnparsedJSON, SourceOptions, Sources::Text::Static());
     };
 
-    DECLARE_JSON_STRUCT(ShapeOptions) {
+    DECLARE_JSON_STRUCT(Shape) {
         enum class Shapes {
             Square,
             SquareOutline,
@@ -57,16 +57,16 @@ namespace Qounters {
         VALUE_DEFAULT(int, Shape, (int) Shapes::Square);
         VALUE_DEFAULT(float, OutlineWidth, 1);
         VALUE_DEFAULT(int, Fill, (int) Fills::None);
-        VALUE_DEFAULT(std::string, FillSource, TextSource::StaticName);
-        VALUE_DEFAULT(UnparsedJSON, SourceOptions, ShapeSource::Static());
+        VALUE_DEFAULT(std::string, FillSource, Sources::Shape::StaticName);
+        VALUE_DEFAULT(UnparsedJSON, SourceOptions, Sources::Shape::Static());
         VALUE_DEFAULT(bool, Inverse, false);
     };
 
-    DECLARE_JSON_STRUCT(ImageOptions) {
+    DECLARE_JSON_STRUCT(Image) {
         VALUE_DEFAULT(std::string, Path, "Default.png");
     };
 
-    DECLARE_JSON_STRUCT(PremadeOptions) {
+    DECLARE_JSON_STRUCT(Premade) {
         VALUE_DEFAULT(std::string, SourceMod, "");
         VALUE_DEFAULT(std::string, Name, std::string(BaseGameObjectStrings[0]));
         VALUE_DEFAULT(UnparsedJSON, Options, {});
@@ -79,18 +79,18 @@ namespace Qounters {
             Image,
             Premade,
         };
-        using OptionsTypes = TypeOptions<TextOptions, ShapeOptions, ImageOptions, PremadeOptions>;
+        using OptionsTypes = TypeOptions<Text, Shape, Image, Premade>;
         VALUE_DEFAULT(ConfigUtils::Vector2, Position, ConfigUtils::Vector2(0, 0));
         VALUE_DEFAULT(float, Rotation, 0);
         VALUE_DEFAULT(ConfigUtils::Vector2, Scale, ConfigUtils::Vector2(1, 1));
         VALUE(int, Type);
         VALUE(OptionsTypes, Options);
-        VALUE_DEFAULT(std::string, ColorSource, ColorSource::StaticName);
-        VALUE_DEFAULT(UnparsedJSON, ColorOptions, ColorSource::Static());
-        VALUE_DEFAULT(std::string, EnableSource, EnableSource::StaticName);
+        VALUE_DEFAULT(std::string, ColorSource, Sources::Color::StaticName);
+        VALUE_DEFAULT(UnparsedJSON, ColorOptions, Sources::Color::Static());
+        VALUE_DEFAULT(std::string, EnableSource, Sources::Enable::StaticName);
         VALUE_DEFAULT(bool, InvertEnable, false);
-        VALUE_DEFAULT(UnparsedJSON, EnableOptions, EnableSource::Static());
-        VALUE_DEFAULT(GradientOptions, Gradient, {});
+        VALUE_DEFAULT(UnparsedJSON, EnableOptions, Sources::Enable::Static());
+        VALUE_DEFAULT(Gradient, GradientOptions, {});
     };
 
     DECLARE_JSON_STRUCT(Group) {

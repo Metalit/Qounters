@@ -1,5 +1,5 @@
 #pragma once
 
-namespace Qounters {
-    void InstallHooks();
+namespace Qounters::Hooks {
+    void Install();
 }

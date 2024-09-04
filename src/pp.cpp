@@ -12,8 +12,8 @@
 #include "song-details/shared/SongDetails.hpp"
 #include "web-utils/shared/WebUtils.hpp"
 
-using namespace GlobalNamespace;
 using namespace Qounters;
+using namespace GlobalNamespace;
 
 std::vector<std::pair<double, double>> const PP::BeatLeaderCurve = {
     {1.0, 7.424},    {0.999, 6.241}, {0.9975, 5.158}, {0.995, 4.010}, {0.9925, 3.241}, {0.99, 2.700}, {0.9875, 2.303}, {0.985, 2.007},
@@ -62,9 +62,10 @@ std::vector<std::pair<double, double>> const PP::ScoreSaberCurve = {
     {0.0, 0.},
 };
 
-double scoresaberMult = 42.117208413;
+static constexpr double ScoresaberMult = 42.117208413;
 
-BeatmapKey latestRequest = {nullptr, 0, nullptr};
+static BeatmapKey latestRequest = {nullptr, 0, nullptr};
+
 bool PP::blSongValid = false;
 PP::BLSongDiff PP::latestBeatleaderSong;
 bool PP::ssSongValid = false;
@@ -116,7 +117,7 @@ float PP::AccCurve(float acc, std::vector<std::pair<double, double>> const& curv
     return curve[i - 1].second + middle_dis * (curve[i].second - curve[i - 1].second);
 }
 
-std::tuple<float, float, float> CalculatePP(float accuracy, float accRating, float passRating, float techRating) {
+static std::tuple<float, float, float> CalculatePP(float accuracy, float accRating, float passRating, float techRating) {
     float passPP = passRating > 0 ? 15.2 * std::exp(std::pow(passRating, 1 / 2.62)) - 30 : 0;
     if (passPP < 0)
         passPP = 0;
@@ -126,19 +127,19 @@ std::tuple<float, float, float> CalculatePP(float accuracy, float accRating, flo
     return {passPP, accPP, techPP};
 }
 
-float Inflate(float pp) {
+static inline float Inflate(float pp) {
     return 650 * std::pow(pp, 1.3) / std::pow(650, 1.3);
 }
 
 bool PP::IsRankedBL() {
-    if (InSettingsEnvironment())
+    if (Environment::InSettings())
         return blSongValid;
     // https://github.com/BeatLeader/beatleader-qmod/blob/b5b7dc811f6b39f52451d2dad9ebb70f3ad4ad57/src/UI/LevelInfoUI.cpp#L78
     return blSongValid && latestBeatleaderSong.Stars > 0 && latestBeatleaderSong.RankedStatus == 3;
 }
 
 bool PP::IsRankedSS() {
-    if (InSettingsEnvironment())
+    if (Environment::InSettings())
         return ssSongValid;
     return ssSongValid && latestScoresaberSong > 0;
 }
@@ -150,7 +151,7 @@ float PP::CalculateBL(float percentage, GameplayModifiers* modifiers, bool faile
     float accRating = latestBeatleaderSong.Acc;
     float techRating = latestBeatleaderSong.Tech;
 
-    if (InSettingsEnvironment()) {
+    if (Environment::InSettings()) {
         // arbitrary but good enough
         passRating = 0.8 * settingsStarsBL;
         accRating = settingsStarsBL;
@@ -204,11 +205,11 @@ float PP::CalculateSS(float percentage, GameplayModifiers* modifiers, bool faile
     if (failed)
         percentage /= 2;
     float multiplier = AccCurve(percentage, ScoreSaberCurve);
-    float stars = InSettingsEnvironment() ? settingsStarsSS : latestScoresaberSong;
-    return multiplier * stars * scoresaberMult;
+    float stars = Environment::InSettings() ? settingsStarsSS : latestScoresaberSong;
+    return multiplier * stars * ScoresaberMult;
 }
 
-void ProcessResponseBL(PP::BLSong song, BeatmapKey map) {
+static void ProcessResponseBL(PP::BLSong song, BeatmapKey map) {
     logger.debug("processing bl respose");
     std::string characteristic = map.beatmapCharacteristic->serializedName;
     std::string difficulty = BeatmapDifficultySerializedMethods::SerializedName(map.difficulty);
@@ -218,13 +219,13 @@ void ProcessResponseBL(PP::BLSong song, BeatmapKey map) {
             logger.debug("found correct difficulty, {:.2f} stars", diff.Stars);
             PP::latestBeatleaderSong = diff;
             PP::blSongValid = true;
-            BroadcastEvent((int) Events::MapInfo);
+            Events::Broadcast((int) Events::MapInfo);
             break;
         }
     }
 }
 
-void GetMapInfoBL(BeatmapKey map, std::string hash) {
+static void GetMapInfoBL(BeatmapKey map, std::string hash) {
     std::string url = "https://api.beatleader.xyz/map/hash/" + hash;
     WebUtils::GetAsync<WebUtils::StringResponse>({url, std::string(MOD_ID " " VERSION)}, [map](WebUtils::StringResponse response) {
         if (!response.IsSuccessful() || !response.responseData) {
@@ -245,9 +246,9 @@ void GetMapInfoBL(BeatmapKey map, std::string hash) {
     });
 }
 
-SongDetailsCache::SongDetails* songDetailsInstance = nullptr;
+static SongDetailsCache::SongDetails* songDetailsInstance = nullptr;
 
-void GetSongDetails(auto&& callback) {
+static void GetSongDetails(auto&& callback) {
     if (songDetailsInstance) {
         callback(songDetailsInstance);
         return;
@@ -261,7 +262,7 @@ void GetSongDetails(auto&& callback) {
     }).detach();
 }
 
-void GetMapInfoSS(BeatmapKey map, std::string hash) {
+static void GetMapInfoSS(BeatmapKey map, std::string hash) {
     std::string characteristic = map.beatmapCharacteristic->serializedName;
     int difficulty = (int) map.difficulty;
 
@@ -279,7 +280,7 @@ void GetMapInfoSS(BeatmapKey map, std::string hash) {
         BSML::MainThreadScheduler::Schedule([&diff]() {
             PP::latestScoresaberSong = diff.starsSS;
             PP::ssSongValid = true;
-            BroadcastEvent((int) Events::MapInfo);
+            Events::Broadcast((int) Events::MapInfo);
         });
     });
 }
@@ -288,7 +289,7 @@ void PP::GetMapInfo(BeatmapKey map) {
     blSongValid = false;
     ssSongValid = false;
     latestRequest = map;
-    BroadcastEvent((int) Events::MapInfo);
+    Events::Broadcast((int) Events::MapInfo);
 
     std::string id = map.levelId;
     static std::string const prefix = "custom_level_";
@@ -306,5 +307,5 @@ void PP::Reset() {
     blSongValid = false;
     ssSongValid = false;
     latestRequest = {nullptr, 0, nullptr};
-    BroadcastEvent((int) Events::MapInfo);
+    Events::Broadcast((int) Events::MapInfo);
 }

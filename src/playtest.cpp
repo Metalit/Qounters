@@ -32,16 +32,16 @@
 using namespace Qounters;
 using namespace GlobalNamespace;
 
-ScoreController* scoreController;
-AudioTimeSyncController* audioController;
-ComboController* comboController;
-GameEnergyCounter* gameEnergyCounter;
-GameEnergyUIPanel* energyBar;
-BeatmapObjectSpawnController* spawner;
+static ScoreController* scoreController;
+static AudioTimeSyncController* audioController;
+static ComboController* comboController;
+static GameEnergyCounter* gameEnergyCounter;
+static GameEnergyUIPanel* energyBar;
+static BeatmapObjectSpawnController* spawner;
 
-SafePtr<ScoreMultiplierCounter> maxMultiplier;
+static SafePtr<ScoreMultiplierCounter> maxMultiplier;
 
-void FindObjects() {
+static void FindObjects() {
     auto hasOtherObjects = UnityEngine::Resources::FindObjectsOfTypeAll<PrepareLevelCompletionResults*>()->First();
     scoreController = Utils::ptr_cast<ScoreController>(hasOtherObjects->_scoreController);
     if (!scoreController) {
@@ -60,12 +60,12 @@ void FindObjects() {
 void Playtest::Update() {
     if (audioController)
         audioController->_songTime += UnityEngine::Time::get_deltaTime();
-    DoSlowUpdate();
-    BroadcastEvent((int) Events::Update);
+    Internals::DoSlowUpdate();
+    Events::Broadcast((int) Events::Update);
 }
 
 void Playtest::SetEnabled(bool enabled) {
-    SetPlayerActive(enabled);
+    Environment::SetPlayerActive(enabled);
     if (!enabled) {
         scoreController = nullptr;
         audioController = nullptr;
@@ -82,7 +82,7 @@ void Playtest::SetEnabled(bool enabled) {
         cast->DissolveAllObjects();
 }
 
-void ResetEnergyBar() {
+static void ResetEnergyBar() {
     if (!energyBar->isActiveAndEnabled)
         return;
     static auto RebindPlayableGraphOutputs = il2cpp_utils::resolve_icall<void, UnityEngine::Playables::PlayableDirector*>(
@@ -128,7 +128,7 @@ void Playtest::ResetGameControllers() {
         element->SetMultipliers(0, 0);
 }
 
-int PositiveMultiplier() {
+static int PositiveMultiplier() {
     if (!maxMultiplier)
         maxMultiplier = ScoreMultiplierCounter::New_ctor();
     maxMultiplier->ProcessMultiplierEvent(ScoreMultiplierCounter::MultiplierEventType::Positive);
@@ -139,7 +139,6 @@ void Playtest::SpawnNote(bool left, bool chain) {
     if (!spawner)
         return;
 
-    using namespace GlobalNamespace;
     static int const chainSegments = 3;
     static int const segmentMaxCut = ScoreModel::GetNoteScoreDefinition(NoteData::ScoringType::BurstSliderElement)->maxCutScore;
 
@@ -161,17 +160,17 @@ void Playtest::SpawnNote(bool left, bool chain) {
 
     // chain links not counted
     if (left)
-        songNotesLeft++;
+        Internals::songNotesLeft++;
     else
-        songNotesRight++;
+        Internals::songNotesRight++;
 
-    songMaxScore += ScoreModel::GetNoteScoreDefinition(data->scoringType)->maxCutScore * PositiveMultiplier();
+    Internals::songMaxScore += ScoreModel::GetNoteScoreDefinition(data->scoringType)->maxCutScore * PositiveMultiplier();
     for (int i = 0; i < chainSegments; i++)
-        songMaxScore += segmentMaxCut * PositiveMultiplier();
-    if (personalBest != -1)
+        Internals::songMaxScore += segmentMaxCut * PositiveMultiplier();
+    if (Internals::personalBest != -1)
         SetPersonalBest(0);
     else
-        BroadcastEvent((int) Qounters::Events::MapInfo);
+        Events::Broadcast((int) Qounters::Events::MapInfo);
 }
 
 void Playtest::SpawnWall() {
@@ -192,49 +191,49 @@ void Playtest::SpawnBomb() {
 
 void Playtest::ResetNotes() {
     ResetGameControllers();
-    leftScore = 0;
-    rightScore = 0;
-    leftMaxScore = 0;
-    rightMaxScore = 0;
-    songMaxScore = 0;
-    leftCombo = 0;
-    rightCombo = 0;
-    combo = 0;
-    health = 0.5;
-    notesLeftCut = 0;
-    notesRightCut = 0;
-    notesLeftBadCut = 0;
-    notesRightBadCut = 0;
-    notesLeftMissed = 0;
-    notesRightMissed = 0;
-    bombsLeftHit = 0;
-    bombsRightHit = 0;
-    wallsHit = 0;
-    songNotesLeft = 0;
-    songNotesRight = 0;
-    leftPreSwing = 0;
-    rightPreSwing = 0;
-    leftPostSwing = 0;
-    rightPostSwing = 0;
-    leftAccuracy = 0;
-    rightAccuracy = 0;
-    leftTimeDependence = 0;
-    rightTimeDependence = 0;
-    leftMissedMaxScore = 0;
-    rightMissedMaxScore = 0;
-    leftMissedFixedScore = 0;
-    rightMissedFixedScore = 0;
-    BroadcastEvent((int) Qounters::Events::ScoreChanged);
-    BroadcastEvent((int) Qounters::Events::NoteCut);
-    BroadcastEvent((int) Qounters::Events::NoteMissed);
-    BroadcastEvent((int) Qounters::Events::BombCut);
-    BroadcastEvent((int) Qounters::Events::WallHit);
-    BroadcastEvent((int) Qounters::Events::ComboChanged);
-    BroadcastEvent((int) Qounters::Events::HealthChanged);
-    if (personalBest != -1)
+    Internals::leftScore = 0;
+    Internals::rightScore = 0;
+    Internals::leftMaxScore = 0;
+    Internals::rightMaxScore = 0;
+    Internals::songMaxScore = 0;
+    Internals::leftCombo = 0;
+    Internals::rightCombo = 0;
+    Internals::combo = 0;
+    Internals::health = 0.5;
+    Internals::notesLeftCut = 0;
+    Internals::notesRightCut = 0;
+    Internals::notesLeftBadCut = 0;
+    Internals::notesRightBadCut = 0;
+    Internals::notesLeftMissed = 0;
+    Internals::notesRightMissed = 0;
+    Internals::bombsLeftHit = 0;
+    Internals::bombsRightHit = 0;
+    Internals::wallsHit = 0;
+    Internals::songNotesLeft = 0;
+    Internals::songNotesRight = 0;
+    Internals::leftPreSwing = 0;
+    Internals::rightPreSwing = 0;
+    Internals::leftPostSwing = 0;
+    Internals::rightPostSwing = 0;
+    Internals::leftAccuracy = 0;
+    Internals::rightAccuracy = 0;
+    Internals::leftTimeDependence = 0;
+    Internals::rightTimeDependence = 0;
+    Internals::leftMissedMaxScore = 0;
+    Internals::rightMissedMaxScore = 0;
+    Internals::leftMissedFixedScore = 0;
+    Internals::rightMissedFixedScore = 0;
+    Events::Broadcast((int) Qounters::Events::ScoreChanged);
+    Events::Broadcast((int) Qounters::Events::NoteCut);
+    Events::Broadcast((int) Qounters::Events::NoteMissed);
+    Events::Broadcast((int) Qounters::Events::BombCut);
+    Events::Broadcast((int) Qounters::Events::WallHit);
+    Events::Broadcast((int) Qounters::Events::ComboChanged);
+    Events::Broadcast((int) Qounters::Events::HealthChanged);
+    if (Internals::personalBest != -1)
         SetPersonalBest(0);
     else
-        BroadcastEvent((int) Qounters::Events::MapInfo);
+        Events::Broadcast((int) Qounters::Events::MapInfo);
     if (maxMultiplier)
         maxMultiplier->Reset();
     PlaytestViewController::GetInstance()->UpdateUI();
@@ -242,13 +241,13 @@ void Playtest::ResetNotes() {
 
 void Playtest::ResetAll() {
     ResetGameControllers();
-    Initialize();
+    Internals::Initialize();
     PP::blSongValid = false;
     settingsStarsBL = 10;
     PP::ssSongValid = false;
     settingsStarsSS = 10;
     SetPersonalBest(-1);
-    UpdateAllSources();
+    HUD::UpdateAllSources();
     if (maxMultiplier)
         maxMultiplier->Reset();
     PlaytestViewController::GetInstance()->UpdateUI();
@@ -262,43 +261,43 @@ void Playtest::SetPersonalBest(float value) {
     else if (value > 0)
         lastValue = value;
     if (value == -1)
-        personalBest = -1;
+        Internals::personalBest = -1;
     else
-        personalBest = Game::GetSongMaxScore() * value / 100;
-    BroadcastEvent((int) Qounters::Events::MapInfo);
+        Internals::personalBest = Game::GetSongMaxScore() * value / 100;
+    Events::Broadcast((int) Qounters::Events::MapInfo);
 }
 
 void Playtest::SetSongTime(float value) {
-    songTime = value;
-    BroadcastEvent((int) Qounters::Events::Update);
+    Internals::songTime = value;
+    Events::Broadcast((int) Qounters::Events::Update);
 };
 
 void Playtest::SetPositiveModifiers(float value) {
-    positiveMods = 1 + (value * 0.01);
-    BroadcastEvent((int) Qounters::Events::ScoreChanged);
+    Internals::positiveMods = 1 + (value * 0.01);
+    Events::Broadcast((int) Qounters::Events::ScoreChanged);
 };
 
 void Playtest::SetNegativeModifiers(float value) {
-    negativeMods = 1 + (value * 0.01);
-    BroadcastEvent((int) Qounters::Events::ScoreChanged);
+    Internals::negativeMods = 1 + (value * 0.01);
+    Events::Broadcast((int) Qounters::Events::ScoreChanged);
 };
 
 void Playtest::SetRankedBL(bool value) {
     PP::blSongValid = value;
-    BroadcastEvent((int) Qounters::Events::MapInfo);
+    Events::Broadcast((int) Qounters::Events::MapInfo);
 };
 
 void Playtest::SetStarsBL(float value) {
     settingsStarsBL = value;
-    BroadcastEvent((int) Qounters::Events::MapInfo);
+    Events::Broadcast((int) Qounters::Events::MapInfo);
 };
 
 void Playtest::SetRankedSS(bool value) {
     PP::ssSongValid = value;
-    BroadcastEvent((int) Qounters::Events::MapInfo);
+    Events::Broadcast((int) Qounters::Events::MapInfo);
 };
 
 void Playtest::SetStarsSS(float value) {
     settingsStarsSS = value;
-    BroadcastEvent((int) Qounters::Events::MapInfo);
+    Events::Broadcast((int) Qounters::Events::MapInfo);
 };

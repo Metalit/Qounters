@@ -11,7 +11,7 @@
 #include "UnityEngine/Quaternion.hpp"
 #include "types.hpp"
 
-namespace Qounters {
+namespace Qounters::Internals {
     extern int leftScore;
     extern int rightScore;
     extern int leftMaxScore;

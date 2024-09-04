@@ -27,9 +27,9 @@ DEFINE_TYPE(Qounters, EditingComponent);
 using namespace Qounters;
 using namespace UnityEngine;
 
-Color const offColor = {0.7, 0.7, 0.7, 1};
-Color const highlightColor = {0, 0.7, 0.8, 1};
-Color const selectColor = {0.2, 0.5, 0.6, 1};
+static Color const OffColor = {0.7, 0.7, 0.7, 1};
+static Color const HighlightColor = {0, 0.7, 0.8, 1};
+static Color const SelectColor = {0.2, 0.5, 0.6, 1};
 
 Material* Outline::material = nullptr;
 int Outline::count = 0;
@@ -338,11 +338,11 @@ void EditingBase::Deselect() {
 
 void EditingBase::UpdateColor() {
     if (pointer || dragging)
-        outline->color = highlightColor;
+        outline->color = HighlightColor;
     else if (selected)
-        outline->color = selectColor;
+        outline->color = SelectColor;
     else
-        outline->color = offColor;
+        outline->color = OffColor;
     if (auto group = Utils::ptr_cast<EditingGroup>(this))
         group->UpdateColorChildren();
 }
@@ -476,9 +476,9 @@ void EditingGroup::OnEndDragDetached(EventSystems::PointerEventData* eventData) 
 void EditingGroup::UpdateColorChildren() {
     if (!highlightedComponents.empty()) {
         if (selected)
-            outline->color = selectColor;
+            outline->color = SelectColor;
         else
-            outline->color = offColor;
+            outline->color = OffColor;
     }
 }
 
@@ -493,7 +493,7 @@ int EditingGroup::GetGroupIdx() {
     return group;
 }
 
-Group& EditingGroup::GetGroup() {
+Options::Group& EditingGroup::GetGroup() {
     return Editor::GetGroup(group);
 }
 
@@ -556,11 +556,11 @@ int EditingComponent::GetComponentIdx() {
     return component;
 }
 
-Group& EditingComponent::GetGroup() {
+Options::Group& EditingComponent::GetGroup() {
     return Editor::GetGroup(GetEditingGroup()->group);
 }
 
-Qounters::Component& EditingComponent::GetComponent() {
+Options::Component& EditingComponent::GetComponent() {
     return GetGroup().Components[component];
 }
 

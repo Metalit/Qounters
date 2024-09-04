@@ -34,9 +34,9 @@
 using namespace Qounters;
 using namespace GlobalNamespace;
 
-std::string lastBeatmap;
+static std::string lastBeatmap;
 
-int GetNoteCount(BeatmapCallbacksUpdater* updater, bool left) {
+static int GetNoteCount(BeatmapCallbacksUpdater* updater, bool left) {
     if (!updater)
         return 0;
     using LinkedList = System::Collections::Generic::LinkedList_1<NoteData*>;
@@ -52,31 +52,31 @@ int GetNoteCount(BeatmapCallbacksUpdater* updater, bool left) {
     auto enumerator = noteDataItemsList->GetEnumerator();
     while (enumerator.MoveNext()) {
         auto noteData = (NoteData*) enumerator.Current;
-        if (ShouldProcessNote(noteData) && noteData->time > songTime && (noteData->colorType == ColorType::ColorA) == left)
+        if (Internals::ShouldProcessNote(noteData) && noteData->time > songTime && (noteData->colorType == ColorType::ColorA) == left)
             noteCount++;
     }
     return noteCount;
 }
 
-int GetMaxScore(BeatmapCallbacksUpdater* updater) {
+static int GetMaxScore(BeatmapCallbacksUpdater* updater) {
     if (!updater)
         return 0;
     return ScoreModel::ComputeMaxMultipliedScoreForBeatmap(updater->_beatmapCallbacksController->_beatmapData);
 }
 
-float GetSongLength(ScoreController* controller) {
+static float GetSongLength(ScoreController* controller) {
     if (!controller)
         return 0;
     return controller->_audioTimeSyncController->_initData->audioClip->length;
 }
 
-int GetFailCount(PlayerDataModel* data) {
+static int GetFailCount(PlayerDataModel* data) {
     if (!data)
         return 0;
     return data->playerData->playerAllOverallStatsData->get_allOverallStatsData()->failedLevelsCount;
 }
 
-float GetPositiveMods(ScoreController* controller) {
+static float GetPositiveMods(ScoreController* controller) {
     if (!controller || !controller->_gameplayModifierParams)
         return 0;
     float ret = 0;
@@ -89,14 +89,14 @@ float GetPositiveMods(ScoreController* controller) {
     return ret;
 }
 
-float GetNegativeMods(ScoreController* controller) {
+static float GetNegativeMods(ScoreController* controller) {
     if (!controller || !controller->_gameplayModifierParams)
         return 0;
     float ret = 0;
     auto mods = ListW<GameplayModifierParamsSO*>(controller->_gameplayModifierParams);
     for (auto& mod : mods) {
         if (mod == controller->_gameplayModifiersModel->_noFailOn0Energy.ptr()) {
-            noFail = true;
+            Internals::noFail = true;
             continue;
         }
         float mult = mod->multiplier;
@@ -106,7 +106,7 @@ float GetNegativeMods(ScoreController* controller) {
     return ret;
 }
 
-int GetHighScore(PlayerDataModel* data, GameplayCoreInstaller* installer) {
+static int GetHighScore(PlayerDataModel* data, GameplayCoreInstaller* installer) {
     if (!data || !installer || !installer->_sceneSetupData)
         return -1;
     auto beatmap = installer->_sceneSetupData->beatmapKey;
@@ -115,13 +115,13 @@ int GetHighScore(PlayerDataModel* data, GameplayCoreInstaller* installer) {
     return data->playerData->levelsStatsData->get_Item(beatmap)->highScore;
 }
 
-float GetHealth(ScoreController* controller) {
+static float GetHealth(ScoreController* controller) {
     if (!controller)
         return 1;
     return controller->_gameEnergyCounter->energy;
 }
 
-namespace Qounters {
+namespace Qounters::Internals {
     int leftScore;
     int rightScore;
     int leftMaxScore;
@@ -178,7 +178,7 @@ namespace Qounters {
     SaberManager* saberManager;
 }
 
-void Qounters::Initialize() {
+void Internals::Initialize() {
     auto beatmapCallbacksUpdater = UnityEngine::Object::FindObjectOfType<BeatmapCallbacksUpdater*>(true);
     auto scoreController = UnityEngine::Object::FindObjectOfType<ScoreController*>(true);
     auto playerDataModel = UnityEngine::Object::FindObjectOfType<PlayerDataModel*>(true);
@@ -199,7 +199,7 @@ void Qounters::Initialize() {
     rightScore = 0;
     leftMaxScore = 0;
     rightMaxScore = 0;
-    songMaxScore = InSettingsEnvironment() ? 0 : GetMaxScore(beatmapCallbacksUpdater);
+    songMaxScore = Environment::InSettings() ? 0 : GetMaxScore(beatmapCallbacksUpdater);
     leftCombo = 0;
     rightCombo = 0;
     combo = 0;
@@ -215,8 +215,8 @@ void Qounters::Initialize() {
     bombsLeftHit = 0;
     bombsRightHit = 0;
     wallsHit = 0;
-    songNotesLeft = InSettingsEnvironment() ? 0 : GetNoteCount(beatmapCallbacksUpdater, true);
-    songNotesRight = InSettingsEnvironment() ? 0 : GetNoteCount(beatmapCallbacksUpdater, false);
+    songNotesLeft = Environment::InSettings() ? 0 : GetNoteCount(beatmapCallbacksUpdater, true);
+    songNotesRight = Environment::InSettings() ? 0 : GetNoteCount(beatmapCallbacksUpdater, false);
     leftPreSwing = 0;
     rightPreSwing = 0;
     leftPostSwing = 0;
@@ -242,7 +242,7 @@ void Qounters::Initialize() {
     std::string beatmap = "Unknown";
     if (setupData)
         beatmap = Utils::GetBeatmapIdentifier(setupData->beatmapKey);
-    if (beatmap != lastBeatmap || InSettingsEnvironment())
+    if (beatmap != lastBeatmap || Environment::InSettings())
         restarts = 0;
     else
         restarts++;
@@ -265,7 +265,7 @@ void Qounters::Initialize() {
     saberManager = UnityEngine::Object::FindObjectOfType<SaberManager*>();
 }
 
-bool Qounters::ShouldProcessNote(NoteData* data) {
+bool Internals::ShouldProcessNote(NoteData* data) {
     // check first for noodle
     if (data->scoringType == NoteData::ScoringType::NoScore || data->scoringType == NoteData::ScoringType::Ignore)
         return false;
@@ -274,7 +274,7 @@ bool Qounters::ShouldProcessNote(NoteData* data) {
     return false;
 }
 
-void Qounters::DoSlowUpdate() {
+void Internals::DoSlowUpdate() {
     timeSinceSlowUpdate += UnityEngine::Time::get_deltaTime();
     if (timeSinceSlowUpdate > 1 / (float) SPEED_SAMPLES_PER_SEC) {
         if (saberManager) {
@@ -292,6 +292,6 @@ void Qounters::DoSlowUpdate() {
             prevRotRight = rotRight;
         }
         timeSinceSlowUpdate = 0;
-        BroadcastEvent((int) Events::SlowUpdate);
+        Events::Broadcast((int) Events::SlowUpdate);
     }
 }

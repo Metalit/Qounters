@@ -19,675 +19,676 @@
 #include "sources.hpp"
 #include "utils.hpp"
 
-namespace Qounters::Editor {
-    constexpr int anchorCount = (int) Group::Anchors::AnchorMax + 1;
+using namespace Qounters;
 
-    std::array<CanvasHighlight*, anchorCount> anchors;
-    std::array<UnityEngine::GameObject*, anchorCount> dragCanvases;
-    UnityEngine::GameObject* detachedDragCanvas;
+static constexpr int AnchorCount = (int) Options::Group::Anchors::AnchorMax + 1;
 
-    int currentAnchor;
+static UnityEngine::Color const NormalColor = {1, 1, 1, 0.2};
+static UnityEngine::Color const HighlightColor = {0, 0.7, 0.8, 0.2};
 
-    std::map<std::pair<int, int>, EditingBase*> editing;
-    EditingBase* selected;
-    int selectedGroupIdx, selectedComponentIdx;
+static std::array<CanvasHighlight*, AnchorCount> anchors;
+static std::array<UnityEngine::GameObject*, AnchorCount> dragCanvases;
+static UnityEngine::GameObject* detachedDragCanvas;
 
-    std::vector<std::tuple<int, int, std::function<void()>>> undos;
+static int currentAnchor;
 
-    bool addDirectToPreset = false;
+static std::map<std::pair<int, int>, EditingBase*> editing;
+static EditingBase* selected;
+static int selectedGroupIdx, selectedComponentIdx;
 
-    Preset preset;
+static std::vector<std::tuple<int, int, std::function<void()>>> undos;
 
-    std::set<int> removedGroupIdxs;
-    std::map<int, std::set<int>> removedComponentIdxs;
+static bool addDirectToPreset = false;
 
-    int highestActionId = 0;
+static Options::Preset preset;
 
-    VRUIControls::VRInputModule* vrInput;
+static std::set<int> removedGroupIdxs;
+static std::map<int, std::set<int>> removedComponentIdxs;
 
-    UnityEngine::Color const normalColor = {1, 1, 1, 0.2};
-    UnityEngine::Color const highlightColor = {0, 0.7, 0.8, 0.2};
+static int highestActionId = 0;
 
-    Group nextUndoGroup;
-    Component nextUndoComponent;
-    int currentActionId;
-    std::set<void (*)()> nextUndoUpdates;
+static VRUIControls::VRInputModule* vrInput;
 
-    int lastActionId;
-    float lastActionTime;
-    std::set<void (*)()> lastUndoUpdates;
+static Options::Group nextUndoGroup;
+static Options::Component nextUndoComponent;
+static int currentActionId;
+static std::set<void (*)()> nextUndoUpdates;
 
-    bool runningUndo;
+static int lastActionId;
+static float lastActionTime;
+static std::set<void (*)()> lastUndoUpdates;
 
-    bool disableActions;
+static bool runningUndo;
 
-    bool previewMode;
+static bool disableActions;
 
-    int prevSelectedGroupIdx, prevSelectedComponentIdx;
-    EditingBase* prevSelected;
-    bool tempSelectIsReal;
+static bool previewMode;
 
-    void TempSelect(int groupIdx, int componentIdx) {
-        prevSelectedGroupIdx = selectedGroupIdx;
-        prevSelectedComponentIdx = selectedComponentIdx;
-        prevSelected = selected;
-        selectedGroupIdx = groupIdx;
-        selectedComponentIdx = componentIdx;
-        selected = editing[{groupIdx, componentIdx}];
-        tempSelectIsReal = prevSelected == selected;
-    }
-    void EndTempSelect() {
-        selectedGroupIdx = prevSelectedGroupIdx;
-        selectedComponentIdx = prevSelectedComponentIdx;
-        if (!tempSelectIsReal)
-            selected = prevSelected;
-        prevSelected = nullptr;
-    }
+static int prevSelectedGroupIdx, prevSelectedComponentIdx;
+static EditingBase* prevSelected;
+static bool tempSelectIsReal;
 
-    inline void AddUpdate(void (*update)()) {
-        if (runningUndo || disableActions)
-            return;
-        nextUndoUpdates.emplace(update);
-    }
-    inline void AddUndo(auto&& fn) {
-        if (runningUndo || disableActions)
-            return;
-        bool wasEmpty = undos.empty();
-        undos.emplace_back(selectedGroupIdx, selectedComponentIdx, fn);
-        if (wasEmpty)
-            SettingsViewController::GetInstance()->UpdateUI();
-    }
+static void TempSelect(int groupIdx, int componentIdx) {
+    prevSelectedGroupIdx = selectedGroupIdx;
+    prevSelectedComponentIdx = selectedComponentIdx;
+    prevSelected = selected;
+    selectedGroupIdx = groupIdx;
+    selectedComponentIdx = componentIdx;
+    selected = editing[{groupIdx, componentIdx}];
+    tempSelectIsReal = prevSelected == selected;
+}
+static void EndTempSelect() {
+    selectedGroupIdx = prevSelectedGroupIdx;
+    selectedComponentIdx = prevSelectedComponentIdx;
+    if (!tempSelectIsReal)
+        selected = prevSelected;
+    prevSelected = nullptr;
+}
 
-    void SetupAnchors() {
-        for (int i = 0; i < anchorCount; i++) {
-            auto anchor = GetAnchor(i);
-            if (!anchor) {
-                anchors[i] = nullptr;
-                continue;
-            }
-            anchors[i] = Utils::GetOrAddComponent<CanvasHighlight*>(anchor);
-            anchors[i]->color = {1, 1, 1, 0.2};
-            anchors[i]->raycastTarget = false;
-        }
-    }
-
-    UnityEngine::GameObject* CreateDragCanvas(std::string name, UnityEngine::Transform* parent) {
-        auto canvas = BSML::Lite::CreateCanvas();
-        canvas->name = name;
-
-        if (parent)
-            canvas->transform->SetParent(parent, false);
-        canvas->transform->localScale = {1, 1, 1};
-        // might be nice to have a constrained area later
-        canvas->GetComponent<UnityEngine::RectTransform*>()->sizeDelta = {1000, 1000};
-        canvas->AddComponent<CanvasHighlight*>()->raycastTarget = true;
-        canvas->active = false;
-        return canvas;
-    }
-
-    void CreateDragCanvases() {
-        for (int i = 0; i < anchorCount; i++) {
-            if (!anchors[i]) {
-                dragCanvases[i] = nullptr;
-                continue;
-            }
-            auto parent = anchors[i]->transform;
-            dragCanvases[i] = CreateDragCanvas("QountersDragCanvas" + std::to_string(i), parent);
-        }
-        detachedDragCanvas = CreateDragCanvas("QountersDetachedDragCanvas", nullptr);
-    }
-
-    void InitializeInternal(Preset const& inPreset, bool newEnvironment) {
-        preset = inPreset;
-        editing.clear();
-        undos.clear();
-        removedGroupIdxs.clear();
-        removedComponentIdxs.clear();
-        selected = nullptr;
-        selectedGroupIdx = -1;
-        selectedComponentIdx = -1;
-        currentActionId = -1;
-        nextUndoUpdates.clear();
-        lastActionId = -1;
-        lastActionTime = 0;
-        lastUndoUpdates.clear();
-        runningUndo = false;
-        disableActions = false;
-        previewMode = false;
-        vrInput = Utils::GetCurrentInputModule();
-        if (newEnvironment) {
-            SetupAnchors();
-            CreateDragCanvases();
-        }
-
-        for (int i = 0; i < preset.Qounters.size(); i++)
-            CreateQounterGroup(preset.Qounters[i], i, true);
-    }
-
-    void Initialize(Preset const& inPreset) {
-        InitializeInternal(inPreset, true);
-    }
-
-    void LoadPreset(Preset const& preset) {
-        for (auto& [idxs, obj] : editing) {
-            auto& [groupIdx, componentIdx] = idxs;
-            if (componentIdx == -1)
-                UnityEngine::Object::Destroy(obj->gameObject);
-        }
-        Reset(false);
-        InitializeInternal(preset, false);
+static inline void AddUpdate(void (*update)()) {
+    if (runningUndo || disableActions)
+        return;
+    nextUndoUpdates.emplace(update);
+}
+static inline void AddUndo(auto&& fn) {
+    if (runningUndo || disableActions)
+        return;
+    bool wasEmpty = undos.empty();
+    undos.emplace_back(selectedGroupIdx, selectedComponentIdx, fn);
+    if (wasEmpty)
         SettingsViewController::GetInstance()->UpdateUI();
-    }
+}
 
-    void SetPreviewMode(bool preview) {
-        previewMode = preview;
-        for (auto& [_, obj] : editing)
-            obj->outline->enabled = !preview;
-        Deselect();
-        UpdateAllEnables();
-        if (preview)
-            SettingsFlowCoordinator::PresentPlaytest();
-        else
-            SettingsFlowCoordinator::PresentTemplates();
-        Playtest::SetEnabled(preview);
-    }
-
-    bool GetPreviewMode() {
-        return previewMode;
-    }
-
-    void SetPresetForMigrating(Preset migratingPreset) {
-        addDirectToPreset = true;
-        preset = migratingPreset;
-    }
-
-    Preset GetPreset() {
-        if (addDirectToPreset) {
-            addDirectToPreset = false;
-            return preset;
+static void SetupAnchors() {
+    for (int i = 0; i < AnchorCount; i++) {
+        auto anchor = HUD::GetAnchor(i);
+        if (!anchor) {
+            anchors[i] = nullptr;
+            continue;
         }
-        Preset ret = preset;
-        for (auto& [idx, set] : removedComponentIdxs) {
-            if (removedGroupIdxs.contains(idx))
-                continue;
-            for (auto it = set.rbegin(); it != set.rend(); it++) {
-                auto& components = ret.Qounters[idx].Components;
-                components.erase(components.begin() + *it);
-            }
+        anchors[i] = Utils::GetOrAddComponent<CanvasHighlight*>(anchor);
+        anchors[i]->color = {1, 1, 1, 0.2};
+        anchors[i]->raycastTarget = false;
+    }
+}
+
+static UnityEngine::GameObject* CreateDragCanvas(std::string name, UnityEngine::Transform* parent) {
+    auto canvas = BSML::Lite::CreateCanvas();
+    canvas->name = name;
+
+    if (parent)
+        canvas->transform->SetParent(parent, false);
+    canvas->transform->localScale = {1, 1, 1};
+    // might be nice to have a constrained area later
+    canvas->GetComponent<UnityEngine::RectTransform*>()->sizeDelta = {1000, 1000};
+    canvas->AddComponent<CanvasHighlight*>()->raycastTarget = true;
+    canvas->active = false;
+    return canvas;
+}
+
+static void CreateDragCanvases() {
+    for (int i = 0; i < AnchorCount; i++) {
+        if (!anchors[i]) {
+            dragCanvases[i] = nullptr;
+            continue;
         }
-        for (auto it = removedGroupIdxs.rbegin(); it != removedGroupIdxs.rend(); it++)
-            ret.Qounters.erase(ret.Qounters.begin() + *it);
-        return ret;
+        auto parent = anchors[i]->transform;
+        dragCanvases[i] = CreateDragCanvas("QountersDragCanvas" + std::to_string(i), parent);
+    }
+    detachedDragCanvas = CreateDragCanvas("QountersDetachedDragCanvas", nullptr);
+}
+
+static void InitializeInternal(Options::Preset const& inPreset, bool newEnvironment) {
+    preset = inPreset;
+    editing.clear();
+    undos.clear();
+    removedGroupIdxs.clear();
+    removedComponentIdxs.clear();
+    selected = nullptr;
+    selectedGroupIdx = -1;
+    selectedComponentIdx = -1;
+    currentActionId = -1;
+    nextUndoUpdates.clear();
+    lastActionId = -1;
+    lastActionTime = 0;
+    lastUndoUpdates.clear();
+    runningUndo = false;
+    disableActions = false;
+    previewMode = false;
+    vrInput = Utils::GetCurrentInputModule();
+    if (newEnvironment) {
+        SetupAnchors();
+        CreateDragCanvases();
     }
 
-    Group& GetGroup(int idx) {
-        return preset.Qounters[idx];
+    for (int i = 0; i < preset.Qounters.size(); i++)
+        HUD::CreateQounterGroup(preset.Qounters[i], i, true);
+}
+
+void Editor::Initialize(Options::Preset const& inPreset) {
+    InitializeInternal(inPreset, true);
+}
+
+void Editor::LoadPreset(Options::Preset const& preset) {
+    for (auto& [idxs, obj] : editing) {
+        auto& [groupIdx, componentIdx] = idxs;
+        if (componentIdx == -1)
+            UnityEngine::Object::Destroy(obj->gameObject);
     }
+    HUD::Reset(false);
+    InitializeInternal(preset, false);
+    SettingsViewController::GetInstance()->UpdateUI();
+}
 
-    void AddGroup(Group group) {
-        if (addDirectToPreset) {
-            preset.Qounters.emplace_back(group);
-            return;
-        }
-
-        int newIdx = preset.Qounters.size();
-        preset.Qounters.emplace_back(group);
-        CreateQounterGroup(group, newIdx, true);
-
-        auto created = editing[{newIdx, -1}];
-        if (!runningUndo)
-            created->Select();
-        SelectEditing(created);
-
-        AddUndo(Remove);
-    }
-
-    void RegisterEditingGroup(EditingGroup* object, int groupIdx) {
-        editing[{groupIdx, -1}] = object;
-        removedGroupIdxs.erase(groupIdx);
-        if (selectedGroupIdx == groupIdx && selectedComponentIdx == -1)
-            SelectEditing(object);
-    }
-    void RegisterEditingComponent(EditingComponent* object, int groupIdx, int componentIdx) {
-        editing[{groupIdx, componentIdx}] = object;
-        if (removedComponentIdxs.contains(groupIdx))
-            removedComponentIdxs[groupIdx].erase(componentIdx);
-        if (selectedGroupIdx == groupIdx && selectedComponentIdx == componentIdx)
-            SelectEditing(object);
-    }
-
-    void UnregisterEditing(EditingBase* object) {
-        if (object == selected)
-            selected = nullptr;
-        for (auto it = editing.begin(); it != editing.end(); it++) {
-            if (it->second == object) {
-                editing.erase(it);
-                return;
-            }
-        }
-    }
-    void MarkAsRemoved(int groupIdx, int componentIdx) {
-        if (componentIdx != -1) {
-            if (!removedComponentIdxs.contains(groupIdx))
-                removedComponentIdxs[groupIdx] = {};
-            removedComponentIdxs[groupIdx].emplace(componentIdx);
-        } else
-            removedGroupIdxs.emplace(groupIdx);
-    }
-
-    void SelectEditing(EditingBase* object) {
-        logger.debug("selected {} -> {}", fmt::ptr(selected), fmt::ptr(object));
-        if (runningUndo || object == selected)
-            return;
-        if (selected)
-            selected->Deselect();
-        selected = object;
-
-        auto options = OptionsViewController::GetInstance();
-
-        if (auto group = Utils::ptr_cast<EditingGroup>(object)) {
-            selectedGroupIdx = group->GetGroupIdx();
-            selectedComponentIdx = -1;
-            options->GroupSelected();
-        } else if (auto component = Utils::ptr_cast<EditingComponent>(object)) {
-            selectedGroupIdx = component->GetEditingGroup()->GetGroupIdx();
-            selectedComponentIdx = component->GetComponentIdx();
-            options->ComponentSelected();
-        }
-
-        SettingsFlowCoordinator::PresentOptions();
-    }
-
-    void Deselect() {
-        if (runningUndo && !tempSelectIsReal)
-            return;
-        if (selected)
-            selected->Deselect();
-        selected = nullptr;
-
+void Editor::SetPreviewMode(bool preview) {
+    previewMode = preview;
+    for (auto& [_, obj] : editing)
+        obj->outline->enabled = !preview;
+    Deselect();
+    HUD::UpdateAllEnables();
+    if (preview)
+        SettingsFlowCoordinator::PresentPlaytest();
+    else
         SettingsFlowCoordinator::PresentTemplates();
-    }
+    Playtest::SetEnabled(preview);
+}
 
-    void BeginDrag(int anchor, bool group) {
-        raycastCanvases.clear();
-        blockOtherRaycasts = true;
-        for (int i = 0; i < anchorCount; i++) {
-            anchors[i]->raycastTarget = group;
-            anchors[i]->SetHighlighted(i != anchor && group);
-            anchors[i]->color = normalColor;
-            dragCanvases[i]->active = i == anchor;
-            raycastCanvases.emplace(anchors[i]->GetComponent<UnityEngine::Canvas*>());
-            raycastCanvases.emplace(dragCanvases[i]->GetComponent<UnityEngine::Canvas*>());
+bool Editor::GetPreviewMode() {
+    return previewMode;
+}
+
+void Editor::SetPresetForMigrating(Options::Preset migratingPreset) {
+    addDirectToPreset = true;
+    preset = migratingPreset;
+}
+
+Options::Preset Editor::GetPreset() {
+    if (addDirectToPreset) {
+        addDirectToPreset = false;
+        return preset;
+    }
+    Options::Preset ret = preset;
+    for (auto& [idx, set] : removedComponentIdxs) {
+        if (removedGroupIdxs.contains(idx))
+            continue;
+        for (auto it = set.rbegin(); it != set.rend(); it++) {
+            auto& components = ret.Qounters[idx].Components;
+            components.erase(components.begin() + *it);
         }
-        currentAnchor = anchor;
     }
-    bool UpdateDrag(EditingGroup* dragged) {
-        using RaycastResult = VRUIControls::VRGraphicRaycaster::VRGraphicRaycastResult;
+    for (auto it = removedGroupIdxs.rbegin(); it != removedGroupIdxs.rend(); it++)
+        ret.Qounters.erase(ret.Qounters.begin() + *it);
+    return ret;
+}
 
-        auto controller = vrInput->_vrPointer->_lastSelectedVrController->_viewAnchorTransform;
-        auto ray = UnityEngine::Ray(controller->position, controller->forward);
+Options::Group& Editor::GetGroup(int idx) {
+    return preset.Qounters[idx];
+}
 
-        auto results = ListW<RaycastResult>::New();
-        for (int i = 0; i < anchorCount; i++) {
-            if (i == currentAnchor)
+void Editor::AddGroup(Options::Group group) {
+    if (addDirectToPreset) {
+        preset.Qounters.emplace_back(group);
+        return;
+    }
+
+    int newIdx = preset.Qounters.size();
+    preset.Qounters.emplace_back(group);
+    HUD::CreateQounterGroup(group, newIdx, true);
+
+    auto created = editing[{newIdx, -1}];
+    if (!runningUndo)
+        created->Select();
+    SelectEditing(created);
+
+    AddUndo(Remove);
+}
+
+void Editor::RegisterEditingGroup(EditingGroup* object, int groupIdx) {
+    editing[{groupIdx, -1}] = object;
+    removedGroupIdxs.erase(groupIdx);
+    if (selectedGroupIdx == groupIdx && selectedComponentIdx == -1)
+        SelectEditing(object);
+}
+void Editor::RegisterEditingComponent(EditingComponent* object, int groupIdx, int componentIdx) {
+    editing[{groupIdx, componentIdx}] = object;
+    if (removedComponentIdxs.contains(groupIdx))
+        removedComponentIdxs[groupIdx].erase(componentIdx);
+    if (selectedGroupIdx == groupIdx && selectedComponentIdx == componentIdx)
+        SelectEditing(object);
+}
+
+void Editor::UnregisterEditing(EditingBase* object) {
+    if (object == selected)
+        selected = nullptr;
+    for (auto it = editing.begin(); it != editing.end(); it++) {
+        if (it->second == object) {
+            editing.erase(it);
+            return;
+        }
+    }
+}
+
+static void MarkAsRemoved(int groupIdx, int componentIdx) {
+    if (componentIdx != -1) {
+        if (!removedComponentIdxs.contains(groupIdx))
+            removedComponentIdxs[groupIdx] = {};
+        removedComponentIdxs[groupIdx].emplace(componentIdx);
+    } else
+        removedGroupIdxs.emplace(groupIdx);
+}
+
+void Editor::SelectEditing(EditingBase* object) {
+    logger.debug("selected {} -> {}", fmt::ptr(selected), fmt::ptr(object));
+    if (runningUndo || object == selected)
+        return;
+    if (selected)
+        selected->Deselect();
+    selected = object;
+
+    auto options = OptionsViewController::GetInstance();
+
+    if (auto group = Utils::ptr_cast<EditingGroup>(object)) {
+        selectedGroupIdx = group->GetGroupIdx();
+        selectedComponentIdx = -1;
+        options->GroupSelected();
+    } else if (auto component = Utils::ptr_cast<EditingComponent>(object)) {
+        selectedGroupIdx = component->GetEditingGroup()->GetGroupIdx();
+        selectedComponentIdx = component->GetComponentIdx();
+        options->ComponentSelected();
+    }
+
+    SettingsFlowCoordinator::PresentOptions();
+}
+
+void Editor::Deselect() {
+    if (runningUndo && !tempSelectIsReal)
+        return;
+    if (selected)
+        selected->Deselect();
+    selected = nullptr;
+
+    SettingsFlowCoordinator::PresentTemplates();
+}
+
+void Editor::BeginDrag(int anchor, bool group) {
+    raycastCanvases.clear();
+    blockOtherRaycasts = true;
+    for (int i = 0; i < AnchorCount; i++) {
+        anchors[i]->raycastTarget = group;
+        anchors[i]->SetHighlighted(i != anchor && group);
+        anchors[i]->color = NormalColor;
+        dragCanvases[i]->active = i == anchor;
+        raycastCanvases.emplace(anchors[i]->GetComponent<UnityEngine::Canvas*>());
+        raycastCanvases.emplace(dragCanvases[i]->GetComponent<UnityEngine::Canvas*>());
+    }
+    currentAnchor = anchor;
+}
+bool Editor::UpdateDrag(EditingGroup* dragged) {
+    using RaycastResult = VRUIControls::VRGraphicRaycaster::VRGraphicRaycastResult;
+
+    auto controller = vrInput->_vrPointer->_lastSelectedVrController->_viewAnchorTransform;
+    auto ray = UnityEngine::Ray(controller->position, controller->forward);
+
+    auto results = ListW<RaycastResult>::New();
+    for (int i = 0; i < AnchorCount; i++) {
+        if (i == currentAnchor)
+            continue;
+
+        auto raycaster = anchors[i]->GetComponent<VRUIControls::VRGraphicRaycaster*>();
+        raycaster->RaycastCanvas(raycaster->_canvas, ray, System::Single::MaxValue, 0, results);
+
+        RaycastResult* hit = nullptr;
+        for (int j = 0; !hit && j < results.size(); j++) {
+            if (results[j].graphic == anchors[i])
+                hit = &results[j];
+        }
+        if (hit) {
+            BeginDrag(i, true);
+            anchors[i]->SetHighlighted(true);
+            anchors[i]->color = HighlightColor;
+            auto hitPoint = anchors[i]->rectTransform->InverseTransformPoint(hit->position);
+            GetSelectedGroup(-1).Position = UnityEngine::Vector2(hitPoint.x, hitPoint.y);
+            dragged->UpdateDragAnchor(i);
+            return true;
+        }
+    }
+    return false;
+}
+void Editor::EndDrag() {
+    raycastCanvases.clear();
+    blockOtherRaycasts = false;
+    for (int i = 0; i < AnchorCount; i++) {
+        anchors[i]->raycastTarget = false;
+        anchors[i]->SetHighlighted(false);
+        dragCanvases[i]->active = false;
+    }
+}
+void Editor::EnableDetachedCanvas(bool enabled) {
+    detachedDragCanvas->active = enabled;
+    raycastCanvases.clear();
+    blockOtherRaycasts = enabled;
+    if (enabled) {
+        auto group = editing[{selectedGroupIdx, -1}];
+        detachedDragCanvas->transform->SetParent(group->rectTransform, false);
+        raycastCanvases.emplace(detachedDragCanvas->GetComponent<UnityEngine::Canvas*>());
+    }
+}
+void Editor::UpdateDetachedDrag(UnityEngine::Vector3 const& pos, UnityEngine::Vector3 const& controller) {
+    auto transform = detachedDragCanvas->transform;
+    transform->position = pos;
+    transform->LookAt(controller);
+}
+
+void Editor::AddComponent() {
+    auto& vec = GetSelectedGroup(-1).Components;
+    auto newIdx = vec.size();
+    auto& newComponent = vec.emplace_back();
+    newComponent.Type = (int) Options::Component::Types::Text;
+    Options::Text opts;
+    opts.TextSource = Sources::Text::StaticName;
+    Sources::Text::Static text;
+    text.Input = "New Component";
+    opts.SourceOptions = text;
+    newComponent.Options = opts;
+
+    HUD::CreateQounterComponent(newComponent, newIdx, selected->transform, true);
+    auto created = editing[{selectedGroupIdx, newIdx}];
+    if (!runningUndo) {
+        created->Select();
+        SelectEditing(created);
+    }
+
+    AddUndo(Remove);
+}
+
+void Editor::ToggleAttachment() {
+    auto& group = GetSelectedGroup(-1);
+
+    AddUndo([state = group]() {
+        GetSelectedGroup(-1) = state;
+        HUD::UpdateGroupPosition(selected->rectTransform, state);
+    });
+
+    group.Detached = !group.Detached;
+    group.DetachedPosition = selected->rectTransform->position;
+    group.DetachedRotation = selected->rectTransform->rotation.eulerAngles;
+    HUD::UpdateGroupPosition(selected->rectTransform, group);
+
+    if (!runningUndo)
+        OptionsViewController::GetInstance()->UpdateSimpleUI();
+}
+
+void Editor::SwapGradientColors() {
+    AddUndo(SwapGradientColors);
+
+    auto& comp = GetSelectedComponent(-1);
+    std::swap(comp.GradientOptions.StartModifierHSV, comp.GradientOptions.EndModifierHSV);
+
+    auto editingComponent = (EditingComponent*) selected;
+    HUD::UpdateComponentColor(editingComponent->typeComponent, comp.ColorSource, comp.ColorOptions, comp.GradientOptions);
+
+    if (!runningUndo)
+        OptionsViewController::GetInstance()->UpdateUI();
+}
+
+static void RemoveWithoutDeselect(int groupIdx, int componentIdx) {
+    auto remove = editing[{groupIdx, componentIdx}];
+    if (componentIdx != -1) {
+        auto comp = (EditingComponent*) remove;
+        HUD::RemoveComponent(Editor::GetGroup(groupIdx).Components[componentIdx].Type, comp->typeComponent);
+    } else {
+        // remove references to destroyed children
+        std::vector<std::pair<int, EditingComponent*>> toRemove = {};
+        for (auto& [idxs, obj] : editing) {
+            auto& [otherGroupIdx, otherComponentIdx] = idxs;
+            if (otherGroupIdx != groupIdx || otherComponentIdx == -1)
                 continue;
-
-            auto raycaster = anchors[i]->GetComponent<VRUIControls::VRGraphicRaycaster*>();
-            raycaster->RaycastCanvas(raycaster->_canvas, ray, System::Single::MaxValue, 0, results);
-
-            RaycastResult* hit = nullptr;
-            for (int j = 0; !hit && j < results.size(); j++) {
-                if (results[j].graphic == anchors[i])
-                    hit = &results[j];
-            }
-            if (hit) {
-                BeginDrag(i, true);
-                anchors[i]->SetHighlighted(true);
-                anchors[i]->color = highlightColor;
-                auto hitPoint = anchors[i]->rectTransform->InverseTransformPoint(hit->position);
-                GetSelectedGroup(-1).Position = UnityEngine::Vector2(hitPoint.x, hitPoint.y);
-                dragged->UpdateDragAnchor(i);
-                return true;
-            }
+            toRemove.emplace_back(otherComponentIdx, (EditingComponent*) obj);
         }
-        return false;
-    }
-    void EndDrag() {
-        raycastCanvases.clear();
-        blockOtherRaycasts = false;
-        for (int i = 0; i < anchorCount; i++) {
-            anchors[i]->raycastTarget = false;
-            anchors[i]->SetHighlighted(false);
-            dragCanvases[i]->active = false;
+        for (auto& [otherComponentIdx, component] : toRemove) {
+            Editor::UnregisterEditing(component);
+            HUD::RemoveComponent(Editor::GetGroup(groupIdx).Components[otherComponentIdx].Type, component->typeComponent);
         }
     }
-    void EnableDetachedCanvas(bool enabled) {
-        detachedDragCanvas->active = enabled;
-        raycastCanvases.clear();
-        blockOtherRaycasts = enabled;
-        if (enabled) {
-            auto group = editing[{selectedGroupIdx, -1}];
-            detachedDragCanvas->transform->SetParent(group->rectTransform, false);
-            raycastCanvases.emplace(detachedDragCanvas->GetComponent<UnityEngine::Canvas*>());
-        }
-    }
-    void UpdateDetachedDrag(UnityEngine::Vector3 const& pos, UnityEngine::Vector3 const& controller) {
-        auto transform = detachedDragCanvas->transform;
-        transform->position = pos;
-        transform->LookAt(controller);
-    }
+    Editor::UnregisterEditing(remove);
+    UnityEngine::Object::Destroy(remove->gameObject);
+}
 
-    void AddComponent() {
-        auto& vec = GetSelectedGroup(-1).Components;
-        auto newIdx = vec.size();
-        auto& newComponent = vec.emplace_back();
-        newComponent.Type = (int) Component::Types::Text;
-        TextOptions opts;
-        opts.TextSource = TextSource::StaticName;
-        TextSource::Static text;
-        text.Input = "New Component";
-        opts.SourceOptions = text;
-        newComponent.Options = opts;
-
-        CreateQounterComponent(newComponent, newIdx, selected->transform, true);
-        auto created = editing[{selectedGroupIdx, newIdx}];
-        if (!runningUndo) {
-            created->Select();
-            SelectEditing(created);
-        }
-
-        AddUndo(Remove);
-    }
-
-    void ToggleAttachment() {
-        auto& group = GetSelectedGroup(-1);
-
-        AddUndo([state = group]() {
-            GetSelectedGroup(-1) = state;
-            UpdateGroupPosition(selected->rectTransform, state);
+void Editor::Remove() {
+    if (selectedComponentIdx != -1) {
+        AddUndo([state = GetSelectedComponent(-1)]() {
+            HUD::CreateQounterComponent(state, selectedComponentIdx, editing[{selectedGroupIdx, -1}]->transform, true);
         });
-
-        group.Detached = !group.Detached;
-        group.DetachedPosition = selected->rectTransform->position;
-        group.DetachedRotation = selected->rectTransform->rotation.eulerAngles;
-        UpdateGroupPosition(selected->rectTransform, group);
-
-        if (!runningUndo)
-            OptionsViewController::GetInstance()->UpdateSimpleUI();
+    } else {
+        AddUndo([state = GetSelectedGroup(-1)]() {
+            std::set<int> toRemove;
+            if (removedComponentIdxs.contains(selectedGroupIdx))
+                toRemove = removedComponentIdxs[selectedGroupIdx];
+            HUD::CreateQounterGroup(state, selectedGroupIdx, true);
+            // removed components aren't actually erased, so we have to remove them again when recreating a group
+            for (auto componentIdx : toRemove)
+                RemoveWithoutDeselect(selectedGroupIdx, componentIdx);
+            removedComponentIdxs[selectedGroupIdx] = toRemove;
+        });
     }
 
-    void SwapGradientColors() {
-        AddUndo(SwapGradientColors);
+    RemoveWithoutDeselect(selectedGroupIdx, selectedComponentIdx);
+    MarkAsRemoved(selectedGroupIdx, selectedComponentIdx);
+    Deselect();
+}
 
-        auto& comp = GetSelectedComponent(-1);
-        std::swap(comp.Gradient.StartModifierHSV, comp.Gradient.EndModifierHSV);
+static void SnapPosition(ConfigUtils::Vector2& position) {
+    float step = getConfig().SnapStep.GetValue();
+    position.x = floor((position.x / step) + 0.5) * step;
+    position.y = floor((position.y / step) + 0.5) * step;
+}
 
-        auto editingComponent = (EditingComponent*) selected;
-        UpdateComponentColor(editingComponent->typeComponent, comp.ColorSource, comp.ColorOptions, comp.Gradient);
-
-        if (!runningUndo)
-            OptionsViewController::GetInstance()->UpdateUI();
+static void UpdatePositionUndo() {
+    Editor::UpdatePosition(true);
+}
+void Editor::UpdatePosition(bool neverSnap) {
+    if (!selected)
+        return;
+    AddUpdate(UpdatePositionUndo);
+    bool snap = !neverSnap && getConfig().Snap.GetValue();
+    auto rect = selected->rectTransform;
+    if (selectedComponentIdx != -1) {
+        if (snap)
+            SnapPosition(GetSelectedComponent(-1).Position);
+        HUD::UpdateComponentPosition(rect, GetSelectedComponent(-1));
+    } else {
+        if (snap)
+            SnapPosition(GetSelectedGroup(-1).Position);
+        HUD::UpdateGroupPosition(rect, GetSelectedGroup(-1));
     }
+}
 
-    void RemoveWithoutDeselect(int groupIdx, int componentIdx) {
-        auto remove = editing[{groupIdx, componentIdx}];
-        if (componentIdx != -1) {
-            auto comp = (EditingComponent*) remove;
-            RemoveComponent(GetGroup(groupIdx).Components[componentIdx].Type, comp->typeComponent);
-        } else {
-            // remove references to destroyed children
-            std::vector<std::pair<int, EditingComponent*>> toRemove = {};
-            for (auto& [idxs, obj] : editing) {
-                auto& [otherGroupIdx, otherComponentIdx] = idxs;
-                if (otherGroupIdx != groupIdx || otherComponentIdx == -1)
-                    continue;
-                toRemove.emplace_back(otherComponentIdx, (EditingComponent*) obj);
-            }
-            for (auto& [otherComponentIdx, component] : toRemove) {
-                UnregisterEditing(component);
-                RemoveComponent(GetGroup(groupIdx).Components[otherComponentIdx].Type, component->typeComponent);
-            }
-        }
-        UnregisterEditing(remove);
-        UnityEngine::Object::Destroy(remove->gameObject);
+void Editor::UpdateType() {
+    AddUpdate(UpdateType);
+
+    auto& component = GetSelectedComponent(-1);
+    RemoveWithoutDeselect(selectedGroupIdx, selectedComponentIdx);
+    if (!runningUndo)
+        HUD::SetDefaultOptions(component);
+    HUD::CreateQounterComponent(component, selectedComponentIdx, editing[{selectedGroupIdx, -1}]->transform, true);
+
+    if (!runningUndo || tempSelectIsReal) {
+        selected = editing[{selectedGroupIdx, selectedComponentIdx}];
+        selected->Select();
+        OptionsViewController::GetInstance()->UpdateUI();
     }
+}
 
-    void Remove() {
-        if (selectedComponentIdx != -1) {
-            AddUndo([state = GetSelectedComponent(-1)]() {
-                CreateQounterComponent(state, selectedComponentIdx, editing[{selectedGroupIdx, -1}]->transform, true);
-            });
-        } else {
-            AddUndo([state = GetSelectedGroup(-1)]() {
-                std::set<int> toRemove;
-                if (removedComponentIdxs.contains(selectedGroupIdx))
-                    toRemove = removedComponentIdxs[selectedGroupIdx];
-                CreateQounterGroup(state, selectedGroupIdx, true);
-                // removed components aren't actually erased, so we have to remove them again when recreating a group
-                for (auto componentIdx : toRemove)
-                    RemoveWithoutDeselect(selectedGroupIdx, componentIdx);
-                removedComponentIdxs[selectedGroupIdx] = toRemove;
-            });
-        }
+void Editor::UpdateColorSource() {
+    AddUpdate(UpdateColorSource);
 
-        RemoveWithoutDeselect(selectedGroupIdx, selectedComponentIdx);
-        MarkAsRemoved(selectedGroupIdx, selectedComponentIdx);
-        Deselect();
-    }
-
-    void SnapPosition(ConfigUtils::Vector2& position) {
-        float step = getConfig().SnapStep.GetValue();
-        position.x = floor((position.x / step) + 0.5) * step;
-        position.y = floor((position.y / step) + 0.5) * step;
-    }
-
-    void UpdatePositionUndo() {
-        UpdatePosition(true);
-    }
-    void UpdatePosition(bool neverSnap) {
-        if (!selected)
-            return;
-        AddUpdate(UpdatePositionUndo);
-        bool snap = !neverSnap && getConfig().Snap.GetValue();
-        auto rect = selected->rectTransform;
-        if (selectedComponentIdx != -1) {
-            if (snap)
-                SnapPosition(GetSelectedComponent(-1).Position);
-            UpdateComponentPosition(rect, GetSelectedComponent(-1));
-        } else {
-            if (snap)
-                SnapPosition(GetSelectedGroup(-1).Position);
-            UpdateGroupPosition(rect, GetSelectedGroup(-1));
-        }
-    }
-
-    void UpdateType() {
-        AddUpdate(UpdateType);
-
-        auto& component = GetSelectedComponent(-1);
-        RemoveWithoutDeselect(selectedGroupIdx, selectedComponentIdx);
-        if (!runningUndo)
-            SetDefaultOptions(component);
-        CreateQounterComponent(component, selectedComponentIdx, editing[{selectedGroupIdx, -1}]->transform, true);
-
-        if (!runningUndo || tempSelectIsReal) {
-            selected = editing[{selectedGroupIdx, selectedComponentIdx}];
-            selected->Select();
-            OptionsViewController::GetInstance()->UpdateUI();
-        }
-    }
-
-    void UpdateColorSource() {
-        AddUpdate(UpdateColorSource);
-
-        if (!runningUndo) {
-            SetColorOptions(-1, ColorSource::Static());
-            OptionsViewController::GetInstance()->UpdateUI();
-        } else {
-            auto& component = GetSelectedComponent(-1);
-            auto editingComponent = (EditingComponent*) selected;
-            UpdateComponentColor(editingComponent->typeComponent, component.ColorSource, component.ColorOptions, component.Gradient);
-        }
-    }
-
-    void UpdateEnableSource() {
-        AddUpdate(UpdateEnableSource);
-
-        if (!runningUndo) {
-            SetEnableOptions(-1, EnableSource::Static());
-            OptionsViewController::GetInstance()->UpdateUI();
-        } else {
-            auto& component = GetSelectedComponent(-1);
-            auto editingComponent = (EditingComponent*) selected;
-            UpdateComponentEnabled(
-                editingComponent->typeComponent->gameObject, component.EnableSource, component.EnableOptions, component.InvertEnable
-            );
-        }
-    }
-
-    void UpdateOptions() {
+    if (!runningUndo) {
+        SetColorOptions(-1, Sources::Color::Static());
+        OptionsViewController::GetInstance()->UpdateUI();
+    } else {
         auto& component = GetSelectedComponent(-1);
         auto editingComponent = (EditingComponent*) selected;
-        UpdateComponentOptions(component.Type, editingComponent->typeComponent, component.Options);
-        AddUpdate(UpdateOptions);
+        HUD::UpdateComponentColor(editingComponent->typeComponent, component.ColorSource, component.ColorOptions, component.GradientOptions);
     }
-    void SetOptions(int actionId, Component::OptionsTypes options) {
-        auto& component = GetSelectedComponent(actionId);
-        component.Options = options;
-        UpdateOptions();
-    }
+}
 
-    void UpdateSourceOptions() {
-        // updates a few unnecessary things, but it's ok
-        UpdateOptions();
-    }
-    void SetSourceOptions(int actionId, UnparsedJSON options) {
-        auto& component = GetSelectedComponent(actionId);
-        SetSourceOptions(component, options);
-        UpdateSourceOptions();
-    }
+void Editor::UpdateEnableSource() {
+    AddUpdate(UpdateEnableSource);
 
-    void UpdateColorOptions() {
+    if (!runningUndo) {
+        SetEnableOptions(-1, Sources::Enable::Static());
+        OptionsViewController::GetInstance()->UpdateUI();
+    } else {
         auto& component = GetSelectedComponent(-1);
         auto editingComponent = (EditingComponent*) selected;
-        UpdateComponentColor(editingComponent->typeComponent, component.ColorSource, component.ColorOptions, component.Gradient);
-        AddUpdate(UpdateColorOptions);
+        HUD::UpdateComponentEnabled(
+            editingComponent->typeComponent->gameObject, component.EnableSource, component.EnableOptions, component.InvertEnable
+        );
     }
-    void UpdateGradientOptions() {
-        UpdateColorOptions();
-    }
-    void SetColorOptions(int actionId, UnparsedJSON options) {
-        auto& component = GetSelectedComponent(actionId);
-        component.ColorOptions = options;
-        UpdateColorOptions();
-    }
+}
 
-    void UpdateEnableOptions() {
-        auto& component = GetSelectedComponent(-1);
-        auto editingComponent = (EditingComponent*) selected;
-        UpdateComponentEnabled(editingComponent->typeComponent->gameObject, component.EnableSource, component.EnableOptions, component.InvertEnable);
-        AddUpdate(UpdateEnableOptions);
-    }
-    void SetEnableOptions(int actionId, UnparsedJSON options) {
-        auto& component = GetSelectedComponent(actionId);
-        component.EnableOptions = options;
-        UpdateEnableOptions();
-    }
+void Editor::UpdateOptions() {
+    auto& component = GetSelectedComponent(-1);
+    auto editingComponent = (EditingComponent*) selected;
+    HUD::UpdateComponentOptions(component.Type, editingComponent->typeComponent, component.Options);
+    AddUpdate(UpdateOptions);
+}
+void Editor::SetOptions(int actionId, Options::Component::OptionsTypes options) {
+    auto& component = GetSelectedComponent(actionId);
+    component.Options = options;
+    UpdateOptions();
+}
 
-    void Undo() {
-        if (undos.empty())
-            return;
-        auto undo = undos.end() - 1;
-        auto& [groupIdx, componentIdx, undoFn] = *undo;
-        runningUndo = true;
-        TempSelect(groupIdx, componentIdx);
-        undoFn();
-        EndTempSelect();
-        runningUndo = false;
-        undos.erase(undo);
-        if (groupIdx == selectedGroupIdx && componentIdx == selectedComponentIdx)
-            OptionsViewController::GetInstance()->UpdateUI();
-        if (undos.empty())
-            SettingsViewController::GetInstance()->UpdateUI();
-    }
+void Editor::UpdateSourceOptions() {
+    // updates a few unnecessary things, but it's ok
+    UpdateOptions();
+}
+void Editor::SetSourceOptions(int actionId, UnparsedJSON options) {
+    auto& component = GetSelectedComponent(actionId);
+    HUD::SetSourceOptions(component, options);
+    UpdateSourceOptions();
+}
 
-    bool HasUndo() {
-        return !undos.empty();
-    }
+void Editor::UpdateColorOptions() {
+    auto& component = GetSelectedComponent(-1);
+    auto editingComponent = (EditingComponent*) selected;
+    HUD::UpdateComponentColor(editingComponent->typeComponent, component.ColorSource, component.ColorOptions, component.GradientOptions);
+    AddUpdate(UpdateColorOptions);
+}
+void Editor::UpdateGradientOptions() {
+    UpdateColorOptions();
+}
+void Editor::SetColorOptions(int actionId, UnparsedJSON options) {
+    auto& component = GetSelectedComponent(actionId);
+    component.ColorOptions = options;
+    UpdateColorOptions();
+}
 
-    void ClearUndos() {
-        undos.clear();
+void Editor::UpdateEnableOptions() {
+    auto& component = GetSelectedComponent(-1);
+    auto editingComponent = (EditingComponent*) selected;
+    HUD::UpdateComponentEnabled(editingComponent->typeComponent->gameObject, component.EnableSource, component.EnableOptions, component.InvertEnable);
+    AddUpdate(UpdateEnableOptions);
+}
+void Editor::SetEnableOptions(int actionId, UnparsedJSON options) {
+    auto& component = GetSelectedComponent(actionId);
+    component.EnableOptions = options;
+    UpdateEnableOptions();
+}
+
+void Editor::Undo() {
+    if (undos.empty())
+        return;
+    auto undo = undos.end() - 1;
+    auto& [groupIdx, componentIdx, undoFn] = *undo;
+    runningUndo = true;
+    TempSelect(groupIdx, componentIdx);
+    undoFn();
+    EndTempSelect();
+    runningUndo = false;
+    undos.erase(undo);
+    if (groupIdx == selectedGroupIdx && componentIdx == selectedComponentIdx)
+        OptionsViewController::GetInstance()->UpdateUI();
+    if (undos.empty())
         SettingsViewController::GetInstance()->UpdateUI();
-    }
+}
 
-    int GetActionId() {
-        return highestActionId++;
-    }
+bool Editor::HasUndo() {
+    return !undos.empty();
+}
 
-    void FinalizeAction() {
-        if (disableActions)
-            return;
-        float time = UnityEngine::Time::get_time();
-        bool merge = currentActionId == lastActionId && time - lastActionTime < UNDO_MERGE_THRESHOLD;
-        lastActionTime = time;
-        lastActionId = currentActionId;
-        currentActionId = -1;
-        if (!nextUndoUpdates.empty()) {
-            if (merge && !runningUndo && !undos.empty()) {
-                std::set<void (*)()> newUpdates = {};
-                for (auto& update : nextUndoUpdates) {
-                    if (!lastUndoUpdates.contains(update))
-                        newUpdates.emplace(update);
-                }
-                if (!newUpdates.empty()) {
-                    auto& [a, b, oldUndo] = undos.back();
-                    oldUndo = [oldUndo, updates = std::move(newUpdates)]() {
-                        oldUndo();
-                        for (auto& update : updates)
-                            update();
-                    };
-                }
-            } else if (selectedComponentIdx == -1) {
-                AddUndo([state = nextUndoGroup, updates = nextUndoUpdates]() {
-                    GetSelectedGroup(-1) = state;
-                    for (auto& update : updates)
-                        update();
-                });
-            } else {
-                AddUndo([state = nextUndoComponent, updates = nextUndoUpdates]() {
-                    GetSelectedComponent(-1) = state;
-                    for (auto& update : updates)
-                        update();
-                });
+void Editor::ClearUndos() {
+    undos.clear();
+    SettingsViewController::GetInstance()->UpdateUI();
+}
+
+int Editor::GetActionId() {
+    return highestActionId++;
+}
+
+void Editor::FinalizeAction() {
+    if (disableActions)
+        return;
+    float time = UnityEngine::Time::get_time();
+    bool merge = currentActionId == lastActionId && time - lastActionTime < UNDO_MERGE_THRESHOLD;
+    lastActionTime = time;
+    lastActionId = currentActionId;
+    currentActionId = -1;
+    if (!nextUndoUpdates.empty()) {
+        if (merge && !runningUndo && !undos.empty()) {
+            std::set<void (*)()> newUpdates = {};
+            for (auto& update : nextUndoUpdates) {
+                if (!lastUndoUpdates.contains(update))
+                    newUpdates.emplace(update);
             }
+            if (!newUpdates.empty()) {
+                auto& [a, b, oldUndo] = undos.back();
+                oldUndo = [oldUndo, updates = std::move(newUpdates)]() {
+                    oldUndo();
+                    for (auto& update : updates)
+                        update();
+                };
+            }
+        } else if (selectedComponentIdx == -1) {
+            AddUndo([state = nextUndoGroup, updates = nextUndoUpdates]() {
+                GetSelectedGroup(-1) = state;
+                for (auto& update : updates)
+                    update();
+            });
+        } else {
+            AddUndo([state = nextUndoComponent, updates = nextUndoUpdates]() {
+                GetSelectedComponent(-1) = state;
+                for (auto& update : updates)
+                    update();
+            });
         }
-        lastUndoUpdates.swap(nextUndoUpdates);
-        nextUndoUpdates.clear();
     }
+    lastUndoUpdates.swap(nextUndoUpdates);
+    nextUndoUpdates.clear();
+}
 
-    void DisableActions() {
-        disableActions = true;
-    }
+void Editor::DisableActions() {
+    disableActions = true;
+}
 
-    void EnableActions() {
-        disableActions = false;
-    }
+void Editor::EnableActions() {
+    disableActions = false;
+}
 
-    Group& GetSelectedGroup(int actionId) {
-        auto& ret = GetGroup(selectedGroupIdx);
-        if (!runningUndo && !disableActions && actionId >= 0 && actionId != currentActionId) {
-            currentActionId = actionId;
-            nextUndoGroup = ret;
-        }
-        return ret;
+Options::Group& Editor::GetSelectedGroup(int actionId) {
+    auto& ret = GetGroup(selectedGroupIdx);
+    if (!runningUndo && !disableActions && actionId >= 0 && actionId != currentActionId) {
+        currentActionId = actionId;
+        nextUndoGroup = ret;
     }
+    return ret;
+}
 
-    Component& GetSelectedComponent(int actionId) {
-        auto& ret = GetGroup(selectedGroupIdx).Components[selectedComponentIdx];
-        if (!runningUndo && !disableActions && actionId >= 0 && actionId != currentActionId) {
-            currentActionId = actionId;
-            nextUndoComponent = ret;
-        }
-        return ret;
+Options::Component& Editor::GetSelectedComponent(int actionId) {
+    auto& ret = GetGroup(selectedGroupIdx).Components[selectedComponentIdx];
+    if (!runningUndo && !disableActions && actionId >= 0 && actionId != currentActionId) {
+        currentActionId = actionId;
+        nextUndoComponent = ret;
     }
+    return ret;
 }
