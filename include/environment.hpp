@@ -19,11 +19,12 @@ namespace Qounters::Environment {
     void DismissSettings();
     void RefreshSettings();
     bool InSettings();
-    std::string CurrentSettingsEnvironment();
-    std::string CurrentColorScheme();
+    GlobalNamespace::EnvironmentInfoSO* CurrentSettingsEnvironment();
 
     void SetPlayerActive(bool active);
+    void UpdateSaberColors();
+    void RunLightingEvents();
 
-    void OnSceneStart(GlobalNamespace::EnvironmentInfoSO* environment);
+    void OnSceneStart();
     void OnSceneEnd();
 }

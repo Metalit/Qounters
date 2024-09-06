@@ -77,6 +77,8 @@ static std::map<int, std::vector<std::pair<Types::Sources, std::string>>> eventS
          {Types::Sources::Text, Sources::Text::PersonalBestName},
          {Types::Sources::Text, Sources::Text::NotesName},
          {Types::Sources::Text, Sources::Text::PPName},
+         {Types::Sources::Color, Sources::Color::PlayerName},
+         {Types::Sources::Color, Sources::Color::PersonalBestName},
          {Types::Sources::Enable, Sources::Enable::RankedName},
      }},
 };

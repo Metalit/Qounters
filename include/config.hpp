@@ -28,7 +28,8 @@ DECLARE_CONFIG(Config) {
     CONFIG_VALUE(SpecificPresets, StringKeyedMap<PresetOverride>, "Environment Specific Presets", {});
     CONFIG_VALUE(EnvironmentType, int, "Settings Environment Type", 0);
     CONFIG_VALUE(Environment, std::string, "Settings Environment", "The First");
-    CONFIG_VALUE(ColorScheme, std::string, "Color Scheme", "User Override / Environment");
+    CONFIG_VALUE(OverrideColor, bool, "Override Color Scheme", false);
+    CONFIG_VALUE(ColorScheme, std::string, "Color Scheme", "");
     CONFIG_VALUE(Snap, bool, "Snap Enabled", true);
     CONFIG_VALUE(SnapStep, float, "Snap To Grid", 2);
     CONFIG_VALUE(LeftOffset, float, "Left Menu Position", 0);

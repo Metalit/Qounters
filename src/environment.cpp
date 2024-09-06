@@ -37,6 +37,8 @@
 #include "GlobalNamespace/PlayerData.hpp"
 #include "GlobalNamespace/PlayerDataFileModel.hpp"
 #include "GlobalNamespace/PlayerDataModel.hpp"
+#include "GlobalNamespace/SaberModelContainer.hpp"
+#include "GlobalNamespace/SaberModelController.hpp"
 #include "GlobalNamespace/SimpleLevelStarter.hpp"
 #include "GlobalNamespace/SongPreviewPlayer.hpp"
 #include "GlobalNamespace/StandardLevelScenesTransitionSetupDataSO.hpp"
@@ -78,7 +80,7 @@ static UIKeyboardManager* keyboardManager;
 static GameObject* menuEnv;
 static GameObject* localPlayer;
 static bool inSettings = false;
-static std::string currentEnvironment = "";
+static EnvironmentInfoSO* currentEnvironment = nullptr;
 static std::string currentColors = "";
 
 static std::map<std::string, Environment::HUDType> const HudTypes = {
@@ -144,18 +146,17 @@ static SimpleLevelStarter* GetLevelStarter() {
 }
 
 static EnvironmentInfoSO* GetEnvironment(SimpleLevelStarter* levelStarter) {
-    currentEnvironment = getConfig().Environment.GetValue();
+    auto serializedName = getConfig().Environment.GetValue();
 
     auto listModel = levelStarter->_playerDataModel->playerDataFileModel->_environmentsListModel;
     for (auto& info : listModel->_envInfos) {
-        if (info->serializedName == currentEnvironment)
+        if (info->serializedName == serializedName)
             return info;
     }
 
     auto ret = listModel->GetFirstEnvironmentInfoWithType(EnvironmentType::Normal);
-    logger.warn("Environment {} not found, resetting to {}", currentEnvironment, ret->serializedName);
-    currentEnvironment = (std::string) ret->serializedName;
-    getConfig().Environment.SetValue(currentEnvironment);
+    logger.warn("Environment {} not found, resetting to {}", serializedName, ret->serializedName);
+    getConfig().Environment.SetValue(ret->serializedName);
     return ret;
 }
 
@@ -163,9 +164,8 @@ static inline System::Action_1<Zenject::DiContainer*>* MakeAction(std::function<
     return custom_types::MakeDelegate<System::Action_1<Zenject::DiContainer*>*>(callback);
 }
 
-static void
-Present(SimpleLevelStarter* levelStarter, bool refresh, ScenesTransitionSetupDataSO* setupData, EnvironmentInfoSO* environment = nullptr) {
-    auto startDelegate = MakeAction([environment](Zenject::DiContainer*) { Environment::OnSceneStart(environment); });
+static void Present(SimpleLevelStarter* levelStarter, bool refresh, ScenesTransitionSetupDataSO* setupData) {
+    auto startDelegate = MakeAction([](Zenject::DiContainer*) { Environment::OnSceneStart(); });
 
     if (refresh)
         levelStarter->_gameScenesManager->ReplaceScenes(setupData, nullptr, 0.25, nullptr, startDelegate);
@@ -196,11 +196,9 @@ static void PresentMultiplayer(SimpleLevelStarter* levelStarter, bool refresh, B
     Present(levelStarter, refresh, setupData);
 }
 
-static void PresentSingleplayer(
-    SimpleLevelStarter* levelStarter, bool refresh, BeatmapLevel* level, BeatmapKey diff, ColorScheme* colors, EnvironmentInfoSO* environment
-) {
+static void PresentSingleplayer(SimpleLevelStarter* levelStarter, bool refresh, BeatmapLevel* level, BeatmapKey diff, ColorScheme* colors) {
     if (colors == nullptr)
-        colors = environment->colorScheme->colorScheme;
+        colors = currentEnvironment->colorScheme->colorScheme;
 
     auto setupData = levelStarter->_menuTransitionsHelper->_standardLevelScenesTransitionSetupData;
     setupData->Init(
@@ -224,7 +222,7 @@ static void PresentSingleplayer(
         System::Nullable_1<RecordingToolManager::SetupData>()
     );
 
-    Present(levelStarter, refresh, setupData, environment);
+    Present(levelStarter, refresh, setupData);
 }
 
 static void PresentScene(SimpleLevelStarter* levelStarter, bool refresh) {
@@ -233,24 +231,21 @@ static void PresentScene(SimpleLevelStarter* levelStarter, bool refresh) {
     auto level = BeatmapLevelExtensions::ToRuntime(levelSO);
     auto diff = BeatmapKey(levelStarter->_beatmapCharacteristic, levelStarter->_beatmapDifficulty, level->levelID);
 
-    auto environment = GetEnvironment(levelStarter);
-    level->GetDifficultyBeatmapData(diff.beatmapCharacteristic, diff.difficulty)->environmentName = environment->serializedName;
+    currentEnvironment = GetEnvironment(levelStarter);
+    level->GetDifficultyBeatmapData(diff.beatmapCharacteristic, diff.difficulty)->environmentName = currentEnvironment->serializedName;
 
     ColorScheme* colors = nullptr;
     currentColors = getConfig().ColorScheme.GetValue();
     auto colorSchemeSettings = levelStarter->_playerDataModel->playerData->colorSchemesSettings;
-    if (currentColors == "User Override / Environment" || !colorSchemeSettings->_colorSchemesDict->ContainsKey(currentColors)) {
-        auto isOverride = colorSchemeSettings->overrideDefaultColors;
-        colors = isOverride ? colorSchemeSettings->GetOverrideColorScheme() : nullptr;
-    } else if (currentColors != "Environment Default")
+    if (colorSchemeSettings->_colorSchemesDict->ContainsKey(currentColors))
         colors = colorSchemeSettings->GetColorSchemeForId(currentColors);
 
     logger.debug("Presenting scene");
 
-    if (currentEnvironment == "MultiplayerEnvironment")
+    if (currentEnvironment->serializedName == "MultiplayerEnvironment")
         PresentMultiplayer(levelStarter, refresh, level, diff, colors);
     else
-        PresentSingleplayer(levelStarter, refresh, level, diff, colors, environment);
+        PresentSingleplayer(levelStarter, refresh, level, diff, colors);
 }
 
 void Environment::PresentSettings() {
@@ -313,16 +308,57 @@ bool Environment::InSettings() {
     return inSettings;
 }
 
-std::string Environment::CurrentSettingsEnvironment() {
+EnvironmentInfoSO* Environment::CurrentSettingsEnvironment() {
     return currentEnvironment;
-}
-
-std::string Environment::CurrentColorScheme() {
-    return currentColors;
 }
 
 void Environment::SetPlayerActive(bool active) {
     localPlayer->active = active;
+}
+
+void Environment::UpdateSaberColors() {
+    auto sabers = localPlayer->GetComponentsInChildren<SaberModelController*>();
+    for (auto& saber : sabers) {
+        if (auto container = saber->GetComponentInParent<SaberModelContainer*>())
+            saber->Init(container->transform, container->_saber);
+    }
+}
+
+void Environment::RunLightingEvents() {
+    auto bcu = Object::FindObjectOfType<BeatmapCallbacksUpdater*>(true);
+    if (currentEnvironment && bcu) {
+        // kinda lame beatgames
+        auto lightShowBeatmapData = BeatmapData::New_ctor(4);
+        lightShowBeatmapData->updateAllBeatmapDataOnInsert = true;
+
+        if (currentEnvironment->defaultLightshowAsset) {
+            logger.debug("loading lightshow data from asset");
+            // logger.debug("{}", currentEnvironment->defaultLightshowAsset->text);
+            auto lightShowSaveData =
+                JsonUtility::FromJson<BeatmapSaveDataVersion4::LightshowSaveData*>(currentEnvironment->defaultLightshowAsset->text);
+
+            auto bpmTimeProcessor = BpmTimeProcessor::New_ctor(
+                69.420, ListW<BeatmapSaveDataVersion3::BpmChangeEventData*>::New()->i___System__Collections__Generic__IReadOnlyList_1_T_()
+            );
+            auto envKeywords = EnvironmentKeywords::New_ctor(currentEnvironment->environmentKeywords);
+            auto envLightGroups = currentEnvironment->environmentLightGroups;
+
+            BeatmapDataLoaderVersion4::BeatmapDataLoader::LoadLightshow(
+                lightShowBeatmapData, lightShowSaveData, bpmTimeProcessor, envKeywords, envLightGroups
+            );
+        } else
+            DefaultEnvironmentEventsFactory::InsertDefaultEvents(lightShowBeatmapData);
+
+        logger.debug("running default lightshow");
+        auto events = lightShowBeatmapData->_allBeatmapData->items;
+        auto currentEvent = events->First;
+        auto bcc = bcu->_beatmapCallbacksController;
+        while (currentEvent != events->Last) {
+            if (auto event = Utils::ptr_cast<BeatmapEventData>(currentEvent->Value))
+                bcc->TriggerBeatmapEvent(event);
+            currentEvent = currentEvent->Next;
+        }
+    }
 }
 
 static void OnMultiplayerSceneStart(MultiplayerController* multiplayerController) {
@@ -356,7 +392,7 @@ static void OnMultiplayerSceneStart(MultiplayerController* multiplayerController
     Utils::FindRecursive(localPlayer->transform, "MainCamera")->gameObject->active = false;
 }
 
-void Environment::OnSceneStart(EnvironmentInfoSO* environment) {
+void Environment::OnSceneStart() {
     logger.info("Settings scene start");
 
     if (auto multiplayerController = Object::FindObjectOfType<MultiplayerController*>())
@@ -396,7 +432,7 @@ void Environment::OnSceneStart(EnvironmentInfoSO* environment) {
     if (!currentFlow->IsFlowCoordinatorInHierarchy(settingsFlow))
         currentFlow->PresentFlowCoordinator(settingsFlow, nullptr, HMUI::ViewController::AnimationDirection::Horizontal, true, false);
 
-    float height = environment && environment->serializedName == "LinkinPark2Environment" ? 0.8 : 0.1;
+    float height = currentEnvironment && currentEnvironment->serializedName == "LinkinPark2Environment" ? 0.8 : 0.1;
     GameObject::Find("MenuCore/UI/ScreenSystem")->transform->localPosition = {0, height, 0};
 
     logger.debug("Fixing environment lighting");
@@ -407,38 +443,7 @@ void Environment::OnSceneStart(EnvironmentInfoSO* environment) {
         env->active = true;
     }
 
-    auto bcu = Object::FindObjectOfType<BeatmapCallbacksUpdater*>(true);
-    if (environment && bcu) {
-        // kinda lame beatgames
-        auto lightShowBeatmapData = BeatmapData::New_ctor(4);
-        lightShowBeatmapData->updateAllBeatmapDataOnInsert = true;
-
-        if (environment->defaultLightshowAsset) {
-            logger.debug("loading lightshow data from asset");
-            auto lightShowSaveData = JsonUtility::FromJson<BeatmapSaveDataVersion4::LightshowSaveData*>(environment->defaultLightshowAsset->text);
-
-            auto bpmTimeProcessor = BpmTimeProcessor::New_ctor(
-                69.420, ListW<BeatmapSaveDataVersion3::BpmChangeEventData*>::New()->i___System__Collections__Generic__IReadOnlyList_1_T_()
-            );
-            auto envKeywords = EnvironmentKeywords::New_ctor(environment->environmentKeywords);
-            auto envLightGroups = environment->environmentLightGroups;
-
-            BeatmapDataLoaderVersion4::BeatmapDataLoader::LoadLightshow(
-                lightShowBeatmapData, lightShowSaveData, bpmTimeProcessor, envKeywords, envLightGroups
-            );
-        } else
-            GlobalNamespace::DefaultEnvironmentEventsFactory::InsertDefaultEvents(lightShowBeatmapData);
-
-        logger.debug("running default lightshow");
-        auto events = lightShowBeatmapData->_allBeatmapData->items;
-        auto currentEvent = events->First;
-        auto bcc = bcu->_beatmapCallbacksController;
-        while (currentEvent != events->Last) {
-            if (auto event = Utils::ptr_cast<BeatmapEventData>(currentEvent->Value))
-                bcc->TriggerBeatmapEvent(event);
-            currentEvent = currentEvent->Next;
-        }
-    }
+    RunLightingEvents();
 
     auto renderParams = Object::FindObjectOfType<VRRenderingParamsSetup*>();
     renderParams->_sceneType = SceneType::Menu;

@@ -1,5 +1,9 @@
 #pragma once
 
+#include "GlobalNamespace/ColorManager.hpp"
+#include "GlobalNamespace/ColorSchemeDropdown.hpp"
+#include "GlobalNamespace/ColorSchemesSettings.hpp"
+#include "GlobalNamespace/EditColorSchemeController.hpp"
 #include "GlobalNamespace/EnvironmentInfoSO.hpp"
 #include "HMUI/ColorGradientSlider.hpp"
 #include "HMUI/FlowCoordinator.hpp"
@@ -74,13 +78,20 @@ DECLARE_CLASS_CODEGEN(Qounters, SettingsViewController, HMUI::ViewController,
     DECLARE_INSTANCE_METHOD(void, OnDestroy);
     DECLARE_INSTANCE_METHOD(void, ShowConfirmModal);
     DECLARE_INSTANCE_METHOD(void, HideConfirmModal);
+    DECLARE_INSTANCE_METHOD(void, ColorCellSelected, int idx);
+    DECLARE_INSTANCE_METHOD(void, UpdateColors);
     DECLARE_INSTANCE_METHOD(void, UpdateUI);
 
     DECLARE_INSTANCE_FIELD_DEFAULT(bool, uiInitialized, false);
     DECLARE_INSTANCE_FIELD(ArrayW<UnityW<GlobalNamespace::EnvironmentInfoSO>>, environments);
+    DECLARE_INSTANCE_FIELD(GlobalNamespace::ColorSchemesSettings*, colorSchemeSettings);
 
     DECLARE_INSTANCE_FIELD(UnityEngine::UI::Button*, undoButton);
     DECLARE_INSTANCE_FIELD(BSML::DropdownListSetting*, environmentDropdown);
+    DECLARE_INSTANCE_FIELD(TMPro::TextMeshProUGUI*, colorToggleName);
+    DECLARE_INSTANCE_FIELD(GlobalNamespace::ColorSchemeDropdown*, colorDropdown);
+    DECLARE_INSTANCE_FIELD(UnityEngine::UI::Button*, colorEditButton);
+    DECLARE_INSTANCE_FIELD(GlobalNamespace::EditColorSchemeController*, colorEditor);
     DECLARE_INSTANCE_FIELD(BSML::DropdownListSetting*, presetDropdown);
     DECLARE_INSTANCE_FIELD(UnityEngine::UI::Button*, deleteButton);
     DECLARE_INSTANCE_FIELD(BSML::ToggleSetting*, previewToggle);

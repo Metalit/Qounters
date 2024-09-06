@@ -2,13 +2,22 @@
 
 #include <numbers>
 
+#include "GlobalNamespace/BloomPrePassBackgroundColorsGradientFromColorSchemeColors.hpp"
+#include "GlobalNamespace/ColorScheme.hpp"
+#include "GlobalNamespace/ColorSchemeSO.hpp"
+#include "GlobalNamespace/ColorsOverrideSettingsPanelController.hpp"
+#include "GlobalNamespace/EnvironmentColorManager.hpp"
 #include "GlobalNamespace/EnvironmentInfoSO.hpp"
 #include "GlobalNamespace/EnvironmentType.hpp"
 #include "GlobalNamespace/EnvironmentsListModel.hpp"
+#include "GlobalNamespace/LightColorGroupEffectManager.hpp"
+#include "GlobalNamespace/NoteCutCoreEffectsSpawner.hpp"
+#include "GlobalNamespace/PlayerData.hpp"
 #include "GlobalNamespace/PlayerDataFileModel.hpp"
 #include "GlobalNamespace/PlayerDataModel.hpp"
 #include "HMUI/CurvedCanvasSettings.hpp"
 #include "HMUI/ScreenSystem.hpp"
+#include "System/Collections/Generic/Dictionary_2.hpp"
 #include "System/Single.hpp"
 #include "UnityEngine/UI/ContentSizeFitter.hpp"
 #include "assets.hpp"
@@ -17,6 +26,7 @@
 #include "bsml/shared/BSML/Components/ScrollViewContent.hpp"
 #include "bsml/shared/BSML/MainThreadScheduler.hpp"
 #include "bsml/shared/Helpers/creation.hpp"
+#include "bsml/shared/Helpers/delegates.hpp"
 #include "bsml/shared/Helpers/extension.hpp"
 #include "bsml/shared/Helpers/getters.hpp"
 #include "bsml/shared/Helpers/utilities.hpp"
@@ -26,7 +36,9 @@
 #include "customtypes/editing.hpp"
 #include "editor.hpp"
 #include "environment.hpp"
+#include "events.hpp"
 #include "game.hpp"
+#include "internals.hpp"
 #include "main.hpp"
 #include "options.hpp"
 #include "playtest.hpp"
@@ -175,7 +187,7 @@ void SettingsFlowCoordinator::DismissScene() {
 }
 
 void SettingsFlowCoordinator::RefreshScene() {
-    if (Environment::CurrentSettingsEnvironment() != getConfig().Environment.GetValue())
+    if (Environment::CurrentSettingsEnvironment()->serializedName != getConfig().Environment.GetValue())
         ConfirmAction(Environment::RefreshSettings);
 }
 
@@ -287,6 +299,15 @@ void SettingsFlowCoordinator::MakeNewPreset(std::string name, bool removeOld) {
     SettingsViewController::GetInstance()->UpdateUI();
 }
 
+static GlobalNamespace::ColorsOverrideSettingsPanelController* GetColorSchemeTemplate() {
+    static UnityW<GlobalNamespace::ColorsOverrideSettingsPanelController> overrideColorsPanel;
+    if (!overrideColorsPanel)
+        overrideColorsPanel = Object::FindObjectsOfType<GlobalNamespace::ColorsOverrideSettingsPanelController*>(true)->First([](auto x) {
+            return x->name == StringW("ColorsOverrideSettings") && x->transform->parent->Find("PlayerOptions");
+        });
+    return overrideColorsPanel;
+}
+
 void SettingsViewController::DidActivate(bool firstActivation, bool addedToHierarchy, bool screenSystemEnabling) {
     if (!firstActivation) {
         UpdateUI();
@@ -345,6 +366,53 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
 
     auto apply = BSML::Lite::CreateUIButton(environment, "Apply", SettingsFlowCoordinator::RefreshScene);
     Utils::SetLayoutSize(apply, 14, 8);
+
+    auto overrideColorsPanel = GetColorSchemeTemplate();
+    colorSchemeSettings = BSML::Helpers::GetMainFlowCoordinator()->_playerDataModel->playerData->colorSchemesSettings;
+    ListW<GlobalNamespace::ColorScheme*> schemesList = colorSchemeSettings->_colorSchemesList;
+
+    auto toggle = BSML::Lite::CreateToggle(vertical, "", getConfig().OverrideColor.GetValue(), [this](bool enabled) {
+        getConfig().OverrideColor.SetValue(enabled);
+        UpdateColors();
+        UpdateUI();
+    });
+    colorToggleName = toggle->transform->Find("NameText")->GetComponent<TMPro::TextMeshProUGUI*>();
+
+    auto transform = BSML::Helpers::GetDiContainer()
+                         ->InstantiatePrefab(overrideColorsPanel->_colorSchemeDropDown->transform->parent)
+                         ->GetComponent<RectTransform*>();
+    transform->SetParent(toggle->transform, false);
+    transform->anchoredPosition = {-20, 0.25};
+    Object::Destroy(transform->Find("NameText")->gameObject);
+
+    colorEditButton = transform->Find("EditButton")->GetComponent<UI::Button*>();
+    colorDropdown = transform->Find("ColorSchemeDropDown")->GetComponent<GlobalNamespace::ColorSchemeDropdown*>();
+
+    colorEditor = BSML::Helpers::GetDiContainer()
+                      ->InstantiatePrefab(overrideColorsPanel->_editColorSchemeController)
+                      ->GetComponent<GlobalNamespace::EditColorSchemeController*>();
+    colorEditor->transform->SetParent(transform, false);
+    auto modal = colorEditor->GetComponent<HMUI::ModalView*>();
+
+    // so bsml doesn't grab them
+    colorEditor->_rgbPanelController->gameObject->name = "QountersRGBPanel";
+    colorEditor->_hsvPanelController->gameObject->name = "QountersHSVPanel";
+
+    colorDropdown->SetData(colorSchemeSettings->_colorSchemesList->i___System__Collections__Generic__IReadOnlyList_1_T_());
+    colorDropdown->add_didSelectCellWithIdxEvent(BSML::MakeSystemAction((std::function<void(UnityW<HMUI::DropdownWithTableView>, int)>) [this](
+        UnityW<HMUI::DropdownWithTableView>, int cell
+    ) { ColorCellSelected(cell); }));
+
+    colorEditButton->onClick->AddListener(BSML::MakeUnityAction([modal]() { modal->Show(true, true, nullptr); }));
+
+    colorEditor->add_didChangeColorSchemeEvent(BSML::MakeSystemAction((std::function<void(GlobalNamespace::ColorScheme*)>) [this](auto scheme) {
+        colorSchemeSettings->SetColorSchemeForId(scheme);
+    }));
+    colorEditor->add_didFinishEvent(BSML::MakeSystemAction([this, modal]() {
+        modal->Hide(true, nullptr);
+        UpdateColors();
+        UpdateUI();
+    }));
 
     BSML::Lite::CreateText(vertical, "Changes to the preset list are always saved!", {0, 0}, {50, 8})->alignment =
         TMPro::TextAlignmentOptions::Center;
@@ -448,6 +516,32 @@ void SettingsViewController::HideConfirmModal() {
         confirmModal->Hide(true, nullptr);
 }
 
+void SettingsViewController::ColorCellSelected(int idx) {
+    auto selectedScheme = colorSchemeSettings->_colorSchemesList->get_Item(idx);
+    getConfig().ColorScheme.SetValue(selectedScheme->colorSchemeId);
+    UpdateColors();
+    UpdateUI();
+}
+
+void SettingsViewController::UpdateColors() {
+    GetColorSchemeTemplate()->Refresh();
+    if (getConfig().OverrideColor.GetValue())
+        Internals::colors = colorSchemeSettings->GetColorSchemeForId(getConfig().ColorScheme.GetValue());
+    else
+        Internals::colors = Environment::CurrentSettingsEnvironment()->colorScheme->colorScheme;
+    // doesn't update any already spawned notes/walls, but idc
+    if (auto colorManager = Object::FindObjectOfType<GlobalNamespace::NoteCutCoreEffectsSpawner*>(true)->_colorManager)
+        colorManager->SetColorScheme(Internals::colors);
+    if (auto env = Object::FindObjectOfType<GlobalNamespace::EnvironmentColorManager*>(true))
+        env->SetColorScheme(Internals::colors);
+    if (auto bg = Object::FindObjectOfType<GlobalNamespace::BloomPrePassBackgroundColorsGradientFromColorSchemeColors*>(true))
+        bg->Start();
+    PlaytestViewController::GetInstance()->UpdateUI();
+    Environment::UpdateSaberColors();
+    Environment::RunLightingEvents();
+    Events::Broadcast((int) Events::MapInfo);
+}
+
 void SettingsViewController::UpdateUI() {
     if (!uiInitialized)
         return;
@@ -478,6 +572,28 @@ void SettingsViewController::UpdateUI() {
         // set to the first environment in the filtered type when it changes
         getConfig().Environment.SetValue(first->serializedName);
     });
+
+    auto dict = colorSchemeSettings->_colorSchemesDict;
+    if (!dict->ContainsKey(getConfig().ColorScheme.GetValue()))
+        getConfig().ColorScheme.SetValue(colorSchemeSettings->GetColorSchemeForIdx(0)->colorSchemeId);
+    auto selectedSchemeId = getConfig().ColorScheme.GetValue();
+    auto selectedScheme = dict->get_Item(selectedSchemeId);
+    colorEditButton->interactable = selectedScheme->isEditable;
+    if (selectedScheme->isEditable)
+        colorEditor->SetColorScheme(selectedScheme);
+
+    colorToggleName->text = getConfig().OverrideColor.GetValue() ? "..." : "Override Environment Colors";
+
+    colorDropdown->transform->parent->gameObject->active = getConfig().OverrideColor.GetValue();
+    auto list = colorSchemeSettings->_colorSchemesList;
+    int idx = 0;
+    for (int i = 0; i < list->get_Count(); i++) {
+        if (list->get_Item(i)->colorSchemeId == selectedSchemeId) {
+            idx = i;
+            break;
+        }
+    }
+    colorDropdown->SelectCellWithIdx(idx);
 
     deleteButton->interactable = presets.size() > 1;
 
