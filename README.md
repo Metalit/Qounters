@@ -24,7 +24,7 @@ The other function has the signature `void (UnityEngine::GameObject*, UnparsedJS
 
 Register your source to the necessary events (in `events.hpp`) and register those two functions to the correct source type and you're done. Make sure the source has a unique string name, even among other custom qounters.
 
-To make a custom event in your mod, simply use `RegisterCustomEvent()`. Put in your unique mod name and any event ID, and you can then broadcast the name with those parameters again, or use the return value of the function to call the other `BroadcastEvent` overload. You can also broadcast any other events, including those from other mods, if you find it necessary.
+To make a custom event in your mod, simply use `RegisterCustomEvent()`. Put in your unique mod name and any event ID, and you can then broadcast the name with those parameters again, or use the return value of the function to call the other `Events::Broadcast` overload. You can also broadcast any other events, including those from other mods, if you find it necessary.
 
 Events can be used for another type of integration with `internals.hpp`. The variables in that file represent the state of the game, and you should only change them if you modify that yourself in a way that Qounters++ might not pick up on. Make sure to broadcast any necessary events if you do. I'm not sure where this might be used outside of my replay mod, but it's available.
 

@@ -81,7 +81,7 @@ static bool inSettings = false;
 static std::string currentEnvironment = "";
 static std::string currentColors = "";
 
-static std::map<std::string, Environment::HUDType> const hudTypes = {
+static std::map<std::string, Environment::HUDType> const HudTypes = {
     {"DefaultEnvironment", Environment::HUDType::Wide},
     {"TriangleEnvironment", Environment::HUDType::Wide},
     {"NiceEnvironment", Environment::HUDType::Wide},
@@ -133,8 +133,8 @@ std::vector<std::string_view> Environment::HUDTypeStrings = {
 };
 
 Environment::HUDType Environment::GetHUDType(std::string serializedName) {
-    auto itr = hudTypes.find(serializedName);
-    if (itr != hudTypes.end())
+    auto itr = HudTypes.find(serializedName);
+    if (itr != HudTypes.end())
         return itr->second;
     return HUDType::Wide;
 }

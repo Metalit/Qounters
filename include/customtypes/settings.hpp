@@ -71,8 +71,6 @@ DECLARE_CLASS_CODEGEN(Qounters, SettingsViewController, HMUI::ViewController,
 
     DECLARE_OVERRIDE_METHOD_MATCH(void, DidActivate, &HMUI::ViewController::DidActivate, bool, bool, bool);
 
-    DECLARE_STATIC_METHOD(SettingsViewController*, GetInstance);
-
     DECLARE_INSTANCE_METHOD(void, OnDestroy);
     DECLARE_INSTANCE_METHOD(void, ShowConfirmModal);
     DECLARE_INSTANCE_METHOD(void, HideConfirmModal);
@@ -89,6 +87,8 @@ DECLARE_CLASS_CODEGEN(Qounters, SettingsViewController, HMUI::ViewController,
     DECLARE_INSTANCE_FIELD(HMUI::ModalView*, confirmModal);
     DECLARE_INSTANCE_FIELD(HMUI::ModalView*, nameModal);
     DECLARE_INSTANCE_FIELD(HMUI::InputFieldView*, nameInput);
+
+    DECLARE_STATIC_METHOD(SettingsViewController*, GetInstance);
 
    private:
     bool nameModalIsRename = false;

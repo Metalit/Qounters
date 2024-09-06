@@ -434,12 +434,6 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
     UpdateUI();
 }
 
-SettingsViewController* SettingsViewController::GetInstance() {
-    if (!instance)
-        instance = BSML::Helpers::CreateViewController<SettingsViewController*>();
-    return instance;
-}
-
 void SettingsViewController::OnDestroy() {
     instance = nullptr;
 }
@@ -469,15 +463,18 @@ void SettingsViewController::UpdateUI() {
 
     int selectedType = getConfig().EnvironmentType.GetValue();
     GlobalNamespace::EnvironmentInfoSO* first = nullptr;
+    std::string selectedName;
     names.clear();
     for (auto& env : environments) {
         if (selectedType == (int) Environment::HUDType::Max + 1 || (int) Environment::GetHUDType(env->serializedName) == selectedType) {
             if (!first)
                 first = env;
+            if (env->serializedName == getConfig().Environment.GetValue())
+                selectedName = (std::string) env->environmentName;
             names.emplace_back(env->environmentName);
         }
     }
-    Utils::SetDropdownValues(environmentDropdown, names, getConfig().Environment.GetValue(), [first]() {
+    Utils::SetDropdownValues(environmentDropdown, names, selectedName, [first]() {
         // set to the first environment in the filtered type when it changes
         getConfig().Environment.SetValue(first->serializedName);
     });
@@ -487,6 +484,12 @@ void SettingsViewController::UpdateUI() {
     Utils::InstantSetToggle(previewToggle, Editor::GetPreviewMode());
 }
 
+SettingsViewController* SettingsViewController::GetInstance() {
+    if (!instance)
+        instance = BSML::Helpers::CreateViewController<SettingsViewController*>();
+    return instance;
+}
+
 static void CreateSpacer(UI::HorizontalLayoutGroup* parent, float width) {
     auto obj = GameObject::New_ctor("QountersSpacer");
     auto layout = obj->AddComponent<UI::LayoutElement*>();
@@ -494,7 +497,7 @@ static void CreateSpacer(UI::HorizontalLayoutGroup* parent, float width) {
     obj->transform->SetParent(parent->transform, false);
 }
 
-BSML::ClickableImage*
+static BSML::ClickableImage*
 CreateLayeredImageButton(UI::HorizontalLayoutGroup* parent, Sprite* bg, Sprite* fg, Vector2 size, std::function<void()> onClick) {
     auto ret = BSML::Lite::CreateClickableImage(parent, bg, onClick);
     ret->preserveAspect = true;
@@ -1444,10 +1447,6 @@ void SpritesListCell::OnImageClicked(int idx) {
     source->OnImageClicked(realIdx);
 }
 
-// void SpritesListCell::RefreshVisuals() {
-
-// }
-
 void SpritesListCell::SetImageStartIdx(int idx) {
     imageStartIdx = idx;
 
@@ -1463,14 +1462,6 @@ void SpritesListCell::SetImageStartIdx(int idx) {
             images[i] = nullptr;
     }
 }
-
-// void SpritesListCell::SelectionDidChange(HMUI::SelectableCell::TransitionType transitionType) {
-
-// }
-
-// void SpritesListCell::HighlightDidChange(HMUI::SelectableCell::TransitionType transitionType) {
-
-// }
 
 SpritesListCell* SpritesListCell::CreateNew(int imagesStartIdx, StringW reuseIdentifier) {
     auto object = GameObject::New_ctor("QountersSpritesListCell");

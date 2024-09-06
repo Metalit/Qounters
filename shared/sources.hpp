@@ -216,7 +216,6 @@ namespace Qounters::Sources {
         };
         DECLARE_JSON_STRUCT(Multiplier) {
             VALUE_DEFAULT(bool, Absolute, false);
-            ;
         };
         DECLARE_JSON_STRUCT(Health){};
         DECLARE_JSON_STRUCT(Time){};

@@ -115,7 +115,8 @@ void Playtest::ResetGameControllers() {
     scoreController->_maxScoreMultiplierCounter->Reset();
     gameEnergyCounter->_didReach0Energy = false;
     gameEnergyCounter->energy = 0.5;
-    gameEnergyCounter->gameEnergyDidChangeEvent->Invoke(0.5);
+    if (gameEnergyCounter->gameEnergyDidChangeEvent)
+        gameEnergyCounter->gameEnergyDidChangeEvent->Invoke(0.5);
     if (energyBar && !energyBar->_energyBar->enabled)
         ResetEnergyBar();
     comboController->_combo = 0;

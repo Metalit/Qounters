@@ -30,26 +30,28 @@ static void DisableGradient(UI::Graphic* component) {
     }
 }
 
-static void SetGradient(UI::Graphic* component, Options::Gradient::Directions direction, Vector3 startHsvMod, Vector3 endHsvMod) {
+static void SetGradient(UI::Graphic* component, Options::Gradient const& options) {
+    auto& startHsvMod = options.StartModifierHSV;
+    auto& endHsvMod = options.EndModifierHSV;
     float h, s, v;
     Color::RGBToHSV(component->color, byref(h), byref(s), byref(v));
     auto startColor = Utils::GetClampedColor({h + startHsvMod.x, s + startHsvMod.y, v + startHsvMod.z});
     auto endColor = Utils::GetClampedColor({h + endHsvMod.x, s + endHsvMod.y, v + endHsvMod.z});
 
     if (auto image = Utils::ptr_cast<HMUI::ImageView>(component)) {
-        image->_gradientDirection = (int) direction;  // same enum values
+        image->_gradientDirection = options.Direction;  // same enum values
         image->color0 = startColor;
         image->color1 = endColor;
         image->gradient = true;
     } else if (auto shape = Utils::ptr_cast<Shape>(component)) {
         shape->gradient = true;
-        shape->gradientDirection = (int) direction;
+        shape->gradientDirection = options.Direction;
         shape->startColor = startColor;
         shape->endColor = endColor;
         shape->SetVerticesDirty();
     } else if (auto text = Utils::ptr_cast<TMPro::TextMeshProUGUI>(component)) {
         auto gradient = Utils::GetOrAddComponent<TextGradient*>(text);
-        gradient->gradientDirection = (int) direction;
+        gradient->gradientDirection = options.Direction;
         gradient->startColor = startColor;
         gradient->endColor = endColor;
         if (gradient->enabled)
@@ -61,7 +63,7 @@ static void SetGradient(UI::Graphic* component, Options::Gradient::Directions di
 
 static std::map<std::string, std::vector<std::pair<TMPro::TextMeshProUGUI*, UnparsedJSON>>> texts;
 static std::map<std::string, std::vector<std::pair<Shape*, UnparsedJSON>>> shapes;
-static std::map<std::string, std::vector<std::pair<UI::Graphic*, UnparsedJSON>>> colors;
+static std::map<std::string, std::vector<std::pair<UI::Graphic*, std::pair<UnparsedJSON, Options::Gradient>>>> colors;
 static std::map<std::string, std::vector<std::pair<GameObject*, std::pair<UnparsedJSON, bool>>>> enables;
 
 template <class TComp, class TOpts>
@@ -233,13 +235,11 @@ UpdateColorOptions(UI::Graphic* component, std::string colorSource, UnparsedJSON
     component->color = sourceFn(options);
 
     if (gradientOptions.Enabled)
-        SetGradient(
-            component, (Options::Gradient::Directions) gradientOptions.Direction, gradientOptions.StartModifierHSV, gradientOptions.EndModifierHSV
-        );
+        SetGradient(component, gradientOptions);
     else
         DisableGradient(component);
 
-    UpdatePair(colors, component, colorSource, options, creation);
+    UpdatePair(colors, component, colorSource, {options, gradientOptions}, creation);
 }
 
 void HUD::UpdateComponentColor(UI::Graphic* component, std::string newSource, UnparsedJSON newOptions, Options::Gradient gradientOptions) {
@@ -603,7 +603,7 @@ void HUD::SetupObjects() {
     Utils::DisableAllBut(hud, {"QountersCanvas", "EnergyPanel"});
 }
 
-void UpdateTexts(std::string source) {
+static void UpdateTexts(std::string source) {
     auto sourceFn = Sources::GetSource(Sources::texts, source).first;
 
     if (!texts.contains(source) || !sourceFn)
@@ -615,7 +615,7 @@ void UpdateTexts(std::string source) {
         element->text = sourceFn(options);
 }
 
-void UpdateShapes(std::string source) {
+static void UpdateShapes(std::string source) {
     auto sourceFn = Sources::GetSource(Sources::shapes, source).first;
 
     if (!shapes.contains(source) || !sourceFn)
@@ -627,7 +627,7 @@ void UpdateShapes(std::string source) {
         element->SetMaskAmount(sourceFn(options));
 }
 
-void UpdateColors(std::string source) {
+static void UpdateColors(std::string source) {
     auto sourceFn = Sources::GetSource(Sources::colors, source).first;
 
     if (!colors.contains(source) || !sourceFn)
@@ -635,11 +635,15 @@ void UpdateColors(std::string source) {
 
     auto& elements = colors[source];
 
-    for (auto& [element, options] : elements)
-        element->color = sourceFn(options);
+    for (auto& [element, options] : elements) {
+        auto& [json, gradient] = options;
+        element->color = sourceFn(json);
+        if (gradient.Enabled)
+            SetGradient(element, gradient);
+    }
 }
 
-void UpdateEnables(std::string source) {
+static void UpdateEnables(std::string source) {
     auto sourceFn = Sources::GetSource(Sources::enables, source).first;
 
     if (!enables.contains(source) || !sourceFn)

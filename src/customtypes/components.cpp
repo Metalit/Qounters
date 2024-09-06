@@ -225,7 +225,7 @@ void TextGradient::OnDisable() {
     if (text) {
         if (delegate)
             text->remove_OnPreRenderText(delegate);
-        text->SetVerticesDirty();
+        text->SetAllDirty();
     }
 }
 
