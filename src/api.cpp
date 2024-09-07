@@ -47,6 +47,16 @@ void API::AddStringSettingOnClose(HMUI::InputFieldView* input, std::function<voi
     Utils::AddStringSettingOnClose(input, onKeyboardClosed);
 }
 
+BSML::ColorSetting* API::CreateColorPicker(
+    UnityEngine::GameObject* parent,
+    std::string name,
+    UnityEngine::Color value,
+    std::function<void(UnityEngine::Color)> onChange,
+    std::function<void()> onClose
+) {
+    return Utils::CreateColorPicker(parent, name, value, onChange, onClose);
+}
+
 bool API::InSettings() {
     return Environment::InSettings();
 }

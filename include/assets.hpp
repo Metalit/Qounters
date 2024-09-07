@@ -47,6 +47,7 @@ namespace IncludedAssets {
     DECLARE_FILE(Bomb_png)
     DECLARE_FILE(Chain_png)
     DECLARE_FILE(ChainArrow_png)
+    DECLARE_FILE(Copy_png)
     DECLARE_FILE(Default_png)
     DECLARE_FILE(Frame_png)
     DECLARE_FILE(Lock_png)

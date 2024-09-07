@@ -1,5 +1,8 @@
 #pragma once
 
+#include "HMUI/InputFieldView.hpp"
+#include "bsml/shared/BSML/Components/Settings/ColorSetting.hpp"
+#include "bsml/shared/BSML/Components/Settings/SliderSetting.hpp"
 #include "options.hpp"
 #include "sources.hpp"
 
@@ -20,6 +23,14 @@ namespace Qounters::API {
 
     void AddSliderEndDrag(BSML::SliderSetting* slider, std::function<void(float)> onEndDrag);
     void AddStringSettingOnClose(HMUI::InputFieldView* input, std::function<void(std::string)> onKeyboardClosed);
+
+    BSML::ColorSetting* CreateColorPicker(
+        UnityEngine::GameObject* parent,
+        std::string name,
+        UnityEngine::Color value,
+        std::function<void(UnityEngine::Color)> onChange,
+        std::function<void()> onClose
+    );
 
     bool InSettings();
 }

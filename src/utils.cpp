@@ -156,7 +156,7 @@ void Utils::SetRelativeSiblingIndex(UnityEngine::Transform* child, UnityEngine::
 }
 
 void Utils::SetLayoutSize(UnityEngine::Component* object, float width, float height, float flex) {
-    auto layout = object->GetComponent<UnityEngine::UI::LayoutElement*>();
+    auto layout = GetOrAddComponent<UnityEngine::UI::LayoutElement*>(object);
     layout->preferredWidth = width;
     layout->preferredHeight = height;
     layout->flexibleWidth = flex;
@@ -279,6 +279,12 @@ BSML::ColorSetting* Utils::CreateColorPicker(
     std::function<void(UnityEngine::Color)> onChange,
     std::function<void()> onClose
 ) {
+    static UnityEngine::Color copied;
+    static bool hasCopied = false;
+    static UnityW<UnityEngine::Sprite> copySprite;
+    if (!copySprite)
+        copySprite = PNG_SPRITE(Copy);
+
     auto ret = BSML::Lite::CreateColorPicker(parent, name, value);
     ret->modalColorPicker->onChange = [ret, onChange](UnityEngine::Color val) {
         ret->set_currentColor(val);
@@ -301,11 +307,58 @@ BSML::ColorSetting* Utils::CreateColorPicker(
     wheel->anchoredPosition = {0, -10};
     preview->anchoredPosition = {17, -27};
     auto modalView = ret->modalColorPicker->modalView;
+    modalView->moveToCenter = true;
     modalView->add_blockerClickedEvent(BSML::MakeSystemAction([ret, modalView, onClose]() {
         modalView->Hide();
         ret->currentColor = ret->modalColorPicker->currentColor;
         onClose();
     }));
+
+    auto copyModal = BSML::Lite::CreateModal(ret);
+    auto modalRect = copyModal->GetComponent<UnityEngine::RectTransform*>();
+    modalRect->anchoredPosition = {10, 0};
+    modalRect->sizeDelta = {35, 18};
+    auto vertical = BSML::Lite::CreateVerticalLayoutGroup(copyModal);
+    vertical->spacing = -2;
+    auto copyButton = BSML::Lite::CreateUIButton(vertical, "       Copy Color", [copyModal, ret]() {
+        copyModal->Hide();
+        hasCopied = true;
+        copied = ret->get_currentColor();
+    });
+    auto horizontal = BSML::Lite::CreateHorizontalLayoutGroup(copyButton);
+    horizontal->childForceExpandWidth = false;
+    auto currentColorImage = UnityEngine::Object::Instantiate(ret->colorImage, horizontal->transform, false);
+    currentColorImage->name = "QountersCurrentColor";
+    currentColorImage->preserveAspect = true;
+    SetLayoutSize(currentColorImage, 9, 4);
+    auto pasteButton = BSML::Lite::CreateUIButton(vertical, "       Paste Color", [copyModal, ret, onChange, onClose]() {
+        copyModal->Hide();
+        if (hasCopied) {
+            ret->set_currentColor(copied);
+            onChange(copied);
+            onClose();
+        }
+    });
+    horizontal = BSML::Lite::CreateHorizontalLayoutGroup(pasteButton);
+    horizontal->childForceExpandWidth = false;
+    auto copiedColorImage = UnityEngine::Object::Instantiate(ret->colorImage, horizontal->transform, false);
+    copiedColorImage->preserveAspect = true;
+    copiedColorImage->name = "QountersCopiedColor";
+    SetLayoutSize(copiedColorImage, 9, 4);
+
+    auto valuePicker = ret->transform->Find("ValuePicker").cast<UnityEngine::RectTransform>();
+    valuePicker->anchoredPosition = {-9, 0};
+    auto button = CreateIconButton(ret->gameObject, copySprite, [copyModal, ret, currentColorImage, pasteButton, copiedColorImage]() {
+        currentColorImage->color = ret->get_currentColor();
+        copiedColorImage->color = hasCopied ? copied : UnityEngine::Color(1, 1, 1, 0.3);
+        pasteButton->interactable = hasCopied;
+        copyModal->Show();
+    });
+    auto buttonRect = button->GetComponent<UnityEngine::RectTransform*>();
+    buttonRect->anchorMin = {1, 0};
+    buttonRect->anchorMax = {1, 1};
+    buttonRect->anchoredPosition = {-4, 0};
+
     return ret;
 }
 
