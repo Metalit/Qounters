@@ -197,9 +197,6 @@ static void PresentMultiplayer(SimpleLevelStarter* levelStarter, bool refresh, B
 }
 
 static void PresentSingleplayer(SimpleLevelStarter* levelStarter, bool refresh, BeatmapLevel* level, BeatmapKey diff, ColorScheme* colors) {
-    if (colors == nullptr)
-        colors = currentEnvironment->colorScheme->colorScheme;
-
     auto setupData = levelStarter->_menuTransitionsHelper->_standardLevelScenesTransitionSetupData;
     setupData->Init(
         "Settings",
@@ -234,11 +231,13 @@ static void PresentScene(SimpleLevelStarter* levelStarter, bool refresh) {
     currentEnvironment = GetEnvironment(levelStarter);
     level->GetDifficultyBeatmapData(diff.beatmapCharacteristic, diff.difficulty)->environmentName = currentEnvironment->serializedName;
 
-    ColorScheme* colors = nullptr;
+    ColorScheme* colors;
     currentColors = getConfig().ColorScheme.GetValue();
     auto colorSchemeSettings = levelStarter->_playerDataModel->playerData->colorSchemesSettings;
-    if (colorSchemeSettings->_colorSchemesDict->ContainsKey(currentColors))
+    if (getConfig().OverrideColor.GetValue() && colorSchemeSettings->_colorSchemesDict->ContainsKey(currentColors))
         colors = colorSchemeSettings->GetColorSchemeForId(currentColors);
+    else
+        colors = currentEnvironment->colorScheme->colorScheme;
 
     logger.debug("Presenting scene");
 
@@ -432,7 +431,13 @@ void Environment::OnSceneStart() {
     if (!currentFlow->IsFlowCoordinatorInHierarchy(settingsFlow))
         currentFlow->PresentFlowCoordinator(settingsFlow, nullptr, HMUI::ViewController::AnimationDirection::Horizontal, true, false);
 
-    float height = currentEnvironment && currentEnvironment->serializedName == "LinkinPark2Environment" ? 0.8 : 0.1;
+    float height = 0;
+    if (currentEnvironment) {
+        if (currentEnvironment->serializedName == "LinkinPark2Environment")
+            height = 0.65;
+        else if (currentEnvironment->serializedName == "LizzoEnvironment")
+            height = 0.1;
+    }
     GameObject::Find("MenuCore/UI/ScreenSystem")->transform->localPosition = {0, height, 0};
 
     logger.debug("Fixing environment lighting");

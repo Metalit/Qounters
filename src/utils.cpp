@@ -393,6 +393,7 @@ MenuDragger* Utils::CreateMenuDragger(UnityEngine::GameObject* parent, bool isLe
     rect->localScale = {1, 1, 1};
     rect->anchorMin = {0.5, 1};
     rect->anchorMax = {0.5, 1};
+    rect->anchoredPosition = {0, 5};
     rect->sizeDelta = {42, 3};
     SetCanvasSorting(padding, 5);
     auto drag = BSML::Lite::CreateCanvas();

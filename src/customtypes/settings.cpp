@@ -78,6 +78,7 @@ static GameObject* AddBackground(HMUI::ViewController* self, Vector2 size) {
     auto rect = self->rectTransform;
     rect->anchorMin = {0, 0};
     rect->anchorMax = {1, 1};
+    rect->sizeDelta = {0, 10};
     rect = object->GetComponent<RectTransform*>();
     rect->anchorMin = {0.5, 1};
     rect->anchorMax = {0.5, 1};
@@ -318,14 +319,14 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
 
     environments = BSML::Helpers::GetMainFlowCoordinator()->_playerDataModel->_playerDataFileModel->_environmentsListModel->_envInfos;
 
-    auto background = AddBackground(this, {110, 88});
+    auto background = AddBackground(this, {110, 82});
     Utils::SetCanvasSorting(gameObject, 4);
 
     auto vertical = BSML::Lite::CreateVerticalLayoutGroup(background);
     vertical->childControlHeight = false;
     vertical->childForceExpandHeight = false;
     vertical->spacing = 1;
-    vertical->rectTransform->anchoredPosition = {0, -4};
+    vertical->rectTransform->anchoredPosition = {0, -3};
 
     auto buttons1 = BSML::Lite::CreateHorizontalLayoutGroup(vertical);
     buttons1->spacing = 3;

@@ -242,7 +242,10 @@ void Playtest::ResetNotes() {
 
 void Playtest::ResetAll() {
     ResetGameControllers();
+    // may have been changed by settings
+    auto colors = Internals::colors;
     Internals::Initialize();
+    Internals::colors = colors;
     PP::blSongValid = false;
     settingsStarsBL = 10;
     PP::ssSongValid = false;
