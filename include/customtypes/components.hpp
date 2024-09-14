@@ -55,7 +55,7 @@ DECLARE_CLASS_CODEGEN(Qounters, TextGradient, UnityEngine::MonoBehaviour,
     DECLARE_INSTANCE_FIELD(UnityEngine::Color, startColor);
     DECLARE_INSTANCE_FIELD(UnityEngine::Color, endColor);
     DECLARE_INSTANCE_FIELD_DEFAULT(TMPro::TextMeshProUGUI*, text, nullptr);
-    DECLARE_INSTANCE_FIELD_DEFAULT(System::Action_1<TMPro::TMP_TextInfo*>*, delegate, nullptr);
+    DECLARE_INSTANCE_FIELD_DEFAULT(System::Action_1<UnityW<UnityEngine::Object>>*, delegate, nullptr);
 
     DECLARE_INSTANCE_METHOD(void, OnEnable);
     DECLARE_INSTANCE_METHOD(void, OnDisable);

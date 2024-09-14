@@ -3,8 +3,10 @@
 #include "GlobalNamespace/GameEnergyUIPanel.hpp"
 #include "GlobalNamespace/ScoreMultiplierUIController.hpp"
 #include "GlobalNamespace/SongProgressUIController.hpp"
+#include "TMPro/FastAction_1.hpp"
 #include "TMPro/TMP_TextInfo.hpp"
 #include "TMPro/TMP_VertexDataUpdateFlags.hpp"
+#include "TMPro/TMPro_EventManager.hpp"
 #include "UnityEngine/Rect.hpp"
 #include "UnityEngine/RectTransform.hpp"
 #include "UnityEngine/Time.hpp"
@@ -209,24 +211,23 @@ Shape* Shape::Create(Transform* parent) {
 
 void TextGradient::OnEnable() {
     if (!delegate) {
-        delegate = BSML::MakeSystemAction<TMPro::TMP_TextInfo*>((std::function<void(TMPro::TMP_TextInfo*)>) [this](TMPro::TMP_TextInfo*) {
-            UpdateGradient();
+        delegate = BSML::MakeSystemAction<UnityW<Object>>((std::function<void(UnityW<Object>)>) [this](UnityW<Object> changed) {
+            if (changed == text)
+                UpdateGradient();
         });
     }
     text = GetComponent<TMPro::TextMeshProUGUI*>();
-    if (text) {
-        text->remove_OnPreRenderText(delegate);
-        text->add_OnPreRenderText(delegate);
+    if (text)
         UpdateGradient();
-    }
+    TMPro::TMPro_EventManager::getStaticF_TEXT_CHANGED_EVENT()->Remove(delegate);
+    TMPro::TMPro_EventManager::getStaticF_TEXT_CHANGED_EVENT()->Add(delegate);
 }
 
 void TextGradient::OnDisable() {
-    if (text) {
-        if (delegate)
-            text->remove_OnPreRenderText(delegate);
+    if (text)
         text->SetAllDirty();
-    }
+    if (delegate)
+        TMPro::TMPro_EventManager::getStaticF_TEXT_CHANGED_EVENT()->Remove(delegate);
 }
 
 Color32 TextGradient::GetColor(Bounds bounds, Vector3 vertex) {
