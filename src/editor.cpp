@@ -369,7 +369,8 @@ void Editor::EnableDetachedCanvas(bool enabled) {
     blockOtherRaycasts = enabled;
     if (enabled) {
         auto group = editing[{selectedGroupIdx, -1}];
-        detachedDragCanvas->transform->SetParent(group->rectTransform, false);
+        detachedDragCanvas->transform->SetParent(group->rectTransform);
+        detachedDragCanvas->transform->SetLocalPositionAndRotation({0, 0, 0}, UnityEngine::Quaternion::get_identity());
         raycastCanvases.emplace(detachedDragCanvas->GetComponent<UnityEngine::Canvas*>());
     }
 }

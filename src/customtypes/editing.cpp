@@ -426,7 +426,7 @@ void EditingGroup::OnDragDetached(EventSystems::PointerEventData* eventData) {
         detachedGrabRot = Quaternion::op_Multiply(Quaternion::Inverse(controller->_viewAnchorTransform->rotation), transform->rotation);
         Editor::EnableDetachedCanvas(true);
     }
-    Editor::UpdateDetachedDrag(eventData->worldPosition, controller->_viewAnchorTransform->position);
+    Editor::UpdateDetachedDrag(eventData->pointerCurrentRaycast.worldPosition, controller->_viewAnchorTransform->position);
 
     float unscaledDeltaTime = Time::get_unscaledDeltaTime();
     // thumbstick movement
