@@ -241,9 +241,10 @@ void Templates::AddPP(int anchor, UnityEngine::Vector2 pos, bool beatleader, boo
         Sources::Text::PP ppOpts;
         ppOpts.Leaderboard = (int) Sources::Text::PP::Leaderboards::BeatLeader;
         ppOpts.Decimals = decimals;
-        auto& text = AddText(group, Sources::Text::PPName, ppOpts, 12, Options::Text::Aligns::Left);
-        yPos += 15;
+        AddText(group, Sources::Text::PPName, ppOpts, 12, Options::Text::Aligns::Left);
         auto& image = group.Components.emplace_back();
+        auto& text = *(group.Components.end() - 2);
+        yPos += 15;
         image.Type = (int) Options::Component::Types::Image;
         Options::Image opts;
         opts.Path = "Beatleader.png";
@@ -261,9 +262,10 @@ void Templates::AddPP(int anchor, UnityEngine::Vector2 pos, bool beatleader, boo
         Sources::Text::PP ppOpts;
         ppOpts.Leaderboard = (int) Sources::Text::PP::Leaderboards::ScoreSaber;
         ppOpts.Decimals = decimals;
-        auto& text = AddText(group, Sources::Text::PPName, ppOpts, 12, Options::Text::Aligns::Left);
-        text.Position = UnityEngine::Vector2(0, yPos);
+        AddText(group, Sources::Text::PPName, ppOpts, 12, Options::Text::Aligns::Left);
         auto& image = group.Components.emplace_back();
+        auto& text = *(group.Components.end() - 2);
+        text.Position = UnityEngine::Vector2(0, yPos);
         image.Type = (int) Options::Component::Types::Image;
         Options::Image opts;
         opts.Path = "Scoresaber.png";
@@ -321,10 +323,11 @@ void Templates::AddFCPercent(int anchor, UnityEngine::Vector2 pos, bool split, b
     opts.Decimals = decimals;
     if (split) {
         opts.Saber = (int) Types::Sabers::Left;
-        auto& leftText = AddText(group, Sources::Text::FCPercentName, opts, 15, Options::Text::Aligns::Right);
-        leftText.Position = UnityEngine::Vector2(-2, 0);
+        AddText(group, Sources::Text::FCPercentName, opts, 15, Options::Text::Aligns::Right);
         opts.Saber = (int) Types::Sabers::Right;
         auto& rightText = AddText(group, Sources::Text::FCPercentName, opts, 15, Options::Text::Aligns::Left);
+        auto& leftText = *(group.Components.end() - 2);
+        leftText.Position = UnityEngine::Vector2(-2, 0);
         rightText.Position = UnityEngine::Vector2(2, 0);
         if (saberColors) {
             Sources::Color::Player colOpts;
