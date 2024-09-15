@@ -87,9 +87,9 @@ void Sources::Text::PersonalBestUI(GameObject* parent, UnparsedJSON unparsed) {
         Editor::FinalizeAction();
     });
 
-    BSML::Lite::CreateToggle(parent, "Hide On First Score", opts.HideFirstScore, [](bool val) {
+    BSML::Lite::CreateToggle(parent, "Show 0 On First Score", !opts.HideFirstScore, [](bool val) {
         static int id = Editor::GetActionId();
-        opts.HideFirstScore = val;
+        opts.HideFirstScore = !val;
         Editor::SetSourceOptions(id, opts);
         Editor::FinalizeAction();
     });

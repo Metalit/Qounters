@@ -259,7 +259,7 @@ void Playtest::ResetAll() {
 
 // -1: no pb, 0: use last pb, >0: set pb percent
 void Playtest::SetPersonalBest(float value) {
-    static float lastValue = -1;
+    static float lastValue = 1;
     if (value == 0)
         value = lastValue;
     else if (value > 0)

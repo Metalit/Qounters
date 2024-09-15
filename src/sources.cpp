@@ -178,7 +178,7 @@ std::string Sources::Text::GetPersonalBest(UnparsedJSON unparsed) {
     }
     if (opts.Percentage) {
         int max = Game::GetSongMaxScore();
-        double ratio = max > 0 ? best / ((double) Game::GetModifierMultiplier(true, true) * max) : 1;
+        double ratio = max > 0 ? best / ((double) Game::GetModifierMultiplier(true, true) * max) : (Environment::InSettings() ? 0 : 1);
         ratio *= 100;
         std::string ret = Utils::FormatDecimals(ratio, opts.Decimals) + "%";
         return opts.Label ? "PB: " + ret : ret;

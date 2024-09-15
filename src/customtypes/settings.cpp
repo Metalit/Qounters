@@ -690,8 +690,8 @@ void PlaytestViewController::DidActivate(bool firstActivation, bool addedToHiera
     SetClickableImageColor(bomb, {0.2, 0.2, 0.2, 1});
 
     pbToggle = BSML::Lite::CreateToggle(parent, "Personal Best", true, [this](bool enabled) {
-        Playtest::SetPersonalBest(enabled ? -1 : 0);
-        pbSlider->gameObject->active = enabled;
+        Playtest::SetPersonalBest(enabled ? 0 : -1);
+        UpdateUI();
     });
 
     pbSlider = BSML::Lite::CreateSliderSetting(parent, "", 1, 1, 1, 120, 0, Playtest::SetPersonalBest);
@@ -767,11 +767,11 @@ void PlaytestViewController::UpdateUI() {
 
     Utils::InstantSetToggle(blToggle, PP::IsRankedBL());
     blSlider->gameObject->active = PP::IsRankedBL();
-    blSlider->set_Value(1);
+    blSlider->set_Value(settingsStarsBL);
 
     Utils::InstantSetToggle(ssToggle, PP::IsRankedSS());
     ssSlider->gameObject->active = PP::IsRankedSS();
-    ssSlider->set_Value(1);
+    ssSlider->set_Value(settingsStarsSS);
 }
 
 PlaytestViewController* PlaytestViewController::GetInstance() {
