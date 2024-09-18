@@ -103,6 +103,23 @@ static float CalculateScaleInverse(float scale) {
     return (std::log(expr1) - coeffLog) / coeffLog;
 }
 
+static void SetScaleButtons(BSML::SliderSetting* slider, float visualIncrement) {
+    slider->incButton->onClick->RemoveAllListeners();
+    slider->incButton->onClick->AddListener(BSML::MakeUnityAction([slider, visualIncrement]() {
+        float newScale = CalculateScale(slider->get_Value()) + visualIncrement;
+        float newValue = CalculateScaleInverse(newScale);
+        slider->set_Value(newValue);
+        slider->OnChange(nullptr, slider->get_Value());
+    }));
+    slider->decButton->onClick->RemoveAllListeners();
+    slider->decButton->onClick->AddListener(BSML::MakeUnityAction([slider, visualIncrement]() {
+        float newScale = CalculateScale(slider->get_Value()) - visualIncrement;
+        float newValue = CalculateScaleInverse(newScale);
+        slider->set_Value(newValue);
+        slider->OnChange(nullptr, slider->get_Value());
+    }));
+}
+
 static StringW ScaleFormat(float val) {
     return Utils::FormatDecimals(CalculateScale(val), 2);
 }
@@ -1098,21 +1115,23 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
     cRotSlider->GetComponent<RectTransform*>()->sizeDelta = {0, 8};
     BSML::Lite::AddHoverHint(cRotSlider, "Change the (Z) rotation of this counter relative to its group");
 
-    cScaleSliderX = BSML::Lite::CreateSliderSetting(componentParent, "X Scale", 0.01, 0, -1, 1, 0, true, {0, 0}, [](float val) {
+    cScaleSliderX = BSML::Lite::CreateSliderSetting(componentParent, "X Scale", 0.0001, 0, -1, 1, 0, true, {0, 0}, [](float val) {
         static int id = Editor::GetActionId();
         Editor::GetSelectedComponent(id).Scale.x = CalculateScale(val);
         Editor::UpdatePosition();
     });
     Utils::AddSliderEndDrag(cScaleSliderX, [](float _) { Editor::FinalizeAction(); });
+    SetScaleButtons(cScaleSliderX, 0.01);
     cScaleSliderX->formatter = ScaleFormat;
     cScaleSliderX->GetComponent<RectTransform*>()->sizeDelta = {0, 8};
     BSML::Lite::AddHoverHint(cScaleSliderX, "Change the horizontal scale of this counter");
-    cScaleSliderY = BSML::Lite::CreateSliderSetting(componentParent, "Y Scale", 0.01, 0, -1, 1, 0, true, {0, 0}, [](float val) {
+    cScaleSliderY = BSML::Lite::CreateSliderSetting(componentParent, "Y Scale", 0.0001, 0, -1, 1, 0, true, {0, 0}, [](float val) {
         static int id = Editor::GetActionId();
         Editor::GetSelectedComponent(id).Scale.y = CalculateScale(val);
         Editor::UpdatePosition();
     });
     Utils::AddSliderEndDrag(cScaleSliderY, [](float _) { Editor::FinalizeAction(); });
+    SetScaleButtons(cScaleSliderY, 0.01);
     cScaleSliderY->formatter = ScaleFormat;
     cScaleSliderY->GetComponent<RectTransform*>()->sizeDelta = {0, 8};
     BSML::Lite::AddHoverHint(cScaleSliderY, "Change the vertical scale of this counter");
