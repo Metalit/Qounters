@@ -284,8 +284,10 @@ void HUD::UpdateComponentPosition(RectTransform* component, Options::Component c
     component->anchoredPosition = qounterComponent.Position;
     component->localEulerAngles = {0, 0, qounterComponent.Rotation};
     component->localScale = {qounterComponent.Scale.x, qounterComponent.Scale.y, 0};
-    if (shape)
+    if (shape) {
         shape->SetVerticesDirty();
+        component = shape->rectTransform;
+    }
     if (auto editing = component->GetComponent<EditingBase*>())
         editing->outline->UpdateSize();
 }
