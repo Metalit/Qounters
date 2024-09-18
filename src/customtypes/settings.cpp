@@ -354,6 +354,7 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
             if (env->environmentName == value)
                 getConfig().Environment.SetValue(env->serializedName);
         }
+        UpdateUI();
     });
     auto parent = environmentDropdown->transform->parent;
     Utils::SetLayoutSize(parent, 87, 8);
@@ -373,9 +374,9 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
     Object::Destroy(toDelete);
     BSML::Lite::AddHoverHint(nested, "Filter the settings environment selector by HUD type");
 
-    auto apply = BSML::Lite::CreateUIButton(environment, "Apply", SettingsFlowCoordinator::RefreshScene);
-    Utils::SetLayoutSize(apply, 14, 8);
-    BSML::Lite::AddHoverHint(apply, "Apply the selected settings environment");
+    applyButton = BSML::Lite::CreateUIButton(environment, "Apply", SettingsFlowCoordinator::RefreshScene);
+    Utils::SetLayoutSize(applyButton, 14, 8);
+    BSML::Lite::AddHoverHint(applyButton, "Apply the selected settings environment");
 
     auto overrideColorsPanel = GetColorSchemeTemplate();
     colorSchemeSettings = BSML::Helpers::GetMainFlowCoordinator()->_playerDataModel->playerData->colorSchemesSettings;
@@ -595,6 +596,8 @@ void SettingsViewController::UpdateUI() {
         // set to the first environment in the filtered type when it changes
         getConfig().Environment.SetValue(first->serializedName);
     });
+
+    applyButton->interactable = Environment::CurrentSettingsEnvironment()->serializedName != getConfig().Environment.GetValue();
 
     auto dict = colorSchemeSettings->_colorSchemesDict;
     if (!dict->ContainsKey(getConfig().ColorScheme.GetValue()))

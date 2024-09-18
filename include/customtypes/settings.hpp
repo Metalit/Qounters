@@ -88,6 +88,7 @@ DECLARE_CLASS_CODEGEN(Qounters, SettingsViewController, HMUI::ViewController,
 
     DECLARE_INSTANCE_FIELD(UnityEngine::UI::Button*, undoButton);
     DECLARE_INSTANCE_FIELD(BSML::DropdownListSetting*, environmentDropdown);
+    DECLARE_INSTANCE_FIELD(UnityEngine::UI::Button*, applyButton);
     DECLARE_INSTANCE_FIELD(TMPro::TextMeshProUGUI*, colorToggleName);
     DECLARE_INSTANCE_FIELD(GlobalNamespace::ColorSchemeDropdown*, colorDropdown);
     DECLARE_INSTANCE_FIELD(UnityEngine::UI::Button*, colorEditButton);
