@@ -244,7 +244,7 @@ namespace Qounters::Sources {
 
     namespace Color {
         inline std::string const StaticName = "Static";
-        inline std::string const PlayerName = "Player";
+        inline std::string const PlayerName = "Color Scheme";
         inline std::string const RankName = "Rank";
         inline std::string const PersonalBestName = "Personal Best";
         inline std::string const ComboName = "Combo";
