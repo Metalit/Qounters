@@ -104,7 +104,7 @@ std::vector<std::string_view> const Sources::PPLeaderboardStrings = {
     "BeatLeader",
 };
 std::vector<std::string_view> const Sources::SaberSpeedModeStrings = {
-    "Average",
+    "Overall Average",
     "5 Second Highest",
 };
 std::vector<std::string_view> const Sources::SpinometerModeStrings = {

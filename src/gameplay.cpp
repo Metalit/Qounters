@@ -117,16 +117,19 @@ void Gameplay::GameplaySetupMenu(UnityEngine::GameObject* parent, bool firstActi
     auto horizontal = BSML::Lite::CreateHorizontalLayoutGroup(vertical);
     Utils::SetLayoutSize(BSML::Lite::CreateText(horizontal, "Current Environment:"), -1, -1, 999);
     environmentText = BSML::Lite::CreateText(horizontal, "");
+    BSML::Lite::AddHoverHint(environmentText, "The environment that will be used for the currently selected level");
 
     horizontal = BSML::Lite::CreateHorizontalLayoutGroup(vertical);
     Utils::SetLayoutSize(BSML::Lite::CreateText(horizontal, "Environment Type:"), -1, -1, 999);
     environmentTypeText = BSML::Lite::CreateText(horizontal, "");
+    BSML::Lite::AddHoverHint(environmentText, "The HUD type of the current environment");
 
     // not toggleable elsewhere for now
     AddConfigValueToggle(vertical, getConfig().Enabled);
     AddConfigValueToggle(vertical, getConfig().Noodle);
 
     presetDropdown = BSML::Lite::CreateDropdown(vertical, "Default Preset", "", {}, SelectPreset);
+    BSML::Lite::AddHoverHint(presetDropdown, "The preset to use in levels");
 
     typeOverrideToggle = BSML::Lite::CreateToggle(vertical, "", false, TypeOverrideToggled);
     typePresetDropdown = BSML::Lite::CreateDropdown(vertical, "", "", {}, SelectTypePreset);
@@ -135,6 +138,7 @@ void Gameplay::GameplaySetupMenu(UnityEngine::GameObject* parent, bool firstActi
     rect->SetParent(typeOverrideToggle->transform, false);
     rect->anchoredPosition = {-20, 0};
     UnityEngine::Object::Destroy(toDelete);
+    BSML::Lite::AddHoverHint(typeOverrideToggle, "Override the preset for this HUD type");
 
     specificOverrideToggle = BSML::Lite::CreateToggle(vertical, "", false, SpecificOverrideToggled);
     specificPresetDropdown = BSML::Lite::CreateDropdown(vertical, "", "", {}, SelectSpecificPreset);
@@ -143,10 +147,12 @@ void Gameplay::GameplaySetupMenu(UnityEngine::GameObject* parent, bool firstActi
     rect->SetParent(specificOverrideToggle->transform, false);
     rect->anchoredPosition = {-20, 0};
     UnityEngine::Object::Destroy(toDelete);
+    BSML::Lite::AddHoverHint(specificOverrideToggle, "Override the preset for this specific environment");
 
     Utils::SetChildrenWidth(vertical->transform, 85);
 
     settingsButton = BSML::Lite::CreateUIButton(vertical, "Open Settings", Environment::PresentSettings);
+    BSML::Lite::AddHoverHint(settingsButton, "Open the preset modification environment");
 
     initialized = true;
     UpdateUI();

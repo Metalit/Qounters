@@ -64,13 +64,14 @@ void Options::CreateTextUI(GameObject* parent, Text const& options) {
     static UI::VerticalLayoutGroup* sourceOptions;
     static bool collapseOpen = true;
 
-    Utils::CreateDropdownEnum(parent, "Align", options.Align, AlignStrings, [](int val) {
+    auto align = Utils::CreateDropdownEnum(parent, "Align", options.Align, AlignStrings, [](int val) {
         static int id = Editor::GetActionId();
         auto opts = Editor::GetOptions<Text>(id);
         opts.Align = val;
         Editor::SetOptions(id, opts);
         Editor::FinalizeAction();
     });
+    BSML::Lite::AddHoverHint(align, "Choose the alignment for the text of this counter");
 
     auto inc = BSML::Lite::CreateIncrementSetting(parent, "Font Size", 1, 0.5, options.Size, true, false, 0, -1, {0, 0}, [](float val) {
         static int id = Editor::GetActionId();
@@ -79,14 +80,16 @@ void Options::CreateTextUI(GameObject* parent, Text const& options) {
         Editor::SetOptions(id, opts);
         Editor::FinalizeAction();
     });
+    BSML::Lite::AddHoverHint(inc, "Choose the font size for the text of this counter");
 
-    BSML::Lite::CreateToggle(parent, "Italic", options.Italic, [](bool val) {
+    auto italic = BSML::Lite::CreateToggle(parent, "Italic", options.Italic, [](bool val) {
         static int id = Editor::GetActionId();
         auto opts = Editor::GetOptions<Text>(id);
         opts.Italic = val;
         Editor::SetOptions(id, opts);
         Editor::FinalizeAction();
     });
+    BSML::Lite::AddHoverHint(italic, "Italicize the text of this counter");
 
     auto sourceCollapse = Utils::CreateCollapseArea(parent, "Text Source Options", collapseOpen);
 
@@ -102,6 +105,7 @@ void Options::CreateTextUI(GameObject* parent, Text const& options) {
         Utils::RebuildWithScrollPosition(parent->transform->parent->gameObject);
         Editor::FinalizeAction();
     });
+    BSML::Lite::AddHoverHint(sourceDropdown, "Change the driver for the text of this counter");
 
     sourceOptions = BSML::Lite::CreateVerticalLayoutGroup(parent);
     Sources::Text::CreateUI(sourceOptions->gameObject, options.TextSource, options.SourceOptions);
@@ -119,7 +123,7 @@ void Options::CreateShapeUI(GameObject* parent, Shape const& options) {
     static UI::VerticalLayoutGroup* sourceOptions;
     static bool collapseOpen = false;
 
-    Utils::CreateDropdownEnum(parent, "Shape", options.Shape, ShapeStrings, [](int val) {
+    auto shape = Utils::CreateDropdownEnum(parent, "Shape", options.Shape, ShapeStrings, [](int val) {
         borderIncrement->gameObject->active = Shape::IsOutline(val);
         Qounters::OptionsViewController::UpdateScrollViewStatic();
         static int id = Editor::GetActionId();
@@ -128,6 +132,7 @@ void Options::CreateShapeUI(GameObject* parent, Shape const& options) {
         Editor::SetOptions(id, opts);
         Editor::FinalizeAction();
     });
+    BSML::Lite::AddHoverHint(shape, "Change the shape of this counter");
 
     borderIncrement =
         BSML::Lite::CreateIncrementSetting(parent, "Border Width", 1, 0.1, options.OutlineWidth, true, false, 0.1, -1, {0, 0}, [](float val) {
@@ -137,6 +142,7 @@ void Options::CreateShapeUI(GameObject* parent, Shape const& options) {
             Editor::SetOptions(id, opts);
             Editor::FinalizeAction();
         });
+    BSML::Lite::AddHoverHint(borderIncrement, "Change the border width of the shape of this counter");
 
     auto fillCollapse = Utils::CreateCollapseArea(parent, "Fill Options", collapseOpen);
 
@@ -147,6 +153,7 @@ void Options::CreateShapeUI(GameObject* parent, Shape const& options) {
         Editor::SetOptions(id, opts);
         Editor::FinalizeAction();
     });
+    BSML::Lite::AddHoverHint(directionDropdown, "Change the way the shape of this counter gets partially filled");
 
     auto inverseToggle = BSML::Lite::CreateToggle(parent, "Inverse Fill", options.Inverse, [](bool val) {
         static int id = Editor::GetActionId();
@@ -155,6 +162,7 @@ void Options::CreateShapeUI(GameObject* parent, Shape const& options) {
         Editor::SetOptions(id, opts);
         Editor::FinalizeAction();
     });
+    BSML::Lite::AddHoverHint(inverseToggle, "Inverse the direction of the fill of this counter");
 
     sourceDropdown = Utils::CreateDropdown(parent, "Fill Source", options.FillSource, Utils::GetKeys(Sources::shapes), [parent](std::string val) {
         static int id = Editor::GetActionId();
@@ -168,6 +176,7 @@ void Options::CreateShapeUI(GameObject* parent, Shape const& options) {
         }
         Editor::FinalizeAction();
     });
+    BSML::Lite::AddHoverHint(sourceDropdown, "Change the driver for the fill of this counter");
 
     sourceOptions = BSML::Lite::CreateVerticalLayoutGroup(parent);
     Sources::Shape::CreateUI(sourceOptions->gameObject, options.FillSource, options.SourceOptions);
@@ -217,7 +226,8 @@ void Options::CreateImageUI(GameObject* parent, Image const& options) {
     currentImage->preserveAspect = true;
     Utils::SetLayoutSize(currentImage, -1, 10);
 
-    BSML::Lite::CreateUIButton(horizontal, "Select Image", []() { modal->Show(); });
+    auto imageButton = BSML::Lite::CreateUIButton(horizontal, "Select Image", []() { modal->Show(); });
+    BSML::Lite::AddHoverHint(imageButton, "Select the image for this counter");
 }
 
 void Options::CreatePremadeUI(GameObject* parent, Premade const& options) {
@@ -226,13 +236,16 @@ void Options::CreatePremadeUI(GameObject* parent, Premade const& options) {
         for (auto& info : infos)
             names.emplace_back(info.name);
     }
-    Utils::CreateDropdown(parent, "Object", options.Name, names, [](std::string val) {
+
+    auto objectDropdown = Utils::CreateDropdown(parent, "Object", options.Name, names, [](std::string val) {
         static int id = Editor::GetActionId();
         auto opts = Editor::GetOptions<Premade>(id);
         opts.Name = val;
         Editor::SetOptions(id, opts);
         Editor::FinalizeAction();
     });
+    BSML::Lite::AddHoverHint(objectDropdown, "Select the premade object for this counter");
+
     // TODO: UI for missing mod?
     auto info = Sources::GetPremadeInfo(options.SourceMod, options.Name);
     if (info && info->uiFunction)

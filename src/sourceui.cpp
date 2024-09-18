@@ -17,18 +17,20 @@ void Sources::Text::StaticUI(GameObject* parent, UnparsedJSON unparsed) {
         opts.Input = (std::string) val;
         Editor::SetSourceOptions(id, opts);
     });
-    Utils::AddStringSettingOnClose(input, [](std::string _) { Editor::FinalizeAction(); });
+    Utils::AddStringSettingOnClose(input, [](std::string) { Editor::FinalizeAction(); });
+    BSML::Lite::AddHoverHint(input, "The static text to show");
 }
 void Sources::Text::ScoreUI(GameObject* parent, UnparsedJSON unparsed) {
     static Score opts;
     opts = unparsed.Parse<Score>();
 
-    Utils::CreateDropdownEnum(parent, "Saber", opts.Saber, Options::SaberStrings, [](int val) {
+    auto saber = Utils::CreateDropdownEnum(parent, "Saber", opts.Saber, Options::SaberStrings, [](int val) {
         static int id = Editor::GetActionId();
         opts.Saber = val;
         Editor::SetSourceOptions(id, opts);
         Editor::FinalizeAction();
     });
+    BSML::Lite::AddHoverHint(saber, "The saber to show the score for");
 
     auto inc = BSML::Lite::CreateIncrementSetting(parent, "Decimals", 0, 1, opts.Decimals, 0, 10, [](float val) {
         static int id = Editor::GetActionId();
@@ -36,81 +38,91 @@ void Sources::Text::ScoreUI(GameObject* parent, UnparsedJSON unparsed) {
         Editor::SetSourceOptions(id, opts);
         Editor::FinalizeAction();
     });
+    BSML::Lite::AddHoverHint(inc, "The number of decimals in the score, if a percentage");
 
-    BSML::Lite::CreateToggle(parent, "Percentage", opts.Percentage, [](bool val) {
+    auto percentage = BSML::Lite::CreateToggle(parent, "Percentage", opts.Percentage, [](bool val) {
         static int id = Editor::GetActionId();
         opts.Percentage = val;
         Editor::SetSourceOptions(id, opts);
         Editor::FinalizeAction();
     });
+    BSML::Lite::AddHoverHint(percentage, "Show the score as a percentage instead of absolute value");
 }
 void Sources::Text::RankUI(GameObject* parent, UnparsedJSON unparsed) {
     static Rank opts;
     opts = unparsed.Parse<Rank>();
 
-    Utils::CreateDropdownEnum(parent, "Saber", opts.Saber, Options::SaberStrings, [](int val) {
+    auto saber = Utils::CreateDropdownEnum(parent, "Saber", opts.Saber, Options::SaberStrings, [](int val) {
         static int id = Editor::GetActionId();
         opts.Saber = val;
         Editor::SetSourceOptions(id, opts);
         Editor::FinalizeAction();
     });
+    BSML::Lite::AddHoverHint(saber, "The saber to show the score for");
 
-    BSML::Lite::CreateToggle(parent, "Positive Modifiers", opts.PositiveModifiers, [](bool val) {
+    auto posMods = BSML::Lite::CreateToggle(parent, "Positive Modifiers", opts.PositiveModifiers, [](bool val) {
         static int id = Editor::GetActionId();
         opts.PositiveModifiers = val;
         Editor::SetSourceOptions(id, opts);
         Editor::FinalizeAction();
     });
+    BSML::Lite::AddHoverHint(posMods, "Include positive modifiers in the rank calculation");
 
-    BSML::Lite::CreateToggle(parent, "Negative Modifiers", opts.NegativeModifiers, [](bool val) {
+    auto negMods = BSML::Lite::CreateToggle(parent, "Negative Modifiers", opts.NegativeModifiers, [](bool val) {
         static int id = Editor::GetActionId();
         opts.NegativeModifiers = val;
         Editor::SetSourceOptions(id, opts);
         Editor::FinalizeAction();
     });
+    BSML::Lite::AddHoverHint(negMods, "Include negative modifiers in the rank calculation");
 }
 void Sources::Text::PersonalBestUI(GameObject* parent, UnparsedJSON unparsed) {
     static PersonalBest opts;
     opts = unparsed.Parse<PersonalBest>();
 
-    auto inc = BSML::Lite::CreateIncrementSetting(parent, "Decimals", 0, 1, opts.Decimals, 0, 10, [](float val) {
+    auto decimals = BSML::Lite::CreateIncrementSetting(parent, "Decimals", 0, 1, opts.Decimals, 0, 10, [](float val) {
         static int id = Editor::GetActionId();
         opts.Decimals = val;
         Editor::SetSourceOptions(id, opts);
         Editor::FinalizeAction();
     });
+    BSML::Lite::AddHoverHint(decimals, "The number of decimals to show, if a percentage");
 
-    BSML::Lite::CreateToggle(parent, "Percentage", opts.Percentage, [](bool val) {
+    auto percentage = BSML::Lite::CreateToggle(parent, "Percentage", opts.Percentage, [](bool val) {
         static int id = Editor::GetActionId();
         opts.Percentage = val;
         Editor::SetSourceOptions(id, opts);
         Editor::FinalizeAction();
     });
+    BSML::Lite::AddHoverHint(percentage, "Display the personal best as a percentage instead of absolute value");
 
-    BSML::Lite::CreateToggle(parent, "Show 0 On First Score", !opts.HideFirstScore, [](bool val) {
+    auto showZero = BSML::Lite::CreateToggle(parent, "Show 0 On First Score", !opts.HideFirstScore, [](bool val) {
         static int id = Editor::GetActionId();
         opts.HideFirstScore = !val;
         Editor::SetSourceOptions(id, opts);
         Editor::FinalizeAction();
     });
+    BSML::Lite::AddHoverHint(showZero, "Shows 0 if you have no personal best instead of \"--\"");
 
-    BSML::Lite::CreateToggle(parent, "Label Text", opts.Label, [](bool val) {
+    auto label = BSML::Lite::CreateToggle(parent, "Label Text", opts.Label, [](bool val) {
         static int id = Editor::GetActionId();
         opts.Label = val;
         Editor::SetSourceOptions(id, opts);
         Editor::FinalizeAction();
     });
+    BSML::Lite::AddHoverHint(label, "Labels the text with \"PB: \"");
 }
 void Sources::Text::ComboUI(GameObject* parent, UnparsedJSON unparsed) {
     static Combo opts;
     opts = unparsed.Parse<Combo>();
 
-    Utils::CreateDropdownEnum(parent, "Saber", opts.Saber, Options::SaberStrings, [](int val) {
+    auto saber = Utils::CreateDropdownEnum(parent, "Saber", opts.Saber, Options::SaberStrings, [](int val) {
         static int id = Editor::GetActionId();
         opts.Saber = val;
         Editor::SetSourceOptions(id, opts);
         Editor::FinalizeAction();
     });
+    BSML::Lite::AddHoverHint(saber, "The saber to show the combo for");
 }
 void Sources::Text::MultiplierUI(GameObject* parent, UnparsedJSON unparsed) {
     // static Multiplier opts;
@@ -120,234 +132,261 @@ void Sources::Text::HealthUI(GameObject* parent, UnparsedJSON unparsed) {
     static Health opts;
     opts = unparsed.Parse<Health>();
 
-    auto inc = BSML::Lite::CreateIncrementSetting(parent, "Decimals", 0, 1, opts.Decimals, 0, 10, [](float val) {
+    auto decimals = BSML::Lite::CreateIncrementSetting(parent, "Decimals", 0, 1, opts.Decimals, 0, 10, [](float val) {
         static int id = Editor::GetActionId();
         opts.Decimals = val;
         Editor::SetSourceOptions(id, opts);
         Editor::FinalizeAction();
     });
+    BSML::Lite::AddHoverHint(decimals, "The number of decimals to show");
 
-    BSML::Lite::CreateToggle(parent, "Percentage", opts.Percentage, [](bool val) {
+    auto percentage = BSML::Lite::CreateToggle(parent, "Percentage", opts.Percentage, [](bool val) {
         static int id = Editor::GetActionId();
         opts.Percentage = val;
         Editor::SetSourceOptions(id, opts);
         Editor::FinalizeAction();
     });
+    BSML::Lite::AddHoverHint(percentage, "Shows the health as a percentage instead of absolute value");
 }
 void Sources::Text::TimeUI(GameObject* parent, UnparsedJSON unparsed) {
     static Time opts;
     opts = unparsed.Parse<Time>();
 
-    BSML::Lite::CreateToggle(parent, "Remaining", opts.Remaining, [](bool val) {
+    auto remaining = BSML::Lite::CreateToggle(parent, "Remaining", opts.Remaining, [](bool val) {
         static int id = Editor::GetActionId();
         opts.Remaining = val;
         Editor::SetSourceOptions(id, opts);
         Editor::FinalizeAction();
     });
+    BSML::Lite::AddHoverHint(remaining, "Shows the time remaining");
 
-    BSML::Lite::CreateToggle(parent, "Percentage", opts.Percentage, [](bool val) {
+    auto percentage = BSML::Lite::CreateToggle(parent, "Percentage", opts.Percentage, [](bool val) {
         static int id = Editor::GetActionId();
         opts.Percentage = val;
         Editor::SetSourceOptions(id, opts);
         Editor::FinalizeAction();
     });
+    BSML::Lite::AddHoverHint(percentage, "Shows the song time as a percentage, instead of absolute value");
 }
 void Sources::Text::AverageCutUI(GameObject* parent, UnparsedJSON unparsed) {
     static AverageCut opts;
     opts = unparsed.Parse<AverageCut>();
 
-    Utils::CreateDropdownEnum(parent, "Saber", opts.Saber, Options::SaberStrings, [](int val) {
+    auto saber = Utils::CreateDropdownEnum(parent, "Saber", opts.Saber, Options::SaberStrings, [](int val) {
         static int id = Editor::GetActionId();
         opts.Saber = val;
         Editor::SetSourceOptions(id, opts);
         Editor::FinalizeAction();
     });
+    BSML::Lite::AddHoverHint(saber, "The saber to show the average for");
 
-    auto inc = BSML::Lite::CreateIncrementSetting(parent, "Decimals", 0, 1, opts.Decimals, 0, 10, [](float val) {
+    auto decimals = BSML::Lite::CreateIncrementSetting(parent, "Decimals", 0, 1, opts.Decimals, 0, 10, [](float val) {
         static int id = Editor::GetActionId();
         opts.Decimals = val;
         Editor::SetSourceOptions(id, opts);
         Editor::FinalizeAction();
     });
+    BSML::Lite::AddHoverHint(decimals, "The number of decimals to show");
 
-    Utils::CreateDropdownEnum(parent, "Part", opts.Part, AverageCutPartStrings, [](int val) {
+    auto part = Utils::CreateDropdownEnum(parent, "Part", opts.Part, AverageCutPartStrings, [](int val) {
         static int id = Editor::GetActionId();
         opts.Part = val;
         Editor::SetSourceOptions(id, opts);
         Editor::FinalizeAction();
     });
+    BSML::Lite::AddHoverHint(part, "Which part of the swing to show the average of");
 }
 void Sources::Text::TimeDependenceUI(UnityEngine::GameObject* parent, UnparsedJSON unparsed) {
     static TimeDependence opts;
     opts = unparsed.Parse<TimeDependence>();
 
-    Utils::CreateDropdownEnum(parent, "Saber", opts.Saber, Options::SaberStrings, [](int val) {
+    auto saber = Utils::CreateDropdownEnum(parent, "Saber", opts.Saber, Options::SaberStrings, [](int val) {
         static int id = Editor::GetActionId();
         opts.Saber = val;
         Editor::SetSourceOptions(id, opts);
         Editor::FinalizeAction();
     });
+    BSML::Lite::AddHoverHint(saber, "The saber to show the time dependence for");
 
-    auto inc = BSML::Lite::CreateIncrementSetting(parent, "Decimals", 0, 1, opts.Decimals, 0, 10, [](float val) {
+    auto decimals = BSML::Lite::CreateIncrementSetting(parent, "Decimals", 0, 1, opts.Decimals, 0, 10, [](float val) {
         static int id = Editor::GetActionId();
         opts.Decimals = val;
         Editor::SetSourceOptions(id, opts);
         Editor::FinalizeAction();
     });
+    BSML::Lite::AddHoverHint(decimals, "The number of decimals (after the decimal point) to show");
 
-    auto inc2 = BSML::Lite::CreateIncrementSetting(parent, "Decimal Offset", 0, 1, opts.DecimalOffset, 0, 10, [](float val) {
+    auto offset = BSML::Lite::CreateIncrementSetting(parent, "Decimal Offset", 0, 1, opts.DecimalOffset, 0, 10, [](float val) {
         static int id = Editor::GetActionId();
         opts.DecimalOffset = val;
         Editor::SetSourceOptions(id, opts);
         Editor::FinalizeAction();
     });
+    BSML::Lite::AddHoverHint(offset, "");
 }
 void Sources::Text::FailsUI(GameObject* parent, UnparsedJSON unparsed) {
     static Fails opts;
     opts = unparsed.Parse<Fails>();
 
-    BSML::Lite::CreateToggle(parent, "Restarts", opts.Restarts, [](bool val) {
+    auto restarts = BSML::Lite::CreateToggle(parent, "Restarts", opts.Restarts, [](bool val) {
         static int id = Editor::GetActionId();
         opts.Restarts = val;
         Editor::SetSourceOptions(id, opts);
         Editor::FinalizeAction();
     });
+    BSML::Lite::AddHoverHint(restarts, "Count the number of consecutive restarts instead of total fails");
 }
 void Sources::Text::MistakesUI(GameObject* parent, UnparsedJSON unparsed) {
     static Mistakes opts;
     opts = unparsed.Parse<Mistakes>();
 
-    Utils::CreateDropdownEnum(parent, "Saber", opts.Saber, Options::SaberStrings, [](int val) {
+    auto saber = Utils::CreateDropdownEnum(parent, "Saber", opts.Saber, Options::SaberStrings, [](int val) {
         static int id = Editor::GetActionId();
         opts.Saber = val;
         Editor::SetSourceOptions(id, opts);
         Editor::FinalizeAction();
     });
+    BSML::Lite::AddHoverHint(saber, "The saber to show the mistake count for");
 
-    BSML::Lite::CreateToggle(parent, "Misses", opts.Misses, [](bool val) {
+    auto misses = BSML::Lite::CreateToggle(parent, "Misses", opts.Misses, [](bool val) {
         static int id = Editor::GetActionId();
         opts.Misses = val;
         Editor::SetSourceOptions(id, opts);
         Editor::FinalizeAction();
     });
+    BSML::Lite::AddHoverHint(misses, "Include misses in the mistake count");
 
-    BSML::Lite::CreateToggle(parent, "Bad Cuts", opts.BadCuts, [](bool val) {
+    auto badCuts = BSML::Lite::CreateToggle(parent, "Bad Cuts", opts.BadCuts, [](bool val) {
         static int id = Editor::GetActionId();
         opts.BadCuts = val;
         Editor::SetSourceOptions(id, opts);
         Editor::FinalizeAction();
     });
+    BSML::Lite::AddHoverHint(badCuts, "Include bad cuts in the mistake count");
 
-    BSML::Lite::CreateToggle(parent, "Bombs", opts.Bombs, [](bool val) {
+    auto bombs = BSML::Lite::CreateToggle(parent, "Bombs", opts.Bombs, [](bool val) {
         static int id = Editor::GetActionId();
         opts.Bombs = val;
         Editor::SetSourceOptions(id, opts);
         Editor::FinalizeAction();
     });
+    BSML::Lite::AddHoverHint(bombs, "Include bombs in the mistake count");
 
-    BSML::Lite::CreateToggle(parent, "Walls", opts.Walls, [](bool val) {
+    auto walls = BSML::Lite::CreateToggle(parent, "Walls", opts.Walls, [](bool val) {
         static int id = Editor::GetActionId();
         opts.Walls = val;
         Editor::SetSourceOptions(id, opts);
         Editor::FinalizeAction();
     });
+    BSML::Lite::AddHoverHint(walls, "Include walls in the mistake count");
 }
 void Sources::Text::NotesUI(GameObject* parent, UnparsedJSON unparsed) {
     static Notes opts;
     opts = unparsed.Parse<Notes>();
 
-    Utils::CreateDropdownEnum(parent, "Saber", opts.Saber, Options::SaberStrings, [](int val) {
+    auto saber = Utils::CreateDropdownEnum(parent, "Saber", opts.Saber, Options::SaberStrings, [](int val) {
         static int id = Editor::GetActionId();
         opts.Saber = val;
         Editor::SetSourceOptions(id, opts);
         Editor::FinalizeAction();
     });
+    BSML::Lite::AddHoverHint(saber, "The saber to show the notes value for");
 
-    Utils::CreateDropdownEnum(parent, "Display", opts.Display, NotesDisplayStrings, [](int val) {
+    auto display = Utils::CreateDropdownEnum(parent, "Display", opts.Display, NotesDisplayStrings, [](int val) {
         static int id = Editor::GetActionId();
         opts.Display = val;
         Editor::SetSourceOptions(id, opts);
         Editor::FinalizeAction();
     });
+    BSML::Lite::AddHoverHint(display, "The note-related value to show");
 }
 void Sources::Text::PPUI(GameObject* parent, UnparsedJSON unparsed) {
     static PP opts;
     opts = unparsed.Parse<PP>();
 
-    Utils::CreateDropdownEnum(parent, "Source", opts.Leaderboard, PPLeaderboardStrings, [](int val) {
+    auto source = Utils::CreateDropdownEnum(parent, "Source", opts.Leaderboard, PPLeaderboardStrings, [](int val) {
         static int id = Editor::GetActionId();
         opts.Leaderboard = val;
         Editor::SetSourceOptions(id, opts);
         Editor::FinalizeAction();
     });
+    BSML::Lite::AddHoverHint(source, "The leaderboard to show the PP value for");
 
-    auto inc = BSML::Lite::CreateIncrementSetting(parent, "Decimals", 0, 1, opts.Decimals, 0, 10, [](float val) {
+    auto decimals = BSML::Lite::CreateIncrementSetting(parent, "Decimals", 0, 1, opts.Decimals, 0, 10, [](float val) {
         static int id = Editor::GetActionId();
         opts.Decimals = val;
         Editor::SetSourceOptions(id, opts);
         Editor::FinalizeAction();
     });
+    BSML::Lite::AddHoverHint(decimals, "The number of decimals to show");
 }
 void Sources::Text::SaberSpeedUI(GameObject* parent, UnparsedJSON unparsed) {
     static SaberSpeed opts;
     opts = unparsed.Parse<SaberSpeed>();
 
-    Utils::CreateDropdownEnum(parent, "Saber", opts.Saber, Options::SaberStrings, [](int val) {
+    auto saber = Utils::CreateDropdownEnum(parent, "Saber", opts.Saber, Options::SaberStrings, [](int val) {
         static int id = Editor::GetActionId();
         opts.Saber = val;
         Editor::SetSourceOptions(id, opts);
         Editor::FinalizeAction();
     });
+    BSML::Lite::AddHoverHint(saber, "The saber to show the speed of");
 
-    auto inc = BSML::Lite::CreateIncrementSetting(parent, "Decimals", 0, 1, opts.Decimals, 0, 10, [](float val) {
+    auto decimals = BSML::Lite::CreateIncrementSetting(parent, "Decimals", 0, 1, opts.Decimals, 0, 10, [](float val) {
         static int id = Editor::GetActionId();
         opts.Decimals = val;
         Editor::SetSourceOptions(id, opts);
         Editor::FinalizeAction();
     });
+    BSML::Lite::AddHoverHint(decimals, "The number of decimals to show");
 
-    Utils::CreateDropdownEnum(parent, "Mode", opts.Mode, SaberSpeedModeStrings, [](int val) {
+    auto mode = Utils::CreateDropdownEnum(parent, "Mode", opts.Mode, SaberSpeedModeStrings, [](int val) {
         static int id = Editor::GetActionId();
         opts.Mode = val;
         Editor::SetSourceOptions(id, opts);
         Editor::FinalizeAction();
     });
+    BSML::Lite::AddHoverHint(mode, "How to show the average saber speed");
 }
 void Sources::Text::SpinometerUI(GameObject* parent, UnparsedJSON unparsed) {
     static Spinometer opts;
     opts = unparsed.Parse<Spinometer>();
 
-    Utils::CreateDropdownEnum(parent, "Saber", opts.Saber, Options::SaberStrings, [](int val) {
+    auto saber = Utils::CreateDropdownEnum(parent, "Saber", opts.Saber, Options::SaberStrings, [](int val) {
         static int id = Editor::GetActionId();
         opts.Saber = val;
         Editor::SetSourceOptions(id, opts);
         Editor::FinalizeAction();
     });
+    BSML::Lite::AddHoverHint(saber, "The saber to show the angular velocity of");
 
-    Utils::CreateDropdownEnum(parent, "Mode", opts.Mode, SpinometerModeStrings, [](int val) {
+    auto mode = Utils::CreateDropdownEnum(parent, "Mode", opts.Mode, SpinometerModeStrings, [](int val) {
         static int id = Editor::GetActionId();
         opts.Mode = val;
         Editor::SetSourceOptions(id, opts);
         Editor::FinalizeAction();
     });
+    BSML::Lite::AddHoverHint(mode, "How to show the angular velocity");
 }
 void Sources::Text::FCPercentUI(GameObject* parent, UnparsedJSON unparsed) {
     static FCPercent opts;
     opts = unparsed.Parse<FCPercent>();
 
-    Utils::CreateDropdownEnum(parent, "Saber", opts.Saber, Options::SaberStrings, [](int val) {
+    auto saber = Utils::CreateDropdownEnum(parent, "Saber", opts.Saber, Options::SaberStrings, [](int val) {
         static int id = Editor::GetActionId();
         opts.Saber = val;
         Editor::SetSourceOptions(id, opts);
         Editor::FinalizeAction();
     });
+    BSML::Lite::AddHoverHint(saber, "The saber to show the full combo percentage for");
 
-    auto inc = BSML::Lite::CreateIncrementSetting(parent, "Decimals", 0, 1, opts.Decimals, 0, 10, [](float val) {
+    auto decimals = BSML::Lite::CreateIncrementSetting(parent, "Decimals", 0, 1, opts.Decimals, 0, 10, [](float val) {
         static int id = Editor::GetActionId();
         opts.Decimals = val;
         Editor::SetSourceOptions(id, opts);
         Editor::FinalizeAction();
     });
+    BSML::Lite::AddHoverHint(decimals, "The number of decimals to show");
 }
 
 void Sources::Text::CreateUI(UnityEngine::GameObject* parent, std::string source, UnparsedJSON options) {
@@ -368,30 +407,33 @@ void Sources::Shape::StaticUI(GameObject* parent, UnparsedJSON unparsed) {
         opts.Input = val;
         Editor::SetSourceOptions(id, opts);
     });
-    Utils::AddSliderEndDrag(slider, [](float _) { Editor::FinalizeAction(); });
+    Utils::AddSliderEndDrag(slider, [](float) { Editor::FinalizeAction(); });
     slider->GetComponent<RectTransform*>()->sizeDelta = {0, 8};
+    BSML::Lite::AddHoverHint(slider, "The static fill level to use");
 }
 void Sources::Shape::ScoreUI(GameObject* parent, UnparsedJSON unparsed) {
     static Score opts;
     opts = unparsed.Parse<Score>();
 
-    Utils::CreateDropdownEnum(parent, "Saber", opts.Saber, Options::SaberStrings, [](int val) {
+    auto saber = Utils::CreateDropdownEnum(parent, "Saber", opts.Saber, Options::SaberStrings, [](int val) {
         static int id = Editor::GetActionId();
         opts.Saber = val;
         Editor::SetSourceOptions(id, opts);
         Editor::FinalizeAction();
     });
+    BSML::Lite::AddHoverHint(saber, "The saber to use the score of");
 }
 void Sources::Shape::MultiplierUI(GameObject* parent, UnparsedJSON unparsed) {
     static Multiplier opts;
     opts = unparsed.Parse<Multiplier>();
 
-    BSML::Lite::CreateToggle(parent, "Absolute", opts.Absolute, [](bool val) {
+    auto absolute = BSML::Lite::CreateToggle(parent, "Absolute", opts.Absolute, [](bool val) {
         static int id = Editor::GetActionId();
         opts.Absolute = val;
         Editor::SetSourceOptions(id, opts);
         Editor::FinalizeAction();
     });
+    BSML::Lite::AddHoverHint(absolute, "Use the absolute multiplier progress instead of the progress to the next increment");
 }
 void Sources::Shape::HealthUI(GameObject* parent, UnparsedJSON unparsed) {
     // static Health opts;
@@ -405,30 +447,33 @@ void Sources::Shape::AverageCutUI(GameObject* parent, UnparsedJSON unparsed) {
     static AverageCut opts;
     opts = unparsed.Parse<AverageCut>();
 
-    Utils::CreateDropdownEnum(parent, "Saber", opts.Saber, Options::SaberStrings, [](int val) {
+    auto saber = Utils::CreateDropdownEnum(parent, "Saber", opts.Saber, Options::SaberStrings, [](int val) {
         static int id = Editor::GetActionId();
         opts.Saber = val;
         Editor::SetSourceOptions(id, opts);
         Editor::FinalizeAction();
     });
+    BSML::Lite::AddHoverHint(saber, "The saber to use the average cut of");
 
-    Utils::CreateDropdownEnum(parent, "Part", opts.Part, AverageCutPartStrings, [](int val) {
+    auto part = Utils::CreateDropdownEnum(parent, "Part", opts.Part, AverageCutPartStrings, [](int val) {
         static int id = Editor::GetActionId();
         opts.Part = val;
         Editor::SetSourceOptions(id, opts);
         Editor::FinalizeAction();
     });
+    BSML::Lite::AddHoverHint(part, "The part of the cut to use the average of");
 }
 void Sources::Shape::NotesUI(GameObject* parent, UnparsedJSON unparsed) {
     static Notes opts;
     opts = unparsed.Parse<Notes>();
 
-    Utils::CreateDropdownEnum(parent, "Saber", opts.Saber, Options::SaberStrings, [](int val) {
+    auto saber = Utils::CreateDropdownEnum(parent, "Saber", opts.Saber, Options::SaberStrings, [](int val) {
         static int id = Editor::GetActionId();
         opts.Saber = val;
         Editor::SetSourceOptions(id, opts);
         Editor::FinalizeAction();
     });
+    BSML::Lite::AddHoverHint(saber, "The saber to use the notes value of");
 }
 
 void Sources::Shape::CreateUI(UnityEngine::GameObject* parent, std::string source, UnparsedJSON options) {
@@ -454,7 +499,7 @@ void Sources::Color::StaticUI(GameObject* parent, UnparsedJSON unparsed) {
     static Static opts;
     opts = unparsed.Parse<Static>();
 
-    Utils::CreateColorPicker(
+    auto color = Utils::CreateColorPicker(
         parent,
         "Color",
         opts.Input,
@@ -465,44 +510,49 @@ void Sources::Color::StaticUI(GameObject* parent, UnparsedJSON unparsed) {
         },
         []() { Editor::FinalizeAction(); }
     );
+    BSML::Lite::AddHoverHint(color->editButton, "The constant color to use");
 }
 void Sources::Color::PlayerUI(GameObject* parent, UnparsedJSON unparsed) {
     static Player opts;
     opts = unparsed.Parse<Player>();
 
-    Utils::CreateDropdownEnum(parent, "Color Setting", opts.Setting, ColorSettingsStrings, [](int val) {
+    auto setting = Utils::CreateDropdownEnum(parent, "Color Setting", opts.Setting, ColorSettingsStrings, [](int val) {
         static int id = Editor::GetActionId();
         opts.Setting = val;
         Editor::SetColorOptions(id, opts);
         Editor::FinalizeAction();
     });
+    BSML::Lite::AddHoverHint(setting, "Which setting from the color scheme to use");
 }
 void Sources::Color::RankUI(GameObject* parent, UnparsedJSON unparsed) {
     static Rank opts;
     opts = unparsed.Parse<Rank>();
 
-    Utils::CreateDropdownEnum(parent, "Saber", opts.Saber, Options::SaberStrings, [](int val) {
+    auto saber = Utils::CreateDropdownEnum(parent, "Saber", opts.Saber, Options::SaberStrings, [](int val) {
         static int id = Editor::GetActionId();
         opts.Saber = val;
         Editor::SetColorOptions(id, opts);
         Editor::FinalizeAction();
     });
+    BSML::Lite::AddHoverHint(saber, "The saber to use the score of for the rank calculation");
 
-    BSML::Lite::CreateToggle(parent, "Positive Modifiers", opts.PositiveModifiers, [](bool val) {
+    auto posMods = BSML::Lite::CreateToggle(parent, "Positive Modifiers", opts.PositiveModifiers, [](bool val) {
         static int id = Editor::GetActionId();
         opts.PositiveModifiers = val;
         Editor::SetColorOptions(id, opts);
         Editor::FinalizeAction();
     });
+    BSML::Lite::AddHoverHint(posMods, "Include positive modifiers in the rank calculation");
 
-    BSML::Lite::CreateToggle(parent, "Negative Modifiers", opts.NegativeModifiers, [](bool val) {
+    auto negMods = BSML::Lite::CreateToggle(parent, "Negative Modifiers", opts.NegativeModifiers, [](bool val) {
         static int id = Editor::GetActionId();
         opts.NegativeModifiers = val;
         Editor::SetColorOptions(id, opts);
         Editor::FinalizeAction();
     });
+    BSML::Lite::AddHoverHint(negMods, "Include negative modifiers in the rank calculation");
 
-    Utils::CreateColorPicker(
+    auto ss = Utils::CreateColorPicker(
         parent,
         "SS Color",
         opts.SS,
@@ -513,8 +563,9 @@ void Sources::Color::RankUI(GameObject* parent, UnparsedJSON unparsed) {
         },
         []() { Editor::FinalizeAction(); }
     );
+    BSML::Lite::AddHoverHint(ss, "The color to use for SS rank");
 
-    Utils::CreateColorPicker(
+    auto s = Utils::CreateColorPicker(
         parent,
         "S Color",
         opts.S,
@@ -525,8 +576,9 @@ void Sources::Color::RankUI(GameObject* parent, UnparsedJSON unparsed) {
         },
         []() { Editor::FinalizeAction(); }
     );
+    BSML::Lite::AddHoverHint(s, "The color to use for S rank");
 
-    Utils::CreateColorPicker(
+    auto a = Utils::CreateColorPicker(
         parent,
         "A Color",
         opts.A,
@@ -537,8 +589,9 @@ void Sources::Color::RankUI(GameObject* parent, UnparsedJSON unparsed) {
         },
         []() { Editor::FinalizeAction(); }
     );
+    BSML::Lite::AddHoverHint(a, "The color to use for A rank");
 
-    Utils::CreateColorPicker(
+    auto b = Utils::CreateColorPicker(
         parent,
         "B Color",
         opts.B,
@@ -549,8 +602,9 @@ void Sources::Color::RankUI(GameObject* parent, UnparsedJSON unparsed) {
         },
         []() { Editor::FinalizeAction(); }
     );
+    BSML::Lite::AddHoverHint(b, "The color to use for B rank");
 
-    Utils::CreateColorPicker(
+    auto c = Utils::CreateColorPicker(
         parent,
         "C Color",
         opts.C,
@@ -561,8 +615,9 @@ void Sources::Color::RankUI(GameObject* parent, UnparsedJSON unparsed) {
         },
         []() { Editor::FinalizeAction(); }
     );
+    BSML::Lite::AddHoverHint(c, "The color to use for C rank");
 
-    Utils::CreateColorPicker(
+    auto d = Utils::CreateColorPicker(
         parent,
         "D Color",
         opts.D,
@@ -573,8 +628,9 @@ void Sources::Color::RankUI(GameObject* parent, UnparsedJSON unparsed) {
         },
         []() { Editor::FinalizeAction(); }
     );
+    BSML::Lite::AddHoverHint(d, "The color to use for D rank");
 
-    Utils::CreateColorPicker(
+    auto e = Utils::CreateColorPicker(
         parent,
         "E Color",
         opts.E,
@@ -585,12 +641,13 @@ void Sources::Color::RankUI(GameObject* parent, UnparsedJSON unparsed) {
         },
         []() { Editor::FinalizeAction(); }
     );
+    BSML::Lite::AddHoverHint(e, "The color to use for E rank");
 }
 void Sources::Color::PersonalBestUI(GameObject* parent, UnparsedJSON unparsed) {
     static PersonalBest opts;
     opts = unparsed.Parse<PersonalBest>();
 
-    Utils::CreateColorPicker(
+    auto better = Utils::CreateColorPicker(
         parent,
         "Better Color",
         opts.Better,
@@ -601,8 +658,9 @@ void Sources::Color::PersonalBestUI(GameObject* parent, UnparsedJSON unparsed) {
         },
         []() { Editor::FinalizeAction(); }
     );
+    BSML::Lite::AddHoverHint(better, "The color to use if the current percentage is better than your personal best");
 
-    Utils::CreateColorPicker(
+    auto worse = Utils::CreateColorPicker(
         parent,
         "Worse Color",
         opts.Worse,
@@ -613,19 +671,21 @@ void Sources::Color::PersonalBestUI(GameObject* parent, UnparsedJSON unparsed) {
         },
         []() { Editor::FinalizeAction(); }
     );
+    BSML::Lite::AddHoverHint(worse, "The color to use if the current percentage is worse than your personal best");
 }
 void Sources::Color::ComboUI(GameObject* parent, UnparsedJSON unparsed) {
     static Combo opts;
     opts = unparsed.Parse<Combo>();
 
-    Utils::CreateDropdownEnum(parent, "Saber", opts.Saber, Options::SaberStrings, [](int val) {
+    auto saber = Utils::CreateDropdownEnum(parent, "Saber", opts.Saber, Options::SaberStrings, [](int val) {
         static int id = Editor::GetActionId();
         opts.Saber = val;
         Editor::SetColorOptions(id, opts);
         Editor::FinalizeAction();
     });
+    BSML::Lite::AddHoverHint(saber, "The saber to use the score of");
 
-    Utils::CreateColorPicker(
+    auto fc = Utils::CreateColorPicker(
         parent,
         "FC Color",
         opts.Full,
@@ -636,8 +696,9 @@ void Sources::Color::ComboUI(GameObject* parent, UnparsedJSON unparsed) {
         },
         []() { Editor::FinalizeAction(); }
     );
+    BSML::Lite::AddHoverHint(fc, "The color to use for a full combo");
 
-    Utils::CreateColorPicker(
+    auto nonFc = Utils::CreateColorPicker(
         parent,
         "Non FC Color",
         opts.NonFull,
@@ -648,12 +709,13 @@ void Sources::Color::ComboUI(GameObject* parent, UnparsedJSON unparsed) {
         },
         []() { Editor::FinalizeAction(); }
     );
+    BSML::Lite::AddHoverHint(nonFc, "The color to use for a non full combo");
 }
 void Sources::Color::MultiplierUI(GameObject* parent, UnparsedJSON unparsed) {
     static Multiplier opts;
     opts = unparsed.Parse<Multiplier>();
 
-    Utils::CreateColorPicker(
+    auto one = Utils::CreateColorPicker(
         parent,
         "One",
         opts.One,
@@ -664,8 +726,9 @@ void Sources::Color::MultiplierUI(GameObject* parent, UnparsedJSON unparsed) {
         },
         []() { Editor::FinalizeAction(); }
     );
+    BSML::Lite::AddHoverHint(one, "The color to use for a multiplier of 1");
 
-    Utils::CreateColorPicker(
+    auto two = Utils::CreateColorPicker(
         parent,
         "Two",
         opts.Two,
@@ -676,8 +739,9 @@ void Sources::Color::MultiplierUI(GameObject* parent, UnparsedJSON unparsed) {
         },
         []() { Editor::FinalizeAction(); }
     );
+    BSML::Lite::AddHoverHint(two, "The color to use for a multiplier of 2");
 
-    Utils::CreateColorPicker(
+    auto four = Utils::CreateColorPicker(
         parent,
         "Four",
         opts.Four,
@@ -688,8 +752,9 @@ void Sources::Color::MultiplierUI(GameObject* parent, UnparsedJSON unparsed) {
         },
         []() { Editor::FinalizeAction(); }
     );
+    BSML::Lite::AddHoverHint(four, "The color to use for a multiplier of 4");
 
-    Utils::CreateColorPicker(
+    auto eight = Utils::CreateColorPicker(
         parent,
         "Eight",
         opts.Eight,
@@ -700,12 +765,13 @@ void Sources::Color::MultiplierUI(GameObject* parent, UnparsedJSON unparsed) {
         },
         []() { Editor::FinalizeAction(); }
     );
+    BSML::Lite::AddHoverHint(eight, "The color to use for a multiplier of 8");
 }
 void Sources::Color::HealthUI(GameObject* parent, UnparsedJSON unparsed) {
     static Health opts;
     opts = unparsed.Parse<Health>();
 
-    Utils::CreateColorPicker(
+    auto full = Utils::CreateColorPicker(
         parent,
         "Full",
         opts.Full,
@@ -716,8 +782,9 @@ void Sources::Color::HealthUI(GameObject* parent, UnparsedJSON unparsed) {
         },
         []() { Editor::FinalizeAction(); }
     );
+    BSML::Lite::AddHoverHint(full, "The color to use for full health");
 
-    Utils::CreateColorPicker(
+    auto overHalf = Utils::CreateColorPicker(
         parent,
         "Above Half",
         opts.AboveHalf,
@@ -728,8 +795,9 @@ void Sources::Color::HealthUI(GameObject* parent, UnparsedJSON unparsed) {
         },
         []() { Editor::FinalizeAction(); }
     );
+    BSML::Lite::AddHoverHint(overHalf, "The color to use for above half health");
 
-    Utils::CreateColorPicker(
+    auto underHalf = Utils::CreateColorPicker(
         parent,
         "Below Half",
         opts.BelowHalf,
@@ -740,6 +808,7 @@ void Sources::Color::HealthUI(GameObject* parent, UnparsedJSON unparsed) {
         },
         []() { Editor::FinalizeAction(); }
     );
+    BSML::Lite::AddHoverHint(underHalf, "The color to use for below half health");
 }
 
 void Sources::Color::CreateUI(UnityEngine::GameObject* parent, std::string source, UnparsedJSON options) {
@@ -759,23 +828,25 @@ void Sources::Enable::RankedUI(UnityEngine::GameObject* parent, UnparsedJSON unp
     static Ranked opts;
     opts = unparsed.Parse<Ranked>();
 
-    Utils::CreateDropdownEnum(parent, "Leaderboard", opts.Leaderboard, RankedStatusLeaderboardStrings, [](int val) {
+    auto leaderboard = Utils::CreateDropdownEnum(parent, "Leaderboard", opts.Leaderboard, RankedStatusLeaderboardStrings, [](int val) {
         static int id = Editor::GetActionId();
         opts.Leaderboard = val;
         Editor::SetEnableOptions(id, opts);
         Editor::FinalizeAction();
     });
+    BSML::Lite::AddHoverHint(leaderboard, "The leaderboard to be ranked on");
 }
 void Sources::Enable::FullComboUI(UnityEngine::GameObject* parent, UnparsedJSON unparsed) {
     static FullCombo opts;
     opts = unparsed.Parse<FullCombo>();
 
-    Utils::CreateDropdownEnum(parent, "Saber", opts.Saber, Options::SaberStrings, [](int val) {
+    auto saber = Utils::CreateDropdownEnum(parent, "Saber", opts.Saber, Options::SaberStrings, [](int val) {
         static int id = Editor::GetActionId();
         opts.Saber = val;
         Editor::SetEnableOptions(id, opts);
         Editor::FinalizeAction();
     });
+    BSML::Lite::AddHoverHint(saber, "The saber that must have a full combo");
 }
 void Sources::Enable::PercentageUI(UnityEngine::GameObject* parent, UnparsedJSON unparsed) {
     static Percentage opts;
@@ -786,15 +857,17 @@ void Sources::Enable::PercentageUI(UnityEngine::GameObject* parent, UnparsedJSON
         opts.Percent = val;
         Editor::SetSourceOptions(id, opts);
     });
-    Utils::AddSliderEndDrag(slider, [](float _) { Editor::FinalizeAction(); });
+    Utils::AddSliderEndDrag(slider, [](float) { Editor::FinalizeAction(); });
     slider->GetComponent<RectTransform*>()->sizeDelta = {0, 8};
+    BSML::Lite::AddHoverHint(slider, "The percentage the score must be above");
 
-    Utils::CreateDropdownEnum(parent, "Saber", opts.Saber, Options::SaberStrings, [](int val) {
+    auto saber = Utils::CreateDropdownEnum(parent, "Saber", opts.Saber, Options::SaberStrings, [](int val) {
         static int id = Editor::GetActionId();
         opts.Saber = val;
         Editor::SetEnableOptions(id, opts);
         Editor::FinalizeAction();
     });
+    BSML::Lite::AddHoverHint(saber, "The saber to use the score of for the percentage calculation");
 }
 void Sources::Enable::FailedUI(UnityEngine::GameObject* parent, UnparsedJSON unparsed) {
     // static Failed opts;

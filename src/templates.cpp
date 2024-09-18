@@ -52,14 +52,23 @@ static Options::Group MakeGroup(int anchor, UnityEngine::Vector2 pos) {
     return group;
 }
 
+static void CreateAnchorDropdown(UnityEngine::GameObject* parent, int& anchor) {
+    BSML::Lite::AddHoverHint(
+        Utils::CreateDropdownEnum(parent, "Starting Anchor", anchor, Options::AnchorStrings, [&anchor](int val) { anchor = val; }),
+        "Select the anchor to create this counter group on"
+    );
+}
+
 static void CreateButtons(UnityEngine::GameObject* parent, std::function<void()> createFn) {
     auto buttons = BSML::Lite::CreateHorizontalLayoutGroup(parent);
     buttons->spacing = 3;
-    BSML::Lite::CreateUIButton(buttons, "Cancel", Templates::CloseModal);
-    BSML::Lite::CreateUIButton(buttons, "Create", "ActionButton", [createFn]() {
+    auto cancelButton = BSML::Lite::CreateUIButton(buttons, "Cancel", Templates::CloseModal);
+    BSML::Lite::AddHoverHint(cancelButton, "Close the menu without creating anything");
+    auto createButton = BSML::Lite::CreateUIButton(buttons, "Create", "ActionButton", [createFn]() {
         createFn();
         Templates::CloseModal();
     });
+    BSML::Lite::AddHoverHint(createButton, "Create the counter group and add it to the preset");
 }
 
 static Options::Component& AddText(
@@ -360,7 +369,7 @@ void Templates::AddFCPercent(int anchor, UnityEngine::Vector2 pos, bool split, b
 void Templates::EmptyUI(UnityEngine::GameObject* parent) {
     static int anchor = 0;
 
-    Utils::CreateDropdownEnum(parent, "Starting Anchor", anchor, Options::AnchorStrings, [](int val) { anchor = val; });
+    CreateAnchorDropdown(parent, anchor);
     CreateButtons(parent, []() { AddEmpty(anchor, {0, 0}); });
 }
 void Templates::ScoreUI(UnityEngine::GameObject* parent) {
@@ -371,12 +380,25 @@ void Templates::ScoreUI(UnityEngine::GameObject* parent) {
     static int decimals = 2;
     static bool rankColors = true;
 
-    Utils::CreateDropdownEnum(parent, "Starting Anchor", anchor, Options::AnchorStrings, [](int val) { anchor = val; });
-    BSML::Lite::CreateToggle(parent, "Show Numeric Score", score, [](bool val) { score = val; });
-    BSML::Lite::CreateToggle(parent, "Show Percentage", percent, [](bool val) { percent = val; });
-    BSML::Lite::CreateToggle(parent, "Show Rank", rank, [](bool val) { rank = val; });
-    BSML::Lite::CreateIncrementSetting(parent, "Percentage Decimals", 0, 1, decimals, [](float val) { decimals = val; });
-    BSML::Lite::CreateToggle(parent, "Color Rank Text", rankColors, [](bool val) { rankColors = val; });
+    CreateAnchorDropdown(parent, anchor);
+    BSML::Lite::AddHoverHint(
+        BSML::Lite::CreateToggle(parent, "Show Numeric Score", score, [](bool val) { score = val; }), "Shows the absolute score value"
+    );
+    BSML::Lite::AddHoverHint(
+        BSML::Lite::CreateToggle(parent, "Show Percentage", percent, [](bool val) { percent = val; }),
+        "Shows the current score percentage of the maximum"
+    );
+    BSML::Lite::AddHoverHint(
+        BSML::Lite::CreateToggle(parent, "Show Rank", rank, [](bool val) { rank = val; }), "Shows the rank of the current score percentage"
+    );
+    BSML::Lite::AddHoverHint(
+        BSML::Lite::CreateIncrementSetting(parent, "Percentage Decimals", 0, 1, decimals, [](float val) { decimals = val; }),
+        "The number of decimals in the score percentage"
+    );
+    BSML::Lite::AddHoverHint(
+        BSML::Lite::CreateToggle(parent, "Color Rank Text", rankColors, [](bool val) { rankColors = val; }),
+        "Make the text of the rank change colors based on its value"
+    );
     CreateButtons(parent, []() { AddScore(anchor, {0, 0}, score, percent, rank, decimals, rankColors); });
 }
 void Templates::PersonalBestUI(UnityEngine::GameObject* parent) {
@@ -385,10 +407,19 @@ void Templates::PersonalBestUI(UnityEngine::GameObject* parent) {
     static bool hideFirst = true;
     static int decimals = 2;
 
-    Utils::CreateDropdownEnum(parent, "Starting Anchor", anchor, Options::AnchorStrings, [](int val) { anchor = val; });
-    BSML::Lite::CreateToggle(parent, "Absolute Score", absolute, [](bool val) { absolute = val; });
-    BSML::Lite::CreateToggle(parent, "Hide On First Score", hideFirst, [](bool val) { hideFirst = val; });
-    BSML::Lite::CreateIncrementSetting(parent, "Decimals", 0, 1, decimals, [](float val) { decimals = val; });
+    CreateAnchorDropdown(parent, anchor);
+    BSML::Lite::AddHoverHint(
+        BSML::Lite::CreateToggle(parent, "Absolute Score", absolute, [](bool val) { absolute = val; }),
+        "Show the absolute personal best value of the personal best instead of the percentage"
+    );
+    BSML::Lite::AddHoverHint(
+        BSML::Lite::CreateToggle(parent, "Show 0 On First Score", !hideFirst, [](bool val) { hideFirst = !val; }),
+        "Shows 0 if you have no personal best instead of \"--\""
+    );
+    BSML::Lite::AddHoverHint(
+        BSML::Lite::CreateIncrementSetting(parent, "Decimals", 0, 1, decimals, [](float val) { decimals = val; }),
+        "The number of decimals in the personal best percentage, if shown"
+    );
     CreateButtons(parent, []() { AddPersonalBest(anchor, {0, 0}, absolute, hideFirst, decimals); });
 }
 void Templates::AverageCutUI(UnityEngine::GameObject* parent) {
@@ -397,10 +428,18 @@ void Templates::AverageCutUI(UnityEngine::GameObject* parent) {
     static bool splitCut = false;
     static int decimals = 2;
 
-    Utils::CreateDropdownEnum(parent, "Starting Anchor", anchor, Options::AnchorStrings, [](int val) { anchor = val; });
-    BSML::Lite::CreateToggle(parent, "Split Sabers", splitSaber, [](bool val) { splitSaber = val; });
-    BSML::Lite::CreateToggle(parent, "Split Cut Parts", splitCut, [](bool val) { splitCut = val; });
-    BSML::Lite::CreateIncrementSetting(parent, "Decimals", 0, 1, decimals, [](float val) { decimals = val; });
+    CreateAnchorDropdown(parent, anchor);
+    BSML::Lite::AddHoverHint(
+        BSML::Lite::CreateToggle(parent, "Split Sabers", splitSaber, [](bool val) { splitSaber = val; }), "Show separate averages per saber"
+    );
+    BSML::Lite::AddHoverHint(
+        BSML::Lite::CreateToggle(parent, "Split Cut Parts", splitCut, [](bool val) { splitCut = val; }),
+        "Show separate averages for the preswing, postswing, and accuracy"
+    );
+    BSML::Lite::AddHoverHint(
+        BSML::Lite::CreateIncrementSetting(parent, "Decimals", 0, 1, decimals, [](float val) { decimals = val; }),
+        "The number of decimals in the averages"
+    );
     CreateButtons(parent, []() { AddAverageCut(anchor, {0, 0}, splitSaber, splitCut, decimals); });
 }
 void Templates::TimeDependenceUI(UnityEngine::GameObject* parent) {
@@ -409,10 +448,18 @@ void Templates::TimeDependenceUI(UnityEngine::GameObject* parent) {
     static int decimals = 2;
     static int decimalOffset = 0;
 
-    Utils::CreateDropdownEnum(parent, "Starting Anchor", anchor, Options::AnchorStrings, [](int val) { anchor = val; });
-    BSML::Lite::CreateToggle(parent, "Split Sabers", splitSaber, [](bool val) { splitSaber = val; });
-    BSML::Lite::CreateIncrementSetting(parent, "Decimals", 0, 1, decimals, [](float val) { decimals = val; });
-    BSML::Lite::CreateIncrementSetting(parent, "Decimal Offset", 0, 1, decimalOffset, [](float val) { decimalOffset = val; });
+    CreateAnchorDropdown(parent, anchor);
+    BSML::Lite::AddHoverHint(
+        BSML::Lite::CreateToggle(parent, "Split Sabers", splitSaber, [](bool val) { splitSaber = val; }), "Show separate time dependencies per saber"
+    );
+    BSML::Lite::AddHoverHint(
+        BSML::Lite::CreateIncrementSetting(parent, "Decimals", 0, 1, decimals, [](float val) { decimals = val; }),
+        "The number of decimals (after the decimal point) to show"
+    );
+    BSML::Lite::AddHoverHint(
+        BSML::Lite::CreateIncrementSetting(parent, "Decimal Offset", 0, 1, decimalOffset, [](float val) { decimalOffset = val; }),
+        "Multiplies the time dependence, so 0.1 could be displayed as 1.0 or 10.0"
+    );
     CreateButtons(parent, []() { AddTimeDependence(anchor, {0, 0}, splitSaber, decimals, decimalOffset); });
 }
 void Templates::NotesUI(UnityEngine::GameObject* parent) {
@@ -420,9 +467,15 @@ void Templates::NotesUI(UnityEngine::GameObject* parent) {
     static int display = 0;
     static int decimals = 2;
 
-    Utils::CreateDropdownEnum(parent, "Starting Anchor", anchor, Options::AnchorStrings, [](int val) { anchor = val; });
-    Utils::CreateDropdownEnum(parent, "Display Type", display, NotesDisplayStrings, [](int val) { display = val; });
-    BSML::Lite::CreateIncrementSetting(parent, "Percentage Decimals", 0, 1, decimals, [](float val) { decimals = val; });
+    CreateAnchorDropdown(parent, anchor);
+    BSML::Lite::AddHoverHint(
+        Utils::CreateDropdownEnum(parent, "Display Type", display, NotesDisplayStrings, [](int val) { display = val; }),
+        "The note-related value to show"
+    );
+    BSML::Lite::AddHoverHint(
+        BSML::Lite::CreateIncrementSetting(parent, "Percentage Decimals", 0, 1, decimals, [](float val) { decimals = val; }),
+        "The number of decimals in any percentages"
+    );
     CreateButtons(parent, []() { AddNotes(anchor, {0, 0}, display, decimals); });
 }
 void Templates::MistakesUI(UnityEngine::GameObject* parent) {
@@ -431,18 +484,27 @@ void Templates::MistakesUI(UnityEngine::GameObject* parent) {
     static bool bombs = false;
     static bool walls = false;
 
-    Utils::CreateDropdownEnum(parent, "Starting Anchor", anchor, Options::AnchorStrings, [](int val) { anchor = val; });
-    BSML::Lite::CreateToggle(parent, "Count Bad Cuts", badCuts, [](bool val) { badCuts = val; });
-    BSML::Lite::CreateToggle(parent, "Count Bombs", bombs, [](bool val) { bombs = val; });
-    BSML::Lite::CreateToggle(parent, "Count Walls", walls, [](bool val) { walls = val; });
+    CreateAnchorDropdown(parent, anchor);
+    BSML::Lite::AddHoverHint(
+        BSML::Lite::CreateToggle(parent, "Count Bad Cuts", badCuts, [](bool val) { badCuts = val; }), "Include bad cuts in the mistake count"
+    );
+    BSML::Lite::AddHoverHint(
+        BSML::Lite::CreateToggle(parent, "Count Bombs", bombs, [](bool val) { bombs = val; }), "Include bomb hits in the mistake count"
+    );
+    BSML::Lite::AddHoverHint(
+        BSML::Lite::CreateToggle(parent, "Count Walls", walls, [](bool val) { walls = val; }), "Include wall hits in the mistake count"
+    );
     CreateButtons(parent, []() { AddMistakes(anchor, {0, 0}, badCuts, bombs, walls); });
 }
 void Templates::FailsUI(UnityEngine::GameObject* parent) {
     static int anchor = 0;
     static bool restarts = false;
 
-    Utils::CreateDropdownEnum(parent, "Starting Anchor", anchor, Options::AnchorStrings, [](int val) { anchor = val; });
-    BSML::Lite::CreateToggle(parent, "Count Restarts Instead", restarts, [](bool val) { restarts = val; });
+    CreateAnchorDropdown(parent, anchor);
+    BSML::Lite::AddHoverHint(
+        BSML::Lite::CreateToggle(parent, "Count Restarts Instead", restarts, [](bool val) { restarts = val; }),
+        "Count the number of consecutive map restarts instead of total fails"
+    );
     CreateButtons(parent, []() { AddFails(anchor, {0, 0}, restarts); });
 }
 void Templates::SongTimeUI(UnityEngine::GameObject* parent) {
@@ -450,35 +512,59 @@ void Templates::SongTimeUI(UnityEngine::GameObject* parent) {
     static int display = 0;
     static bool timeLeft = false;
 
-    Utils::CreateDropdownEnum(parent, "Starting Anchor", anchor, Options::AnchorStrings, [](int val) { anchor = val; });
-    Utils::CreateDropdownEnum(parent, "Display Type", display, SongTimeDisplayStrings, [](int val) { display = val; });
-    BSML::Lite::CreateToggle(parent, "Time Remaining", timeLeft, [](bool val) { timeLeft = val; });
+    CreateAnchorDropdown(parent, anchor);
+    BSML::Lite::AddHoverHint(
+        Utils::CreateDropdownEnum(parent, "Display Type", display, SongTimeDisplayStrings, [](int val) { display = val; }),
+        "How to display the song time"
+    );
+    BSML::Lite::AddHoverHint(
+        BSML::Lite::CreateToggle(parent, "Time Remaining", timeLeft, [](bool val) { timeLeft = val; }),
+        "Show the time remaining instead of current time for non-base game displays"
+    );
     CreateButtons(parent, []() { AddSongTime(anchor, {0, 0}, display, timeLeft); });
 }
 void Templates::PPUI(UnityEngine::GameObject* parent) {
     static int anchor = 0;
-    static bool beatleader = false;
-    static bool scoresaber = false;
-    static bool hideUnranked = false;
+    static bool beatleader = true;
+    static bool scoresaber = true;
+    static bool hideUnranked = true;
     static int decimals = 2;
 
-    Utils::CreateDropdownEnum(parent, "Starting Anchor", anchor, Options::AnchorStrings, [](int val) { anchor = val; });
-    BSML::Lite::CreateToggle(parent, "Show ScoreSaber", scoresaber, [](bool val) { scoresaber = val; });
-    BSML::Lite::CreateToggle(parent, "Show BeatLeader", beatleader, [](bool val) { beatleader = val; });
-    BSML::Lite::CreateToggle(parent, "Hide When Unranked", hideUnranked, [](bool val) { hideUnranked = val; });
-    BSML::Lite::CreateIncrementSetting(parent, "Decimals", 0, 1, decimals, [](float val) { decimals = val; });
+    CreateAnchorDropdown(parent, anchor);
+    BSML::Lite::AddHoverHint(
+        BSML::Lite::CreateToggle(parent, "Show ScoreSaber", scoresaber, [](bool val) { scoresaber = val; }), "Show ScoreSaber PP value"
+    );
+    BSML::Lite::AddHoverHint(
+        BSML::Lite::CreateToggle(parent, "Show BeatLeader", beatleader, [](bool val) { beatleader = val; }), "Show BeatLeader PP value"
+    );
+    BSML::Lite::AddHoverHint(
+        BSML::Lite::CreateToggle(parent, "Hide When Unranked", hideUnranked, [](bool val) { hideUnranked = val; }),
+        "Disable displaying individual leaderboards when the map is not ranked on them"
+    );
+    BSML::Lite::AddHoverHint(
+        BSML::Lite::CreateIncrementSetting(parent, "Decimals", 0, 1, decimals, [](float val) { decimals = val; }),
+        "The number of decimals in the PP values"
+    );
     CreateButtons(parent, []() { AddPP(anchor, {0, 0}, beatleader, scoresaber, hideUnranked, decimals); });
 }
 void Templates::SaberSpeedUI(UnityEngine::GameObject* parent) {
     static int anchor = 0;
     static bool split = false;
-    static bool last5Secs = false;
+    static bool last5Secs = true;
     static int decimals = 2;
 
-    Utils::CreateDropdownEnum(parent, "Starting Anchor", anchor, Options::AnchorStrings, [](int val) { anchor = val; });
-    BSML::Lite::CreateToggle(parent, "Split Sabers", split, [](bool val) { split = val; });
-    BSML::Lite::CreateToggle(parent, "Last 5 Seconds Only", last5Secs, [](bool val) { last5Secs = val; });
-    BSML::Lite::CreateIncrementSetting(parent, "Decimals", 0, 1, decimals, [](float val) { decimals = val; });
+    CreateAnchorDropdown(parent, anchor);
+    BSML::Lite::AddHoverHint(
+        BSML::Lite::CreateToggle(parent, "Split Sabers", split, [](bool val) { split = val; }), "Show separate speeds per saber"
+    );
+    BSML::Lite::AddHoverHint(
+        BSML::Lite::CreateToggle(parent, "Last 5 Seconds Only", last5Secs, [](bool val) { last5Secs = val; }),
+        "Show the average speed from the last 5 seconds instead of all time"
+    );
+    BSML::Lite::AddHoverHint(
+        BSML::Lite::CreateIncrementSetting(parent, "Decimals", 0, 1, decimals, [](float val) { decimals = val; }),
+        "The number of decimals in the saber speeds"
+    );
     CreateButtons(parent, []() { AddSaberSpeed(anchor, {0, 0}, split, last5Secs, decimals); });
 }
 void Templates::SpinometerUI(UnityEngine::GameObject* parent) {
@@ -486,9 +572,14 @@ void Templates::SpinometerUI(UnityEngine::GameObject* parent) {
     static bool split = false;
     static bool highest = false;
 
-    Utils::CreateDropdownEnum(parent, "Starting Anchor", anchor, Options::AnchorStrings, [](int val) { anchor = val; });
-    BSML::Lite::CreateToggle(parent, "Split Sabers", split, [](bool val) { split = val; });
-    BSML::Lite::CreateToggle(parent, "Use Highest", highest, [](bool val) { highest = val; });
+    CreateAnchorDropdown(parent, anchor);
+    BSML::Lite::AddHoverHint(
+        BSML::Lite::CreateToggle(parent, "Split Sabers", split, [](bool val) { split = val; }), "Show separate spinometers per saber"
+    );
+    BSML::Lite::AddHoverHint(
+        BSML::Lite::CreateToggle(parent, "Use Highest", highest, [](bool val) { highest = val; }),
+        "Use the overall highest angular velocity instead of from the last second"
+    );
     CreateButtons(parent, []() { AddSpinometer(anchor, {0, 0}, split, highest); });
 }
 void Templates::FCPercentUI(UnityEngine::GameObject* parent) {
@@ -498,10 +589,20 @@ void Templates::FCPercentUI(UnityEngine::GameObject* parent) {
     static bool hideInFC = true;
     static int decimals = 2;
 
-    Utils::CreateDropdownEnum(parent, "Starting Anchor", anchor, Options::AnchorStrings, [](int val) { anchor = val; });
-    BSML::Lite::CreateToggle(parent, "Split Sabers", split, [](bool val) { split = val; });
-    BSML::Lite::CreateToggle(parent, "Use Saber Colors", saberColors, [](bool val) { saberColors = val; });
-    BSML::Lite::CreateToggle(parent, "Hide With FC", hideInFC, [](bool val) { hideInFC = val; });
-    BSML::Lite::CreateIncrementSetting(parent, "Decimals", 0, 1, decimals, [](float val) { decimals = val; });
+    CreateAnchorDropdown(parent, anchor);
+    BSML::Lite::AddHoverHint(
+        BSML::Lite::CreateToggle(parent, "Split Sabers", split, [](bool val) { split = val; }), "Show separate full combo percentages per saber"
+    );
+    BSML::Lite::AddHoverHint(
+        BSML::Lite::CreateToggle(parent, "Use Saber Colors", saberColors, [](bool val) { saberColors = val; }),
+        "Set FC percentages to their respective saber colors, if separate"
+    );
+    BSML::Lite::AddHoverHint(
+        BSML::Lite::CreateToggle(parent, "Hide With FC", hideInFC, [](bool val) { hideInFC = val; }), "Hide FC percentages with a full combo"
+    );
+    BSML::Lite::AddHoverHint(
+        BSML::Lite::CreateIncrementSetting(parent, "Decimals", 0, 1, decimals, [](float val) { decimals = val; }),
+        "The number of decimals in the FC percentages"
+    );
     CreateButtons(parent, []() { AddFCPercent(anchor, {0, 0}, split, saberColors, hideInFC, decimals); });
 }

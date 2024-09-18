@@ -19,7 +19,9 @@
 #include "HMUI/ScreenSystem.hpp"
 #include "System/Collections/Generic/Dictionary_2.hpp"
 #include "System/Single.hpp"
+#include "UnityEngine/AdditionalCanvasShaderChannels.hpp"
 #include "UnityEngine/UI/ContentSizeFitter.hpp"
+#include "VRUIControls/VRGraphicRaycaster.hpp"
 #include "assets.hpp"
 #include "bsml/shared/BSML-Lite.hpp"
 #include "bsml/shared/BSML/Components/Backgroundable.hpp"
@@ -331,15 +333,19 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
     auto buttons1 = BSML::Lite::CreateHorizontalLayoutGroup(vertical);
     buttons1->spacing = 3;
     undoButton = BSML::Lite::CreateUIButton(buttons1, "Undo", Editor::Undo);
-    BSML::Lite::CreateUIButton(buttons1, "Exit", SettingsFlowCoordinator::DismissScene);
+    BSML::Lite::AddHoverHint(undoButton, "Undo the last change to the preset");
+    auto exitButton = BSML::Lite::CreateUIButton(buttons1, "Exit", SettingsFlowCoordinator::DismissScene);
+    BSML::Lite::AddHoverHint(exitButton, "Exit the settings environment without saving");
 
     auto buttons2 = BSML::Lite::CreateHorizontalLayoutGroup(vertical);
     buttons2->spacing = 1;
-    BSML::Lite::CreateUIButton(buttons2, "Save", SettingsFlowCoordinator::Save);
-    BSML::Lite::CreateUIButton(buttons2, "Save And Exit", "ActionButton", []() {
+    auto saveButton = BSML::Lite::CreateUIButton(buttons2, "Save", SettingsFlowCoordinator::Save);
+    BSML::Lite::AddHoverHint(saveButton, "Save all changes to the current preset");
+    auto saveExitButton = BSML::Lite::CreateUIButton(buttons2, "Save And Exit", "ActionButton", []() {
         SettingsFlowCoordinator::Save();
         SettingsFlowCoordinator::DismissScene();
     });
+    BSML::Lite::AddHoverHint(saveExitButton, "Save the current preset and exit the settings environment");
 
     auto environment = BSML::Lite::CreateHorizontalLayoutGroup(vertical);
     environment->spacing = 1;
@@ -351,6 +357,7 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
     });
     auto parent = environmentDropdown->transform->parent;
     Utils::SetLayoutSize(parent, 87, 8);
+    BSML::Lite::AddHoverHint(environmentDropdown, "Change the environment for the settings menu");
 
     std::vector<std::string_view> append = {"Any"};
     append.insert(append.begin(), Environment::HUDTypeStrings.begin(), Environment::HUDTypeStrings.end());
@@ -364,9 +371,11 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
     rect->anchoredPosition = {-36, 0};
     rect->sizeDelta = {22, 0};
     Object::Destroy(toDelete);
+    BSML::Lite::AddHoverHint(nested, "Filter the settings environment selector by HUD type");
 
     auto apply = BSML::Lite::CreateUIButton(environment, "Apply", SettingsFlowCoordinator::RefreshScene);
     Utils::SetLayoutSize(apply, 14, 8);
+    BSML::Lite::AddHoverHint(apply, "Apply the selected settings environment");
 
     auto overrideColorsPanel = GetColorSchemeTemplate();
     colorSchemeSettings = BSML::Helpers::GetMainFlowCoordinator()->_playerDataModel->playerData->colorSchemesSettings;
@@ -378,6 +387,7 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
         UpdateUI();
     });
     colorToggleName = toggle->transform->Find("NameText")->GetComponent<TMPro::TextMeshProUGUI*>();
+    BSML::Lite::AddHoverHint(toggle, "Override the default colors for the settings environment");
 
     auto transform = BSML::Helpers::GetDiContainer()
                          ->InstantiatePrefab(overrideColorsPanel->_colorSchemeDropDown->transform->parent)
@@ -387,7 +397,9 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
     Object::Destroy(transform->Find("NameText")->gameObject);
 
     colorEditButton = transform->Find("EditButton")->GetComponent<UI::Button*>();
+    BSML::Lite::AddHoverHint(colorEditButton, "Edit this color scheme");
     colorDropdown = transform->Find("ColorSchemeDropDown")->GetComponent<GlobalNamespace::ColorSchemeDropdown*>();
+    BSML::Lite::AddHoverHint(colorDropdown, "Select the color scheme for the settings environment");
 
     colorEditor = BSML::Helpers::GetDiContainer()
                       ->InstantiatePrefab(overrideColorsPanel->_editColorSchemeController)
@@ -419,6 +431,7 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
         TMPro::TextAlignmentOptions::Center;
 
     presetDropdown = BSML::Lite::CreateDropdown(vertical, "Editing Preset", "", {}, SettingsFlowCoordinator::SelectPreset);
+    BSML::Lite::AddHoverHint(presetDropdown, "Select the preset to modify");
 
     auto buttons3 = BSML::Lite::CreateHorizontalLayoutGroup(vertical);
     buttons3->spacing = 1;
@@ -428,21 +441,26 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
         nameModal->Show(true, true, nullptr);
     });
     Utils::SetLayoutSize(renameButton, 24, 8);
+    BSML::Lite::AddHoverHint(renameButton, "Change the name of the selected preset");
     auto dupeButton = BSML::Lite::CreateUIButton(buttons3, "Duplicate", [this]() {
         nameModalIsRename = false;
         nameInput->text = getConfig().SettingsPreset.GetValue();
         nameModal->Show(true, true, nullptr);
     });
     Utils::SetLayoutSize(dupeButton, 24, 8);
+    BSML::Lite::AddHoverHint(dupeButton, "Copy the selected preset to a new preset");
     deleteButton = BSML::Lite::CreateUIButton(buttons3, "Delete", SettingsFlowCoordinator::DeletePreset);
     Utils::SetLayoutSize(deleteButton, 24, 8);
+    BSML::Lite::AddHoverHint(deleteButton, "Permanently delete the selected preset");
     auto resetButton = BSML::Lite::CreateUIButton(buttons3, "Reset", SettingsFlowCoordinator::ResetPreset);
     Utils::SetLayoutSize(resetButton, 24, 8);
+    BSML::Lite::AddHoverHint(resetButton, "Reset the selected preset to the default HUD");
 
     auto snapIncrement = AddConfigValueIncrementFloat(vertical, getConfig().SnapStep, 1, 0.5, 0.5, 5);
     auto incrementObject = snapIncrement->transform->GetChild(1)->gameObject;
     incrementObject->active = getConfig().Snap.GetValue();
     incrementObject->GetComponent<RectTransform*>()->anchoredPosition = {-20, 0};
+    BSML::Lite::AddHoverHint(incrementObject, "The size of the grid to snap to when dragging");
 
     auto snapToggle =
         BSML::Lite::CreateToggle(vertical, getConfig().Snap.GetName(), getConfig().Snap.GetValue(), [incrementObject](bool value) mutable {
@@ -452,11 +470,15 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
     snapToggle->toggle->transform->SetParent(snapIncrement->transform, false);
     snapToggle->transform->SetParent(snapIncrement->transform, false);
     Object::Destroy(snapToggle->text->gameObject);
+    BSML::Lite::AddHoverHint(snapToggle->toggle, "Snap objects to a grid when dragging them");
 
     previewToggle = BSML::Lite::CreateToggle(vertical, "Preview Mode", false, [this](bool value) {
         Editor::SetPreviewMode(value);
         undoButton->interactable = !value && Editor::HasUndo();
     });
+    BSML::Lite::AddHoverHint(
+        previewToggle, "Disables selection and outlines, and enables a playtesting menu to experiment with different scores and other values"
+    );
 
     confirmModal = BSML::Lite::CreateModal(this, {95, 25}, SettingsFlowCoordinator::OnModalCancel);
     auto modalLayout1 = BSML::Lite::CreateVerticalLayoutGroup(confirmModal);
@@ -673,57 +695,72 @@ void PlaytestViewController::DidActivate(bool firstActivation, bool addedToHiera
     auto chainArrow = PNG_SPRITE(ChainArrow);
 
     lNote = CreateLayeredImageButton(spawnButtons, note, arrow, {8, 8}, []() { Playtest::SpawnNote(true, false); });
+    BSML::Lite::AddHoverHint(lNote, "Spawn a left saber note");
     rNote = CreateLayeredImageButton(spawnButtons, note, arrow, {8, 8}, []() { Playtest::SpawnNote(false, false); });
+    BSML::Lite::AddHoverHint(rNote, "Spawn a right saber note");
 
     CreateSpacer(spawnButtons, 3);
 
     lChain = CreateLayeredImageButton(spawnButtons, chain, chainArrow, {8, 8}, []() { Playtest::SpawnNote(true, true); });
+    BSML::Lite::AddHoverHint(lChain, "Spawn a left saber chain");
     rChain = CreateLayeredImageButton(spawnButtons, chain, chainArrow, {8, 8}, []() { Playtest::SpawnNote(false, true); });
+    BSML::Lite::AddHoverHint(rChain, "Spawn a right saber chain");
 
     CreateSpacer(spawnButtons, 3);
 
     wall = CreateLayeredImageButton(spawnButtons, PNG_SPRITE(Wall), PNG_SPRITE(Frame), {8, 16}, []() { Playtest::SpawnWall(); });
+    BSML::Lite::AddHoverHint(wall, "Spawn a wall");
 
     CreateSpacer(spawnButtons, 3);
 
     auto bomb = CreateLayeredImageButton(spawnButtons, PNG_SPRITE(Bomb), nullptr, {8, 8}, []() { Playtest::SpawnBomb(); });
     SetClickableImageColor(bomb, {0.2, 0.2, 0.2, 1});
+    BSML::Lite::AddHoverHint(bomb, "Spawn a bomb");
 
     pbToggle = BSML::Lite::CreateToggle(parent, "Personal Best", true, [this](bool enabled) {
         Playtest::SetPersonalBest(enabled ? 0 : -1);
         UpdateUI();
     });
+    BSML::Lite::AddHoverHint(pbToggle, "Emulate a personal best on the map");
 
     pbSlider = BSML::Lite::CreateSliderSetting(parent, "", 1, 1, 1, 120, 0, Playtest::SetPersonalBest);
     pbSlider = Utils::ReparentSlider(pbSlider, pbToggle, 30);
     pbSlider->GetComponent<RectTransform*>()->anchoredPosition = {-20, 0};
     pbSlider->formatter = percentFormat;
+    BSML::Lite::AddHoverHint(pbSlider, "Choose the personal best to emulate");
 
     // for now, the settings "song" is 24 seconds long
     timeSlider = BSML::Lite::CreateSliderSetting(parent, "Song Progress", 1, 0, 0, 24, 0, true, {0, 0}, Playtest::SetSongTime);
+    BSML::Lite::AddHoverHint(timeSlider, "Choose the current time of the map");
 
     posModsIncrement = BSML::Lite::CreateIncrementSetting(parent, "Positive Modifiers", 0, 5, 0, 0, 50, Playtest::SetPositiveModifiers);
     posModsIncrement->formatter = percentFormat;
+    BSML::Lite::AddHoverHint(posModsIncrement, "Emulate a positive modifier percentage");
     negModsIncrement = BSML::Lite::CreateIncrementSetting(parent, "Negative Modifiers", 0, 5, 0, -50, 0, Playtest::SetNegativeModifiers);
     negModsIncrement->formatter = percentFormat;
+    BSML::Lite::AddHoverHint(negModsIncrement, "Emulate a negative modifier percentage");
 
     blToggle = BSML::Lite::CreateToggle(parent, "BeatLeader Ranked", true, [this](bool enabled) {
         Playtest::SetRankedBL(enabled);
         blSlider->gameObject->active = enabled;
     });
+    BSML::Lite::AddHoverHint(blToggle, "Emulate the map being ranked on BeatLeader");
 
     blSlider = BSML::Lite::CreateSliderSetting(parent, "", 0.1, 1, 1, 15, 0, Playtest::SetStarsBL);
     blSlider = Utils::ReparentSlider(blSlider, blToggle, 28);
     blSlider->GetComponent<RectTransform*>()->anchoredPosition = {-20, 0};
+    BSML::Lite::AddHoverHint(blSlider, "Choose the BeatLeader ranking star rating");
 
     ssToggle = BSML::Lite::CreateToggle(parent, "ScoreSaber Ranked", true, [this](bool enabled) {
         Playtest::SetRankedSS(enabled);
         ssSlider->gameObject->active = enabled;
     });
+    BSML::Lite::AddHoverHint(ssToggle, "Emulate the map being ranked on ScoreSaber");
 
     ssSlider = BSML::Lite::CreateSliderSetting(parent, "", 0.1, 1, 1, 15, 0, Playtest::SetStarsSS);
     ssSlider = Utils::ReparentSlider(ssSlider, ssToggle, 28);
     ssSlider->GetComponent<RectTransform*>()->anchoredPosition = {-20, 0};
+    BSML::Lite::AddHoverHint(ssSlider, "Choose the ScoreSaber ranking star rating");
 
     auto resetLayout = BSML::Lite::CreateHorizontalLayoutGroup(parent);
     resetLayout->childForceExpandWidth = false;
@@ -731,8 +768,10 @@ void PlaytestViewController::DidActivate(bool firstActivation, bool addedToHiera
     resetLayout->childAlignment = TextAnchor::MiddleCenter;
     resetButton = BSML::Lite::CreateUIButton(resetLayout, "Reset Notes", Playtest::ResetNotes);
     Utils::SetLayoutSize(resetButton, 30, 8);
+    BSML::Lite::AddHoverHint(resetButton, "Reset all values related to notes");
     auto resetAllButton = BSML::Lite::CreateUIButton(resetLayout, "Reset All", Playtest::ResetAll);
     Utils::SetLayoutSize(resetAllButton, 30, 8);
+    BSML::Lite::AddHoverHint(resetAllButton, "Reset all emulated values for the map");
 
     Utils::SetChildrenWidth(parent->transform, 75);
 
@@ -790,6 +829,11 @@ void TemplatesViewController::DidActivate(bool firstActivation, bool addedToHier
 
     auto background = AddBackground(this, {50, 88});
 
+    auto text = BSML::Lite::CreateText(background, "Templates", {0, 38});
+    text->enableWordWrapping = false;
+    text->alignment = TMPro::TextAlignmentOptions::Center;
+    BSML::Lite::AddHoverHint(text, "Create premade counter groups for common usecases");
+
     list = BSML::Lite::CreateScrollableList(background, {50, 80}, [this](int idx) {
         list->tableView->ClearSelection();
         ShowTemplateModal(idx);
@@ -798,6 +842,15 @@ void TemplatesViewController::DidActivate(bool firstActivation, bool addedToHier
     auto rect = list->transform->parent.cast<RectTransform>();
     rect->anchorMin = {0.5, 0.5};
     rect->anchorMax = {0.5, 0.5};
+    rect->anchoredPosition = {0, -5};
+    rect->GetComponent<UI::VerticalLayoutGroup*>()->spacing = -2;
+
+    auto canvas = list->gameObject->AddComponent<Canvas*>();
+    canvas->additionalShaderChannels =
+        (AdditionalCanvasShaderChannels) ((int) AdditionalCanvasShaderChannels::TexCoord1 | (int) AdditionalCanvasShaderChannels::TexCoord2);
+    list->gameObject->AddComponent<VRUIControls::VRGraphicRaycaster*>()->_physicsRaycaster = BSML::Helpers::GetPhysicsRaycasterWithCache();
+    canvas->overrideSorting = true;
+    canvas->sortingOrder = 4;
 
     for (auto templateName : Utils::GetKeys(Templates::registration))
         list->data->Add(BSML::CustomCellInfo::construct(templateName));
@@ -829,7 +882,9 @@ void TemplatesViewController::ShowTemplateModal(int idx) {
 
     modal->Show(true, true, nullptr);
     BSML::MainThreadScheduler::ScheduleNextFrame([this]() {
-        modal->GetComponent<RectTransform*>()->sizeDelta = Vector2::op_Addition(modalLayout->sizeDelta, {5, 5});
+        modal->GetComponent<RectTransform*>()->sizeDelta = Vector2::op_Addition(modalLayout->sizeDelta, {8, 8});
+        modal->_blockerGO->GetComponent<Canvas*>()->sortingOrder = 29999;
+        modal->GetComponent<Canvas*>()->sortingOrder = 30000;
     });
 }
 
@@ -873,6 +928,7 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
         Editor::FinalizeAction();
     });
     Utils::AddIncrementIncrement(gPosIncrementX, 5);
+    BSML::Lite::AddHoverHint(gPosIncrementX, "Change the left/right position of the selected counter group");
     gPosIncrementY = BSML::Lite::CreateIncrementSetting(groupParent, "Y Position", 1, 0.5, 0, [](float val) {
         static int id = Editor::GetActionId();
         Editor::GetSelectedGroup(id).Position.y = val;
@@ -880,6 +936,7 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
         Editor::FinalizeAction();
     });
     Utils::AddIncrementIncrement(gPosIncrementY, 5);
+    BSML::Lite::AddHoverHint(gPosIncrementY, "Change the up/down position of the selected counter group");
 
     auto xPosLayout = BSML::Lite::CreateHorizontalLayoutGroup(groupParent);
     xPosLayout->spacing = 2;
@@ -890,11 +947,13 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
         Editor::FinalizeAction();
     });
     Utils::AddIncrementIncrement(gDetPosIncrementX, 0.25);
+    BSML::Lite::AddHoverHint(gDetPosIncrementX, "Change the left/right position of the selected counter group");
     gDetPosLockX = Utils::CreateIconButton(xPosLayout->gameObject, nullptr, [this]() {
         auto& group = Editor::GetSelectedGroup(-1);
         group.LockPosX = !group.LockPosX;
         UpdateSimpleUI();
     });
+    BSML::Lite::AddHoverHint(gDetPosLockX, "Lock the left/right position of the selected counter group when dragging");
 
     auto yPosLayout = BSML::Lite::CreateHorizontalLayoutGroup(groupParent);
     yPosLayout->spacing = 2;
@@ -905,11 +964,13 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
         Editor::FinalizeAction();
     });
     Utils::AddIncrementIncrement(gDetPosIncrementY, 0.25);
+    BSML::Lite::AddHoverHint(gDetPosIncrementY, "Change the up/down position of the selected counter group");
     gDetPosLockY = Utils::CreateIconButton(yPosLayout->gameObject, nullptr, [this]() {
         auto& group = Editor::GetSelectedGroup(-1);
         group.LockPosY = !group.LockPosY;
         UpdateSimpleUI();
     });
+    BSML::Lite::AddHoverHint(gDetPosLockY, "Lock the up/down position of the selected counter group when dragging");
 
     auto zPosLayout = BSML::Lite::CreateHorizontalLayoutGroup(groupParent);
     zPosLayout->spacing = 2;
@@ -920,11 +981,13 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
         Editor::FinalizeAction();
     });
     Utils::AddIncrementIncrement(gDetPosIncrementZ, 0.25);
+    BSML::Lite::AddHoverHint(gDetPosIncrementZ, "Change the forward/backward position of the selected counter group");
     gDetPosLockZ = Utils::CreateIconButton(zPosLayout->gameObject, nullptr, [this]() {
         auto& group = Editor::GetSelectedGroup(-1);
         group.LockPosZ = !group.LockPosZ;
         UpdateSimpleUI();
     });
+    BSML::Lite::AddHoverHint(gDetPosLockZ, "Lock the forward/backward position of the selected counter group when dragging");
 
     gRotSlider = BSML::Lite::CreateSliderSetting(groupParent, "Rotation", 1, 0, -180, 180, 0, true, {0, 0}, [](float val) {
         static int id = Editor::GetActionId();
@@ -932,6 +995,7 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
         Editor::UpdatePosition();
     });
     Utils::AddSliderEndDrag(gRotSlider, [](float _) { Editor::FinalizeAction(); });
+    BSML::Lite::AddHoverHint(gRotSlider, "Change the (Z) rotation of the selected counter group");
 
     auto xRotLayout = BSML::Lite::CreateHorizontalLayoutGroup(groupParent);
     xRotLayout->spacing = 1;
@@ -941,11 +1005,13 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
         Editor::UpdatePosition();
     });
     Utils::AddSliderEndDrag(gDetRotSliderX, [](float _) { Editor::FinalizeAction(); });
+    BSML::Lite::AddHoverHint(gDetRotSliderX, "Change the X (pitch) rotation of the selected counter group");
     gDetRotLockX = Utils::CreateIconButton(xRotLayout->gameObject, nullptr, [this]() {
         auto& group = Editor::GetSelectedGroup(-1);
         group.LockRotX = !group.LockRotX;
         UpdateSimpleUI();
     });
+    BSML::Lite::AddHoverHint(gDetRotLockX, "Lock the X (pitch) rotation of the selected counter group when dragging");
 
     auto yRotLayout = BSML::Lite::CreateHorizontalLayoutGroup(groupParent);
     yRotLayout->spacing = 1;
@@ -955,11 +1021,13 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
         Editor::UpdatePosition();
     });
     Utils::AddSliderEndDrag(gDetRotSliderY, [](float _) { Editor::FinalizeAction(); });
+    BSML::Lite::AddHoverHint(gDetRotSliderY, "Change the Y (yaw) rotation of the selected counter group");
     gDetRotLockY = Utils::CreateIconButton(yRotLayout->gameObject, nullptr, [this]() {
         auto& group = Editor::GetSelectedGroup(-1);
         group.LockRotY = !group.LockRotY;
         UpdateSimpleUI();
     });
+    BSML::Lite::AddHoverHint(gDetRotLockY, "Lock the Y (yaw) rotation of the selected counter group when dragging");
 
     auto zRotLayout = BSML::Lite::CreateHorizontalLayoutGroup(groupParent);
     zRotLayout->spacing = 1;
@@ -969,25 +1037,31 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
         Editor::UpdatePosition();
     });
     Utils::AddSliderEndDrag(gDetRotSliderZ, [](float _) { Editor::FinalizeAction(); });
+    BSML::Lite::AddHoverHint(gDetRotSliderZ, "Change the Z (roll) of the selected counter group");
     gDetRotLockZ = Utils::CreateIconButton(zRotLayout->gameObject, nullptr, [this]() {
         auto& group = Editor::GetSelectedGroup(-1);
         group.LockRotZ = !group.LockRotZ;
         UpdateSimpleUI();
     });
+    BSML::Lite::AddHoverHint(gDetRotLockZ, "Lock the Z (roll) of the selected counter group when dragging");
 
     auto gButtonsParent1 = BSML::Lite::CreateHorizontalLayoutGroup(groupParent);
     gButtonsParent1->spacing = 3;
 
-    gComponentButton = BSML::Lite::CreateUIButton(gButtonsParent1, "Add Component", Editor::AddComponent);
+    gComponentButton = BSML::Lite::CreateUIButton(gButtonsParent1, "Add Counter", Editor::AddComponent);
+    BSML::Lite::AddHoverHint(gComponentButton, "Add and select a new counter to this group");
 
     gDetachButton = BSML::Lite::CreateUIButton(gButtonsParent1, "Detach", Editor::ToggleAttachment);
+    BSML::Lite::AddHoverHint(gDetachButton, "Detach this counter group from its anchor, allowing free 3D movement");
 
     auto gButtonsParent2 = BSML::Lite::CreateHorizontalLayoutGroup(groupParent);
     gButtonsParent2->spacing = 3;
 
     gDeleteButton = BSML::Lite::CreateUIButton(gButtonsParent2, "Delete", Editor::Remove);
+    BSML::Lite::AddHoverHint(gDeleteButton, "Delete this counter group");
 
     gDeselectButton = BSML::Lite::CreateUIButton(gButtonsParent2, "Deselect", Editor::Deselect);
+    BSML::Lite::AddHoverHint(gDeselectButton, "Deselect this counter group");
 
     Utils::SetChildrenWidth(groupParent->transform, 85);
 
@@ -1002,6 +1076,7 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
         Editor::FinalizeAction();
     });
     Utils::AddIncrementIncrement(cPosIncrementX, 5);
+    BSML::Lite::AddHoverHint(cPosIncrementX, "Change the left/right position of this counter relative to its group");
     cPosIncrementY = BSML::Lite::CreateIncrementSetting(componentParent, "Rel. Y Position", 1, 0.5, 0, [](float val) {
         static int id = Editor::GetActionId();
         Editor::GetSelectedComponent(id).Position.y = val;
@@ -1009,6 +1084,7 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
         Editor::FinalizeAction();
     });
     Utils::AddIncrementIncrement(cPosIncrementY, 5);
+    BSML::Lite::AddHoverHint(cPosIncrementY, "Change the up/down position of this counter relative to its group");
 
     cRotSlider = BSML::Lite::CreateSliderSetting(componentParent, "Relative Rotation", 1, 0, -180, 180, 0, true, {0, 0}, [](float val) {
         static int id = Editor::GetActionId();
@@ -1017,6 +1093,7 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
     });
     Utils::AddSliderEndDrag(cRotSlider, [](float _) { Editor::FinalizeAction(); });
     cRotSlider->GetComponent<RectTransform*>()->sizeDelta = {0, 8};
+    BSML::Lite::AddHoverHint(cRotSlider, "Change the (Z) rotation of this counter relative to its group");
 
     cScaleSliderX = BSML::Lite::CreateSliderSetting(componentParent, "X Scale", 0.01, 0, -1, 1, 0, true, {0, 0}, [](float val) {
         static int id = Editor::GetActionId();
@@ -1026,6 +1103,7 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
     Utils::AddSliderEndDrag(cScaleSliderX, [](float _) { Editor::FinalizeAction(); });
     cScaleSliderX->formatter = ScaleFormat;
     cScaleSliderX->GetComponent<RectTransform*>()->sizeDelta = {0, 8};
+    BSML::Lite::AddHoverHint(cScaleSliderX, "Change the horizontal scale of this counter");
     cScaleSliderY = BSML::Lite::CreateSliderSetting(componentParent, "Y Scale", 0.01, 0, -1, 1, 0, true, {0, 0}, [](float val) {
         static int id = Editor::GetActionId();
         Editor::GetSelectedComponent(id).Scale.y = CalculateScale(val);
@@ -1034,6 +1112,7 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
     Utils::AddSliderEndDrag(cScaleSliderY, [](float _) { Editor::FinalizeAction(); });
     cScaleSliderY->formatter = ScaleFormat;
     cScaleSliderY->GetComponent<RectTransform*>()->sizeDelta = {0, 8};
+    BSML::Lite::AddHoverHint(cScaleSliderY, "Change the vertical scale of this counter");
 
     positionCollapse->AddContents({cPosIncrementX, cPosIncrementY, cRotSlider, cScaleSliderX, cScaleSliderY});
     positionCollapse->onUpdate = OptionsViewController::UpdateScrollViewStatic;
@@ -1049,6 +1128,7 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
         Editor::UpdateType();
         Editor::FinalizeAction();
     });
+    BSML::Lite::AddHoverHint(cTypeDropdown, "Change the type (text, shape, image, or premade) of this counter");
 
     cTypeOptions = BSML::Lite::CreateVerticalLayoutGroup(componentParent);
     cTypeOptions->GetComponent<UI::ContentSizeFitter*>()->verticalFit = UI::ContentSizeFitter::FitMode::PreferredSize;
@@ -1069,6 +1149,7 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
         }
         Editor::FinalizeAction();
     });
+    BSML::Lite::AddHoverHint(cColorSourceDropdown, "Change the driver for the color of this counter");
 
     cColorSourceOptions = BSML::Lite::CreateVerticalLayoutGroup(componentParent);
     cColorSourceOptions->GetComponent<UI::ContentSizeFitter*>()->verticalFit = UI::ContentSizeFitter::FitMode::PreferredSize;
@@ -1083,6 +1164,7 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
         Editor::FinalizeAction();
         GetInstance()->UpdateUI();
     });
+    BSML::Lite::AddHoverHint(cGradientToggle, "Use a color gradient for this counter");
 
     auto gradientCollapse = Utils::CreateCollapseArea(componentParent, "Gradient Options", true);
     gradientCollapseComponent = gradientCollapse;
@@ -1098,9 +1180,11 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
     });
     auto parent = cGradientDirectionDropdown->transform->parent;
     Utils::SetLayoutSize(parent, 50, 8);
+    BSML::Lite::AddHoverHint(cGradientDirectionDropdown, "Change the direction of the color gradient");
 
     auto swap = BSML::Lite::CreateUIButton(directionAndSwap, "Swap Colors", Editor::SwapGradientColors);
     Utils::SetLayoutSize(swap, 24, 8);
+    BSML::Lite::AddHoverHint(swap, "Swap the colors on either end of the color gradient");
 
     auto startHsvController = Utils::CreateHSVModifierPicker(
         componentParent,
@@ -1113,6 +1197,7 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
         Editor::FinalizeAction
     );
     startHsvComponent = startHsvController;
+    BSML::Lite::AddHoverHint(startHsvController->openButton, "Pick the hue, saturation, and value modifications for the start of the color gradient");
 
     auto endHsvController = Utils::CreateHSVModifierPicker(
         componentParent,
@@ -1125,6 +1210,7 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
         Editor::FinalizeAction
     );
     endHsvComponent = endHsvController;
+    BSML::Lite::AddHoverHint(endHsvController->openButton, "Pick the hue, saturation, and value modifications for the end of the color gradient");
 
     gradientCollapse->AddContents({directionAndSwap, startHsvController, endHsvController});
     gradientCollapse->onUpdate = OptionsViewController::UpdateScrollViewStatic;
@@ -1144,6 +1230,7 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
         }
         Editor::FinalizeAction();
     });
+    BSML::Lite::AddHoverHint(cEnableSourceDropdown, "Change the driver for the visibility of this counter");
 
     cInvertEnableToggle = BSML::Lite::CreateToggle(componentParent, "Invert Visibility", false, [](bool val) {
         static int id = Editor::GetActionId();
@@ -1151,6 +1238,7 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
         Editor::UpdateEnableOptions();
         Editor::FinalizeAction();
     });
+    BSML::Lite::AddHoverHint(cInvertEnableToggle, "Invert the visibility of this counter from the driver's settings");
 
     cEnableSourceOptions = BSML::Lite::CreateVerticalLayoutGroup(componentParent);
     cEnableSourceOptions->GetComponent<UI::ContentSizeFitter*>()->verticalFit = UI::ContentSizeFitter::FitMode::PreferredSize;
@@ -1166,8 +1254,10 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
     cButtonsParent->rectTransform->anchoredPosition = {0, -37};
 
     cDeleteButton = BSML::Lite::CreateUIButton(cButtonsParent, "Delete", Editor::Remove);
+    BSML::Lite::AddHoverHint(cDeleteButton, "Delete this counter");
 
     cDeselectButton = BSML::Lite::CreateUIButton(cButtonsParent, "Deselect", Editor::Deselect);
+    BSML::Lite::AddHoverHint(cDeselectButton, "Deselect this counter");
 
     Object::Destroy(componentParent->GetComponentInParent<BSML::ScrollViewContent*>(true));
     auto componentTop = Utils::GetScrollViewTop(componentParent);
