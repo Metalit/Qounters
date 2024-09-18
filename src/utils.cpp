@@ -301,6 +301,12 @@ BSML::ColorSetting* Utils::CreateColorPicker(
     rgb->anchorMin = {0.5, 0.5};
     rgb->anchorMax = {0.5, 0.5};
     rgb->anchoredPosition = {-24, 10};
+    auto content = rgb->GetChild(0);
+    for (int i = 0; i < 3; i++) {
+        auto slider = content->GetChild(i).cast<UnityEngine::RectTransform>();
+        slider->anchoredPosition = {4, slider->anchoredPosition.y};
+        slider->sizeDelta = {56, 8};
+    }
     wheel->localScale = {0.8, 0.8, 0.8};
     wheel->anchorMin = {0.5, 0.5};
     wheel->anchorMax = {0.5, 0.5};
