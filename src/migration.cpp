@@ -67,13 +67,6 @@ void Migration::Migrate() {
         return;
     }
 
-    if (!config.Enabled) {
-        presets.emplace(newPresetName, Options::Preset());
-        getConfig().Presets.SetValue(presets);
-        getConfig().Preset.SetValue(newPresetName);
-        return;
-    }
-
     auto newPreset = Options::GetDefaultHUDPreset();
 
     if (config.HideMultiplier)
@@ -178,7 +171,8 @@ void Migration::Migrate() {
     presets[newPresetName] = newPreset;
 
     getConfig().Presets.SetValue(presets);
-    getConfig().Preset.SetValue(newPresetName);
+    if (config.Enabled)
+        getConfig().Preset.SetValue(newPresetName);
 
     logger.info("Done migrating");
 }
