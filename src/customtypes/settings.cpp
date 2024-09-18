@@ -1014,7 +1014,7 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
         Editor::GetSelectedGroup(id).Rotation = val;
         Editor::UpdatePosition();
     });
-    Utils::AddSliderEndDrag(gRotSlider, [](float _) { Editor::FinalizeAction(); });
+    Utils::AddSliderEndDrag(gRotSlider, [](float) { Editor::FinalizeAction(); });
     BSML::Lite::AddHoverHint(gRotSlider, "Change the (Z) rotation of the selected counter group");
 
     auto xRotLayout = BSML::Lite::CreateHorizontalLayoutGroup(groupParent);
@@ -1024,7 +1024,7 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
         Editor::GetSelectedGroup(id).DetachedRotation.x = val;
         Editor::UpdatePosition();
     });
-    Utils::AddSliderEndDrag(gDetRotSliderX, [](float _) { Editor::FinalizeAction(); });
+    Utils::AddSliderEndDrag(gDetRotSliderX, [](float) { Editor::FinalizeAction(); });
     BSML::Lite::AddHoverHint(gDetRotSliderX, "Change the X (pitch) rotation of the selected counter group");
     gDetRotLockX = Utils::CreateIconButton(xRotLayout->gameObject, nullptr, [this]() {
         auto& group = Editor::GetSelectedGroup(-1);
@@ -1040,7 +1040,7 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
         Editor::GetSelectedGroup(id).DetachedRotation.y = val;
         Editor::UpdatePosition();
     });
-    Utils::AddSliderEndDrag(gDetRotSliderY, [](float _) { Editor::FinalizeAction(); });
+    Utils::AddSliderEndDrag(gDetRotSliderY, [](float) { Editor::FinalizeAction(); });
     BSML::Lite::AddHoverHint(gDetRotSliderY, "Change the Y (yaw) rotation of the selected counter group");
     gDetRotLockY = Utils::CreateIconButton(yRotLayout->gameObject, nullptr, [this]() {
         auto& group = Editor::GetSelectedGroup(-1);
@@ -1056,7 +1056,7 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
         Editor::GetSelectedGroup(id).DetachedRotation.z = val;
         Editor::UpdatePosition();
     });
-    Utils::AddSliderEndDrag(gDetRotSliderZ, [](float _) { Editor::FinalizeAction(); });
+    Utils::AddSliderEndDrag(gDetRotSliderZ, [](float) { Editor::FinalizeAction(); });
     BSML::Lite::AddHoverHint(gDetRotSliderZ, "Change the Z (roll) of the selected counter group");
     gDetRotLockZ = Utils::CreateIconButton(zRotLayout->gameObject, nullptr, [this]() {
         auto& group = Editor::GetSelectedGroup(-1);
@@ -1111,7 +1111,7 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
         Editor::GetSelectedComponent(id).Rotation = val;
         Editor::UpdatePosition();
     });
-    Utils::AddSliderEndDrag(cRotSlider, [](float _) { Editor::FinalizeAction(); });
+    Utils::AddSliderEndDrag(cRotSlider, [](float) { Editor::FinalizeAction(); });
     cRotSlider->GetComponent<RectTransform*>()->sizeDelta = {0, 8};
     BSML::Lite::AddHoverHint(cRotSlider, "Change the (Z) rotation of this counter relative to its group");
 
@@ -1120,7 +1120,7 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
         Editor::GetSelectedComponent(id).Scale.x = CalculateScale(val);
         Editor::UpdatePosition();
     });
-    Utils::AddSliderEndDrag(cScaleSliderX, [](float _) { Editor::FinalizeAction(); });
+    Utils::AddSliderEndDrag(cScaleSliderX, [](float) { Editor::FinalizeAction(); });
     SetScaleButtons(cScaleSliderX, 0.01);
     cScaleSliderX->formatter = ScaleFormat;
     cScaleSliderX->GetComponent<RectTransform*>()->sizeDelta = {0, 8};
@@ -1130,7 +1130,7 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
         Editor::GetSelectedComponent(id).Scale.y = CalculateScale(val);
         Editor::UpdatePosition();
     });
-    Utils::AddSliderEndDrag(cScaleSliderY, [](float _) { Editor::FinalizeAction(); });
+    Utils::AddSliderEndDrag(cScaleSliderY, [](float) { Editor::FinalizeAction(); });
     SetScaleButtons(cScaleSliderY, 0.01);
     cScaleSliderY->formatter = ScaleFormat;
     cScaleSliderY->GetComponent<RectTransform*>()->sizeDelta = {0, 8};

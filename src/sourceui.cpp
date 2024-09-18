@@ -508,7 +508,7 @@ void Sources::Color::StaticUI(GameObject* parent, UnparsedJSON unparsed) {
             opts.Input = val;
             Editor::SetColorOptions(id, opts);
         },
-        []() { Editor::FinalizeAction(); }
+        Editor::FinalizeAction
     );
     BSML::Lite::AddHoverHint(color->editButton, "The constant color to use");
 }
@@ -561,7 +561,7 @@ void Sources::Color::RankUI(GameObject* parent, UnparsedJSON unparsed) {
             opts.SS = val;
             Editor::SetColorOptions(id, opts);
         },
-        []() { Editor::FinalizeAction(); }
+        Editor::FinalizeAction
     );
     BSML::Lite::AddHoverHint(ss, "The color to use for SS rank");
 
@@ -574,7 +574,7 @@ void Sources::Color::RankUI(GameObject* parent, UnparsedJSON unparsed) {
             opts.S = val;
             Editor::SetColorOptions(id, opts);
         },
-        []() { Editor::FinalizeAction(); }
+        Editor::FinalizeAction
     );
     BSML::Lite::AddHoverHint(s, "The color to use for S rank");
 
@@ -587,7 +587,7 @@ void Sources::Color::RankUI(GameObject* parent, UnparsedJSON unparsed) {
             opts.A = val;
             Editor::SetColorOptions(id, opts);
         },
-        []() { Editor::FinalizeAction(); }
+        Editor::FinalizeAction
     );
     BSML::Lite::AddHoverHint(a, "The color to use for A rank");
 
@@ -600,7 +600,7 @@ void Sources::Color::RankUI(GameObject* parent, UnparsedJSON unparsed) {
             opts.B = val;
             Editor::SetColorOptions(id, opts);
         },
-        []() { Editor::FinalizeAction(); }
+        Editor::FinalizeAction
     );
     BSML::Lite::AddHoverHint(b, "The color to use for B rank");
 
@@ -613,7 +613,7 @@ void Sources::Color::RankUI(GameObject* parent, UnparsedJSON unparsed) {
             opts.C = val;
             Editor::SetColorOptions(id, opts);
         },
-        []() { Editor::FinalizeAction(); }
+        Editor::FinalizeAction
     );
     BSML::Lite::AddHoverHint(c, "The color to use for C rank");
 
@@ -626,7 +626,7 @@ void Sources::Color::RankUI(GameObject* parent, UnparsedJSON unparsed) {
             opts.D = val;
             Editor::SetColorOptions(id, opts);
         },
-        []() { Editor::FinalizeAction(); }
+        Editor::FinalizeAction
     );
     BSML::Lite::AddHoverHint(d, "The color to use for D rank");
 
@@ -639,7 +639,7 @@ void Sources::Color::RankUI(GameObject* parent, UnparsedJSON unparsed) {
             opts.E = val;
             Editor::SetColorOptions(id, opts);
         },
-        []() { Editor::FinalizeAction(); }
+        Editor::FinalizeAction
     );
     BSML::Lite::AddHoverHint(e, "The color to use for E rank");
 }
@@ -656,7 +656,7 @@ void Sources::Color::PersonalBestUI(GameObject* parent, UnparsedJSON unparsed) {
             opts.Better = val;
             Editor::SetColorOptions(id, opts);
         },
-        []() { Editor::FinalizeAction(); }
+        Editor::FinalizeAction
     );
     BSML::Lite::AddHoverHint(better, "The color to use if the current percentage is better than your personal best");
 
@@ -669,7 +669,7 @@ void Sources::Color::PersonalBestUI(GameObject* parent, UnparsedJSON unparsed) {
             opts.Worse = val;
             Editor::SetColorOptions(id, opts);
         },
-        []() { Editor::FinalizeAction(); }
+        Editor::FinalizeAction
     );
     BSML::Lite::AddHoverHint(worse, "The color to use if the current percentage is worse than your personal best");
 }
@@ -694,7 +694,7 @@ void Sources::Color::ComboUI(GameObject* parent, UnparsedJSON unparsed) {
             opts.Full = val;
             Editor::SetColorOptions(id, opts);
         },
-        []() { Editor::FinalizeAction(); }
+        Editor::FinalizeAction
     );
     BSML::Lite::AddHoverHint(fc, "The color to use for a full combo");
 
@@ -707,7 +707,7 @@ void Sources::Color::ComboUI(GameObject* parent, UnparsedJSON unparsed) {
             opts.NonFull = val;
             Editor::SetColorOptions(id, opts);
         },
-        []() { Editor::FinalizeAction(); }
+        Editor::FinalizeAction
     );
     BSML::Lite::AddHoverHint(nonFc, "The color to use for a non full combo");
 }
@@ -724,7 +724,7 @@ void Sources::Color::MultiplierUI(GameObject* parent, UnparsedJSON unparsed) {
             opts.One = val;
             Editor::SetColorOptions(id, opts);
         },
-        []() { Editor::FinalizeAction(); }
+        Editor::FinalizeAction
     );
     BSML::Lite::AddHoverHint(one, "The color to use for a multiplier of 1");
 
@@ -737,7 +737,7 @@ void Sources::Color::MultiplierUI(GameObject* parent, UnparsedJSON unparsed) {
             opts.Two = val;
             Editor::SetColorOptions(id, opts);
         },
-        []() { Editor::FinalizeAction(); }
+        Editor::FinalizeAction
     );
     BSML::Lite::AddHoverHint(two, "The color to use for a multiplier of 2");
 
@@ -750,7 +750,7 @@ void Sources::Color::MultiplierUI(GameObject* parent, UnparsedJSON unparsed) {
             opts.Four = val;
             Editor::SetColorOptions(id, opts);
         },
-        []() { Editor::FinalizeAction(); }
+        Editor::FinalizeAction
     );
     BSML::Lite::AddHoverHint(four, "The color to use for a multiplier of 4");
 
@@ -763,7 +763,7 @@ void Sources::Color::MultiplierUI(GameObject* parent, UnparsedJSON unparsed) {
             opts.Eight = val;
             Editor::SetColorOptions(id, opts);
         },
-        []() { Editor::FinalizeAction(); }
+        Editor::FinalizeAction
     );
     BSML::Lite::AddHoverHint(eight, "The color to use for a multiplier of 8");
 }
@@ -780,7 +780,7 @@ void Sources::Color::HealthUI(GameObject* parent, UnparsedJSON unparsed) {
             opts.Full = val;
             Editor::SetColorOptions(id, opts);
         },
-        []() { Editor::FinalizeAction(); }
+        Editor::FinalizeAction
     );
     BSML::Lite::AddHoverHint(full, "The color to use for full health");
 
@@ -793,7 +793,7 @@ void Sources::Color::HealthUI(GameObject* parent, UnparsedJSON unparsed) {
             opts.AboveHalf = val;
             Editor::SetColorOptions(id, opts);
         },
-        []() { Editor::FinalizeAction(); }
+        Editor::FinalizeAction
     );
     BSML::Lite::AddHoverHint(overHalf, "The color to use for above half health");
 
@@ -806,7 +806,7 @@ void Sources::Color::HealthUI(GameObject* parent, UnparsedJSON unparsed) {
             opts.BelowHalf = val;
             Editor::SetColorOptions(id, opts);
         },
-        []() { Editor::FinalizeAction(); }
+        Editor::FinalizeAction
     );
     BSML::Lite::AddHoverHint(underHalf, "The color to use for below half health");
 }
