@@ -445,6 +445,7 @@ Utils::CreateCollapseArea(UnityEngine::GameObject* parent, std::string title, bo
 
 MenuDragger* Utils::CreateMenuDragger(UnityEngine::GameObject* parent, bool isLeftMenu) {
     auto padding = BSML::Lite::CreateCanvas();
+    padding->active = false;
     padding->name = "QountersMenuDragger";
     padding->AddComponent<CanvasHighlight*>();
     auto rect = padding->GetComponent<UnityEngine::RectTransform*>();
@@ -472,7 +473,7 @@ MenuDragger* Utils::CreateMenuDragger(UnityEngine::GameObject* parent, bool isLe
     img->anchorMax = {0.5, 0.5};
     img->sizeDelta = {40, 1};
     ret->isLeftMenu = isLeftMenu;
-    ret->OnEnable();
+    padding->active = true;
     return ret;
 }
 
