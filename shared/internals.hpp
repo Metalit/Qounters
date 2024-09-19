@@ -69,6 +69,7 @@ namespace Qounters::Internals {
 
     void Initialize();
 
-    bool ShouldProcessNote(GlobalNamespace::NoteData* data);
+    bool IsFakeNote(GlobalNamespace::NoteData* data);
+    bool ShouldCountNote(GlobalNamespace::NoteData* data);
     void DoSlowUpdate();
 }

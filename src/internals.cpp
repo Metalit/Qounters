@@ -52,7 +52,7 @@ static int GetNoteCount(BeatmapCallbacksUpdater* updater, bool left) {
     auto enumerator = noteDataItemsList->GetEnumerator();
     while (enumerator.MoveNext()) {
         auto noteData = (NoteData*) enumerator.Current;
-        if (Internals::ShouldProcessNote(noteData) && noteData->time > songTime && (noteData->colorType == ColorType::ColorA) == left)
+        if (Internals::ShouldCountNote(noteData) && noteData->time > songTime && (noteData->colorType == ColorType::ColorA) == left)
             noteCount++;
     }
     return noteCount;
@@ -265,13 +265,14 @@ void Internals::Initialize() {
     saberManager = UnityEngine::Object::FindObjectOfType<SaberManager*>();
 }
 
-bool Internals::ShouldProcessNote(NoteData* data) {
-    // check first for noodle
-    if (data->scoringType == NoteData::ScoringType::NoScore || data->scoringType == NoteData::ScoringType::Ignore)
+bool Internals::IsFakeNote(NoteData* data) {
+    return data->scoringType != NoteData::ScoringType::NoScore && data->scoringType != NoteData::ScoringType::Ignore;
+}
+
+bool Internals::ShouldCountNote(NoteData* data) {
+    if (IsFakeNote(data))
         return false;
-    if (data->gameplayType == NoteData::GameplayType::Normal || data->gameplayType == NoteData::GameplayType::BurstSliderHead)
-        return true;
-    return false;
+    return data->gameplayType == NoteData::GameplayType::Normal || data->gameplayType == NoteData::GameplayType::BurstSliderHead;
 }
 
 void Internals::DoSlowUpdate() {

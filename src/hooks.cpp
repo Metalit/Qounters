@@ -106,6 +106,9 @@ MAKE_HOOK_MATCH(
 
     bool left = info->saberType == SaberType::SaberA;
     bool bomb = noteController->noteData->gameplayType == NoteData::GameplayType::Bomb;
+    if (!bomb && Internals::IsFakeNote(noteController->noteData))
+        return;
+
     if (info->allIsOK) {
         Internals::combo++;
         if (left)
@@ -144,7 +147,7 @@ MAKE_HOOK_MATCH(
 ) {
     BeatmapObjectManager_HandleNoteControllerNoteWasMissed(self, noteController);
 
-    if (noteController->noteData->gameplayType == NoteData::GameplayType::Bomb)
+    if (noteController->noteData->gameplayType == NoteData::GameplayType::Bomb || Internals::IsFakeNote(noteController->noteData))
         return;
 
     Internals::combo = 0;
@@ -168,7 +171,7 @@ MAKE_HOOK_MATCH(
 ) {
     CutScoreBuffer_HandleSaberSwingRatingCounterDidFinish(self, swingRatingCounter);
 
-    if (self->noteCutInfo.allIsOK && Internals::ShouldProcessNote(self->noteCutInfo.noteData)) {
+    if (self->noteCutInfo.allIsOK && Internals::ShouldCountNote(self->noteCutInfo.noteData)) {
         int after = self->afterCutScore;
         if (self->noteScoreDefinition->maxAfterCutScore == 0)  // TODO: selectively exclude from averages?
             after = 30;
