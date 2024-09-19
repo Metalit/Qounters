@@ -260,10 +260,10 @@ std::string Sources::Text::GetMistakes(UnparsedJSON unparsed) {
 std::string Sources::Text::GetNotes(UnparsedJSON unparsed) {
     auto opts = unparsed.Parse<Notes>();
 
-    int notes = Game::GetNotesCut(opts.Saber);
     if (opts.Display == (int) Notes::Displays::Remaining)
-        notes = Game::GetSongNotes(opts.Saber) - notes;
+        return std::to_string(Game::GetSongNotes(opts.Saber) - Game::GetTotalNotes(opts.Saber));
 
+    int notes = Game::GetNotesCut(opts.Saber);
     if (opts.Display == (int) Notes::Displays::Ratio) {
         return fmt::format("{} / {}", notes, Game::GetTotalNotes(opts.Saber));
     } else if (opts.Display == (int) Notes::Displays::Percent) {
