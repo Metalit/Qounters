@@ -175,7 +175,7 @@ namespace Qounters::Internals {
     float timeSinceSlowUpdate;
     UnityEngine::Quaternion prevRotLeft;
     UnityEngine::Quaternion prevRotRight;
-    SaberManager* saberManager;
+    UnityW<SaberManager> saberManager;
 }
 
 void Internals::Initialize() {

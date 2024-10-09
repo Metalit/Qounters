@@ -65,7 +65,7 @@ namespace Qounters::Internals {
     extern float timeSinceSlowUpdate;
     extern UnityEngine::Quaternion prevRotLeft;
     extern UnityEngine::Quaternion prevRotRight;
-    extern GlobalNamespace::SaberManager* saberManager;
+    extern UnityW<GlobalNamespace::SaberManager> saberManager;
 
     void Initialize();
 
