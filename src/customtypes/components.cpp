@@ -379,6 +379,13 @@ static Transform* GetBase(int component) {
     }
 }
 
+static std::vector<std::string> const BrokenProgressTexts = {
+    "ProgressText/Progress/ProgressSeconds",
+    "ProgressText/Progress/ProgressMinutes",
+    "ProgressText/Duration/DurationSeconds",
+    "ProgressText/Duration/DurationMinutes"
+};
+
 void BaseGameGraphic::MakeClones() {
     for (int i = 0; i <= (int) Objects::ComponentsMax; i++) {
         auto base = GetBase(i);
@@ -397,6 +404,17 @@ void BaseGameGraphic::MakeClones() {
 
         if (i == (int) Objects::Multiplier)
             clones[i]->Find("BGCircle")->gameObject->active = true;
+        else if (i == (int) Objects::ProgressBar) {
+            // fixes in 360 mode, doesn't change anything in other modes
+            for (auto name : BrokenProgressTexts) {
+                if (!clones[i]->Find(name))
+                    continue;
+                auto obj = clones[i]->Find(name).cast<RectTransform>();
+                obj->anchoredPosition = {obj->anchoredPosition.x, 0};
+            }
+            clones[i]->Find("Slider")->gameObject->active = true;
+            clones[i]->Find("Progress")->gameObject->active = true;
+        }
 
         // non SerializeField fields don't get copied on instantiate
         CopyFields(base, clones[i], i);

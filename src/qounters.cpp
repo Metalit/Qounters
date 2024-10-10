@@ -445,6 +445,9 @@ static RectTransform* GetCanvas(std::string parentName, Transform* hud, Vector3 
     ret->anchorMin = {0.5, 0.5};
     ret->anchorMax = {0.5, 0.5};
 
+    // I have no idea why but this fixes sprites being blurry on the 360 degree right panel
+    canvas->GetComponent<Canvas*>()->rootCanvas->referencePixelsPerUnit = 8;
+
     return ret;
 }
 
