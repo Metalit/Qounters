@@ -266,7 +266,7 @@ void Internals::Initialize() {
 }
 
 bool Internals::IsFakeNote(NoteData* data) {
-    return data->scoringType != NoteData::ScoringType::NoScore && data->scoringType != NoteData::ScoringType::Ignore;
+    return data->scoringType == NoteData::ScoringType::NoScore || data->scoringType == NoteData::ScoringType::Ignore;
 }
 
 bool Internals::ShouldCountNote(NoteData* data) {
