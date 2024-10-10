@@ -8,6 +8,7 @@
 #include "GlobalNamespace/PlayerDataModel.hpp"
 #include "UnityEngine/UI/LayoutRebuilder.hpp"
 #include "bsml/shared/BSML-Lite.hpp"
+#include "bsml/shared/BSML/MainThreadScheduler.hpp"
 #include "bsml/shared/Helpers/getters.hpp"
 #include "config.hpp"
 #include "customtypes/components.hpp"
@@ -39,9 +40,11 @@ static bool IsMultiplayer() {
     return Utils::ptr_cast<GlobalNamespace::GameServerLobbyFlowCoordinator>(flowCoordinator.ptr());
 }
 
-static void SetNameText(UnityEngine::Component* setting, std::string text) {
-    if (auto textObj = setting->transform->Find("NameText"))
+static void SetNameText(UnityEngine::Component* setting, std::string text, float scale) {
+    if (auto textObj = setting->transform->Find("NameText")) {
         textObj->GetComponent<TMPro::TextMeshProUGUI*>()->text = text;
+        textObj.cast<UnityEngine::RectTransform>()->sizeDelta = {scale, 0};
+    }
 }
 
 static void OnDestroy() {
@@ -138,6 +141,7 @@ void Gameplay::GameplaySetupMenu(UnityEngine::GameObject* parent, bool firstActi
     rect->SetParent(typeOverrideToggle->transform, false);
     rect->anchoredPosition = {-20, 0};
     UnityEngine::Object::Destroy(toDelete);
+    typeOverrideToggle->transform->Find("NameText")->GetComponent<TMPro::TextMeshProUGUI*>()->fontSizeMin = 4;
     BSML::Lite::AddHoverHint(typeOverrideToggle, "Override the preset for this HUD type");
 
     specificOverrideToggle = BSML::Lite::CreateToggle(vertical, "", false, SpecificOverrideToggled);
@@ -147,6 +151,7 @@ void Gameplay::GameplaySetupMenu(UnityEngine::GameObject* parent, bool firstActi
     rect->SetParent(specificOverrideToggle->transform, false);
     rect->anchoredPosition = {-20, 0};
     UnityEngine::Object::Destroy(toDelete);
+    specificOverrideToggle->transform->Find("NameText")->GetComponent<TMPro::TextMeshProUGUI*>()->fontSizeMin = 4;
     BSML::Lite::AddHoverHint(specificOverrideToggle, "Override the preset for this specific environment");
 
     Utils::SetChildrenWidth(vertical->transform, 85);
@@ -234,12 +239,8 @@ void Gameplay::UpdateUI() {
 
         environmentText->text = name;
         environmentTypeText->text = reqs.empty() ? type : fmt::format("{}    <size=66%>{}", type, fmt::join(reqs, ", "));
-        ;
-        if (hasTypeOverride)
-            SetNameText(typeOverrideToggle, fmt::format("Override for {}...", type));
-        else
-            SetNameText(typeOverrideToggle, fmt::format("Override for {} Environments", type));
-        SetNameText(specificOverrideToggle, fmt::format("Override for {}", name));
+        SetNameText(typeOverrideToggle, fmt::format("Override for {} Environments", type), hasTypeOverride ? -57 : 0);
+        SetNameText(specificOverrideToggle, fmt::format("Override for {}", name), hasSpecificOverride ? -57 : 0);
 
         presetDropdown->set_interactable(!hasTypeOverride && !hasSpecificOverride);
         typePresetDropdown->set_interactable(!hasSpecificOverride);
@@ -249,5 +250,9 @@ void Gameplay::UpdateUI() {
 
     settingsButton->gameObject->active = !IsMultiplayer();
 
-    UnityEngine::UI::LayoutRebuilder::ForceRebuildLayoutImmediate(vertical->rectTransform);
+    // why unity why
+    if (vertical->gameObject->active) {
+        UnityEngine::UI::LayoutRebuilder::ForceRebuildLayoutImmediate(vertical->rectTransform);
+        BSML::MainThreadScheduler::ScheduleNextFrame([]() { vertical->SetDirty(); });
+    }
 }
