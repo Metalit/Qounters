@@ -234,6 +234,11 @@ MAKE_HOOK_MATCH(AudioTimeSyncController_Update, &AudioTimeSyncController::Update
 MAKE_HOOK_MATCH(
     CoreGameHUDController_Initialize, &CoreGameHUDController::Initialize, void, CoreGameHUDController* self, CoreGameHUDController::InitData* initData
 ) {
+    if (!getConfig().Enabled.GetValue()) {
+        CoreGameHUDController_Initialize(self, initData);
+        return;
+    }
+
     initData->advancedHUD = true;
     wasHidden = initData->hide;
 
@@ -241,7 +246,6 @@ MAKE_HOOK_MATCH(
         logger.info("Qounters end");
         initialized = false;
         HUD::Reset();
-        Internals::saberManager = nullptr;
         rotationalAnchor = nullptr;
     });
 
@@ -265,6 +269,9 @@ MAKE_HOOK_MATCH(
     MultiplayerIntroAnimationController* self
 ) {
     MultiplayerIntroAnimationController_BindTimeline(self);
+
+    if (!getConfig().Enabled.GetValue())
+        return;
 
     if (!Environment::InSettings() && !wasHidden && !initialized) {
         logger.info("Qounters start");
