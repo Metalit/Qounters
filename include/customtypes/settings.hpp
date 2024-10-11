@@ -146,7 +146,7 @@ DECLARE_CLASS_CODEGEN(Qounters, TemplatesViewController, HMUI::ViewController,
     DECLARE_DEFAULT_CTOR();
 
     DECLARE_OVERRIDE_METHOD_MATCH(void, DidActivate, &HMUI::ViewController::DidActivate, bool, bool, bool);
-
+    DECLARE_OVERRIDE_METHOD_MATCH(void, DidDeactivate, &HMUI::ViewController::DidDeactivate, bool, bool);
     DECLARE_INSTANCE_METHOD(void, OnDestroy);
 
     DECLARE_INSTANCE_METHOD(void, ShowTemplateModal, int idx);

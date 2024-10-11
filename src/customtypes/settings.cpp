@@ -890,6 +890,17 @@ void TemplatesViewController::DidActivate(bool firstActivation, bool addedToHier
     uiInitialized = true;
 }
 
+void TemplatesViewController::DidDeactivate(bool removedFromHierarchy, bool screenSystemDisabling) {
+    if (!uiInitialized)
+        return;
+
+    modal->Hide(false, nullptr);
+}
+
+void TemplatesViewController::OnDestroy() {
+    instance = nullptr;
+}
+
 void TemplatesViewController::ShowTemplateModal(int idx) {
     if (!uiInitialized)
         return;
@@ -919,10 +930,6 @@ TemplatesViewController* TemplatesViewController::GetInstance() {
     if (!instance)
         instance = BSML::Helpers::CreateViewController<TemplatesViewController*>();
     return instance;
-}
-
-void TemplatesViewController::OnDestroy() {
-    instance = nullptr;
 }
 
 void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierarchy, bool screenSystemEnabling) {
