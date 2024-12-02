@@ -37,6 +37,7 @@
 #include "GlobalNamespace/PlayerData.hpp"
 #include "GlobalNamespace/PlayerDataFileModel.hpp"
 #include "GlobalNamespace/PlayerDataModel.hpp"
+#include "GlobalNamespace/PlayerSpecificSettings.hpp"
 #include "GlobalNamespace/SaberModelContainer.hpp"
 #include "GlobalNamespace/SaberModelController.hpp"
 #include "GlobalNamespace/SimpleLevelStarter.hpp"
@@ -78,6 +79,7 @@ static SongPreviewPlayer* songPreview;
 static VRUIControls::VRInputModule* vrInput;
 static UIKeyboardManager* keyboardManager;
 static GameObject* menuEnv;
+static bool wasNoTextsAndHuds = false;
 static GameObject* localPlayer;
 static bool inSettings = false;
 static EnvironmentInfoSO* currentEnvironment = nullptr;
@@ -231,11 +233,14 @@ static void PresentScene(SimpleLevelStarter* levelStarter, bool refresh) {
     currentEnvironment = GetEnvironment(levelStarter);
     level->GetDifficultyBeatmapData(diff.beatmapCharacteristic, diff.difficulty)->environmentName = currentEnvironment->serializedName;
 
+    auto playerData = levelStarter->_playerDataModel->playerData;
+    wasNoTextsAndHuds = playerData->get_playerSpecificSettings()->noTextsAndHuds;
+    playerData->get_playerSpecificSettings()->_noTextsAndHuds = false;
+
     ColorScheme* colors;
     currentColors = getConfig().ColorScheme.GetValue();
-    auto colorSchemeSettings = levelStarter->_playerDataModel->playerData->colorSchemesSettings;
-    if (getConfig().OverrideColor.GetValue() && colorSchemeSettings->_colorSchemesDict->ContainsKey(currentColors))
-        colors = colorSchemeSettings->GetColorSchemeForId(currentColors);
+    if (getConfig().OverrideColor.GetValue() && playerData->colorSchemesSettings->_colorSchemesDict->ContainsKey(currentColors))
+        colors = playerData->colorSchemesSettings->GetColorSchemeForId(currentColors);
     else
         colors = currentEnvironment->colorScheme->colorScheme;
 
@@ -467,6 +472,7 @@ void Environment::OnSceneEnd() {
     auto levelStarter = GetLevelStarter();
     levelStarter->_menuTransitionsHelper->_standardLevelScenesTransitionSetupData->didFinishEvent = nullptr;
     levelStarter->_gameScenesManager->_neverUnloadScenes->Remove("MenuCore");
+    levelStarter->_playerDataModel->playerData->get_playerSpecificSettings()->_noTextsAndHuds = wasNoTextsAndHuds;
     menuEnvironment->ShowEnvironmentType(MenuEnvironmentManager::MenuEnvironmentType::Default);
     songPreview->CrossfadeToDefault();
     vrInput->gameObject->active = true;
