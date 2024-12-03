@@ -160,7 +160,7 @@ namespace Qounters::Internals {
     GameplayModifiers* modifiers;
     float positiveMods;
     float negativeMods;
-    int personalBest;
+    double personalBest;
     int fails;
     int restarts;
     ColorScheme* colors;
@@ -192,14 +192,14 @@ void Internals::Initialize() {
         }
     }
     if (!gameplayCoreInstaller)
-        gameplayCoreInstaller = gameplayCoreInstallers[0];
-    auto setupData = gameplayCoreInstaller && gameplayCoreInstaller->_sceneSetupData ? gameplayCoreInstaller->_sceneSetupData : nullptr;
+        gameplayCoreInstaller = gameplayCoreInstallers->FirstOrDefault();
+    auto setupData = gameplayCoreInstaller ? gameplayCoreInstaller->_sceneSetupData : nullptr;
 
     leftScore = 0;
     rightScore = 0;
     leftMaxScore = 0;
     rightMaxScore = 0;
-    songMaxScore = Environment::InSettings() ? 0 : GetMaxScore(beatmapCallbacksUpdater);
+    songMaxScore = Environment::InSettings() ? 1 : GetMaxScore(beatmapCallbacksUpdater);
     leftCombo = 0;
     rightCombo = 0;
     combo = 0;

@@ -29,7 +29,7 @@ namespace Qounters::Game {
     float GetLastSecAngle(int saber);
     float GetHighestSecAngle(int saber);
     float GetModifierMultiplier(bool positive, bool negative);
-    int GetBestScore();
+    double GetBestScore();  // return double for pb hackery in settings playtesting
     int GetFails();
     int GetRestarts();
     UnityEngine::Color GetColor(int color);

@@ -747,7 +747,7 @@ void PlaytestViewController::DidActivate(bool firstActivation, bool addedToHiera
     pbSlider = Utils::ReparentSlider(pbSlider, pbToggle, 30);
     pbSlider->GetComponent<RectTransform*>()->anchoredPosition = {-20, 0};
     pbSlider->formatter = percentFormat;
-    BSML::Lite::AddHoverHint(pbSlider, "Choose the personal best to emulate");
+    BSML::Lite::AddHoverHint(pbSlider, "Choose the personal best to emulate (without modifiers)");
 
     // for now, the settings "song" is 24 seconds long
     timeSlider = BSML::Lite::CreateSliderSetting(parent, "Song Progress", 1, 0, 0, 24, 0, true, {0, 0}, Playtest::SetSongTime);
@@ -813,16 +813,16 @@ void PlaytestViewController::UpdateUI() {
 
     SetClickableImageColor(wall, Game::GetColor((int) Sources::Color::Player::ColorSettings::Walls));
 
-    Utils::InstantSetToggle(pbToggle, Game::GetBestScore() > 0);
-    pbSlider->gameObject->active = Game::GetBestScore() > 0;
-    pbSlider->set_Value(100 * Game::GetBestScore() / (float) Game::GetSongMaxScore());
+    Utils::InstantSetToggle(pbToggle, Game::GetBestScore() >= 0);
+    pbSlider->gameObject->active = Game::GetBestScore() >= 0;
+    pbSlider->set_Value(100 * Game::GetBestScore() / Game::GetSongMaxScore());
 
     timeSlider->set_Value(Game::GetSongTime());
 
-    int pos = (Game::GetModifierMultiplier(true, false) - 1) * 100;
-    Utils::SetIncrementValue(posModsIncrement, pos);
-    int neg = (Game::GetModifierMultiplier(false, true) - 1) * 100;
-    Utils::SetIncrementValue(negModsIncrement, neg);
+    float pos = (Game::GetModifierMultiplier(true, false) - 1) * 100;
+    Utils::SetIncrementValue(posModsIncrement, std::round(pos));
+    float neg = (Game::GetModifierMultiplier(false, true) - 1) * 100;
+    Utils::SetIncrementValue(negModsIncrement, std::round(neg));
 
     Utils::InstantSetToggle(blToggle, PP::IsRankedBL());
     blSlider->gameObject->active = PP::IsRankedBL();

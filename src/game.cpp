@@ -246,11 +246,9 @@ float Game::GetModifierMultiplier(bool positive, bool negative) {
         ret += positiveMods;
     if (negative)
         ret += negativeMods;
-    if (negative && noFail && health <= 0)
-        ret -= 0.5;
     return ret;
 }
-int Game::GetBestScore() {
+double Game::GetBestScore() {
     return personalBest;
 }
 int Game::GetFails() {

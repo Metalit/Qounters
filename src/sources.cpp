@@ -169,21 +169,21 @@ std::string Sources::Text::GetRank(UnparsedJSON unparsed) {
 std::string Sources::Text::GetPersonalBest(UnparsedJSON unparsed) {
     auto opts = unparsed.Parse<PersonalBest>();
 
-    int best = Game::GetBestScore();
+    double best = Game::GetBestScore();
     if (best == -1) {
         if (opts.HideFirstScore)
             return opts.Label ? "PB: --" : "--";
         else
             best = 0;
     }
+    int max = Game::GetSongMaxScore();
+    std::string text;
     if (opts.Percentage) {
-        int max = Game::GetSongMaxScore();
-        double ratio = max > 0 ? best / ((double) Game::GetModifierMultiplier(true, true) * max) : (Environment::InSettings() ? 0 : 1);
-        ratio *= 100;
-        std::string ret = Utils::FormatDecimals(ratio, opts.Decimals) + "%";
-        return opts.Label ? "PB: " + ret : ret;
+        double ratio = max > 0 ? best / (Game::GetModifierMultiplier(true, true) * max) : 1;
+        text = Utils::FormatDecimals(ratio * 100, opts.Decimals) + "%";
     } else
-        return opts.Label ? "PB: " + std::to_string(best) : std::to_string(best);
+        text = Environment::InSettings() && max == 1 ? "0" : std::to_string((int) best);
+    return opts.Label ? "PB: " + text : text;
 }
 std::string Sources::Text::GetCombo(UnparsedJSON unparsed) {
     auto opts = unparsed.Parse<Combo>();
@@ -399,13 +399,13 @@ UnityEngine::Color Sources::Color::GetRank(UnparsedJSON unparsed) {
 UnityEngine::Color Sources::Color::GetPersonalBest(UnparsedJSON unparsed) {
     auto opts = unparsed.Parse<PersonalBest>();
 
-    int best = Game::GetBestScore();
+    double best = Game::GetBestScore();
     int songMax = Game::GetSongMaxScore();
     double current = Game::GetScore((int) Types::Sabers::Both);
     // PB modifiers would be applied to best score
     current *= Game::GetModifierMultiplier(true, true);
     int max = Game::GetMaxScore((int) Types::Sabers::Both);
-    double bestRatio = songMax > 0 ? best / (double) songMax : 1;
+    double bestRatio = songMax > 0 ? best / songMax : 1;
     double ratio = max > 0 ? current / max : 1;
 
     return ratio >= bestRatio ? opts.Better : opts.Worse;

@@ -214,7 +214,7 @@ MAKE_HOOK_MATCH(GameEnergyCounter_ProcessEnergyChange, &GameEnergyCounter::Proce
 
     GameEnergyCounter_ProcessEnergyChange(self, energyChange);
 
-    if (wasAbove0 && self->_didReach0Energy) {
+    if (!Environment::InSettings() && Internals::noFail && wasAbove0 && self->_didReach0Energy) {
         Internals::negativeMods -= 0.5;
         Events::Broadcast((int) Events::ScoreChanged);
     }

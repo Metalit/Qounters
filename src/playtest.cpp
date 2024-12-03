@@ -6,6 +6,7 @@
 #include "GlobalNamespace/ComboController.hpp"
 #include "GlobalNamespace/GameEnergyCounter.hpp"
 #include "GlobalNamespace/GameEnergyUIPanel.hpp"
+#include "GlobalNamespace/IBeatmapObjectController.hpp"
 #include "GlobalNamespace/ObstacleData.hpp"
 #include "GlobalNamespace/PrepareLevelCompletionResults.hpp"
 #include "GlobalNamespace/ScoreController.hpp"
@@ -39,6 +40,7 @@ static GameEnergyCounter* gameEnergyCounter;
 static GameEnergyUIPanel* energyBar;
 static BeatmapObjectSpawnController* spawner;
 
+static float lastPbValue = 1;
 static SafePtr<ScoreMultiplierCounter> maxMultiplier;
 
 static void FindObjects() {
@@ -57,6 +59,24 @@ static void FindObjects() {
     spawner = UnityEngine::Resources::FindObjectsOfTypeAll<BeatmapObjectSpawnController*>()->First();
 }
 
+static void DespawnObjects() {
+    if (!spawner)
+        return;
+    if (auto cast = Utils::ptr_cast<BeatmapObjectManager>(spawner->_beatmapObjectSpawner)) {
+        ListW<IBeatmapObjectController*> objects = cast->_allBeatmapObjects;
+        std::vector<IBeatmapObjectController*> copy = {objects.begin(), objects.end()};
+        for (auto& object : copy) {
+            object->Pause(false);
+            if (il2cpp_utils::try_cast<NoteController>(object).has_value())
+                cast->Despawn((NoteController*) object);
+            else if (il2cpp_utils::try_cast<ObstacleController>(object).has_value())
+                cast->Despawn((ObstacleController*) object);
+            else if (il2cpp_utils::try_cast<SliderController>(object).has_value())
+                cast->Despawn((SliderController*) object);
+        }
+    }
+}
+
 void Playtest::Update() {
     if (audioController)
         audioController->_songTime += UnityEngine::Time::get_deltaTime();
@@ -67,6 +87,7 @@ void Playtest::Update() {
 void Playtest::SetEnabled(bool enabled) {
     Environment::SetPlayerActive(enabled);
     if (!enabled) {
+        DespawnObjects();
         scoreController = nullptr;
         audioController = nullptr;
         comboController = nullptr;
@@ -76,10 +97,7 @@ void Playtest::SetEnabled(bool enabled) {
         return;
     } else
         FindObjects();
-    if (!spawner)
-        return;
-    if (auto cast = Utils::ptr_cast<BeatmapObjectManager>(spawner->_beatmapObjectSpawner))
-        cast->DissolveAllObjects();
+    DespawnObjects();
 }
 
 static void ResetEnergyBar() {
@@ -127,6 +145,7 @@ void Playtest::ResetGameControllers() {
     scoreController->_sortedScoringElementsWithoutMultiplier->Clear();
     for (auto element : ListW<ScoringElement*>(scoreController->_scoringElementsWithMultiplier))
         element->SetMultipliers(0, 0);
+    DespawnObjects();
 }
 
 static int PositiveMultiplier() {
@@ -165,6 +184,8 @@ void Playtest::SpawnNote(bool left, bool chain) {
     else
         Internals::songNotesRight++;
 
+    if (Internals::songMaxScore == 1)
+        Internals::songMaxScore = 0;
     Internals::songMaxScore += ScoreModel::GetNoteScoreDefinition(data->scoringType)->maxCutScore * PositiveMultiplier();
     for (int i = 0; i < chainSegments; i++)
         Internals::songMaxScore += segmentMaxCut * PositiveMultiplier();
@@ -196,7 +217,7 @@ void Playtest::ResetNotes() {
     Internals::rightScore = 0;
     Internals::leftMaxScore = 0;
     Internals::rightMaxScore = 0;
-    Internals::songMaxScore = 0;
+    Internals::songMaxScore = 1;
     Internals::leftCombo = 0;
     Internals::rightCombo = 0;
     Internals::combo = 0;
@@ -251,6 +272,7 @@ void Playtest::ResetAll() {
     PP::ssSongValid = false;
     settingsStarsSS = 10;
     SetPersonalBest(-1);
+    lastPbValue = 1;
     HUD::UpdateAllSources();
     if (maxMultiplier)
         maxMultiplier->Reset();
@@ -259,11 +281,10 @@ void Playtest::ResetAll() {
 
 // -1: no pb, 0: use last pb, >0: set pb percent
 void Playtest::SetPersonalBest(float value) {
-    static float lastValue = 1;
     if (value == 0)
-        value = lastValue;
+        value = lastPbValue;
     else if (value > 0)
-        lastValue = value;
+        lastPbValue = value;
     if (value == -1)
         Internals::personalBest = -1;
     else
@@ -277,12 +298,12 @@ void Playtest::SetSongTime(float value) {
 };
 
 void Playtest::SetPositiveModifiers(float value) {
-    Internals::positiveMods = 1 + (value * 0.01);
+    Internals::positiveMods = value * 0.01;
     Events::Broadcast((int) Qounters::Events::ScoreChanged);
 };
 
 void Playtest::SetNegativeModifiers(float value) {
-    Internals::negativeMods = 1 + (value * 0.01);
+    Internals::negativeMods = value * 0.01;
     Events::Broadcast((int) Qounters::Events::ScoreChanged);
 };
 

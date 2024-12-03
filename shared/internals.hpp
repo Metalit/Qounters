@@ -50,7 +50,7 @@ namespace Qounters::Internals {
     extern GlobalNamespace::GameplayModifiers* modifiers;
     extern float positiveMods;
     extern float negativeMods;
-    extern int personalBest;
+    extern double personalBest;
     extern int fails;
     extern int restarts;
     extern GlobalNamespace::ColorScheme* colors;
