@@ -177,9 +177,12 @@ void Utils::SetChildrenWidth(UnityEngine::Transform* parent, float width) {
 }
 
 void Utils::SetCanvasSorting(UnityEngine::GameObject* canvas, int value) {
+    bool wasActive = canvas->activeSelf;
+    canvas->active = true;
     auto comp = canvas->GetComponent<UnityEngine::Canvas*>();
     comp->overrideSorting = true;
     comp->sortingOrder = value;
+    canvas->active = wasActive;
 }
 
 void Utils::InstantSetToggle(BSML::ToggleSetting* toggle, bool value) {
@@ -487,15 +490,14 @@ MenuDragger* Utils::CreateMenuDragger(UnityEngine::GameObject* parent, bool isLe
     rect->anchorMax = {0.5, 1};
     rect->anchoredPosition = {0, 5};
     rect->sizeDelta = {42, 3};
-    SetCanvasSorting(padding, 5);
     auto drag = BSML::Lite::CreateCanvas();
+    drag->active = false;
     drag->name = "QountersMenuDragCanvas";
     drag->AddComponent<CanvasHighlight*>();
     auto dragRect = drag->GetComponent<UnityEngine::RectTransform*>();
     dragRect->SetParent(rect, false);
     dragRect->localScale = {1, 1, 1};
     dragRect->sizeDelta = {1000, 1000};
-    drag->active = false;
     auto ret = padding->AddComponent<MenuDragger*>();
     ret->dragCanvas = drag;
     ret->menu = parent->GetComponent<UnityEngine::RectTransform*>();
@@ -506,6 +508,7 @@ MenuDragger* Utils::CreateMenuDragger(UnityEngine::GameObject* parent, bool isLe
     img->sizeDelta = {40, 1};
     ret->isLeftMenu = isLeftMenu;
     padding->active = true;
+    SetCanvasSorting(padding, 6);
     return ret;
 }
 
