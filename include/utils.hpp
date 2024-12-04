@@ -18,6 +18,7 @@ namespace Qounters::Utils {
     std::string FormatDecimals(double num, int decimals);
     std::string SecondsToString(int seconds);
 
+    UnityEngine::Vector3 GetFixedEuler(UnityEngine::Quaternion rotation);
     UnityEngine::Color GetClampedColor(std::tuple<float, float, float> hsv);
 
     std::tuple<std::string, std::string, int> GetBeatmapDetails(GlobalNamespace::BeatmapKey beatmap);

@@ -459,7 +459,7 @@ void EditingGroup::OnDragDetached(EventSystems::PointerEventData* eventData) {
     if (group.LockPosZ)
         group.DetachedPosition.z = currentPos.z;
     auto currentRot = group.DetachedRotation;
-    group.DetachedRotation = Quaternion::Slerp(Quaternion::Euler(currentRot), rot, 5 * unscaledDeltaTime).eulerAngles;
+    group.DetachedRotation = Utils::GetFixedEuler(Quaternion::Slerp(Quaternion::Euler(currentRot), rot, 5 * unscaledDeltaTime));
     if (group.LockRotX)
         group.DetachedRotation.x = currentRot.x;
     if (group.LockRotY)

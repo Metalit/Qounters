@@ -451,7 +451,7 @@ void Editor::ToggleAttachment() {
 
     group.Detached = !group.Detached;
     group.DetachedPosition = selected->rectTransform->position;
-    group.DetachedRotation = selected->rectTransform->rotation.eulerAngles;
+    group.DetachedRotation = Utils::GetFixedEuler(selected->rectTransform->rotation);
     HUD::UpdateGroupPosition(selected->rectTransform, group);
 
     if (!runningUndo)

@@ -13,6 +13,7 @@
 #include "System/Action.hpp"
 #include "UnityEngine/EventSystems/IDragHandler.hpp"
 #include "UnityEngine/EventSystems/IEndDragHandler.hpp"
+#include "UnityEngine/EventSystems/IPointerUpHandler.hpp"
 #include "UnityEngine/EventSystems/IInitializePotentialDragHandler.hpp"
 #include "bsml/shared/BSML/Components/ClickableImage.hpp"
 #include "bsml/shared/BSML/Components/CustomListTableData.hpp"
@@ -356,11 +357,11 @@ DECLARE_CLASS_CODEGEN_INTERFACES(Qounters, MenuDragger, UnityEngine::MonoBehavio
 
 #define INTERFACES std::vector<Il2CppClass*>({ \
     classof(UES::IEventSystemHandler*), \
-    classof(UES::IEndDragHandler*), \
+    classof(UES::IPointerUpHandler*), \
 })
 
 DECLARE_CLASS_CODEGEN_INTERFACES(Qounters, EndDragHandler, UnityEngine::MonoBehaviour, INTERFACES,
-    DECLARE_OVERRIDE_METHOD_MATCH(void, OnEndDrag, &UES::IEndDragHandler::OnEndDrag, UES::PointerEventData* eventData);
+    DECLARE_OVERRIDE_METHOD_MATCH(void, OnPointerUp, &UES::IPointerUpHandler::OnPointerUp, UES::PointerEventData* eventData);
 
     DECLARE_DEFAULT_CTOR();
 

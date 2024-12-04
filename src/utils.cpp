@@ -49,6 +49,15 @@ std::string Utils::SecondsToString(int value) {
     return minutesString + ":" + secondsString;
 }
 
+UnityEngine::Vector3 Utils::GetFixedEuler(UnityEngine::Quaternion rotation) {
+    auto ret = rotation.eulerAngles;
+    for (auto val : {&ret.x, &ret.y, &ret.z}) {
+        if (*val > 180)
+            *val -= 360;
+    }
+    return ret;
+}
+
 UnityEngine::Color Utils::GetClampedColor(std::tuple<float, float, float> hsv) {
     auto [h, s, v] = hsv;
     h = fmod(h, 1);

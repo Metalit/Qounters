@@ -1696,7 +1696,7 @@ float MenuDragger::GetPointerPosX(EventSystems::PointerEventData* eventData) {
     return rootCanvas->transform->InverseTransformPoint({screenPos.x, screenPos.y, 0}).x;
 }
 
-void EndDragHandler::OnEndDrag(EventSystems::PointerEventData* eventData) {
+void EndDragHandler::OnPointerUp(EventSystems::PointerEventData* eventData) {
     callback();
 }
 
