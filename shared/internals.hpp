@@ -67,6 +67,8 @@ namespace Qounters::Internals {
     extern UnityEngine::Quaternion prevRotRight;
     extern UnityW<GlobalNamespace::SaberManager> saberManager;
 
+    extern UnorderedEventCallback<> onInitialize;
+
     void Initialize();
 
     bool IsFakeNote(GlobalNamespace::NoteData* data);

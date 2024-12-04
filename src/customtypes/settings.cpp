@@ -33,6 +33,7 @@
 #include "bsml/shared/Helpers/getters.hpp"
 #include "bsml/shared/Helpers/utilities.hpp"
 #include "config.hpp"
+#include "copies.hpp"
 #include "custom-types/shared/delegate.hpp"
 #include "customtypes/components.hpp"
 #include "customtypes/editing.hpp"
@@ -224,6 +225,8 @@ void SettingsFlowCoordinator::OnModalCancel() {
 }
 
 void SettingsFlowCoordinator::SelectPreset(StringW name) {
+    if (getConfig().SettingsPreset.GetValue() == name)
+        return;
     ConfirmAction(
         [name = (std::string) name]() {
             auto presets = getConfig().Presets.GetValue();
@@ -498,7 +501,7 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
         previewToggle, "Disables selection and outlines, and enables a playtesting menu to experiment with different scores and other values"
     );
 
-    confirmModal = BSML::Lite::CreateModal(this, {95, 25}, SettingsFlowCoordinator::OnModalCancel);
+    confirmModal = BSML::Lite::CreateModal(this, {102, 25}, SettingsFlowCoordinator::OnModalCancel);
     auto modalLayout1 = BSML::Lite::CreateVerticalLayoutGroup(confirmModal);
     modalLayout1->childControlHeight = false;
     modalLayout1->childForceExpandHeight = true;
@@ -1070,31 +1073,43 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
         group.LockRotZ = !group.LockRotZ;
         UpdateSimpleUI();
     });
-    BSML::Lite::AddHoverHint(gDetRotLockZ, "Lock the Z (roll) of the selected counter group when dragging");
+    BSML::Lite::AddHoverHint(gDetRotLockZ, "Lock the Z (roll) rotation of the selected counter group when dragging");
 
     auto gButtonsParent1 = BSML::Lite::CreateHorizontalLayoutGroup(groupParent);
     gButtonsParent1->spacing = 3;
 
-    gComponentButton = BSML::Lite::CreateUIButton(gButtonsParent1, "Add Counter", Editor::AddComponent);
+    gComponentButton = BSML::Lite::CreateUIButton(gButtonsParent1, "Add Counter", Editor::NewComponent);
     BSML::Lite::AddHoverHint(gComponentButton, "Add and select a new counter to this group");
+    Utils::SetLayoutSize(gComponentButton, 26, 9);
 
-    gDetachButton = BSML::Lite::CreateUIButton(gButtonsParent1, "Detach", Editor::ToggleAttachment);
-    BSML::Lite::AddHoverHint(gDetachButton, "Detach this counter group from its anchor, allowing free 3D movement");
+    gPasteButton = BSML::Lite::CreateUIButton(gButtonsParent1, "Paste Counter", Editor::PasteComponent);
+    BSML::Lite::AddHoverHint(gPasteButton, "Paste the most recently copied counter into this group");
+    Utils::SetLayoutSize(gPasteButton, 26, 9);
+
+    gDuplicateButton = BSML::Lite::CreateUIButton(gButtonsParent1, "Duplicate", Editor::Duplicate);
+    BSML::Lite::AddHoverHint(gDuplicateButton, "Duplicate this group and all its components");
+    Utils::SetLayoutSize(gDuplicateButton, 26, 9);
 
     auto gButtonsParent2 = BSML::Lite::CreateHorizontalLayoutGroup(groupParent);
     gButtonsParent2->spacing = 3;
 
     gDeleteButton = BSML::Lite::CreateUIButton(gButtonsParent2, "Delete", Editor::Remove);
     BSML::Lite::AddHoverHint(gDeleteButton, "Delete this counter group");
+    Utils::SetLayoutSize(gDeleteButton, 26, 9);
 
     gDeselectButton = BSML::Lite::CreateUIButton(gButtonsParent2, "Deselect", Editor::Deselect);
     BSML::Lite::AddHoverHint(gDeselectButton, "Deselect this counter group");
+    Utils::SetLayoutSize(gDeselectButton, 26, 9);
+
+    gDetachButton = BSML::Lite::CreateUIButton(gButtonsParent2, "Detach", Editor::ToggleAttachment);
+    BSML::Lite::AddHoverHint(gDetachButton, "Detach this counter group from its anchor, allowing free 3D movement");
+    Utils::SetLayoutSize(gDetachButton, 26, 9);
 
     Utils::SetChildrenWidth(groupParent->transform, 85);
 
     componentParent = BSML::Lite::CreateScrollView(background);
 
-    auto positionCollapse = Utils::CreateCollapseArea(componentParent, "Position Options", true);
+    auto positionCollapse = Utils::CreateCollapseArea(componentParent, "Position Options", true, Copies::Position);
 
     cPosIncrementX = BSML::Lite::CreateIncrementSetting(componentParent, "Rel. X Position", 1, 0.5, 0, [](float val) {
         static int id = Editor::GetActionId();
@@ -1146,15 +1161,14 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
     positionCollapse->AddContents({cPosIncrementX, cPosIncrementY, cRotSlider, cScaleSliderX, cScaleSliderY});
     positionCollapse->onUpdate = OptionsViewController::UpdateScrollViewStatic;
 
-    auto typeCollapse = Utils::CreateCollapseArea(componentParent, "Text Options", true);
+    auto typeCollapse = Utils::CreateCollapseArea(componentParent, "Text Options", true, Copies::Type);
     typeCollapseComponent = typeCollapse;
 
     cTypeDropdown = Utils::CreateDropdownEnum(componentParent, "Type", 0, Options::TypeStrings, [typeCollapse](int val) {
         typeCollapse->title = std::string(Options::TypeStrings[val]) + " Options";
         typeCollapse->UpdateOpen();
         static int id = Editor::GetActionId();
-        Editor::GetSelectedComponent(id).Type = val;
-        Editor::UpdateType();
+        Editor::SetType(id, (Options::Component::Types) val);
         Editor::FinalizeAction();
     });
     BSML::Lite::AddHoverHint(cTypeDropdown, "Change the type (text, shape, image, or premade) of this counter");
@@ -1165,7 +1179,7 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
     typeCollapse->AddContents({cTypeDropdown->transform->parent, cTypeOptions});
     typeCollapse->onUpdate = OptionsViewController::UpdateScrollViewStatic;
 
-    auto colorCollapse = Utils::CreateCollapseArea(componentParent, "Color Options", false);
+    auto colorCollapse = Utils::CreateCollapseArea(componentParent, "Color Options", false, Copies::Color);
     colorCollapseComponent = colorCollapse;
 
     cColorSourceDropdown = Utils::CreateDropdown(componentParent, "Color Source", "", Utils::GetKeys(Sources::colors), [this](std::string val) {
@@ -1173,8 +1187,7 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
         auto& comp = Editor::GetSelectedComponent(id);
         if (comp.ColorSource != val) {
             cColorSourceDropdown->dropdown->Hide(false);
-            comp.ColorSource = val;
-            Editor::UpdateColorSource();
+            Editor::SetColorSource(id, val);
         }
         Editor::FinalizeAction();
     });
@@ -1188,14 +1201,14 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
         auto& gradient = Editor::GetSelectedComponent(id).GradientOptions;
         if (value != gradient.Enabled) {
             gradient.Enabled = value;
-            Editor::UpdateGradientOptions();
+            Editor::UpdateColor();
         }
         Editor::FinalizeAction();
         GetInstance()->UpdateUI();
     });
     BSML::Lite::AddHoverHint(cGradientToggle, "Use a color gradient for this counter");
 
-    auto gradientCollapse = Utils::CreateCollapseArea(componentParent, "Gradient Options", true);
+    auto gradientCollapse = Utils::CreateCollapseArea(componentParent, "Gradient Options", true, Copies::Gradient);
     gradientCollapseComponent = gradientCollapse;
 
     auto directionAndSwap = BSML::Lite::CreateHorizontalLayoutGroup(componentParent);
@@ -1204,7 +1217,7 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
     cGradientDirectionDropdown = Utils::CreateDropdownEnum(directionAndSwap->gameObject, "Direction", 0, Options::DirectionStrings, [](int value) {
         static int id = Editor::GetActionId();
         Editor::GetSelectedComponent(id).GradientOptions.Direction = value;
-        Editor::UpdateGradientOptions();
+        Editor::UpdateColor();
         Editor::FinalizeAction();
     });
     auto parent = cGradientDirectionDropdown->transform->parent;
@@ -1221,7 +1234,7 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
         [](Vector3 hsv) {
             static int id = Editor::GetActionId();
             Editor::GetSelectedComponent(id).GradientOptions.StartModifierHSV = hsv;
-            Editor::UpdateGradientOptions();
+            Editor::UpdateColor();
         },
         Editor::FinalizeAction
     );
@@ -1234,7 +1247,7 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
         [](Vector3 hsv) {
             static int id = Editor::GetActionId();
             Editor::GetSelectedComponent(id).GradientOptions.EndModifierHSV = hsv;
-            Editor::UpdateGradientOptions();
+            Editor::UpdateColor();
         },
         Editor::FinalizeAction
     );
@@ -1247,15 +1260,14 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
     colorCollapse->AddContents({cGradientToggle, gradientCollapse, cColorSourceDropdown->transform->parent, cColorSourceOptions});
     colorCollapse->onUpdate = OptionsViewController::UpdateScrollViewStatic;
 
-    auto enableCollapse = Utils::CreateCollapseArea(componentParent, "Visibility Options", false);
+    auto enableCollapse = Utils::CreateCollapseArea(componentParent, "Visibility Options", false, Copies::Enable);
 
     cEnableSourceDropdown = Utils::CreateDropdown(componentParent, "Visible If", "", Utils::GetKeys(Sources::enables), [this](std::string val) {
         static int id = Editor::GetActionId();
         auto& comp = Editor::GetSelectedComponent(id);
         if (comp.EnableSource != val) {
             cEnableSourceDropdown->dropdown->Hide(false);
-            comp.EnableSource = val;
-            Editor::UpdateEnableSource();
+            Editor::SetEnableSource(id, val);
         }
         Editor::FinalizeAction();
     });
@@ -1264,7 +1276,7 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
     cInvertEnableToggle = BSML::Lite::CreateToggle(componentParent, "Invert Visibility", false, [](bool val) {
         static int id = Editor::GetActionId();
         Editor::GetSelectedComponent(id).InvertEnable = val;
-        Editor::UpdateEnableOptions();
+        Editor::UpdateEnable();
         Editor::FinalizeAction();
     });
     BSML::Lite::AddHoverHint(cInvertEnableToggle, "Invert the visibility of this counter from the driver's settings");
@@ -1284,9 +1296,19 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
 
     cDeleteButton = BSML::Lite::CreateUIButton(cButtonsParent, "Delete", Editor::Remove);
     BSML::Lite::AddHoverHint(cDeleteButton, "Delete this counter");
+    Utils::SetLayoutSize(cDeleteButton, 18, 9);
 
     cDeselectButton = BSML::Lite::CreateUIButton(cButtonsParent, "Deselect", Editor::Deselect);
     BSML::Lite::AddHoverHint(cDeselectButton, "Deselect this counter");
+    Utils::SetLayoutSize(cDeselectButton, 18, 9);
+
+    cCopyButton = BSML::Lite::CreateUIButton(cButtonsParent, "Copy", Editor::CopyComponent);
+    BSML::Lite::AddHoverHint(cCopyButton, "Copy this counter to paste into another group");
+    Utils::SetLayoutSize(cCopyButton, 18, 9);
+
+    cDuplicateButton = BSML::Lite::CreateUIButton(cButtonsParent, "Duplicate", Editor::Duplicate);
+    BSML::Lite::AddHoverHint(cDuplicateButton, "Duplicate this counter inside this group");
+    Utils::SetLayoutSize(cDuplicateButton, 18, 9);
 
     Object::Destroy(componentParent->GetComponentInParent<BSML::ScrollViewContent*>(true));
     auto componentTop = Utils::GetScrollViewTop(componentParent);
@@ -1332,7 +1354,7 @@ void OptionsViewController::UpdateSimpleUI() {
 
     float height = 88;
     if (group)
-        height = Editor::GetSelectedGroup(-1).Detached ? 70 : 47;
+        height = Editor::GetSelectedGroup(-1).Detached ? 74 : 47;
     auto background = transform->GetChild(0)->GetComponent<RectTransform*>();
     background->sizeDelta = {background->sizeDelta.x, height};
     groupParent->gameObject->active = group;
@@ -1370,6 +1392,7 @@ void OptionsViewController::UpdateSimpleUI() {
         gDetRotSliderX->transform->parent->gameObject->active = state.Detached;
         gDetRotSliderY->transform->parent->gameObject->active = state.Detached;
         gDetRotSliderZ->transform->parent->gameObject->active = state.Detached;
+        gPasteButton->interactable = Editor::CanPasteComponent();
         BSML::Lite::SetButtonText(gDetachButton, state.Detached ? "Attach" : "Detach");
     } else if (component) {
         auto& state = Editor::GetSelectedComponent(-1);

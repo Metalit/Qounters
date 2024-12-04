@@ -544,6 +544,7 @@ void PopulateMeshHSVGradient(HMUI::ImageView* self, UnityEngine::UI::VertexHelpe
 }
 
 MAKE_HOOK_MATCH(ImageView_OnPopulateMesh, &HMUI::ImageView::OnPopulateMesh, void, HMUI::ImageView* self, UnityEngine::UI::VertexHelper* toFill) {
+
     if (auto hsv = self->GetComponent<HSVGradientImage*>())
         PopulateMeshHSVGradient(self, toFill, hsv->modified, hsv->modifier, hsv->elements);
     else

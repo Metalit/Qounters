@@ -11,6 +11,7 @@
 #include "VRUIControls/VRPointer.hpp"
 #include "bsml/shared/BSML-Lite.hpp"
 #include "config.hpp"
+#include "copies.hpp"
 #include "customtypes/editing.hpp"
 #include "customtypes/settings.hpp"
 #include "main.hpp"
@@ -42,10 +43,13 @@ static bool addDirectToPreset = false;
 
 static Options::Preset preset;
 
+static bool hasCopy;
+static Options::Component copied;
+
 static std::set<int> removedGroupIdxs;
 static std::map<int, std::set<int>> removedComponentIdxs;
 
-static int highestActionId = 0;
+static int highestActionId = Copies::CopyMax;
 
 static VRUIControls::VRInputModule* vrInput;
 
@@ -142,6 +146,7 @@ static void InitializeInternal(Options::Preset const& inPreset, bool newEnvironm
     preset = inPreset;
     editing.clear();
     undos.clear();
+    hasCopy = false;
     removedGroupIdxs.clear();
     removedComponentIdxs.clear();
     selected = nullptr;
@@ -227,13 +232,13 @@ Options::Group& Editor::GetGroup(int idx) {
 
 void Editor::AddGroup(Options::Group group) {
     if (addDirectToPreset) {
-        preset.Qounters.emplace_back(group);
+        preset.Qounters.emplace_back(std::move(group));
         return;
     }
 
     int newIdx = preset.Qounters.size();
-    preset.Qounters.emplace_back(group);
-    HUD::CreateQounterGroup(group, newIdx, true);
+    auto& moved = preset.Qounters.emplace_back(std::move(group));
+    HUD::CreateQounterGroup(moved, newIdx, true);
 
     auto created = editing[{newIdx, -1}];
     if (!runningUndo)
@@ -241,6 +246,48 @@ void Editor::AddGroup(Options::Group group) {
     SelectEditing(created);
 
     AddUndo(Remove);
+}
+
+static void AddComponent(Options::Component component) {
+    auto& vec = Editor::GetSelectedGroup(-1).Components;
+    auto newIdx = vec.size();
+    auto& newComponent = vec.emplace_back(std::move(component));
+
+    HUD::CreateQounterComponent(newComponent, newIdx, editing[{selectedGroupIdx, -1}]->transform, true);
+    auto created = editing[{selectedGroupIdx, newIdx}];
+    created->Select();
+    Editor::SelectEditing(created);
+
+    AddUndo(Editor::Remove);
+}
+
+void Editor::Duplicate() {
+    if (selectedComponentIdx == -1) {
+        auto group = GetSelectedGroup(-1);
+        if (group.Detached)
+            group.DetachedPosition.z -= 0.25;
+        else
+            group.Position.y -= 5;
+        AddGroup(std::move(group));
+    } else {
+        auto component = GetSelectedComponent(-1);
+        component.Position.y -= 5;
+        AddComponent(std::move(component));
+    }
+}
+
+void Editor::CopyComponent() {
+    hasCopy = true;
+    copied = GetSelectedComponent(-1);
+}
+
+bool Editor::CanPasteComponent() {
+    return hasCopy;
+}
+
+void Editor::PasteComponent() {
+    if (hasCopy)
+        AddComponent(copied);
 }
 
 void Editor::RegisterEditingGroup(EditingGroup* object, int groupIdx) {
@@ -372,7 +419,8 @@ void Editor::EnableDetachedCanvas(bool enabled) {
         detachedDragCanvas->transform->SetParent(group->rectTransform);
         detachedDragCanvas->transform->SetLocalPositionAndRotation({0, 0, 0}, UnityEngine::Quaternion::get_identity());
         raycastCanvases.emplace(detachedDragCanvas->GetComponent<UnityEngine::Canvas*>());
-    }
+    } else
+        detachedDragCanvas->transform->SetParent(nullptr);
 }
 void Editor::UpdateDetachedDrag(UnityEngine::Vector3 const& pos, UnityEngine::Vector3 const& controller) {
     auto transform = detachedDragCanvas->transform;
@@ -380,26 +428,17 @@ void Editor::UpdateDetachedDrag(UnityEngine::Vector3 const& pos, UnityEngine::Ve
     transform->LookAt(controller);
 }
 
-void Editor::AddComponent() {
-    auto& vec = GetSelectedGroup(-1).Components;
-    auto newIdx = vec.size();
-    auto& newComponent = vec.emplace_back();
+void Editor::NewComponent() {
+    Options::Component newComponent;
     newComponent.Type = (int) Options::Component::Types::Text;
     Options::Text opts;
     opts.TextSource = Sources::Text::StaticName;
     Sources::Text::Static text;
-    text.Input = "New Component";
+    text.Input = "New Counter";
     opts.SourceOptions = text;
     newComponent.Options = opts;
 
-    HUD::CreateQounterComponent(newComponent, newIdx, selected->transform, true);
-    auto created = editing[{selectedGroupIdx, newIdx}];
-    if (!runningUndo) {
-        created->Select();
-        SelectEditing(created);
-    }
-
-    AddUndo(Remove);
+    AddComponent(std::move(newComponent));
 }
 
 void Editor::ToggleAttachment() {
@@ -505,47 +544,27 @@ void Editor::UpdatePosition(bool neverSnap) {
 }
 
 void Editor::UpdateType() {
-    AddUpdate(UpdateType);
-
-    auto& component = GetSelectedComponent(-1);
-    RemoveWithoutDeselect(selectedGroupIdx, selectedComponentIdx);
-    if (!runningUndo)
-        HUD::SetDefaultOptions(component);
-    HUD::CreateQounterComponent(component, selectedComponentIdx, editing[{selectedGroupIdx, -1}]->transform, true);
-
-    if (!runningUndo || tempSelectIsReal) {
-        selected = editing[{selectedGroupIdx, selectedComponentIdx}];
-        selected->Select();
-        OptionsViewController::GetInstance()->UpdateUI();
-    }
+    UpdateAll();
+}
+void Editor::SetType(int actionId, Options::Component::Types type) {
+    auto& component = GetSelectedComponent(actionId);
+    component.Type = (int) type;
+    HUD::SetDefaultOptions(component);
+    UpdateType();
 }
 
-void Editor::UpdateColorSource() {
-    AddUpdate(UpdateColorSource);
-
-    if (!runningUndo) {
-        SetColorOptions(-1, Sources::Color::Static());
-        OptionsViewController::GetInstance()->UpdateUI();
-    } else {
-        auto& component = GetSelectedComponent(-1);
-        auto editingComponent = (EditingComponent*) selected;
-        HUD::UpdateComponentColor(editingComponent->typeComponent, component.ColorSource, component.ColorOptions, component.GradientOptions);
-    }
+void Editor::SetColorSource(int actionId, std::string source) {
+    auto& component = GetSelectedComponent(actionId);
+    component.ColorSource = source;
+    SetColorOptions(actionId, Sources::Color::Static());
+    OptionsViewController::GetInstance()->UpdateUI();
 }
 
-void Editor::UpdateEnableSource() {
-    AddUpdate(UpdateEnableSource);
-
-    if (!runningUndo) {
-        SetEnableOptions(-1, Sources::Enable::Static());
-        OptionsViewController::GetInstance()->UpdateUI();
-    } else {
-        auto& component = GetSelectedComponent(-1);
-        auto editingComponent = (EditingComponent*) selected;
-        HUD::UpdateComponentEnabled(
-            editingComponent->typeComponent->gameObject, component.EnableSource, component.EnableOptions, component.InvertEnable
-        );
-    }
+void Editor::SetEnableSource(int actionId, std::string source) {
+    auto& component = GetSelectedComponent(actionId);
+    component.EnableSource = source;
+    SetEnableOptions(actionId, Sources::Enable::Static());
+    OptionsViewController::GetInstance()->UpdateUI();
 }
 
 void Editor::UpdateOptions() {
@@ -570,31 +589,47 @@ void Editor::SetSourceOptions(int actionId, UnparsedJSON options) {
     UpdateSourceOptions();
 }
 
-void Editor::UpdateColorOptions() {
+void Editor::UpdateColor() {
     auto& component = GetSelectedComponent(-1);
     auto editingComponent = (EditingComponent*) selected;
     HUD::UpdateComponentColor(editingComponent->typeComponent, component.ColorSource, component.ColorOptions, component.GradientOptions);
-    AddUpdate(UpdateColorOptions);
-}
-void Editor::UpdateGradientOptions() {
-    UpdateColorOptions();
+    AddUpdate(UpdateColor);
 }
 void Editor::SetColorOptions(int actionId, UnparsedJSON options) {
     auto& component = GetSelectedComponent(actionId);
     component.ColorOptions = options;
-    UpdateColorOptions();
+    UpdateColor();
 }
 
-void Editor::UpdateEnableOptions() {
+void Editor::UpdateEnable() {
     auto& component = GetSelectedComponent(-1);
     auto editingComponent = (EditingComponent*) selected;
     HUD::UpdateComponentEnabled(editingComponent->typeComponent->gameObject, component.EnableSource, component.EnableOptions, component.InvertEnable);
-    AddUpdate(UpdateEnableOptions);
+    AddUpdate(UpdateEnable);
 }
 void Editor::SetEnableOptions(int actionId, UnparsedJSON options) {
     auto& component = GetSelectedComponent(actionId);
     component.EnableOptions = options;
-    UpdateEnableOptions();
+    UpdateEnable();
+}
+
+void Editor::UpdateAll() {
+    if (selectedComponentIdx != -1) {
+        auto& component = GetSelectedComponent(-1);
+        RemoveWithoutDeselect(selectedGroupIdx, selectedComponentIdx);
+        HUD::CreateQounterComponent(component, selectedComponentIdx, editing[{selectedGroupIdx, -1}]->transform, true);
+    } else {
+        auto& group = GetSelectedGroup(-1);
+        RemoveWithoutDeselect(selectedGroupIdx, -1);
+        HUD::CreateQounterGroup(group, selectedGroupIdx, true);
+    }
+
+    if (!runningUndo || tempSelectIsReal) {
+        selected = editing[{selectedGroupIdx, selectedComponentIdx}];
+        selected->Select();
+        OptionsViewController::GetInstance()->UpdateUI();
+    }
+    AddUpdate(UpdateAll);
 }
 
 void Editor::Undo() {
@@ -635,34 +670,45 @@ void Editor::FinalizeAction() {
     lastActionTime = time;
     lastActionId = currentActionId;
     currentActionId = -1;
-    if (!nextUndoUpdates.empty()) {
-        if (merge && !runningUndo && !undos.empty()) {
+    bool unchanged = selectedComponentIdx == -1 ? GetSelectedGroup(-1) == nextUndoGroup : GetSelectedComponent(-1) == nextUndoComponent;
+    if (unchanged || nextUndoUpdates.empty()) {
+        nextUndoUpdates.clear();
+        return;
+    }
+    if (merge && !runningUndo && !undos.empty()) {
+        // most of this is just preventing redundant updates, so not strictly necessary
+        if (!lastUndoUpdates.contains(UpdateAll)) {
             std::set<void (*)()> newUpdates = {};
             for (auto& update : nextUndoUpdates) {
                 if (!lastUndoUpdates.contains(update))
                     newUpdates.emplace(update);
             }
             if (!newUpdates.empty()) {
-                auto& [a, b, oldUndo] = undos.back();
+                if (newUpdates.contains(UpdateAll))
+                    newUpdates = {UpdateAll};
+                auto& oldUndo = std::get<2>(undos.back());
                 oldUndo = [oldUndo, updates = std::move(newUpdates)]() {
                     oldUndo();
                     for (auto& update : updates)
                         update();
                 };
             }
-        } else if (selectedComponentIdx == -1) {
-            AddUndo([state = nextUndoGroup, updates = nextUndoUpdates]() {
-                GetSelectedGroup(-1) = state;
-                for (auto& update : updates)
-                    update();
-            });
-        } else {
-            AddUndo([state = nextUndoComponent, updates = nextUndoUpdates]() {
-                GetSelectedComponent(-1) = state;
-                for (auto& update : updates)
-                    update();
-            });
-        }
+            for (auto& update : lastUndoUpdates)
+                nextUndoUpdates.emplace(update);
+        } else
+            nextUndoUpdates = {UpdateAll};
+    } else if (selectedComponentIdx == -1) {
+        AddUndo([state = nextUndoGroup, updates = nextUndoUpdates]() {
+            GetSelectedGroup(-1) = state;
+            for (auto& update : updates)
+                update();
+        });
+    } else {
+        AddUndo([state = nextUndoComponent, updates = nextUndoUpdates]() {
+            GetSelectedComponent(-1) = state;
+            for (auto& update : updates)
+                update();
+        });
     }
     lastUndoUpdates.swap(nextUndoUpdates);
     nextUndoUpdates.clear();

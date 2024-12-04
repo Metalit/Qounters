@@ -176,6 +176,7 @@ namespace Qounters::Internals {
     UnityEngine::Quaternion prevRotLeft;
     UnityEngine::Quaternion prevRotRight;
     UnityW<SaberManager> saberManager;
+    UnorderedEventCallback<> onInitialize;
 }
 
 void Internals::Initialize() {
@@ -263,6 +264,8 @@ void Internals::Initialize() {
     prevRotLeft = UnityEngine::Quaternion::get_identity();
     prevRotRight = UnityEngine::Quaternion::get_identity();
     saberManager = UnityEngine::Object::FindObjectOfType<SaberManager*>();
+
+    onInitialize.invoke();
 }
 
 bool Internals::IsFakeNote(NoteData* data) {

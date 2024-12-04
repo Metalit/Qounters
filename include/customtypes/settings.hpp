@@ -208,9 +208,11 @@ DECLARE_CLASS_CODEGEN(Qounters, OptionsViewController, HMUI::ViewController,
     DECLARE_INSTANCE_FIELD(BSML::SliderSetting*, gDetRotSliderZ);
     DECLARE_INSTANCE_FIELD(UnityEngine::UI::Button*, gDetRotLockZ);
     DECLARE_INSTANCE_FIELD(UnityEngine::UI::Button*, gComponentButton);
-    DECLARE_INSTANCE_FIELD(UnityEngine::UI::Button*, gDetachButton);
+    DECLARE_INSTANCE_FIELD(UnityEngine::UI::Button*, gPasteButton);
+    DECLARE_INSTANCE_FIELD(UnityEngine::UI::Button*, gDuplicateButton);
     DECLARE_INSTANCE_FIELD(UnityEngine::UI::Button*, gDeleteButton);
     DECLARE_INSTANCE_FIELD(UnityEngine::UI::Button*, gDeselectButton);
+    DECLARE_INSTANCE_FIELD(UnityEngine::UI::Button*, gDetachButton);
 
     DECLARE_INSTANCE_FIELD(BSML::IncrementSetting*, cPosIncrementX);
     DECLARE_INSTANCE_FIELD(BSML::IncrementSetting*, cPosIncrementY);
@@ -230,6 +232,8 @@ DECLARE_CLASS_CODEGEN(Qounters, OptionsViewController, HMUI::ViewController,
     DECLARE_INSTANCE_FIELD(BSML::ToggleSetting*, cInvertEnableToggle);
     DECLARE_INSTANCE_FIELD(UnityEngine::UI::Button*, cDeleteButton);
     DECLARE_INSTANCE_FIELD(UnityEngine::UI::Button*, cDeselectButton);
+    DECLARE_INSTANCE_FIELD(UnityEngine::UI::Button*, cCopyButton);
+    DECLARE_INSTANCE_FIELD(UnityEngine::UI::Button*, cDuplicateButton);
 
     DECLARE_INSTANCE_FIELD(UnityEngine::UI::VerticalLayoutGroup*, cTypeOptions);
     DECLARE_INSTANCE_FIELD(UnityEngine::UI::VerticalLayoutGroup*, cColorSourceOptions);

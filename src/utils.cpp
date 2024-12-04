@@ -19,6 +19,7 @@
 #include "bsml/shared/BSML-Lite.hpp"
 #include "bsml/shared/Helpers/delegates.hpp"
 #include "bsml/shared/Helpers/utilities.hpp"
+#include "copies.hpp"
 #include "customtypes/editing.hpp"
 #include "customtypes/settings.hpp"
 #include "main.hpp"
@@ -360,6 +361,7 @@ BSML::ColorSetting* Utils::CreateColorPicker(
         pasteButton->interactable = hasCopied;
         copyModal->Show();
     });
+    BSML::Lite::AddHoverHint(button, "Copy or paste colors");
     auto buttonRect = button->GetComponent<UnityEngine::RectTransform*>();
     buttonRect->anchorMin = {1, 0};
     buttonRect->anchorMax = {1, 1};
@@ -420,8 +422,11 @@ HSVController* Utils::CreateHSVModifierPicker(
     return ret;
 }
 
-CollapseController*
-Utils::CreateCollapseArea(UnityEngine::GameObject* parent, std::string title, bool open, std::set<UnityEngine::Component*> contents) {
+CollapseController* Utils::CreateCollapseArea(UnityEngine::GameObject* parent, std::string title, bool open, int copyId) {
+    static UnityW<UnityEngine::Sprite> copySprite;
+    if (!copySprite)
+        copySprite = PNG_SPRITE(Copy);
+
     auto layout = BSML::Lite::CreateHorizontalLayoutGroup(parent);
     layout->gameObject->name = "QountersCollapseArea";
     layout->spacing = 2;
@@ -437,9 +442,36 @@ Utils::CreateCollapseArea(UnityEngine::GameObject* parent, std::string title, bo
     ret->text = BSML::Lite::CreateText(layout, "", TMPro::FontStyles::Normal, 3.5);
     ret->line = BSML::Lite::CreateImage(layout, BSML::Utilities::ImageResources::GetWhitePixel());
     SetLayoutSize(ret->line, 0, 0.4, 999);
-    ret->AddContents(contents);
+    ret->UpdateOpen();
     // update colors
     ret->OnPointerExit(nullptr);
+
+    if (copyId >= 0) {
+        auto copyImage = BSML::Lite::CreateClickableImage(layout, copySprite);
+        SetLayoutSize(copyImage, 3, 3);
+        BSML::Lite::AddHoverHint(copyImage, "Copy and paste these options");
+        auto copyModal = BSML::Lite::CreateModal(copyImage);
+        auto modalRect = copyModal->GetComponent<UnityEngine::RectTransform*>();
+        modalRect->anchoredPosition = {-16, 0};
+        modalRect->sizeDelta = {24, 18};
+        auto vertical = BSML::Lite::CreateVerticalLayoutGroup(copyModal);
+        vertical->spacing = -2;
+        auto copyEnum = (enum Copies::Copy) copyId;
+        auto copyButton = BSML::Lite::CreateUIButton(vertical, "Copy", [copyModal, copyEnum]() {
+            copyModal->Hide();
+            Copies::Copy(copyEnum);
+        });
+        SetLayoutSize(copyButton, 20, -1);
+        auto pasteButton = BSML::Lite::CreateUIButton(vertical, "Paste", [copyModal, copyEnum]() {
+            copyModal->HMUI::ModalView::Hide(false, nullptr);
+            Copies::Paste(copyEnum);
+        });
+        SetLayoutSize(pasteButton, 20, -1);
+        copyImage->onClick += [copyModal, pasteButton, copyEnum]() {
+            pasteButton->interactable = Copies::HasCopy(copyEnum);
+            copyModal->Show();
+        };
+    }
     return ret;
 }
 

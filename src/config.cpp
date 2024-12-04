@@ -2,6 +2,7 @@
 
 #include "UnityEngine/UI/ContentSizeFitter.hpp"
 #include "bsml/shared/BSML-Lite.hpp"
+#include "copies.hpp"
 #include "customtypes/components.hpp"
 #include "customtypes/settings.hpp"
 #include "editor.hpp"
@@ -91,7 +92,7 @@ void Options::CreateTextUI(GameObject* parent, Text const& options) {
     });
     BSML::Lite::AddHoverHint(italic, "Italicize the text of this counter");
 
-    auto sourceCollapse = Utils::CreateCollapseArea(parent, "Text Source Options", collapseOpen);
+    auto sourceCollapse = Utils::CreateCollapseArea(parent, "Text Source Options", collapseOpen, Copies::TextSource);
 
     sourceDropdown = Utils::CreateDropdown(parent, "Text Source", options.TextSource, Utils::GetKeys(Sources::texts), [parent](std::string val) {
         static int id = Editor::GetActionId();
@@ -144,7 +145,7 @@ void Options::CreateShapeUI(GameObject* parent, Shape const& options) {
         });
     BSML::Lite::AddHoverHint(borderIncrement, "Change the border width of the shape of this counter");
 
-    auto fillCollapse = Utils::CreateCollapseArea(parent, "Fill Options", collapseOpen);
+    auto fillCollapse = Utils::CreateCollapseArea(parent, "Fill Options", collapseOpen, Copies::Fill);
 
     auto directionDropdown = Utils::CreateDropdownEnum(parent, "Fill Direction", options.Fill, FillStrings, [](int val) {
         static int id = Editor::GetActionId();

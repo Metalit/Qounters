@@ -81,8 +81,7 @@ namespace Qounters::Utils {
     Qounters::HSVController* CreateHSVModifierPicker(
         UnityEngine::GameObject* parent, std::string name, std::function<void(UnityEngine::Vector3)> onChange, std::function<void()> onClose
     );
-    Qounters::CollapseController*
-    CreateCollapseArea(UnityEngine::GameObject* parent, std::string title, bool open, std::set<UnityEngine::Component*> contents = {});
+    Qounters::CollapseController* CreateCollapseArea(UnityEngine::GameObject* parent, std::string title, bool open, int copyId = -1);
     Qounters::MenuDragger* CreateMenuDragger(UnityEngine::GameObject* parent, bool isLeftMenu);
 
     void AddModalAnimations(HMUI::SimpleTextDropdown* dropdown, HMUI::ModalView* behindModal);

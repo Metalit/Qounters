@@ -81,7 +81,7 @@
       },
       {
         "id": "config-utils",
-        "versionRange": "^1.5.0",
+        "versionRange": "^2.0.0",
         "additionalData": {}
       },
       {
@@ -110,17 +110,17 @@
     {
       "dependency": {
         "id": "web-utils",
-        "versionRange": "=0.6.6",
+        "versionRange": "=0.6.7",
         "additionalData": {
-          "soLink": "https://github.com/RedBrumbler/WebUtils/releases/download/v0.6.6/libweb-utils.so",
-          "debugSoLink": "https://github.com/RedBrumbler/WebUtils/releases/download/v0.6.6/debug_libweb-utils.so",
+          "soLink": "https://github.com/RedBrumbler/WebUtils/releases/download/v0.6.7/libweb-utils.so",
+          "debugSoLink": "https://github.com/RedBrumbler/WebUtils/releases/download/v0.6.7/debug_libweb-utils.so",
           "overrideSoName": "libweb-utils.so",
-          "modLink": "https://github.com/RedBrumbler/WebUtils/releases/download/v0.6.6/WebUtils.qmod",
-          "branchName": "version/v0_6_6",
+          "modLink": "https://github.com/RedBrumbler/WebUtils/releases/download/v0.6.7/WebUtils.qmod",
+          "branchName": "version/v0_6_7",
           "cmake": false
         }
       },
-      "version": "0.6.6"
+      "version": "0.6.7"
     },
     {
       "dependency": {
@@ -227,14 +227,14 @@
     {
       "dependency": {
         "id": "config-utils",
-        "versionRange": "=1.5.0",
+        "versionRange": "=2.0.0",
         "additionalData": {
           "headersOnly": true,
           "overrideSoName": "libconfig-utils_test.so",
           "cmake": true
         }
       },
-      "version": "1.5.0"
+      "version": "2.0.0"
     },
     {
       "dependency": {
