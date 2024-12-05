@@ -322,17 +322,8 @@ void HUD::UpdateGroupPosition(RectTransform* group, Options::Group const& qounte
 }
 
 void HUD::RemoveComponent(int componentType, UnityEngine::Component* component) {
-    switch ((Options::Component::Types) componentType) {
-        case Options::Component::Types::Text:
-            RemoveFromMap(texts, component);
-            break;
-        case Options::Component::Types::Shape:
-            RemoveFromMap(shapes, component);
-            break;
-        case Options::Component::Types::Image:
-        case Options::Component::Types::Premade:
-            break;
-    }
+    RemoveFromMap(texts, component);
+    RemoveFromMap(shapes, component);
     RemoveFromMap(colors, component);
     RemoveFromMap(enables, component->gameObject);
 }
