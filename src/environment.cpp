@@ -128,6 +128,10 @@ static std::map<std::string, Environment::HUDType> const HudTypes = {
     {"MultiplayerEnvironment", Environment::HUDType::Wide},
 };
 
+static std::set<std::string> const EnabledGameplayObjects = {
+    "GameplayData", "BaseGameEffects", "InteropSabersManager", "GameplaySabersManager", "GameplayDriversManager"
+};
+
 std::vector<std::string_view> Environment::HUDTypeStrings = {
     "Wide",
     "Narrow",
@@ -318,13 +322,20 @@ EnvironmentInfoSO* Environment::CurrentSettingsEnvironment() {
 
 void Environment::SetPlayerActive(bool active) {
     localPlayer->active = active;
+    // reesabers doesn't seem to use the right color scheme even initially
+    UpdateSaberColors();
 }
 
 void Environment::UpdateSaberColors() {
     auto sabers = localPlayer->GetComponentsInChildren<SaberModelController*>();
     for (auto& saber : sabers) {
-        if (auto container = saber->GetComponentInParent<SaberModelContainer*>())
+        if (auto container = saber->GetComponentInParent<SaberModelContainer*>()) {
             saber->Init(container->transform, container->_saber);
+            if (auto ree = container->transform->Find("ReeSaber")) {
+                ree->gameObject->active = false;
+                ree->gameObject->active = true;
+            }
+        }
     }
 }
 
@@ -389,7 +400,9 @@ static void OnMultiplayerSceneStart(MultiplayerController* multiplayerController
     auto objects = GameObject::Find("MultiplayerLocalActivePlayerController(Clone)/IsActiveObjects")->transform;
 
     objects->Find("MultiplayerLocalActivePlayerInGameMenuViewController")->gameObject->active = false;
-    Utils::DisableAllBut(objects->Find("GameplayCore"), {"GameplayData", "BaseGameEffects", "BeatmapObjectSpawnController"});
+    auto enabled = EnabledGameplayObjects;
+    enabled.emplace("BeatmapObjectSpawnController");
+    Utils::DisableAllBut(objects->Find("GameplayCore"), enabled);
 
     localPlayer = objects->Find("LocalPlayerGameCore")->gameObject;
     localPlayer->active = false;
@@ -411,7 +424,9 @@ void Environment::OnSceneStart() {
     if (auto gameplay = GameObject::Find("StandardGameplay")) {
         // disable all children so that we can easily reenable LocalPlayerGameCore later
         auto transform = gameplay->transform;
-        Utils::DisableAllBut(transform, {"LocalPlayerGameCore", "GameplayData", "BaseGameEffects"});
+        auto enabled = EnabledGameplayObjects;
+        enabled.emplace("LocalPlayerGameCore");
+        Utils::DisableAllBut(transform, enabled);
         // disable local player, but not recursively
         localPlayer = transform->Find("LocalPlayerGameCore")->gameObject;
         localPlayer->active = false;

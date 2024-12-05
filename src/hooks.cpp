@@ -226,6 +226,9 @@ MAKE_HOOK_MATCH(AudioTimeSyncController_Update, &AudioTimeSyncController::Update
 
     AudioTimeSyncController_Update(self);
 
+    if (!initialized)
+        return;
+
     Internals::DoSlowUpdate();
     Internals::songTime = self->songTime;
     Events::Broadcast((int) Events::Update);
