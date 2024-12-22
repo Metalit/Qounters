@@ -94,13 +94,14 @@ static inline void AddUpdate(void (*update)()) {
         return;
     nextUndoUpdates.emplace(update);
 }
-static inline void AddUndo(auto&& fn) {
+static inline bool AddUndo(auto&& fn) {
     if (runningUndo || disableActions)
-        return;
+        return false;
     bool wasEmpty = undos.empty();
     undos.emplace_back(selectedGroupIdx, selectedComponentIdx, fn);
     if (wasEmpty)
         SettingsViewController::GetInstance()->UpdateUI();
+    return true;
 }
 
 static void SetupAnchors() {
@@ -662,9 +663,9 @@ int Editor::GetActionId() {
     return highestActionId++;
 }
 
-void Editor::FinalizeAction() {
+bool Editor::FinalizeAction() {
     if (disableActions)
-        return;
+        return false;
     float time = UnityEngine::Time::get_time();
     bool merge = currentActionId == lastActionId && time - lastActionTime < UNDO_MERGE_THRESHOLD;
     lastActionTime = time;
@@ -673,8 +674,9 @@ void Editor::FinalizeAction() {
     bool unchanged = selectedComponentIdx == -1 ? GetSelectedGroup(-1) == nextUndoGroup : GetSelectedComponent(-1) == nextUndoComponent;
     if (unchanged || nextUndoUpdates.empty()) {
         nextUndoUpdates.clear();
-        return;
+        return false;
     }
+    bool added = false;
     if (merge && !runningUndo && !undos.empty()) {
         // most of this is just preventing redundant updates, so not strictly necessary
         if (!lastUndoUpdates.contains(UpdateAll)) {
@@ -698,13 +700,13 @@ void Editor::FinalizeAction() {
         } else
             nextUndoUpdates = {UpdateAll};
     } else if (selectedComponentIdx == -1) {
-        AddUndo([state = nextUndoGroup, updates = nextUndoUpdates]() {
+        added = AddUndo([state = nextUndoGroup, updates = nextUndoUpdates]() {
             GetSelectedGroup(-1) = state;
             for (auto& update : updates)
                 update();
         });
     } else {
-        AddUndo([state = nextUndoComponent, updates = nextUndoUpdates]() {
+        added = AddUndo([state = nextUndoComponent, updates = nextUndoUpdates]() {
             GetSelectedComponent(-1) = state;
             for (auto& update : updates)
                 update();
@@ -712,6 +714,7 @@ void Editor::FinalizeAction() {
     }
     lastUndoUpdates.swap(nextUndoUpdates);
     nextUndoUpdates.clear();
+    return added;
 }
 
 void Editor::DisableActions() {

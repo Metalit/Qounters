@@ -383,10 +383,11 @@ void EditingGroup::OnEndDrag(EventSystems::PointerEventData* eventData) {
     else
         OnEndDragNormal(eventData);
 
-    Editor::FinalizeAction();
-    bool tooShort = Time::get_time() - dragStart < MAX_SECS_WITHOUT_DRAG;
-    if (tooShort)
-        Editor::Undo();
+    if (Editor::FinalizeAction()) {
+        bool tooShort = Time::get_time() - dragStart < MAX_SECS_WITHOUT_DRAG;
+        if (tooShort)
+            Editor::Undo();
+    }
 
     outlineSizer->enabled = true;
     dragging = false;
@@ -540,10 +541,11 @@ void EditingComponent::OnEndDrag(EventSystems::PointerEventData* eventData) {
         Editor::EndDrag();
     UpdateColor();
 
-    Editor::FinalizeAction();
-    bool tooShort = Time::get_time() - dragStart < MAX_SECS_WITHOUT_DRAG;
-    if (tooShort)
-        Editor::Undo();
+    if (Editor::FinalizeAction()) {
+        bool tooShort = Time::get_time() - dragStart < MAX_SECS_WITHOUT_DRAG;
+        if (tooShort)
+            Editor::Undo();
+    }
 }
 
 EditingGroup* EditingComponent::GetEditingGroup() {

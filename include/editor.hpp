@@ -60,7 +60,7 @@ namespace Qounters::Editor {
     bool HasUndo();
     void ClearUndos();
     int GetActionId();
-    void FinalizeAction();
+    bool FinalizeAction();
 
     void DisableActions();
     void EnableActions();
