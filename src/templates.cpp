@@ -93,8 +93,12 @@ void Templates::AddScore(int anchor, UnityEngine::Vector2 pos, bool score, bool 
     auto group = MakeGroup(anchor, pos);
     float yPos = 0;
     if (rank) {
-        AddText(group, Sources::Text::RankName, Sources::Text::Rank(), 33);
+        auto& text = AddText(group, Sources::Text::RankName, Sources::Text::Rank(), 33);
         yPos += 18;
+        if (rankColors) {
+            text.ColorSource = Sources::Color::RankName;
+            text.ColorOptions = Sources::Color::Rank();
+        }
     }
     if (percent) {
         Sources::Text::Score opts;
@@ -351,9 +355,11 @@ void Templates::AddFCPercent(int anchor, UnityEngine::Vector2 pos, bool split, b
             Sources::Enable::FullCombo showOpts;
             showOpts.Saber = (int) Types::Sabers::Left;
             leftText.EnableSource = Sources::Enable::FullComboName;
+            leftText.InvertEnable = true;
             leftText.EnableOptions = showOpts;
             showOpts.Saber = (int) Types::Sabers::Right;
             rightText.EnableSource = Sources::Enable::FullComboName;
+            rightText.InvertEnable = true;
             rightText.EnableOptions = showOpts;
         }
     } else {
