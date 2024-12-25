@@ -147,7 +147,6 @@ static void InitializeInternal(Options::Preset const& inPreset, bool newEnvironm
     preset = inPreset;
     editing.clear();
     undos.clear();
-    hasCopy = false;
     removedGroupIdxs.clear();
     removedComponentIdxs.clear();
     selected = nullptr;
@@ -184,6 +183,8 @@ void Editor::LoadPreset(Options::Preset const& preset) {
     HUD::Reset(false);
     InitializeInternal(preset, false);
     SettingsViewController::GetInstance()->UpdateUI();
+    Playtest::SetEnabled(false);
+    SettingsFlowCoordinator::PresentTemplates();
 }
 
 void Editor::SetPreviewMode(bool preview) {
