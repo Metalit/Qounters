@@ -100,6 +100,8 @@ DECLARE_CLASS_CODEGEN(Qounters, SettingsViewController, HMUI::ViewController,
     DECLARE_INSTANCE_FIELD(HMUI::ModalView*, confirmModal);
     DECLARE_INSTANCE_FIELD(HMUI::ModalView*, nameModal);
     DECLARE_INSTANCE_FIELD(HMUI::InputFieldView*, nameInput);
+    DECLARE_INSTANCE_FIELD(HMUI::ModalView*, deleteModal);
+    DECLARE_INSTANCE_FIELD(HMUI::ModalView*, resetModal);
 
     DECLARE_STATIC_METHOD(SettingsViewController*, GetInstance);
 

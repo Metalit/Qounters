@@ -470,10 +470,10 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
     });
     Utils::SetLayoutSize(dupeButton, 24, 8);
     BSML::Lite::AddHoverHint(dupeButton, "Copy the selected preset to a new preset");
-    deleteButton = BSML::Lite::CreateUIButton(buttons3, "Delete", SettingsFlowCoordinator::DeletePreset);
+    deleteButton = BSML::Lite::CreateUIButton(buttons3, "Delete", [this]() { deleteModal->Show(true, true, nullptr); });
     Utils::SetLayoutSize(deleteButton, 24, 8);
     BSML::Lite::AddHoverHint(deleteButton, "Permanently delete the selected preset");
-    auto resetButton = BSML::Lite::CreateUIButton(buttons3, "Reset", SettingsFlowCoordinator::ResetPreset);
+    auto resetButton = BSML::Lite::CreateUIButton(buttons3, "Reset", [this]() { resetModal->Show(true, true, nullptr); });
     Utils::SetLayoutSize(resetButton, 24, 8);
     BSML::Lite::AddHoverHint(resetButton, "Reset the selected preset to the default HUD");
 
@@ -511,15 +511,15 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
     auto text1 = BSML::Lite::CreateText(modalLayout1, warningString, {0, 0}, {50, 13});
     text1->alignment = TMPro::TextAlignmentOptions::Bottom;
 
-    auto modalButtons = BSML::Lite::CreateHorizontalLayoutGroup(modalLayout1);
-    modalButtons->GetComponent<UI::LayoutElement*>()->preferredHeight = 9;
-    modalButtons->spacing = 3;
-    BSML::Lite::CreateUIButton(modalButtons, "Continue", SettingsFlowCoordinator::OnModalConfirm);
-    BSML::Lite::CreateUIButton(modalButtons, "Save And Continue", []() {
+    auto modalButtons1 = BSML::Lite::CreateHorizontalLayoutGroup(modalLayout1);
+    modalButtons1->GetComponent<UI::LayoutElement*>()->preferredHeight = 9;
+    modalButtons1->spacing = 3;
+    BSML::Lite::CreateUIButton(modalButtons1, "Continue", SettingsFlowCoordinator::OnModalConfirm);
+    BSML::Lite::CreateUIButton(modalButtons1, "Save And Continue", []() {
         SettingsFlowCoordinator::Save();
         SettingsFlowCoordinator::OnModalConfirm();
     });
-    BSML::Lite::CreateUIButton(modalButtons, "Cancel", SettingsFlowCoordinator::OnModalCancel);
+    BSML::Lite::CreateUIButton(modalButtons1, "Cancel", SettingsFlowCoordinator::OnModalCancel);
 
     nameModal = BSML::Lite::CreateModal(this, {95, 20}, nullptr);
     auto modalLayout2 = BSML::Lite::CreateVerticalLayoutGroup(nameModal);
@@ -541,6 +541,44 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
         else
             SettingsFlowCoordinator::DuplicatePreset(val);
     };
+
+    deleteModal = BSML::Lite::CreateModal(this, {72, 25}, SettingsFlowCoordinator::OnModalCancel);
+    auto modalLayout3 = BSML::Lite::CreateVerticalLayoutGroup(deleteModal);
+    modalLayout3->childControlHeight = false;
+    modalLayout3->childForceExpandHeight = true;
+    modalLayout3->spacing = 1;
+
+    auto deleteString = "Are you sure you would like to delete this preset?\nThis action cannot be undone.";
+    auto text3 = BSML::Lite::CreateText(modalLayout3, deleteString, {0, 0}, {50, 13});
+    text3->alignment = TMPro::TextAlignmentOptions::Bottom;
+
+    auto modalButtons2 = BSML::Lite::CreateHorizontalLayoutGroup(modalLayout3);
+    modalButtons2->GetComponent<UI::LayoutElement*>()->preferredHeight = 9;
+    modalButtons2->spacing = 3;
+    BSML::Lite::CreateUIButton(modalButtons2, "Delete", [this]() {
+        deleteModal->Hide(true, nullptr);
+        SettingsFlowCoordinator::DeletePreset();
+    });
+    BSML::Lite::CreateUIButton(modalButtons2, "Cancel", [this]() { deleteModal->Hide(true, nullptr); });
+
+    resetModal = BSML::Lite::CreateModal(this, {72, 25}, SettingsFlowCoordinator::OnModalCancel);
+    auto modalLayout4 = BSML::Lite::CreateVerticalLayoutGroup(resetModal);
+    modalLayout4->childControlHeight = false;
+    modalLayout4->childForceExpandHeight = true;
+    modalLayout4->spacing = 1;
+
+    auto resetString = "Are you sure you would like to reset this preset?\nThis action cannot be undone.";
+    auto text4 = BSML::Lite::CreateText(modalLayout4, resetString, {0, 0}, {50, 13});
+    text4->alignment = TMPro::TextAlignmentOptions::Bottom;
+
+    auto modalButtons3 = BSML::Lite::CreateHorizontalLayoutGroup(modalLayout4);
+    modalButtons3->GetComponent<UI::LayoutElement*>()->preferredHeight = 9;
+    modalButtons3->spacing = 3;
+    BSML::Lite::CreateUIButton(modalButtons3, "Reset", [this]() {
+        resetModal->Hide(true, nullptr);
+        SettingsFlowCoordinator::ResetPreset();
+    });
+    BSML::Lite::CreateUIButton(modalButtons3, "Cancel", [this]() { resetModal->Hide(true, nullptr); });
 
     uiInitialized = true;
     UpdateUI();
