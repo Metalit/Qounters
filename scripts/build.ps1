@@ -27,5 +27,8 @@ if (($clean.IsPresent) -or (-not (Test-Path -Path "build"))) {
     new-item -Path build -ItemType Directory
 }
 
+# Uncomment this on systems with lots of cores
+# $env:CMAKE_BUILD_PARALLEL_LEVEL = 5
+
 & cmake -G "Ninja" -DCMAKE_BUILD_TYPE="RelWithDebInfo" -B build -Wno-dev
 & cmake --build ./build
