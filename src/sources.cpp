@@ -173,7 +173,7 @@ std::string Sources::Text::GetRank(UnparsedJSON unparsed) {
     if (ratio >= 0.35)
         return "C";
     if (ratio >= 0.2)
-        return "C";
+        return "D";
     return "E";
 }
 std::string Sources::Text::GetPersonalBest(UnparsedJSON unparsed) {
@@ -403,7 +403,7 @@ UnityEngine::Color Sources::Color::GetRank(UnparsedJSON unparsed) {
     if (ratio >= 0.35)
         return opts.C;
     if (ratio >= 0.2)
-        return opts.C;
+        return opts.D;
     return opts.E;
 }
 UnityEngine::Color Sources::Color::GetPersonalBest(UnparsedJSON unparsed) {
