@@ -130,8 +130,18 @@ std::string Sources::Text::GetScore(UnparsedJSON unparsed) {
         double ratio = max > 0 ? score / (double) max : 1;
         ratio *= 100;
         return Utils::FormatDecimals(ratio, opts.Decimals) + "%";
-    } else
-        return std::to_string(score);
+    } else {
+        // spaces between every three digits, and pad zeroes if below 100
+        auto number = fmt::format("{:03}", score);
+        if (score < 1000)
+            return number;
+        size_t len = number.size();
+        for (int i = 1; i <= (len - 1) / 3; i++) {
+            size_t split = len - 3 * i;
+            number = number.substr(0, split) + " " + number.substr(split);
+        }
+        return number;
+    }
 }
 std::string Sources::Text::GetRank(UnparsedJSON unparsed) {
     auto opts = unparsed.Parse<Rank>();
