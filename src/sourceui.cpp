@@ -552,6 +552,19 @@ void Sources::Color::RankUI(GameObject* parent, UnparsedJSON unparsed) {
     });
     BSML::Lite::AddHoverHint(negMods, "Include negative modifiers in the rank calculation");
 
+    auto sss = Utils::CreateColorPicker(
+        parent,
+        "SSS Color",
+        opts.SSS,
+        [](UnityEngine::Color val) {
+            static int id = Editor::GetActionId();
+            opts.SSS = val;
+            Editor::SetColorOptions(id, opts);
+        },
+        Editor::FinalizeAction
+    );
+    BSML::Lite::AddHoverHint(sss, "The color to use for SSS rank");
+
     auto ss = Utils::CreateColorPicker(
         parent,
         "SS Color",

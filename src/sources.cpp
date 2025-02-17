@@ -382,6 +382,8 @@ UnityEngine::Color Sources::Color::GetRank(UnparsedJSON unparsed) {
     int max = Game::GetMaxScore(opts.Saber);
     if (max == 0)
         return opts.SS;
+    if (score == max)
+        return opts.SSS;
 
     score *= Game::GetModifierMultiplier(true, true);
     // if "Positive Modifiers" is enabled, we want an 82% with a +10% modifier to be an SS

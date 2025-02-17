@@ -277,6 +277,8 @@ namespace Qounters::Sources {
             VALUE_DEFAULT(ConfigUtils::Color, C, ConfigUtils::Color(1, 0.5, 0, 1));
             VALUE_DEFAULT(ConfigUtils::Color, D, ConfigUtils::Color(1, 0, 0, 1));
             VALUE_DEFAULT(ConfigUtils::Color, E, ConfigUtils::Color(1, 0, 0, 1));
+            // parse after SS
+            VALUE_DEFAULT(ConfigUtils::Color, SSS, self->SS) = ConfigUtils::Color(0, 1, 1, 1);
         };
         DECLARE_JSON_STRUCT(PersonalBest) {
             VALUE_DEFAULT(ConfigUtils::Color, Better, ConfigUtils::Color(0, 1, 1, 1));
