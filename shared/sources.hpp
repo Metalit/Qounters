@@ -278,7 +278,11 @@ namespace Qounters::Sources {
             VALUE_DEFAULT(ConfigUtils::Color, D, ConfigUtils::Color(1, 0, 0, 1));
             VALUE_DEFAULT(ConfigUtils::Color, E, ConfigUtils::Color(1, 0, 0, 1));
             // parse after SS
-            VALUE_DEFAULT(ConfigUtils::Color, SSS, self->SS) = ConfigUtils::Color(0, 1, 1, 1);
+            VALUE_DEFAULT(ConfigUtils::Color, SSS, ConfigUtils::Color(0, 1, 1, 1));
+            DESERIALIZE_FUNCTION(tempDefaultSSS) {
+                if (!jsonValue.HasMember("SSS"))
+                    SSS = SS;
+            }
         };
         DECLARE_JSON_STRUCT(PersonalBest) {
             VALUE_DEFAULT(ConfigUtils::Color, Better, ConfigUtils::Color(0, 1, 1, 1));
