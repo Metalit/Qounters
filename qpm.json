@@ -5,7 +5,7 @@
   "info": {
     "name": "Qounters++",
     "id": "qounters++",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "url": "https://github.com/Metalit/QountersPlusPlus",
     "additionalData": {
       "overrideSoName": "libqountersplusplus.so"
@@ -85,7 +85,7 @@
     },
     {
       "id": "song-details",
-      "versionRange": "^0.3.1",
+      "versionRange": "^1.0.2",
       "additionalData": {}
     },
     {
