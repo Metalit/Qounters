@@ -2,11 +2,15 @@
 
 #include "bsml/shared/BSML-Lite.hpp"
 #include "editor.hpp"
+#include "metacore/shared/ui.hpp"
 #include "sources.hpp"
 #include "utils.hpp"
 
 using namespace Qounters;
+using namespace MetaCore;
 using namespace UnityEngine;
+
+#define MUI MetaCore::UI
 
 void Sources::Text::StaticUI(GameObject* parent, UnparsedJSON unparsed) {
     static Static opts;
@@ -17,14 +21,14 @@ void Sources::Text::StaticUI(GameObject* parent, UnparsedJSON unparsed) {
         opts.Input = (std::string) val;
         Editor::SetSourceOptions(id, opts);
     });
-    Utils::AddStringSettingOnClose(input, [](std::string) { Editor::FinalizeAction(); });
+    MUI::AddStringSettingOnClose(input, []() { Editor::FinalizeAction(); });
     BSML::Lite::AddHoverHint(input, "The static text to show");
 }
 void Sources::Text::ScoreUI(GameObject* parent, UnparsedJSON unparsed) {
     static Score opts;
     opts = unparsed.Parse<Score>();
 
-    auto saber = Utils::CreateDropdownEnum(parent, "Saber", opts.Saber, Options::SaberStrings, [](int val) {
+    auto saber = MUI::CreateDropdownEnum(parent, "Saber", opts.Saber, Options::SaberStrings, [](int val) {
         static int id = Editor::GetActionId();
         opts.Saber = val;
         Editor::SetSourceOptions(id, opts);
@@ -52,7 +56,7 @@ void Sources::Text::RankUI(GameObject* parent, UnparsedJSON unparsed) {
     static Rank opts;
     opts = unparsed.Parse<Rank>();
 
-    auto saber = Utils::CreateDropdownEnum(parent, "Saber", opts.Saber, Options::SaberStrings, [](int val) {
+    auto saber = MUI::CreateDropdownEnum(parent, "Saber", opts.Saber, Options::SaberStrings, [](int val) {
         static int id = Editor::GetActionId();
         opts.Saber = val;
         Editor::SetSourceOptions(id, opts);
@@ -116,7 +120,7 @@ void Sources::Text::ComboUI(GameObject* parent, UnparsedJSON unparsed) {
     static Combo opts;
     opts = unparsed.Parse<Combo>();
 
-    auto saber = Utils::CreateDropdownEnum(parent, "Saber", opts.Saber, Options::SaberStrings, [](int val) {
+    auto saber = MUI::CreateDropdownEnum(parent, "Saber", opts.Saber, Options::SaberStrings, [](int val) {
         static int id = Editor::GetActionId();
         opts.Saber = val;
         Editor::SetSourceOptions(id, opts);
@@ -172,7 +176,7 @@ void Sources::Text::AverageCutUI(GameObject* parent, UnparsedJSON unparsed) {
     static AverageCut opts;
     opts = unparsed.Parse<AverageCut>();
 
-    auto saber = Utils::CreateDropdownEnum(parent, "Saber", opts.Saber, Options::SaberStrings, [](int val) {
+    auto saber = MUI::CreateDropdownEnum(parent, "Saber", opts.Saber, Options::SaberStrings, [](int val) {
         static int id = Editor::GetActionId();
         opts.Saber = val;
         Editor::SetSourceOptions(id, opts);
@@ -188,7 +192,7 @@ void Sources::Text::AverageCutUI(GameObject* parent, UnparsedJSON unparsed) {
     });
     BSML::Lite::AddHoverHint(decimals, "The number of decimals to show");
 
-    auto part = Utils::CreateDropdownEnum(parent, "Part", opts.Part, AverageCutPartStrings, [](int val) {
+    auto part = MUI::CreateDropdownEnum(parent, "Part", opts.Part, AverageCutPartStrings, [](int val) {
         static int id = Editor::GetActionId();
         opts.Part = val;
         Editor::SetSourceOptions(id, opts);
@@ -200,7 +204,7 @@ void Sources::Text::TimeDependenceUI(UnityEngine::GameObject* parent, UnparsedJS
     static TimeDependence opts;
     opts = unparsed.Parse<TimeDependence>();
 
-    auto saber = Utils::CreateDropdownEnum(parent, "Saber", opts.Saber, Options::SaberStrings, [](int val) {
+    auto saber = MUI::CreateDropdownEnum(parent, "Saber", opts.Saber, Options::SaberStrings, [](int val) {
         static int id = Editor::GetActionId();
         opts.Saber = val;
         Editor::SetSourceOptions(id, opts);
@@ -240,7 +244,7 @@ void Sources::Text::MistakesUI(GameObject* parent, UnparsedJSON unparsed) {
     static Mistakes opts;
     opts = unparsed.Parse<Mistakes>();
 
-    auto saber = Utils::CreateDropdownEnum(parent, "Saber", opts.Saber, Options::SaberStrings, [](int val) {
+    auto saber = MUI::CreateDropdownEnum(parent, "Saber", opts.Saber, Options::SaberStrings, [](int val) {
         static int id = Editor::GetActionId();
         opts.Saber = val;
         Editor::SetSourceOptions(id, opts);
@@ -284,7 +288,7 @@ void Sources::Text::NotesUI(GameObject* parent, UnparsedJSON unparsed) {
     static Notes opts;
     opts = unparsed.Parse<Notes>();
 
-    auto saber = Utils::CreateDropdownEnum(parent, "Saber", opts.Saber, Options::SaberStrings, [](int val) {
+    auto saber = MUI::CreateDropdownEnum(parent, "Saber", opts.Saber, Options::SaberStrings, [](int val) {
         static int id = Editor::GetActionId();
         opts.Saber = val;
         Editor::SetSourceOptions(id, opts);
@@ -292,7 +296,7 @@ void Sources::Text::NotesUI(GameObject* parent, UnparsedJSON unparsed) {
     });
     BSML::Lite::AddHoverHint(saber, "The saber to show the notes value for");
 
-    auto display = Utils::CreateDropdownEnum(parent, "Display", opts.Display, NotesDisplayStrings, [](int val) {
+    auto display = MUI::CreateDropdownEnum(parent, "Display", opts.Display, NotesDisplayStrings, [](int val) {
         static int id = Editor::GetActionId();
         opts.Display = val;
         Editor::SetSourceOptions(id, opts);
@@ -304,7 +308,7 @@ void Sources::Text::PPUI(GameObject* parent, UnparsedJSON unparsed) {
     static PP opts;
     opts = unparsed.Parse<PP>();
 
-    auto source = Utils::CreateDropdownEnum(parent, "Source", opts.Leaderboard, PPLeaderboardStrings, [](int val) {
+    auto source = MUI::CreateDropdownEnum(parent, "Source", opts.Leaderboard, PPLeaderboardStrings, [](int val) {
         static int id = Editor::GetActionId();
         opts.Leaderboard = val;
         Editor::SetSourceOptions(id, opts);
@@ -324,7 +328,7 @@ void Sources::Text::SaberSpeedUI(GameObject* parent, UnparsedJSON unparsed) {
     static SaberSpeed opts;
     opts = unparsed.Parse<SaberSpeed>();
 
-    auto saber = Utils::CreateDropdownEnum(parent, "Saber", opts.Saber, Options::SaberStrings, [](int val) {
+    auto saber = MUI::CreateDropdownEnum(parent, "Saber", opts.Saber, Options::SaberStrings, [](int val) {
         static int id = Editor::GetActionId();
         opts.Saber = val;
         Editor::SetSourceOptions(id, opts);
@@ -340,7 +344,7 @@ void Sources::Text::SaberSpeedUI(GameObject* parent, UnparsedJSON unparsed) {
     });
     BSML::Lite::AddHoverHint(decimals, "The number of decimals to show");
 
-    auto mode = Utils::CreateDropdownEnum(parent, "Mode", opts.Mode, SaberSpeedModeStrings, [](int val) {
+    auto mode = MUI::CreateDropdownEnum(parent, "Mode", opts.Mode, SaberSpeedModeStrings, [](int val) {
         static int id = Editor::GetActionId();
         opts.Mode = val;
         Editor::SetSourceOptions(id, opts);
@@ -352,7 +356,7 @@ void Sources::Text::SpinometerUI(GameObject* parent, UnparsedJSON unparsed) {
     static Spinometer opts;
     opts = unparsed.Parse<Spinometer>();
 
-    auto saber = Utils::CreateDropdownEnum(parent, "Saber", opts.Saber, Options::SaberStrings, [](int val) {
+    auto saber = MUI::CreateDropdownEnum(parent, "Saber", opts.Saber, Options::SaberStrings, [](int val) {
         static int id = Editor::GetActionId();
         opts.Saber = val;
         Editor::SetSourceOptions(id, opts);
@@ -360,7 +364,7 @@ void Sources::Text::SpinometerUI(GameObject* parent, UnparsedJSON unparsed) {
     });
     BSML::Lite::AddHoverHint(saber, "The saber to show the angular velocity of");
 
-    auto mode = Utils::CreateDropdownEnum(parent, "Mode", opts.Mode, SpinometerModeStrings, [](int val) {
+    auto mode = MUI::CreateDropdownEnum(parent, "Mode", opts.Mode, SpinometerModeStrings, [](int val) {
         static int id = Editor::GetActionId();
         opts.Mode = val;
         Editor::SetSourceOptions(id, opts);
@@ -372,7 +376,7 @@ void Sources::Text::FCPercentUI(GameObject* parent, UnparsedJSON unparsed) {
     static FCPercent opts;
     opts = unparsed.Parse<FCPercent>();
 
-    auto saber = Utils::CreateDropdownEnum(parent, "Saber", opts.Saber, Options::SaberStrings, [](int val) {
+    auto saber = MUI::CreateDropdownEnum(parent, "Saber", opts.Saber, Options::SaberStrings, [](int val) {
         static int id = Editor::GetActionId();
         opts.Saber = val;
         Editor::SetSourceOptions(id, opts);
@@ -407,7 +411,7 @@ void Sources::Shape::StaticUI(GameObject* parent, UnparsedJSON unparsed) {
         opts.Input = val;
         Editor::SetSourceOptions(id, opts);
     });
-    Utils::AddSliderEndDrag(slider, [](float) { Editor::FinalizeAction(); });
+    MUI::AddSliderEndDrag(slider, [](float) { Editor::FinalizeAction(); });
     slider->GetComponent<RectTransform*>()->sizeDelta = {0, 8};
     BSML::Lite::AddHoverHint(slider, "The static fill level to use");
 }
@@ -415,7 +419,7 @@ void Sources::Shape::ScoreUI(GameObject* parent, UnparsedJSON unparsed) {
     static Score opts;
     opts = unparsed.Parse<Score>();
 
-    auto saber = Utils::CreateDropdownEnum(parent, "Saber", opts.Saber, Options::SaberStrings, [](int val) {
+    auto saber = MUI::CreateDropdownEnum(parent, "Saber", opts.Saber, Options::SaberStrings, [](int val) {
         static int id = Editor::GetActionId();
         opts.Saber = val;
         Editor::SetSourceOptions(id, opts);
@@ -447,7 +451,7 @@ void Sources::Shape::AverageCutUI(GameObject* parent, UnparsedJSON unparsed) {
     static AverageCut opts;
     opts = unparsed.Parse<AverageCut>();
 
-    auto saber = Utils::CreateDropdownEnum(parent, "Saber", opts.Saber, Options::SaberStrings, [](int val) {
+    auto saber = MUI::CreateDropdownEnum(parent, "Saber", opts.Saber, Options::SaberStrings, [](int val) {
         static int id = Editor::GetActionId();
         opts.Saber = val;
         Editor::SetSourceOptions(id, opts);
@@ -455,7 +459,7 @@ void Sources::Shape::AverageCutUI(GameObject* parent, UnparsedJSON unparsed) {
     });
     BSML::Lite::AddHoverHint(saber, "The saber to use the average cut of");
 
-    auto part = Utils::CreateDropdownEnum(parent, "Part", opts.Part, AverageCutPartStrings, [](int val) {
+    auto part = MUI::CreateDropdownEnum(parent, "Part", opts.Part, AverageCutPartStrings, [](int val) {
         static int id = Editor::GetActionId();
         opts.Part = val;
         Editor::SetSourceOptions(id, opts);
@@ -467,7 +471,7 @@ void Sources::Shape::NotesUI(GameObject* parent, UnparsedJSON unparsed) {
     static Notes opts;
     opts = unparsed.Parse<Notes>();
 
-    auto saber = Utils::CreateDropdownEnum(parent, "Saber", opts.Saber, Options::SaberStrings, [](int val) {
+    auto saber = MUI::CreateDropdownEnum(parent, "Saber", opts.Saber, Options::SaberStrings, [](int val) {
         static int id = Editor::GetActionId();
         opts.Saber = val;
         Editor::SetSourceOptions(id, opts);
@@ -516,7 +520,7 @@ void Sources::Color::PlayerUI(GameObject* parent, UnparsedJSON unparsed) {
     static Player opts;
     opts = unparsed.Parse<Player>();
 
-    auto setting = Utils::CreateDropdownEnum(parent, "Color Setting", opts.Setting, ColorSettingsStrings, [](int val) {
+    auto setting = MUI::CreateDropdownEnum(parent, "Color Setting", opts.Setting, ColorSettingsStrings, [](int val) {
         static int id = Editor::GetActionId();
         opts.Setting = val;
         Editor::SetColorOptions(id, opts);
@@ -528,7 +532,7 @@ void Sources::Color::RankUI(GameObject* parent, UnparsedJSON unparsed) {
     static Rank opts;
     opts = unparsed.Parse<Rank>();
 
-    auto saber = Utils::CreateDropdownEnum(parent, "Saber", opts.Saber, Options::SaberStrings, [](int val) {
+    auto saber = MUI::CreateDropdownEnum(parent, "Saber", opts.Saber, Options::SaberStrings, [](int val) {
         static int id = Editor::GetActionId();
         opts.Saber = val;
         Editor::SetColorOptions(id, opts);
@@ -690,7 +694,7 @@ void Sources::Color::ComboUI(GameObject* parent, UnparsedJSON unparsed) {
     static Combo opts;
     opts = unparsed.Parse<Combo>();
 
-    auto saber = Utils::CreateDropdownEnum(parent, "Saber", opts.Saber, Options::SaberStrings, [](int val) {
+    auto saber = MUI::CreateDropdownEnum(parent, "Saber", opts.Saber, Options::SaberStrings, [](int val) {
         static int id = Editor::GetActionId();
         opts.Saber = val;
         Editor::SetColorOptions(id, opts);
@@ -841,7 +845,7 @@ void Sources::Enable::RankedUI(UnityEngine::GameObject* parent, UnparsedJSON unp
     static Ranked opts;
     opts = unparsed.Parse<Ranked>();
 
-    auto leaderboard = Utils::CreateDropdownEnum(parent, "Leaderboard", opts.Leaderboard, RankedStatusLeaderboardStrings, [](int val) {
+    auto leaderboard = MUI::CreateDropdownEnum(parent, "Leaderboard", opts.Leaderboard, RankedStatusLeaderboardStrings, [](int val) {
         static int id = Editor::GetActionId();
         opts.Leaderboard = val;
         Editor::SetEnableOptions(id, opts);
@@ -853,7 +857,7 @@ void Sources::Enable::FullComboUI(UnityEngine::GameObject* parent, UnparsedJSON 
     static FullCombo opts;
     opts = unparsed.Parse<FullCombo>();
 
-    auto saber = Utils::CreateDropdownEnum(parent, "Saber", opts.Saber, Options::SaberStrings, [](int val) {
+    auto saber = MUI::CreateDropdownEnum(parent, "Saber", opts.Saber, Options::SaberStrings, [](int val) {
         static int id = Editor::GetActionId();
         opts.Saber = val;
         Editor::SetEnableOptions(id, opts);
@@ -870,11 +874,11 @@ void Sources::Enable::PercentageUI(UnityEngine::GameObject* parent, UnparsedJSON
         opts.Percent = val;
         Editor::SetSourceOptions(id, opts);
     });
-    Utils::AddSliderEndDrag(slider, [](float) { Editor::FinalizeAction(); });
+    MUI::AddSliderEndDrag(slider, [](float) { Editor::FinalizeAction(); });
     slider->GetComponent<RectTransform*>()->sizeDelta = {0, 8};
     BSML::Lite::AddHoverHint(slider, "The percentage the score must be above");
 
-    auto saber = Utils::CreateDropdownEnum(parent, "Saber", opts.Saber, Options::SaberStrings, [](int val) {
+    auto saber = MUI::CreateDropdownEnum(parent, "Saber", opts.Saber, Options::SaberStrings, [](int val) {
         static int id = Editor::GetActionId();
         opts.Saber = val;
         Editor::SetEnableOptions(id, opts);

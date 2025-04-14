@@ -21,9 +21,6 @@ namespace Qounters::API {
     void SetEnableOptions(int actionId, UnparsedJSON options);
     void FinalizeAction();
 
-    void AddSliderEndDrag(BSML::SliderSetting* slider, std::function<void(float)> onEndDrag);
-    void AddStringSettingOnClose(HMUI::InputFieldView* input, std::function<void(std::string)> onKeyboardClosed);
-
     BSML::ColorSetting* CreateColorPicker(
         UnityEngine::GameObject* parent,
         std::string name,
@@ -31,6 +28,8 @@ namespace Qounters::API {
         std::function<void(UnityEngine::Color)> onChange,
         std::function<void()> onClose
     );
+
+    float GetPlaytestPB();
 
     bool InSettings();
 }

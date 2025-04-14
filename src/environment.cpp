@@ -1,6 +1,5 @@
 #include "environment.hpp"
 
-#include "BeatSaber/GameSettings/GraphicSettingsHandler.hpp"
 #include "BeatmapDataLoaderVersion4/BeatmapDataLoader.hpp"
 #include "BeatmapSaveDataVersion3/BpmChangeEventData.hpp"
 #include "BeatmapSaveDataVersion4/LightshowSaveData.hpp"
@@ -12,6 +11,7 @@
 #include "GlobalNamespace/BeatmapLevel.hpp"
 #include "GlobalNamespace/BeatmapLevelExtensions.hpp"
 #include "GlobalNamespace/BeatmapLevelSO.hpp"
+#include "GlobalNamespace/BeatmapLightEventConverterNoConvert.hpp"
 #include "GlobalNamespace/BpmTimeProcessor.hpp"
 #include "GlobalNamespace/ColorSchemeSO.hpp"
 #include "GlobalNamespace/ColorSchemesSettings.hpp"
@@ -65,12 +65,14 @@
 #include "customtypes/components.hpp"
 #include "customtypes/settings.hpp"
 #include "editor.hpp"
-#include "internals.hpp"
 #include "main.hpp"
+#include "metacore/shared/internals.hpp"
+#include "metacore/shared/unity.hpp"
 #include "qounters.hpp"
 #include "utils.hpp"
 
 using namespace Qounters;
+using namespace MetaCore;
 using namespace GlobalNamespace;
 using namespace UnityEngine;
 
@@ -191,7 +193,7 @@ static void PresentMultiplayer(SimpleLevelStarter* levelStarter, bool refresh, B
         levelStarter->_playerDataModel->playerData->playerSpecificSettings,
         nullptr,
         levelStarter->_menuTransitionsHelper->_audioClipAsyncLoader,
-        levelStarter->_menuTransitionsHelper->_graphicSettingsHandler->_currentPreset,
+        levelStarter->_menuTransitionsHelper->_settingsManager,
         levelStarter->_menuTransitionsHelper->_beatmapDataLoader,
         false
     );
@@ -206,10 +208,11 @@ static void PresentSingleplayer(SimpleLevelStarter* levelStarter, bool refresh, 
     auto setupData = levelStarter->_menuTransitionsHelper->_standardLevelScenesTransitionSetupData;
     setupData->Init(
         "Settings",
-        diff,
+        byref(diff),
         level,
         nullptr,
         colors,
+        true,
         nullptr,
         levelStarter->_gameplayModifiers,
         levelStarter->_playerDataModel->playerData->playerSpecificSettings,
@@ -217,9 +220,10 @@ static void PresentSingleplayer(SimpleLevelStarter* levelStarter, bool refresh, 
         levelStarter->_environmentsListModel,
         levelStarter->_menuTransitionsHelper->_audioClipAsyncLoader,
         levelStarter->_menuTransitionsHelper->_beatmapDataLoader,
-        levelStarter->_menuTransitionsHelper->_graphicSettingsHandler->_currentPreset,
+        levelStarter->_menuTransitionsHelper->_settingsManager,
         "",
         levelStarter->_menuTransitionsHelper->_beatmapLevelsModel,
+        levelStarter->_menuTransitionsHelper->_beatmapLevelsEntitlementModel,
         false,
         false,
         System::Nullable_1<RecordingToolManager::SetupData>()
@@ -330,7 +334,7 @@ void Environment::UpdateSaberColors() {
     auto sabers = localPlayer->GetComponentsInChildren<SaberModelController*>();
     for (auto& saber : sabers) {
         if (auto container = saber->GetComponentInParent<SaberModelContainer*>()) {
-            saber->Init(container->transform, container->_saber);
+            saber->Init(container->transform, container->_saber, container->_initData->trailTintColor);
             if (auto ree = container->transform->Find("ReeSaber")) {
                 ree->gameObject->active = false;
                 ree->gameObject->active = true;
@@ -357,9 +361,10 @@ void Environment::RunLightingEvents() {
             );
             auto envKeywords = EnvironmentKeywords::New_ctor(currentEnvironment->environmentKeywords);
             auto envLightGroups = currentEnvironment->environmentLightGroups;
+            auto converter = BeatmapLightEventConverterNoConvert::New_ctor()->i___GlobalNamespace__IBeatmapLightEventConverter();
 
             BeatmapDataLoaderVersion4::BeatmapDataLoader::LoadLightshow(
-                lightShowBeatmapData, lightShowSaveData, bpmTimeProcessor, envKeywords, envLightGroups
+                lightShowBeatmapData, lightShowSaveData, bpmTimeProcessor, envKeywords, envLightGroups, converter
             );
         } else
             DefaultEnvironmentEventsFactory::InsertDefaultEvents(lightShowBeatmapData);
@@ -402,11 +407,11 @@ static void OnMultiplayerSceneStart(MultiplayerController* multiplayerController
     objects->Find("MultiplayerLocalActivePlayerInGameMenuViewController")->gameObject->active = false;
     auto enabled = EnabledGameplayObjects;
     enabled.emplace("BeatmapObjectSpawnController");
-    Utils::DisableAllBut(objects->Find("GameplayCore"), enabled);
+    Engine::DisableAllBut(objects->Find("GameplayCore"), enabled);
 
     localPlayer = objects->Find("LocalPlayerGameCore")->gameObject;
     localPlayer->active = false;
-    Utils::FindRecursive(localPlayer->transform, "MainCamera")->gameObject->active = false;
+    Engine::FindRecursive(localPlayer->transform, "MainCamera")->gameObject->active = false;
 }
 
 void Environment::OnSceneStart() {
@@ -426,17 +431,17 @@ void Environment::OnSceneStart() {
         auto transform = gameplay->transform;
         auto enabled = EnabledGameplayObjects;
         enabled.emplace("LocalPlayerGameCore");
-        Utils::DisableAllBut(transform, enabled);
+        Engine::DisableAllBut(transform, enabled);
         // disable local player, but not recursively
         localPlayer = transform->Find("LocalPlayerGameCore")->gameObject;
         localPlayer->active = false;
-        Utils::FindRecursive(localPlayer->transform, "MainCamera")->gameObject->active = false;
+        Engine::FindRecursive(localPlayer->transform, "MainCamera")->gameObject->active = false;
     }
 
     auto newInput = Utils::GetCurrentInputModule();
     logger.debug("found input module {} (old was {})", fmt::ptr(newInput), fmt::ptr(vrInput));
     if (newInput && newInput != vrInput) {
-        keyboardManager->_vrInputModule = newInput;
+        keyboardManager->_vrInputModule = newInput->i___GlobalNamespace__IVRInputModule();
         keyboardManager->Start();
         vrInput->gameObject->active = false;
         vrInput->eventSystem->gameObject->active = false;
@@ -494,9 +499,9 @@ void Environment::OnSceneEnd() {
     vrInput->eventSystem->gameObject->active = true;
     vrInput->_vrPointer->_leftVRController->gameObject->active = true;
     vrInput->_vrPointer->_rightVRController->gameObject->active = true;
-    if (keyboardManager->_vrInputModule.ptr() != vrInput) {
+    if (keyboardManager->_vrInputModule != vrInput->i___GlobalNamespace__IVRInputModule()) {
         keyboardManager->OnDestroy();
-        keyboardManager->_vrInputModule = vrInput;
+        keyboardManager->_vrInputModule = vrInput->i___GlobalNamespace__IVRInputModule();
     }
     menuEnv->active = true;
     Object::FindObjectOfType<FadeInOutController*>()->FadeIn();

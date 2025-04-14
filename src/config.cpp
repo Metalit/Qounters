@@ -7,6 +7,7 @@
 #include "customtypes/settings.hpp"
 #include "editor.hpp"
 #include "main.hpp"
+#include "metacore/shared/ui.hpp"
 #include "options.hpp"
 #include "qounters.hpp"
 #include "sources.hpp"
@@ -14,7 +15,11 @@
 #include "utils.hpp"
 
 using namespace Qounters;
+using namespace MetaCore;
 using namespace UnityEngine;
+
+#define MUI MetaCore::UI
+#define UUI UnityEngine::UI
 
 std::vector<std::string_view> const Options::SaberStrings = {
     "Left",
@@ -62,10 +67,10 @@ std::vector<std::string_view> const Options::BaseGameObjectStrings = {
 
 void Options::CreateTextUI(GameObject* parent, Text const& options) {
     static BSML::DropdownListSetting* sourceDropdown;
-    static UI::VerticalLayoutGroup* sourceOptions;
+    static UUI::VerticalLayoutGroup* sourceOptions;
     static bool collapseOpen = true;
 
-    auto align = Utils::CreateDropdownEnum(parent, "Align", options.Align, AlignStrings, [](int val) {
+    auto align = MUI::CreateDropdownEnum(parent, "Align", options.Align, AlignStrings, [](int val) {
         static int id = Editor::GetActionId();
         auto opts = Editor::GetOptions<Text>(id);
         opts.Align = val;
@@ -94,7 +99,7 @@ void Options::CreateTextUI(GameObject* parent, Text const& options) {
 
     auto sourceCollapse = Utils::CreateCollapseArea(parent, "Text Source Options", collapseOpen, Copies::TextSource);
 
-    sourceDropdown = Utils::CreateDropdown(parent, "Text Source", options.TextSource, Utils::GetKeys(Sources::texts), [parent](std::string val) {
+    sourceDropdown = MUI::CreateDropdown(parent, "Text Source", options.TextSource, Utils::GetKeys(Sources::texts), [parent](std::string val) {
         static int id = Editor::GetActionId();
         auto opts = Editor::GetOptions<Text>(id);
         if (val == opts.TextSource)
@@ -121,10 +126,10 @@ void Options::CreateTextUI(GameObject* parent, Text const& options) {
 void Options::CreateShapeUI(GameObject* parent, Shape const& options) {
     static BSML::IncrementSetting* borderIncrement;
     static BSML::DropdownListSetting* sourceDropdown;
-    static UI::VerticalLayoutGroup* sourceOptions;
+    static UUI::VerticalLayoutGroup* sourceOptions;
     static bool collapseOpen = false;
 
-    auto shape = Utils::CreateDropdownEnum(parent, "Shape", options.Shape, ShapeStrings, [](int val) {
+    auto shape = MUI::CreateDropdownEnum(parent, "Shape", options.Shape, ShapeStrings, [](int val) {
         borderIncrement->gameObject->active = Shape::IsOutline(val);
         Qounters::OptionsViewController::UpdateScrollViewStatic();
         static int id = Editor::GetActionId();
@@ -147,7 +152,7 @@ void Options::CreateShapeUI(GameObject* parent, Shape const& options) {
 
     auto fillCollapse = Utils::CreateCollapseArea(parent, "Fill Options", collapseOpen, Copies::Fill);
 
-    auto directionDropdown = Utils::CreateDropdownEnum(parent, "Fill Direction", options.Fill, FillStrings, [](int val) {
+    auto directionDropdown = MUI::CreateDropdownEnum(parent, "Fill Direction", options.Fill, FillStrings, [](int val) {
         static int id = Editor::GetActionId();
         auto opts = Editor::GetOptions<Shape>(id);
         opts.Fill = val;
@@ -165,7 +170,7 @@ void Options::CreateShapeUI(GameObject* parent, Shape const& options) {
     });
     BSML::Lite::AddHoverHint(inverseToggle, "Inverse the direction of the fill of this counter");
 
-    sourceDropdown = Utils::CreateDropdown(parent, "Fill Source", options.FillSource, Utils::GetKeys(Sources::shapes), [parent](std::string val) {
+    sourceDropdown = MUI::CreateDropdown(parent, "Fill Source", options.FillSource, Utils::GetKeys(Sources::shapes), [parent](std::string val) {
         static int id = Editor::GetActionId();
         auto opts = Editor::GetOptions<Shape>(id);
         if (opts.FillSource != val) {
@@ -197,7 +202,7 @@ void Options::CreateImageUI(GameObject* parent, Image const& options) {
     auto currentSprite = ImageSpriteCache::GetSprite(options.Path);
 
     constexpr int width =
-        SpritesListCell::cellSize * SpritesListCell::imagesPerCell + SpritesListCell::imageSpacing * (SpritesListCell::imagesPerCell - 1);
+        SpritesListCell::CellSize * SpritesListCell::ImagesPerCell + SpritesListCell::ImageSpacing * (SpritesListCell::ImagesPerCell - 1);
     Vector2 listSize = {width, 60};
     modal = BSML::Lite::CreateModal(parent, Vector2::op_Addition(listSize, {5, 0}), nullptr);
     modal->moveToCenter = true;
@@ -218,14 +223,14 @@ void Options::CreateImageUI(GameObject* parent, Image const& options) {
     rect->anchorMin = {0.5, 0.5};
     rect->anchorMax = {0.5, 0.5};
     rect->sizeDelta = listSize;
-    rect->GetComponent<UI::ContentSizeFitter*>()->horizontalFit = UI::ContentSizeFitter::FitMode::Unconstrained;
+    rect->GetComponent<UUI::ContentSizeFitter*>()->horizontalFit = UUI::ContentSizeFitter::FitMode::Unconstrained;
 
     auto horizontal = BSML::Lite::CreateHorizontalLayoutGroup(parent);
     horizontal->spacing = 5;
 
     currentImage = BSML::Lite::CreateImage(horizontal, currentSprite);
     currentImage->preserveAspect = true;
-    Utils::SetLayoutSize(currentImage, -1, 10);
+    MUI::SetLayoutSize(currentImage, -1, 10);
 
     auto imageButton = BSML::Lite::CreateUIButton(horizontal, "Select Image", []() { modal->Show(); });
     BSML::Lite::AddHoverHint(imageButton, "Select the image for this counter");
@@ -238,7 +243,7 @@ void Options::CreatePremadeUI(GameObject* parent, Premade const& options) {
             names.emplace_back(info.name);
     }
 
-    auto objectDropdown = Utils::CreateDropdown(parent, "Object", options.Name, names, [](std::string val) {
+    auto objectDropdown = MUI::CreateDropdown(parent, "Object", options.Name, names, [](std::string val) {
         static int id = Editor::GetActionId();
         auto opts = Editor::GetOptions<Premade>(id);
         opts.Name = val;
@@ -274,7 +279,7 @@ void Options::CreateTypeUI(Transform* parent, int type, Component::OptionsTypes 
             break;
     }
 
-    Utils::SetChildrenWidth(parent, parent->GetComponent<UI::LayoutElement*>()->preferredWidth);
+    MUI::SetChildrenWidth(parent, parent->GetComponent<UUI::LayoutElement*>()->preferredWidth);
 }
 
 static Options::Group GetScoreGroup() {

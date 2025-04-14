@@ -9,16 +9,21 @@
 #include "customtypes/editing.hpp"
 #include "editor.hpp"
 #include "environment.hpp"
-#include "internals.hpp"
 #include "main.hpp"
+#include "metacore/shared/ui.hpp"
+#include "metacore/shared/unity.hpp"
 #include "options.hpp"
 #include "sources.hpp"
 #include "utils.hpp"
 
 using namespace Qounters;
+using namespace MetaCore;
 using namespace UnityEngine;
 
-static void DisableGradient(UI::Graphic* component) {
+#define MUI MetaCore::UI
+#define UUI UnityEngine::UI
+
+static void DisableGradient(UUI::Graphic* component) {
     if (auto image = Utils::ptr_cast<HMUI::ImageView>(component)) {
         image->gradient = false;
     } else if (auto shape = Utils::ptr_cast<Shape>(component)) {
@@ -30,7 +35,7 @@ static void DisableGradient(UI::Graphic* component) {
     }
 }
 
-static void SetGradient(UI::Graphic* component, Options::Gradient const& options) {
+static void SetGradient(UUI::Graphic* component, Options::Gradient const& options) {
     auto& startHsvMod = options.StartModifierHSV;
     auto& endHsvMod = options.EndModifierHSV;
     float h, s, v;
@@ -50,7 +55,7 @@ static void SetGradient(UI::Graphic* component, Options::Gradient const& options
         shape->endColor = endColor;
         shape->SetVerticesDirty();
     } else if (auto text = Utils::ptr_cast<TMPro::TextMeshProUGUI>(component)) {
-        auto gradient = Utils::GetOrAddComponent<TextGradient*>(text);
+        auto gradient = Engine::GetOrAddComponent<TextGradient*>(text);
         gradient->gradientDirection = options.Direction;
         gradient->startColor = startColor;
         gradient->endColor = endColor;
@@ -63,7 +68,7 @@ static void SetGradient(UI::Graphic* component, Options::Gradient const& options
 
 static std::map<std::string, std::vector<std::pair<TMPro::TextMeshProUGUI*, UnparsedJSON>>> texts;
 static std::map<std::string, std::vector<std::pair<Shape*, UnparsedJSON>>> shapes;
-static std::map<std::string, std::vector<std::pair<UI::Graphic*, std::pair<UnparsedJSON, Options::Gradient>>>> colors;
+static std::map<std::string, std::vector<std::pair<UUI::Graphic*, std::pair<UnparsedJSON, Options::Gradient>>>> colors;
 static std::map<std::string, std::vector<std::pair<GameObject*, std::pair<UnparsedJSON, bool>>>> enables;
 
 template <class TComp, class TOpts>
@@ -105,7 +110,7 @@ static void RemoveFromMap(std::map<std::string, std::vector<std::pair<TComp, TOp
     }
 }
 
-static void AddEditingComponent(UI::Graphic* component, int componentIndex) {
+static void AddEditingComponent(UUI::Graphic* component, int componentIndex) {
     auto edit = component->gameObject->AddComponent<EditingComponent*>();
     edit->Init(component, componentIndex);
     Editor::RegisterEditingComponent(edit, edit->GetEditingGroup()->GetGroupIdx(), componentIndex);
@@ -202,7 +207,7 @@ static PremadeParent* UpdatePremadeOptions(PremadeParent* premade, Options::Comp
             premade->graphic = nullptr;
             creation = true;
         } else
-            info->update(premade->GetGraphic()->GetComponent<UI::Graphic*>(), options.Options);
+            info->update(premade->GetGraphic()->GetComponent<UUI::Graphic*>(), options.Options);
     }
     if (creation)
         premade->graphic = info->creation(premade->gameObject, options.Options);
@@ -228,7 +233,7 @@ void HUD::UpdateComponentOptions(int componentType, UnityEngine::Component* comp
 }
 
 static void
-UpdateColorOptions(UI::Graphic* component, std::string colorSource, UnparsedJSON options, Options::Gradient gradientOptions, bool creation) {
+UpdateColorOptions(UUI::Graphic* component, std::string colorSource, UnparsedJSON options, Options::Gradient gradientOptions, bool creation) {
     auto sourceFn = Sources::GetSource(Sources::colors, colorSource).first;
     if (!sourceFn)
         return;
@@ -242,7 +247,7 @@ UpdateColorOptions(UI::Graphic* component, std::string colorSource, UnparsedJSON
     UpdatePair(colors, component, colorSource, {options, gradientOptions}, creation);
 }
 
-void HUD::UpdateComponentColor(UI::Graphic* component, std::string newSource, UnparsedJSON newOptions, Options::Gradient gradientOptions) {
+void HUD::UpdateComponentColor(UUI::Graphic* component, std::string newSource, UnparsedJSON newOptions, Options::Gradient gradientOptions) {
     UpdateColorOptions(component, newSource, newOptions, gradientOptions, false);
 }
 
@@ -407,11 +412,11 @@ static std::map<HUD::Type, std::map<Options::Group::Anchors, std::tuple<std::str
 static RectTransform* GetCanvas(std::string parentName, Transform* hud, Vector3 fallback, Vector3 fallbackRot) {
     static ConstString name("QountersCanvas");
 
-    auto parent = Utils::FindRecursive(hud, parentName);
+    auto parent = Engine::FindRecursive(hud, parentName);
     if (!parent && !parentName.starts_with("Qounters")) {
         logger.info("Failed to find parent {}!", parentName);
         parentName = "Qounters" + parentName;
-        parent = Utils::FindRecursive(hud, parentName);
+        parent = Engine::FindRecursive(hud, parentName);
     }
     if (!parent) {
         logger.info("Creating custom parent object {}", parentName);
@@ -426,7 +431,7 @@ static RectTransform* GetCanvas(std::string parentName, Transform* hud, Vector3 
 
     auto canvas = BSML::Lite::CreateCanvas();
     canvas->name = name;
-    Utils::SetCanvasSorting(canvas, 0);
+    MUI::SetCanvasSorting(canvas, 0);
 
     auto ret = canvas->GetComponent<RectTransform*>();
     ret->localScale = {0.02, 0.02, 0.02};
@@ -466,7 +471,7 @@ Transform* HUD::GetAnchor(int anchor) {
 void HUD::CreateQounterComponent(Options::Component const& qounterComponent, int componentIdx, Transform* parent, bool editing) {
     logger.debug("Creating qounter component of type {}", qounterComponent.Type);
 
-    UI::Graphic* component;
+    UUI::Graphic* component;
 
     switch ((Options::Component::Types) qounterComponent.Type) {
         case Options::Component::Types::Text: {
@@ -516,7 +521,7 @@ void HUD::CreateQounterGroup(Options::Group const& qounterGroup, int groupIdx, b
 
     auto parent = BSML::Lite::CreateCanvas();
     parent->name = "QounterGroup";
-    Utils::SetCanvasSorting(parent, 0);
+    MUI::SetCanvasSorting(parent, 0);
     auto parentTransform = parent->GetComponent<RectTransform*>();
     parentTransform->localScale = {1, 1, 1};
 
@@ -535,8 +540,8 @@ void HUD::CreateQounterGroup(Options::Group const& qounterGroup, int groupIdx, b
 static Options::Preset GetPreset() {
     auto presets = getConfig().Presets.GetValue();
 
-    if (Internals::environment) {
-        std::string serializedName = Internals::environment->serializedName;
+    if (Internals::environment()) {
+        std::string serializedName = Internals::environment()->serializedName;
         auto specificPresets = getConfig().SpecificPresets.GetValue();
         if (specificPresets.contains(serializedName) && specificPresets[serializedName].Enabled) {
             auto ret = specificPresets[serializedName].Preset;
@@ -546,7 +551,7 @@ static Options::Preset GetPreset() {
             specificPresets[serializedName].Preset = presets.begin()->first;
         }
 
-        std::string hudTypeString = std::to_string((int) Environment::GetHUDType(Internals::environment->serializedName));
+        std::string hudTypeString = std::to_string((int) Environment::GetHUDType(Internals::environment()->serializedName));
         auto typePresets = getConfig().TypePresets.GetValue();
         if (typePresets.contains(hudTypeString) && typePresets[hudTypeString].Enabled) {
             auto ret = typePresets[hudTypeString].Preset;
@@ -568,7 +573,7 @@ static Options::Preset GetPreset() {
 void HUD::CreateQounters() {
     if (GetHUD().second == HUD::Type::Unsupported)
         return;
-    if (getConfig().Noodle.GetValue() && !Utils::GetSimplifiedRequirements(Internals::beatmapKey).empty())
+    if (getConfig().Noodle.GetValue() && !Utils::GetSimplifiedRequirements(Internals::beatmapKey()).empty())
         return;
 
     auto preset = GetPreset();
@@ -596,7 +601,7 @@ void HUD::SetupObjects() {
 
     for (int i = 0; i <= (int) Options::Group::Anchors::AnchorMax; i++)
         GetAnchor(i);
-    Utils::DisableAllBut(hud, {"QountersCanvas", "EnergyPanel"});
+    Engine::DisableAllBut(hud, {"QountersCanvas", "EnergyPanel"});
 }
 
 static void UpdateTexts(std::string source) {

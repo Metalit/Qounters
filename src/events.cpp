@@ -1,13 +1,14 @@
-#include "events.hpp"
+#include "metacore/shared/events.hpp"
 
 #include "config.hpp"
+#include "events.hpp"
 #include "qounters.hpp"
 #include "sources.hpp"
 
 using namespace Qounters;
 
 static std::map<int, std::vector<std::pair<Types::Sources, std::string>>> eventSourceRegistry = {
-    {(int) Events::ScoreChanged,
+    {(int) MetaCore::Events::ScoreChanged,
      {
          {Types::Sources::Text, Sources::Text::ScoreName},
          {Types::Sources::Text, Sources::Text::RankName},
@@ -18,7 +19,7 @@ static std::map<int, std::vector<std::pair<Types::Sources, std::string>>> eventS
          {Types::Sources::Color, Sources::Color::PersonalBestName},
          {Types::Sources::Enable, Sources::Enable::PercentageName},
      }},
-    {(int) Events::NoteCut,
+    {(int) MetaCore::Events::NoteCut,
      {
          {Types::Sources::Text, Sources::Text::AverageCutName},
          {Types::Sources::Text, Sources::Text::TimeDependenceName},
@@ -28,23 +29,23 @@ static std::map<int, std::vector<std::pair<Types::Sources, std::string>>> eventS
          {Types::Sources::Shape, Sources::Shape::AverageCutName},
          {Types::Sources::Shape, Sources::Shape::NotesName},
      }},
-    {(int) Events::NoteMissed,
+    {(int) MetaCore::Events::NoteMissed,
      {
          {Types::Sources::Text, Sources::Text::MistakesName},
          {Types::Sources::Text, Sources::Text::NotesName},
          {Types::Sources::Shape, Sources::Shape::NotesName},
      }},
-    {(int) Events::BombCut,
+    {(int) MetaCore::Events::BombCut,
      {
          {Types::Sources::Text, Sources::Text::MistakesName},
          {Types::Sources::Text, Sources::Text::NotesName},
          {Types::Sources::Shape, Sources::Shape::NotesName},
      }},
-    {(int) Events::WallHit,
+    {(int) MetaCore::Events::WallHit,
      {
          {Types::Sources::Text, Sources::Text::MistakesName},
      }},
-    {(int) Events::ComboChanged,
+    {(int) MetaCore::Events::ComboChanged,
      {
          {Types::Sources::Text, Sources::Text::ComboName},
          {Types::Sources::Text, Sources::Text::MultiplierName},
@@ -53,7 +54,7 @@ static std::map<int, std::vector<std::pair<Types::Sources, std::string>>> eventS
          {Types::Sources::Color, Sources::Color::MultiplierName},
          {Types::Sources::Enable, Sources::Enable::FullComboName},
      }},
-    {(int) Events::HealthChanged,
+    {(int) MetaCore::Events::HealthChanged,
      {
          {Types::Sources::Text, Sources::Text::HealthName},
          {Types::Sources::Text, Sources::Text::FailsName},
@@ -61,17 +62,17 @@ static std::map<int, std::vector<std::pair<Types::Sources, std::string>>> eventS
          {Types::Sources::Color, Sources::Color::HealthName},
          {Types::Sources::Enable, Sources::Enable::FailedName},
      }},
-    {(int) Events::Update,
+    {(int) MetaCore::Events::Update,
      {
          {Types::Sources::Text, Sources::Text::TimeName},
          {Types::Sources::Shape, Sources::Shape::TimeName},
      }},
-    {(int) Events::SlowUpdate,
+    {(int) MetaCore::Events::SlowUpdate,
      {
          {Types::Sources::Text, Sources::Text::SaberSpeedName},
          {Types::Sources::Text, Sources::Text::SpinometerName},
      }},
-    {(int) Events::MapInfo,
+    {(int) MetaCore::Events::MapSelected,
      {
          {Types::Sources::Text, Sources::Text::RankName},
          {Types::Sources::Text, Sources::Text::PersonalBestName},
@@ -83,37 +84,30 @@ static std::map<int, std::vector<std::pair<Types::Sources, std::string>>> eventS
      }},
 };
 
-static std::map<std::string, std::map<int, int>> customEvents = {};
-
-int RegisterCustomEvent(std::string mod, int event) {
-    int maxEvent = (int) Events::EventMax;
-    for (auto& [_, idMap] : customEvents) {
-        for (auto& [_, realId] : idMap)
-            maxEvent = std::max(realId, maxEvent);
-    }
-    if (!customEvents.contains(mod))
-        customEvents[mod] = {};
-    customEvents[mod][event] = maxEvent + 1;
-    return maxEvent + 1;
-}
-
-void RegisterToEvent(Types::Sources sourceType, std::string source, int event) {
+void Events::RegisterToEvent(Types::Sources sourceType, std::string source, int event) {
+    if (event < 0)
+        return;
     if (!eventSourceRegistry.contains(event))
         eventSourceRegistry[event] = {};
     eventSourceRegistry[event].emplace_back(sourceType, source);
 }
 
-void Events::Broadcast(int event) {
+void Events::RegisterToEvent(Types::Sources sourceType, std::string source, std::string mod, int event) {
+    RegisterToEvent(sourceType, source, MetaCore::Events::FindEvent(mod, event));
+}
+
+void Events::RegisterToQountersEvent(Types::Sources sourceType, std::string source, std::string mod, int event) {
+    RegisterToEvent(sourceType, source, MOD_ID, event);
+}
+
+void OnEvent(int event) {
     if (!eventSourceRegistry.contains(event))
         return;
     for (auto& [sourceType, source] : eventSourceRegistry[event])
         HUD::UpdateSource(sourceType, source);
 }
 
-void Events::Broadcast(std::string mod, int event) {
-    if (!customEvents.contains(mod))
-        return;
-    if (!customEvents[mod].contains(event))
-        return;
-    Broadcast(customEvents[mod][event]);
+AUTO_FUNCTION {
+    MetaCore::Events::AddCallback(OnEvent);
+    MetaCore::Events::RegisterEvent(MOD_ID, Events::PPInfo);
 }

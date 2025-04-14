@@ -13,11 +13,12 @@
 #include "UnityEngine/UI/Image.hpp"
 #include "UnityEngine/UI/Mask.hpp"
 #include "bsml/shared/BSML-Lite.hpp"
-#include "bsml/shared/Helpers/delegates.hpp"
 #include "bsml/shared/Helpers/utilities.hpp"
 #include "config.hpp"
-#include "internals.hpp"
 #include "main.hpp"
+#include "metacore/shared/delegates.hpp"
+#include "metacore/shared/internals.hpp"
+#include "metacore/shared/unity.hpp"
 #include "options.hpp"
 #include "qounters.hpp"
 #include "utils.hpp"
@@ -28,9 +29,9 @@ DEFINE_TYPE(Qounters, BaseGameGraphic);
 DEFINE_TYPE(Qounters, PremadeParent);
 DEFINE_TYPE(Qounters, SongTimeSource);
 DEFINE_TYPE(Qounters, ImageSpriteCache);
-DEFINE_TYPE(Qounters, ObjectSignal);
 
 using namespace Qounters;
+using namespace MetaCore;
 using namespace GlobalNamespace;
 using namespace UnityEngine;
 
@@ -211,7 +212,7 @@ Shape* Shape::Create(Transform* parent) {
 
 void TextGradient::OnEnable() {
     if (!delegate) {
-        delegate = BSML::MakeSystemAction<UnityW<Object>>((std::function<void(UnityW<Object>)>) [this](UnityW<Object> changed) {
+        delegate = Delegates::MakeSystemAction([this](UnityW<Object> changed) {
             if (changed == text)
                 UpdateGradient();
         });
@@ -313,7 +314,7 @@ void BaseGameGraphic::SetComponent(int comp) {
     instance->SetParent(transform, false);
     instance->gameObject->active = true;
 
-    auto rect = Utils::GetOrAddComponent<RectTransform*>(instance);
+    auto rect = Engine::GetOrAddComponent<RectTransform*>(instance);
     rect->anchorMin = {0.5, 0.5};
     rect->anchorMax = {0.5, 0.5};
     rect->anchoredPosition = {0, 0};
@@ -346,7 +347,7 @@ void BaseGameGraphic::SetChildColors() {
     float origAlhpa = modColor.a;
 
     for (auto graphic : graphics) {
-        auto path = Utils::GetTransformPath(instance, graphic->transform);
+        auto path = Engine::GetTransformPath(instance, graphic->transform);
         if (!alphaIndex[component].contains(path))
             continue;
         modColor.a = origAlhpa * alphaIndex[component][path];
@@ -371,11 +372,11 @@ static Transform* GetBase(int component) {
         return nullptr;
     switch ((BaseGameGraphic::Objects) component) {
         case BaseGameGraphic::Objects::Multiplier:
-            return Utils::FindRecursive(hud, "MultiplierCanvas");
+            return Engine::FindRecursive(hud, "MultiplierCanvas");
         case BaseGameGraphic::Objects::ProgressBar:
-            return Utils::FindRecursive(hud, "SongProgressCanvas");
+            return Engine::FindRecursive(hud, "SongProgressCanvas");
         case BaseGameGraphic::Objects::HealthBar:
-            return Utils::FindRecursive(hud, "EnergyPanel");
+            return Engine::FindRecursive(hud, "EnergyPanel");
     }
 }
 
@@ -422,7 +423,7 @@ void BaseGameGraphic::MakeClones() {
         alphaIndex[i] = {};
         auto graphics = base->GetComponentsInChildren<UI::Graphic*>();
         for (auto graphic : graphics) {
-            std::string path = Utils::GetTransformPath(base, graphic->transform);
+            std::string path = Engine::GetTransformPath(base, graphic->transform);
             alphaIndex[i][path] = graphic->color.a;
             logger.debug("{:.2f} alpha for {} {}", graphic->color.a, i, path.c_str());
         }
@@ -438,7 +439,7 @@ void PremadeParent::Update() {
     if (!GetGraphic())
         return;
     if (!rectTransform)
-        rectTransform = Utils::GetOrAddComponent<RectTransform*>(this);
+        rectTransform = Engine::GetOrAddComponent<RectTransform*>(this);
     rectTransform->sizeDelta = graphic->rectTransform->sizeDelta;
     if (updateColor)
         graphic->color = color;
@@ -456,7 +457,7 @@ UI::Graphic* PremadeParent::GetGraphic() {
 }
 
 float SongTimeSource::get_songTime() {
-    return Internals::songTime;
+    return Internals::songTime();
 }
 
 float SongTimeSource::get_lastFrameDeltaSongTime() {
@@ -464,11 +465,15 @@ float SongTimeSource::get_lastFrameDeltaSongTime() {
 }
 
 float SongTimeSource::get_songEndTime() {
-    return Internals::songLength;
+    return Internals::songLength();
 }
 
 float SongTimeSource::get_songLength() {
-    return Internals::songLength;
+    return Internals::songLength();
+}
+
+float SongTimeSource::get_timeScale() {
+    return 1;
 }
 
 bool SongTimeSource::get_isReady() {
@@ -520,25 +525,4 @@ int ImageSpriteCache::NumberOfSprites() {
 
 Sprite* ImageSpriteCache::GetSpriteIdx(int spriteIdx) {
     return GetInstance()->sprites[spriteIdx];
-}
-
-void ObjectSignal::OnEnable() {
-    if (onEnable)
-        onEnable();
-}
-
-void ObjectSignal::OnDisable() {
-    if (onDisable)
-        onDisable();
-}
-
-void ObjectSignal::OnDestroy() {
-    if (onDestroy)
-        onDestroy();
-}
-
-ObjectSignal* ObjectSignal::CreateDestroySignal(std::function<void()> onDestroy) {
-    auto ret = GameObject::New_ctor("QountersDestroySignal")->AddComponent<ObjectSignal*>();
-    ret->onDestroy = onDestroy;
-    return ret;
 }

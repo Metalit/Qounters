@@ -6,6 +6,7 @@
 #include "customtypes/settings.hpp"
 #include "editor.hpp"
 #include "main.hpp"
+#include "metacore/shared/ui.hpp"
 #include "options.hpp"
 #include "sources.hpp"
 #include "utils.hpp"
@@ -54,7 +55,7 @@ static Options::Group MakeGroup(int anchor, UnityEngine::Vector2 pos) {
 
 static void CreateAnchorDropdown(UnityEngine::GameObject* parent, int& anchor) {
     BSML::Lite::AddHoverHint(
-        Utils::CreateDropdownEnum(parent, "Starting Anchor", anchor, Options::AnchorStrings, [&anchor](int val) { anchor = val; }),
+        MetaCore::UI::CreateDropdownEnum(parent, "Starting Anchor", anchor, Options::AnchorStrings, [&anchor](int val) { anchor = val; }),
         "Select the anchor to create this counter group on"
     );
 }
@@ -475,7 +476,7 @@ void Templates::NotesUI(UnityEngine::GameObject* parent) {
 
     CreateAnchorDropdown(parent, anchor);
     BSML::Lite::AddHoverHint(
-        Utils::CreateDropdownEnum(parent, "Display Type", display, NotesDisplayStrings, [](int val) { display = val; }),
+        MetaCore::UI::CreateDropdownEnum(parent, "Display Type", display, NotesDisplayStrings, [](int val) { display = val; }),
         "The note-related value to show"
     );
     BSML::Lite::AddHoverHint(
@@ -520,7 +521,7 @@ void Templates::SongTimeUI(UnityEngine::GameObject* parent) {
 
     CreateAnchorDropdown(parent, anchor);
     BSML::Lite::AddHoverHint(
-        Utils::CreateDropdownEnum(parent, "Display Type", display, SongTimeDisplayStrings, [](int val) { display = val; }),
+        MetaCore::UI::CreateDropdownEnum(parent, "Display Type", display, SongTimeDisplayStrings, [](int val) { display = val; }),
         "How to display the song time"
     );
     BSML::Lite::AddHoverHint(

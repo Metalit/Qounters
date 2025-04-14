@@ -28,21 +28,22 @@
 #include "bsml/shared/BSML/Components/ScrollViewContent.hpp"
 #include "bsml/shared/BSML/MainThreadScheduler.hpp"
 #include "bsml/shared/Helpers/creation.hpp"
-#include "bsml/shared/Helpers/delegates.hpp"
 #include "bsml/shared/Helpers/extension.hpp"
 #include "bsml/shared/Helpers/getters.hpp"
 #include "bsml/shared/Helpers/utilities.hpp"
 #include "config.hpp"
 #include "copies.hpp"
-#include "custom-types/shared/delegate.hpp"
 #include "customtypes/components.hpp"
 #include "customtypes/editing.hpp"
 #include "editor.hpp"
 #include "environment.hpp"
-#include "events.hpp"
-#include "game.hpp"
-#include "internals.hpp"
 #include "main.hpp"
+#include "metacore/shared/delegates.hpp"
+#include "metacore/shared/events.hpp"
+#include "metacore/shared/internals.hpp"
+#include "metacore/shared/stats.hpp"
+#include "metacore/shared/strings.hpp"
+#include "metacore/shared/ui.hpp"
 #include "options.hpp"
 #include "playtest.hpp"
 #include "pp.hpp"
@@ -61,13 +62,15 @@ DEFINE_TYPE(Qounters, HSVGradientImage);
 DEFINE_TYPE(Qounters, HSVController);
 DEFINE_TYPE(Qounters, CollapseController);
 DEFINE_TYPE(Qounters, MenuDragger);
-DEFINE_TYPE(Qounters, EndDragHandler);
-DEFINE_TYPE(Qounters, KeyboardCloseHandler);
 DEFINE_TYPE(Qounters, SpritesListCell);
 DEFINE_TYPE(Qounters, SpritesListSource);
 
 using namespace Qounters;
+using namespace MetaCore;
 using namespace UnityEngine;
+
+#define MUI MetaCore::UI
+#define UUI UnityEngine::UI
 
 float settingsStarsBL = 10;
 float settingsStarsSS = 10;
@@ -106,14 +109,14 @@ static float CalculateScaleInverse(float scale) {
 
 static void SetScaleButtons(BSML::SliderSetting* slider, float visualIncrement) {
     slider->incButton->onClick->RemoveAllListeners();
-    slider->incButton->onClick->AddListener(BSML::MakeUnityAction([slider, visualIncrement]() {
+    slider->incButton->onClick->AddListener(Delegates::MakeUnityAction([slider, visualIncrement]() {
         float newScale = CalculateScale(slider->get_Value()) + visualIncrement;
         float newValue = CalculateScaleInverse(newScale);
         slider->set_Value(newValue);
         slider->OnChange(nullptr, slider->get_Value());
     }));
     slider->decButton->onClick->RemoveAllListeners();
-    slider->decButton->onClick->AddListener(BSML::MakeUnityAction([slider, visualIncrement]() {
+    slider->decButton->onClick->AddListener(Delegates::MakeUnityAction([slider, visualIncrement]() {
         float newScale = CalculateScale(slider->get_Value()) - visualIncrement;
         float newValue = CalculateScaleInverse(newScale);
         slider->set_Value(newValue);
@@ -122,7 +125,7 @@ static void SetScaleButtons(BSML::SliderSetting* slider, float visualIncrement) 
 }
 
 static StringW ScaleFormat(float val) {
-    return Utils::FormatDecimals(CalculateScale(val), 2);
+    return Strings::FormatDecimals(CalculateScale(val), 2);
 }
 
 void SettingsFlowCoordinator::DidActivate(bool firstActivation, bool addedToHierarchy, bool screenSystemEnabling) {
@@ -342,7 +345,7 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
     environments = BSML::Helpers::GetMainFlowCoordinator()->_playerDataModel->_playerDataFileModel->_environmentsListModel->_envInfos;
 
     auto background = AddBackground(this, {110, 82});
-    Utils::SetCanvasSorting(gameObject, 4);
+    MUI::SetCanvasSorting(gameObject, 4);
 
     auto vertical = BSML::Lite::CreateVerticalLayoutGroup(background);
     vertical->childControlHeight = false;
@@ -377,12 +380,12 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
         UpdateUI();
     });
     auto parent = environmentDropdown->transform->parent;
-    Utils::SetLayoutSize(parent, 87, 8);
+    MUI::SetLayoutSize(parent, 87, 8);
     BSML::Lite::AddHoverHint(environmentDropdown, "Change the environment for the settings menu");
 
     std::vector<std::string_view> append = {"Any"};
     append.insert(append.begin(), Environment::HUDTypeStrings.begin(), Environment::HUDTypeStrings.end());
-    auto nested = Utils::CreateDropdownEnum(background, "", getConfig().EnvironmentType.GetValue(), append, [this](int value) {
+    auto nested = MUI::CreateDropdownEnum(background, "", getConfig().EnvironmentType.GetValue(), append, [this](int value) {
         getConfig().EnvironmentType.SetValue(value);
         UpdateUI();
     });
@@ -395,7 +398,7 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
     BSML::Lite::AddHoverHint(nested, "Filter the settings environment selector by HUD type");
 
     applyButton = BSML::Lite::CreateUIButton(environment, "Apply", SettingsFlowCoordinator::RefreshScene);
-    Utils::SetLayoutSize(applyButton, 14, 8);
+    MUI::SetLayoutSize(applyButton, 14, 8);
     BSML::Lite::AddHoverHint(applyButton, "Apply the selected settings environment");
 
     auto overrideColorsPanel = GetColorSchemeTemplate();
@@ -417,7 +420,7 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
     transform->anchoredPosition = {-20, 0.25};
     Object::Destroy(transform->Find("NameText")->gameObject);
 
-    colorEditButton = transform->Find("EditButton")->GetComponent<UI::Button*>();
+    colorEditButton = transform->Find("EditButton")->GetComponent<UUI::Button*>();
     BSML::Lite::AddHoverHint(colorEditButton, "Edit this color scheme");
     colorDropdown = transform->Find("ColorSchemeDropDown")->GetComponent<GlobalNamespace::ColorSchemeDropdown*>();
     BSML::Lite::AddHoverHint(colorDropdown, "Select the color scheme for the settings environment");
@@ -433,16 +436,16 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
     colorEditor->_hsvPanelController->gameObject->name = "QountersHSVPanel";
 
     colorDropdown->SetData(colorSchemeSettings->_colorSchemesList->i___System__Collections__Generic__IReadOnlyList_1_T_());
-    colorDropdown->add_didSelectCellWithIdxEvent(BSML::MakeSystemAction((std::function<void(UnityW<HMUI::DropdownWithTableView>, int)>) [this](
-        UnityW<HMUI::DropdownWithTableView>, int cell
-    ) { ColorCellSelected(cell); }));
+    colorDropdown->add_didSelectCellWithIdxEvent(Delegates::MakeSystemAction([this](UnityW<HMUI::DropdownWithTableView>, int cell) {
+        ColorCellSelected(cell);
+    }));
 
-    colorEditButton->onClick->AddListener(BSML::MakeUnityAction([modal]() { modal->Show(true, true, nullptr); }));
+    colorEditButton->onClick->AddListener(Delegates::MakeUnityAction([modal]() { modal->Show(true, true, nullptr); }));
 
-    colorEditor->add_didChangeColorSchemeEvent(BSML::MakeSystemAction((std::function<void(GlobalNamespace::ColorScheme*)>) [this](auto scheme) {
+    colorEditor->add_didChangeColorSchemeEvent(Delegates::MakeSystemAction([this](ColorScheme* scheme) {
         colorSchemeSettings->SetColorSchemeForId(scheme);
     }));
-    colorEditor->add_didFinishEvent(BSML::MakeSystemAction([this, modal]() {
+    colorEditor->add_didFinishEvent(Delegates::MakeSystemAction([this, modal]() {
         modal->Hide(true, nullptr);
         UpdateColors();
         UpdateUI();
@@ -461,20 +464,20 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
         nameInput->text = getConfig().SettingsPreset.GetValue();
         nameModal->Show(true, true, nullptr);
     });
-    Utils::SetLayoutSize(renameButton, 24, 8);
+    MUI::SetLayoutSize(renameButton, 24, 8);
     BSML::Lite::AddHoverHint(renameButton, "Change the name of the selected preset");
     auto dupeButton = BSML::Lite::CreateUIButton(buttons3, "Duplicate", [this]() {
         nameModalIsRename = false;
         nameInput->text = getConfig().SettingsPreset.GetValue();
         nameModal->Show(true, true, nullptr);
     });
-    Utils::SetLayoutSize(dupeButton, 24, 8);
+    MUI::SetLayoutSize(dupeButton, 24, 8);
     BSML::Lite::AddHoverHint(dupeButton, "Copy the selected preset to a new preset");
     deleteButton = BSML::Lite::CreateUIButton(buttons3, "Delete", [this]() { deleteModal->Show(true, true, nullptr); });
-    Utils::SetLayoutSize(deleteButton, 24, 8);
+    MUI::SetLayoutSize(deleteButton, 24, 8);
     BSML::Lite::AddHoverHint(deleteButton, "Permanently delete the selected preset");
     auto resetButton = BSML::Lite::CreateUIButton(buttons3, "Reset", [this]() { resetModal->Show(true, true, nullptr); });
-    Utils::SetLayoutSize(resetButton, 24, 8);
+    MUI::SetLayoutSize(resetButton, 24, 8);
     BSML::Lite::AddHoverHint(resetButton, "Reset the selected preset to the default HUD");
 
     auto snapIncrement = AddConfigValueIncrementFloat(vertical, getConfig().SnapStep, 1, 0.5, 0.5, 5);
@@ -512,7 +515,7 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
     text1->alignment = TMPro::TextAlignmentOptions::Bottom;
 
     auto modalButtons1 = BSML::Lite::CreateHorizontalLayoutGroup(modalLayout1);
-    modalButtons1->GetComponent<UI::LayoutElement*>()->preferredHeight = 9;
+    modalButtons1->GetComponent<UUI::LayoutElement*>()->preferredHeight = 9;
     modalButtons1->spacing = 3;
     BSML::Lite::CreateUIButton(modalButtons1, "Continue", SettingsFlowCoordinator::OnModalConfirm);
     BSML::Lite::CreateUIButton(modalButtons1, "Save And Continue", []() {
@@ -531,7 +534,7 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
     text2->alignment = TMPro::TextAlignmentOptions::Bottom;
 
     nameInput = BSML::Lite::CreateStringSetting(modalLayout2, "Name", "", {0, 0}, {0, 0, 0});
-    Utils::GetOrAddComponent<KeyboardCloseHandler*>(nameInput)->okCallback = [this]() {
+    MUI::AddStringSettingOnClose(nameInput, nullptr, [this]() {
         std::string val = nameInput->text;
         if (val.empty())
             return;
@@ -540,7 +543,7 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
             SettingsFlowCoordinator::RenamePreset(val);
         else
             SettingsFlowCoordinator::DuplicatePreset(val);
-    };
+    });
 
     deleteModal = BSML::Lite::CreateModal(this, {72, 25}, SettingsFlowCoordinator::OnModalCancel);
     auto modalLayout3 = BSML::Lite::CreateVerticalLayoutGroup(deleteModal);
@@ -553,7 +556,7 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
     text3->alignment = TMPro::TextAlignmentOptions::Bottom;
 
     auto modalButtons2 = BSML::Lite::CreateHorizontalLayoutGroup(modalLayout3);
-    modalButtons2->GetComponent<UI::LayoutElement*>()->preferredHeight = 9;
+    modalButtons2->GetComponent<UUI::LayoutElement*>()->preferredHeight = 9;
     modalButtons2->spacing = 3;
     BSML::Lite::CreateUIButton(modalButtons2, "Delete", [this]() {
         deleteModal->Hide(true, nullptr);
@@ -572,7 +575,7 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
     text4->alignment = TMPro::TextAlignmentOptions::Bottom;
 
     auto modalButtons3 = BSML::Lite::CreateHorizontalLayoutGroup(modalLayout4);
-    modalButtons3->GetComponent<UI::LayoutElement*>()->preferredHeight = 9;
+    modalButtons3->GetComponent<UUI::LayoutElement*>()->preferredHeight = 9;
     modalButtons3->spacing = 3;
     BSML::Lite::CreateUIButton(modalButtons3, "Reset", [this]() {
         resetModal->Hide(true, nullptr);
@@ -608,20 +611,20 @@ void SettingsViewController::ColorCellSelected(int idx) {
 void SettingsViewController::UpdateColors() {
     GetColorSchemeTemplate()->Refresh();
     if (getConfig().OverrideColor.GetValue())
-        Internals::colors = colorSchemeSettings->GetColorSchemeForId(getConfig().ColorScheme.GetValue());
+        Internals::colors() = colorSchemeSettings->GetColorSchemeForId(getConfig().ColorScheme.GetValue());
     else
-        Internals::colors = Environment::CurrentSettingsEnvironment()->colorScheme->colorScheme;
+        Internals::colors() = Environment::CurrentSettingsEnvironment()->colorScheme->colorScheme;
     // doesn't update any already spawned notes/walls, but idc
     if (auto colorManager = Object::FindObjectOfType<GlobalNamespace::NoteCutCoreEffectsSpawner*>(true)->_colorManager)
-        colorManager->SetColorScheme(Internals::colors);
+        colorManager->SetColorScheme(Internals::colors());
     if (auto env = Object::FindObjectOfType<GlobalNamespace::EnvironmentColorManager*>(true))
-        env->SetColorScheme(Internals::colors);
+        env->SetColorScheme(Internals::colors());
     if (auto bg = Object::FindObjectOfType<GlobalNamespace::BloomPrePassBackgroundColorsGradientFromColorSchemeColors*>(true))
         bg->Start();
     PlaytestViewController::GetInstance()->UpdateUI();
     Environment::UpdateSaberColors();
     Environment::RunLightingEvents();
-    Events::Broadcast((int) Events::MapInfo);
+    MetaCore::Events::Broadcast(MetaCore::Events::MapSelected);
 }
 
 void SettingsViewController::UpdateUI() {
@@ -635,7 +638,7 @@ void SettingsViewController::UpdateUI() {
     std::vector<std::string> names;
     for (auto& [name, _] : presets)
         names.emplace_back(name);
-    Utils::SetDropdownValues(presetDropdown, names, preset);
+    MUI::SetDropdownValues(presetDropdown, names, preset);
 
     int selectedType = getConfig().EnvironmentType.GetValue();
     GlobalNamespace::EnvironmentInfoSO* first = nullptr;
@@ -650,10 +653,9 @@ void SettingsViewController::UpdateUI() {
             names.emplace_back(env->environmentName);
         }
     }
-    Utils::SetDropdownValues(environmentDropdown, names, selectedName, [first]() {
-        // set to the first environment in the filtered type when it changes
+    // set to the first environment in the filtered type when it changes
+    if (!MUI::SetDropdownValues(environmentDropdown, names, selectedName))
         getConfig().Environment.SetValue(first->serializedName);
-    });
 
     applyButton->interactable = Environment::CurrentSettingsEnvironment()->serializedName != getConfig().Environment.GetValue();
 
@@ -681,7 +683,7 @@ void SettingsViewController::UpdateUI() {
 
     deleteButton->interactable = presets.size() > 1;
 
-    Utils::InstantSetToggle(previewToggle, Editor::GetPreviewMode());
+    MUI::InstantSetToggle(previewToggle, Editor::GetPreviewMode());
 }
 
 SettingsViewController* SettingsViewController::GetInstance() {
@@ -690,18 +692,18 @@ SettingsViewController* SettingsViewController::GetInstance() {
     return instance;
 }
 
-static void CreateSpacer(UI::HorizontalLayoutGroup* parent, float width) {
+static void CreateSpacer(UUI::HorizontalLayoutGroup* parent, float width) {
     auto obj = GameObject::New_ctor("QountersSpacer");
-    auto layout = obj->AddComponent<UI::LayoutElement*>();
+    auto layout = obj->AddComponent<UUI::LayoutElement*>();
     layout->preferredWidth = width;
     obj->transform->SetParent(parent->transform, false);
 }
 
 static BSML::ClickableImage*
-CreateLayeredImageButton(UI::HorizontalLayoutGroup* parent, Sprite* bg, Sprite* fg, Vector2 size, std::function<void()> onClick) {
+CreateLayeredImageButton(UUI::HorizontalLayoutGroup* parent, Sprite* bg, Sprite* fg, Vector2 size, std::function<void()> onClick) {
     auto ret = BSML::Lite::CreateClickableImage(parent, bg, onClick);
     ret->preserveAspect = true;
-    Utils::SetLayoutSize(ret, size.x, size.y);
+    MUI::SetLayoutSize(ret, size.x, size.y);
     if (fg)
         BSML::Lite::CreateImage(ret, fg, {0, 0}, size)->preserveAspect = true;
     return ret;
@@ -785,7 +787,7 @@ void PlaytestViewController::DidActivate(bool firstActivation, bool addedToHiera
     BSML::Lite::AddHoverHint(pbToggle, "Emulate a personal best on the map");
 
     pbSlider = BSML::Lite::CreateSliderSetting(parent, "", 1, 1, 1, 120, 0, Playtest::SetPersonalBest);
-    pbSlider = Utils::ReparentSlider(pbSlider, pbToggle, 30);
+    pbSlider = MUI::ReparentSlider(pbSlider, pbToggle, 30);
     pbSlider->GetComponent<RectTransform*>()->anchoredPosition = {-20, 0};
     pbSlider->formatter = percentFormat;
     BSML::Lite::AddHoverHint(pbSlider, "Choose the personal best to emulate (without modifiers)");
@@ -808,7 +810,7 @@ void PlaytestViewController::DidActivate(bool firstActivation, bool addedToHiera
     BSML::Lite::AddHoverHint(blToggle, "Emulate the map being ranked on BeatLeader");
 
     blSlider = BSML::Lite::CreateSliderSetting(parent, "", 0.1, 1, 1, 15, 0, Playtest::SetStarsBL);
-    blSlider = Utils::ReparentSlider(blSlider, blToggle, 28);
+    blSlider = MUI::ReparentSlider(blSlider, blToggle, 28);
     blSlider->GetComponent<RectTransform*>()->anchoredPosition = {-20, 0};
     BSML::Lite::AddHoverHint(blSlider, "Choose the BeatLeader ranking star rating");
 
@@ -819,7 +821,7 @@ void PlaytestViewController::DidActivate(bool firstActivation, bool addedToHiera
     BSML::Lite::AddHoverHint(ssToggle, "Emulate the map being ranked on ScoreSaber");
 
     ssSlider = BSML::Lite::CreateSliderSetting(parent, "", 0.1, 1, 1, 15, 0, Playtest::SetStarsSS);
-    ssSlider = Utils::ReparentSlider(ssSlider, ssToggle, 28);
+    ssSlider = MUI::ReparentSlider(ssSlider, ssToggle, 28);
     ssSlider->GetComponent<RectTransform*>()->anchoredPosition = {-20, 0};
     BSML::Lite::AddHoverHint(ssSlider, "Choose the ScoreSaber ranking star rating");
 
@@ -828,13 +830,13 @@ void PlaytestViewController::DidActivate(bool firstActivation, bool addedToHiera
     resetLayout->spacing = 3;
     resetLayout->childAlignment = TextAnchor::MiddleCenter;
     resetButton = BSML::Lite::CreateUIButton(resetLayout, "Reset Notes", Playtest::ResetNotes);
-    Utils::SetLayoutSize(resetButton, 30, 8);
+    MUI::SetLayoutSize(resetButton, 30, 8);
     BSML::Lite::AddHoverHint(resetButton, "Reset all values related to notes");
     auto resetAllButton = BSML::Lite::CreateUIButton(resetLayout, "Reset All", Playtest::ResetAll);
-    Utils::SetLayoutSize(resetAllButton, 30, 8);
+    MUI::SetLayoutSize(resetAllButton, 30, 8);
     BSML::Lite::AddHoverHint(resetAllButton, "Reset all emulated values for the map");
 
-    Utils::SetChildrenWidth(parent->transform, 75);
+    MUI::SetChildrenWidth(parent->transform, 75);
 
     uiInitialized = true;
     UpdateUI();
@@ -844,32 +846,32 @@ void PlaytestViewController::UpdateUI() {
     if (!uiInitialized)
         return;
 
-    auto left = Game::GetColor((int) Sources::Color::Player::ColorSettings::LeftSaber);
-    auto right = Game::GetColor((int) Sources::Color::Player::ColorSettings::RightSaber);
+    auto left = Sources::Color::Player::GetColor((int) Sources::Color::Player::ColorSettings::LeftSaber);
+    auto right = Sources::Color::Player::GetColor((int) Sources::Color::Player::ColorSettings::RightSaber);
 
     SetClickableImageColor(lNote, left);
     SetClickableImageColor(rNote, right);
     SetClickableImageColor(lChain, left);
     SetClickableImageColor(rChain, right);
 
-    SetClickableImageColor(wall, Game::GetColor((int) Sources::Color::Player::ColorSettings::Walls));
+    SetClickableImageColor(wall, Sources::Color::Player::GetColor((int) Sources::Color::Player::ColorSettings::Walls));
 
-    Utils::InstantSetToggle(pbToggle, Game::GetBestScore() >= 0);
-    pbSlider->gameObject->active = Game::GetBestScore() >= 0;
-    pbSlider->set_Value(100 * Game::GetBestScore() / Game::GetSongMaxScore());
+    MUI::InstantSetToggle(pbToggle, Stats::GetBestScore() >= 0);
+    pbSlider->gameObject->active = Stats::GetBestScore() >= 0;
+    pbSlider->set_Value(100 * Playtest::GetOverridePBRatio());
 
-    timeSlider->set_Value(Game::GetSongTime());
+    timeSlider->set_Value(Stats::GetSongTime());
 
-    float pos = (Game::GetModifierMultiplier(true, false) - 1) * 100;
-    Utils::SetIncrementValue(posModsIncrement, std::round(pos));
-    float neg = (Game::GetModifierMultiplier(false, true) - 1) * 100;
-    Utils::SetIncrementValue(negModsIncrement, std::round(neg));
+    float pos = (Stats::GetModifierMultiplier(true, false) - 1) * 100;
+    MUI::SetIncrementValue(posModsIncrement, std::round(pos));
+    float neg = (Stats::GetModifierMultiplier(false, true) - 1) * 100;
+    MUI::SetIncrementValue(negModsIncrement, std::round(neg));
 
-    Utils::InstantSetToggle(blToggle, PP::IsRankedBL());
+    MUI::InstantSetToggle(blToggle, PP::IsRankedBL());
     blSlider->gameObject->active = PP::IsRankedBL();
     blSlider->set_Value(settingsStarsBL);
 
-    Utils::InstantSetToggle(ssToggle, PP::IsRankedSS());
+    MUI::InstantSetToggle(ssToggle, PP::IsRankedSS());
     ssSlider->gameObject->active = PP::IsRankedSS();
     ssSlider->set_Value(settingsStarsSS);
 }
@@ -904,7 +906,7 @@ void TemplatesViewController::DidActivate(bool firstActivation, bool addedToHier
     rect->anchorMin = {0.5, 0.5};
     rect->anchorMax = {0.5, 0.5};
     rect->anchoredPosition = {0, -5};
-    rect->GetComponent<UI::VerticalLayoutGroup*>()->spacing = -2;
+    rect->GetComponent<UUI::VerticalLayoutGroup*>()->spacing = -2;
 
     auto canvas = list->gameObject->AddComponent<Canvas*>();
     canvas->additionalShaderChannels =
@@ -924,9 +926,9 @@ void TemplatesViewController::DidActivate(bool firstActivation, bool addedToHier
     modalLayout->anchorMin = {0.5, 0.5};
     modalLayout->anchorMax = {0.5, 0.5};
 
-    auto fitter = modalLayout->GetComponent<UI::ContentSizeFitter*>();
-    fitter->verticalFit = UI::ContentSizeFitter::FitMode::PreferredSize;
-    fitter->horizontalFit = UI::ContentSizeFitter::FitMode::PreferredSize;
+    auto fitter = modalLayout->GetComponent<UUI::ContentSizeFitter*>();
+    fitter->verticalFit = UUI::ContentSizeFitter::FitMode::PreferredSize;
+    fitter->horizontalFit = UUI::ContentSizeFitter::FitMode::PreferredSize;
 
     uiInitialized = true;
 }
@@ -950,7 +952,7 @@ void TemplatesViewController::ShowTemplateModal(int idx) {
         Object::DestroyImmediate(modalLayout->GetChild(0)->gameObject);
 
     Templates::registration[idx].second(modalLayout->gameObject);
-    Utils::SetChildrenWidth(modalLayout, 75);
+    MUI::SetChildrenWidth(modalLayout, 75);
 
     modal->Show(true, true, nullptr);
     BSML::MainThreadScheduler::ScheduleNextFrame([this]() {
@@ -995,7 +997,7 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
         Editor::UpdatePosition(true);
         Editor::FinalizeAction();
     });
-    Utils::AddIncrementIncrement(gPosIncrementX, 5);
+    MUI::AddIncrementIncrement(gPosIncrementX, 5);
     BSML::Lite::AddHoverHint(gPosIncrementX, "Change the left/right position of the selected counter group");
     gPosIncrementY = BSML::Lite::CreateIncrementSetting(groupParent, "Y Position", 1, 0.5, 0, [](float val) {
         static int id = Editor::GetActionId();
@@ -1003,7 +1005,7 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
         Editor::UpdatePosition(true);
         Editor::FinalizeAction();
     });
-    Utils::AddIncrementIncrement(gPosIncrementY, 5);
+    MUI::AddIncrementIncrement(gPosIncrementY, 5);
     BSML::Lite::AddHoverHint(gPosIncrementY, "Change the up/down position of the selected counter group");
 
     auto xPosLayout = BSML::Lite::CreateHorizontalLayoutGroup(groupParent);
@@ -1014,9 +1016,9 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
         Editor::UpdatePosition(true);
         Editor::FinalizeAction();
     });
-    Utils::AddIncrementIncrement(gDetPosIncrementX, 0.25);
+    MUI::AddIncrementIncrement(gDetPosIncrementX, 0.25);
     BSML::Lite::AddHoverHint(gDetPosIncrementX, "Change the left/right position of the selected counter group");
-    gDetPosLockX = Utils::CreateIconButton(xPosLayout->gameObject, nullptr, [this]() {
+    gDetPosLockX = MUI::CreateIconButton(xPosLayout->gameObject, nullptr, [this]() {
         auto& group = Editor::GetSelectedGroup(-1);
         group.LockPosX = !group.LockPosX;
         UpdateSimpleUI();
@@ -1031,9 +1033,9 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
         Editor::UpdatePosition(true);
         Editor::FinalizeAction();
     });
-    Utils::AddIncrementIncrement(gDetPosIncrementY, 0.25);
+    MUI::AddIncrementIncrement(gDetPosIncrementY, 0.25);
     BSML::Lite::AddHoverHint(gDetPosIncrementY, "Change the up/down position of the selected counter group");
-    gDetPosLockY = Utils::CreateIconButton(yPosLayout->gameObject, nullptr, [this]() {
+    gDetPosLockY = MUI::CreateIconButton(yPosLayout->gameObject, nullptr, [this]() {
         auto& group = Editor::GetSelectedGroup(-1);
         group.LockPosY = !group.LockPosY;
         UpdateSimpleUI();
@@ -1048,9 +1050,9 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
         Editor::UpdatePosition(true);
         Editor::FinalizeAction();
     });
-    Utils::AddIncrementIncrement(gDetPosIncrementZ, 0.25);
+    MUI::AddIncrementIncrement(gDetPosIncrementZ, 0.25);
     BSML::Lite::AddHoverHint(gDetPosIncrementZ, "Change the forward/backward position of the selected counter group");
-    gDetPosLockZ = Utils::CreateIconButton(zPosLayout->gameObject, nullptr, [this]() {
+    gDetPosLockZ = MUI::CreateIconButton(zPosLayout->gameObject, nullptr, [this]() {
         auto& group = Editor::GetSelectedGroup(-1);
         group.LockPosZ = !group.LockPosZ;
         UpdateSimpleUI();
@@ -1062,7 +1064,7 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
         Editor::GetSelectedGroup(id).Rotation = val;
         Editor::UpdatePosition();
     });
-    Utils::AddSliderEndDrag(gRotSlider, [](float) { Editor::FinalizeAction(); });
+    MUI::AddSliderEndDrag(gRotSlider, [](float) { Editor::FinalizeAction(); });
     BSML::Lite::AddHoverHint(gRotSlider, "Change the (Z) rotation of the selected counter group");
 
     auto xRotLayout = BSML::Lite::CreateHorizontalLayoutGroup(groupParent);
@@ -1072,9 +1074,9 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
         Editor::GetSelectedGroup(id).DetachedRotation.x = val;
         Editor::UpdatePosition();
     });
-    Utils::AddSliderEndDrag(gDetRotSliderX, [](float) { Editor::FinalizeAction(); });
+    MUI::AddSliderEndDrag(gDetRotSliderX, [](float) { Editor::FinalizeAction(); });
     BSML::Lite::AddHoverHint(gDetRotSliderX, "Change the X (pitch) rotation of the selected counter group");
-    gDetRotLockX = Utils::CreateIconButton(xRotLayout->gameObject, nullptr, [this]() {
+    gDetRotLockX = MUI::CreateIconButton(xRotLayout->gameObject, nullptr, [this]() {
         auto& group = Editor::GetSelectedGroup(-1);
         group.LockRotX = !group.LockRotX;
         UpdateSimpleUI();
@@ -1088,9 +1090,9 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
         Editor::GetSelectedGroup(id).DetachedRotation.y = val;
         Editor::UpdatePosition();
     });
-    Utils::AddSliderEndDrag(gDetRotSliderY, [](float) { Editor::FinalizeAction(); });
+    MUI::AddSliderEndDrag(gDetRotSliderY, [](float) { Editor::FinalizeAction(); });
     BSML::Lite::AddHoverHint(gDetRotSliderY, "Change the Y (yaw) rotation of the selected counter group");
-    gDetRotLockY = Utils::CreateIconButton(yRotLayout->gameObject, nullptr, [this]() {
+    gDetRotLockY = MUI::CreateIconButton(yRotLayout->gameObject, nullptr, [this]() {
         auto& group = Editor::GetSelectedGroup(-1);
         group.LockRotY = !group.LockRotY;
         UpdateSimpleUI();
@@ -1104,9 +1106,9 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
         Editor::GetSelectedGroup(id).DetachedRotation.z = val;
         Editor::UpdatePosition();
     });
-    Utils::AddSliderEndDrag(gDetRotSliderZ, [](float) { Editor::FinalizeAction(); });
+    MUI::AddSliderEndDrag(gDetRotSliderZ, [](float) { Editor::FinalizeAction(); });
     BSML::Lite::AddHoverHint(gDetRotSliderZ, "Change the Z (roll) of the selected counter group");
-    gDetRotLockZ = Utils::CreateIconButton(zRotLayout->gameObject, nullptr, [this]() {
+    gDetRotLockZ = MUI::CreateIconButton(zRotLayout->gameObject, nullptr, [this]() {
         auto& group = Editor::GetSelectedGroup(-1);
         group.LockRotZ = !group.LockRotZ;
         UpdateSimpleUI();
@@ -1118,32 +1120,32 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
 
     gComponentButton = BSML::Lite::CreateUIButton(gButtonsParent1, "Add Counter", Editor::NewComponent);
     BSML::Lite::AddHoverHint(gComponentButton, "Add and select a new counter to this group");
-    Utils::SetLayoutSize(gComponentButton, 26, 9);
+    MUI::SetLayoutSize(gComponentButton, 26, 9);
 
     gPasteButton = BSML::Lite::CreateUIButton(gButtonsParent1, "Paste Counter", Editor::PasteComponent);
     BSML::Lite::AddHoverHint(gPasteButton, "Paste the most recently copied counter into this group");
-    Utils::SetLayoutSize(gPasteButton, 26, 9);
+    MUI::SetLayoutSize(gPasteButton, 26, 9);
 
     gDuplicateButton = BSML::Lite::CreateUIButton(gButtonsParent1, "Duplicate", Editor::Duplicate);
     BSML::Lite::AddHoverHint(gDuplicateButton, "Duplicate this group and all its components");
-    Utils::SetLayoutSize(gDuplicateButton, 26, 9);
+    MUI::SetLayoutSize(gDuplicateButton, 26, 9);
 
     auto gButtonsParent2 = BSML::Lite::CreateHorizontalLayoutGroup(groupParent);
     gButtonsParent2->spacing = 3;
 
     gDeleteButton = BSML::Lite::CreateUIButton(gButtonsParent2, "Delete", Editor::Remove);
     BSML::Lite::AddHoverHint(gDeleteButton, "Delete this counter group");
-    Utils::SetLayoutSize(gDeleteButton, 26, 9);
+    MUI::SetLayoutSize(gDeleteButton, 26, 9);
 
     gDeselectButton = BSML::Lite::CreateUIButton(gButtonsParent2, "Deselect", Editor::Deselect);
     BSML::Lite::AddHoverHint(gDeselectButton, "Deselect this counter group");
-    Utils::SetLayoutSize(gDeselectButton, 26, 9);
+    MUI::SetLayoutSize(gDeselectButton, 26, 9);
 
     gDetachButton = BSML::Lite::CreateUIButton(gButtonsParent2, "Detach", Editor::ToggleAttachment);
     BSML::Lite::AddHoverHint(gDetachButton, "Detach this counter group from its anchor, allowing free 3D movement");
-    Utils::SetLayoutSize(gDetachButton, 26, 9);
+    MUI::SetLayoutSize(gDetachButton, 26, 9);
 
-    Utils::SetChildrenWidth(groupParent->transform, 85);
+    MUI::SetChildrenWidth(groupParent->transform, 85);
 
     componentParent = BSML::Lite::CreateScrollView(background);
 
@@ -1155,7 +1157,7 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
         Editor::UpdatePosition(true);
         Editor::FinalizeAction();
     });
-    Utils::AddIncrementIncrement(cPosIncrementX, 5);
+    MUI::AddIncrementIncrement(cPosIncrementX, 5);
     BSML::Lite::AddHoverHint(cPosIncrementX, "Change the left/right position of this counter relative to its group");
     cPosIncrementY = BSML::Lite::CreateIncrementSetting(componentParent, "Rel. Y Position", 1, 0.5, 0, [](float val) {
         static int id = Editor::GetActionId();
@@ -1163,7 +1165,7 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
         Editor::UpdatePosition(true);
         Editor::FinalizeAction();
     });
-    Utils::AddIncrementIncrement(cPosIncrementY, 5);
+    MUI::AddIncrementIncrement(cPosIncrementY, 5);
     BSML::Lite::AddHoverHint(cPosIncrementY, "Change the up/down position of this counter relative to its group");
 
     cRotSlider = BSML::Lite::CreateSliderSetting(componentParent, "Relative Rotation", 1, 0, -180, 180, 0, true, {0, 0}, [](float val) {
@@ -1171,7 +1173,7 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
         Editor::GetSelectedComponent(id).Rotation = val;
         Editor::UpdatePosition();
     });
-    Utils::AddSliderEndDrag(cRotSlider, [](float) { Editor::FinalizeAction(); });
+    MUI::AddSliderEndDrag(cRotSlider, [](float) { Editor::FinalizeAction(); });
     cRotSlider->GetComponent<RectTransform*>()->sizeDelta = {0, 8};
     BSML::Lite::AddHoverHint(cRotSlider, "Change the (Z) rotation of this counter relative to its group");
 
@@ -1180,7 +1182,7 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
         Editor::GetSelectedComponent(id).Scale.x = CalculateScale(val);
         Editor::UpdatePosition();
     });
-    Utils::AddSliderEndDrag(cScaleSliderX, [](float) { Editor::FinalizeAction(); });
+    MUI::AddSliderEndDrag(cScaleSliderX, [](float) { Editor::FinalizeAction(); });
     SetScaleButtons(cScaleSliderX, 0.01);
     cScaleSliderX->formatter = ScaleFormat;
     cScaleSliderX->GetComponent<RectTransform*>()->sizeDelta = {0, 8};
@@ -1190,7 +1192,7 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
         Editor::GetSelectedComponent(id).Scale.y = CalculateScale(val);
         Editor::UpdatePosition();
     });
-    Utils::AddSliderEndDrag(cScaleSliderY, [](float) { Editor::FinalizeAction(); });
+    MUI::AddSliderEndDrag(cScaleSliderY, [](float) { Editor::FinalizeAction(); });
     SetScaleButtons(cScaleSliderY, 0.01);
     cScaleSliderY->formatter = ScaleFormat;
     cScaleSliderY->GetComponent<RectTransform*>()->sizeDelta = {0, 8};
@@ -1202,7 +1204,7 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
     auto typeCollapse = Utils::CreateCollapseArea(componentParent, "Text Options", true, Copies::Type);
     typeCollapseComponent = typeCollapse;
 
-    cTypeDropdown = Utils::CreateDropdownEnum(componentParent, "Type", 0, Options::TypeStrings, [typeCollapse](int val) {
+    cTypeDropdown = MUI::CreateDropdownEnum(componentParent, "Type", 0, Options::TypeStrings, [typeCollapse](int val) {
         typeCollapse->title = std::string(Options::TypeStrings[val]) + " Options";
         typeCollapse->UpdateOpen();
         static int id = Editor::GetActionId();
@@ -1212,7 +1214,7 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
     BSML::Lite::AddHoverHint(cTypeDropdown, "Change the type (text, shape, image, or premade) of this counter");
 
     cTypeOptions = BSML::Lite::CreateVerticalLayoutGroup(componentParent);
-    cTypeOptions->GetComponent<UI::ContentSizeFitter*>()->verticalFit = UI::ContentSizeFitter::FitMode::PreferredSize;
+    cTypeOptions->GetComponent<UUI::ContentSizeFitter*>()->verticalFit = UUI::ContentSizeFitter::FitMode::PreferredSize;
 
     typeCollapse->AddContents({cTypeDropdown->transform->parent, cTypeOptions});
     typeCollapse->onUpdate = OptionsViewController::UpdateScrollViewStatic;
@@ -1220,7 +1222,7 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
     auto colorCollapse = Utils::CreateCollapseArea(componentParent, "Color Options", false, Copies::Color);
     colorCollapseComponent = colorCollapse;
 
-    cColorSourceDropdown = Utils::CreateDropdown(componentParent, "Color Source", "", Utils::GetKeys(Sources::colors), [this](std::string val) {
+    cColorSourceDropdown = MUI::CreateDropdown(componentParent, "Color Source", "", Utils::GetKeys(Sources::colors), [this](std::string val) {
         static int id = Editor::GetActionId();
         auto& comp = Editor::GetSelectedComponent(id);
         if (comp.ColorSource != val) {
@@ -1232,7 +1234,7 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
     BSML::Lite::AddHoverHint(cColorSourceDropdown, "Change the driver for the color of this counter");
 
     cColorSourceOptions = BSML::Lite::CreateVerticalLayoutGroup(componentParent);
-    cColorSourceOptions->GetComponent<UI::ContentSizeFitter*>()->verticalFit = UI::ContentSizeFitter::FitMode::PreferredSize;
+    cColorSourceOptions->GetComponent<UUI::ContentSizeFitter*>()->verticalFit = UUI::ContentSizeFitter::FitMode::PreferredSize;
 
     cGradientToggle = BSML::Lite::CreateToggle(componentParent, "Gradient", false, [](bool value) {
         static int id = Editor::GetActionId();
@@ -1252,18 +1254,18 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
     auto directionAndSwap = BSML::Lite::CreateHorizontalLayoutGroup(componentParent);
     directionAndSwap->spacing = 1;
 
-    cGradientDirectionDropdown = Utils::CreateDropdownEnum(directionAndSwap->gameObject, "Direction", 0, Options::DirectionStrings, [](int value) {
+    cGradientDirectionDropdown = MUI::CreateDropdownEnum(directionAndSwap->gameObject, "Direction", 0, Options::DirectionStrings, [](int value) {
         static int id = Editor::GetActionId();
         Editor::GetSelectedComponent(id).GradientOptions.Direction = value;
         Editor::UpdateColor();
         Editor::FinalizeAction();
     });
     auto parent = cGradientDirectionDropdown->transform->parent;
-    Utils::SetLayoutSize(parent, 50, 8);
+    MUI::SetLayoutSize(parent, 50, 8);
     BSML::Lite::AddHoverHint(cGradientDirectionDropdown, "Change the direction of the color gradient");
 
     auto swap = BSML::Lite::CreateUIButton(directionAndSwap, "Swap Colors", Editor::SwapGradientColors);
-    Utils::SetLayoutSize(swap, 24, 8);
+    MUI::SetLayoutSize(swap, 24, 8);
     BSML::Lite::AddHoverHint(swap, "Swap the colors on either end of the color gradient");
 
     auto startHsvController = Utils::CreateHSVModifierPicker(
@@ -1300,7 +1302,7 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
 
     auto enableCollapse = Utils::CreateCollapseArea(componentParent, "Visibility Options", false, Copies::Enable);
 
-    cEnableSourceDropdown = Utils::CreateDropdown(componentParent, "Visible If", "", Utils::GetKeys(Sources::enables), [this](std::string val) {
+    cEnableSourceDropdown = MUI::CreateDropdown(componentParent, "Visible If", "", Utils::GetKeys(Sources::enables), [this](std::string val) {
         static int id = Editor::GetActionId();
         auto& comp = Editor::GetSelectedComponent(id);
         if (comp.EnableSource != val) {
@@ -1320,7 +1322,7 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
     BSML::Lite::AddHoverHint(cInvertEnableToggle, "Invert the visibility of this counter from the driver's settings");
 
     cEnableSourceOptions = BSML::Lite::CreateVerticalLayoutGroup(componentParent);
-    cEnableSourceOptions->GetComponent<UI::ContentSizeFitter*>()->verticalFit = UI::ContentSizeFitter::FitMode::PreferredSize;
+    cEnableSourceOptions->GetComponent<UUI::ContentSizeFitter*>()->verticalFit = UUI::ContentSizeFitter::FitMode::PreferredSize;
 
     enableCollapse->AddContents({cEnableSourceDropdown->transform->parent, cInvertEnableToggle, cEnableSourceOptions});
     enableCollapse->onUpdate = OptionsViewController::UpdateScrollViewStatic;
@@ -1334,29 +1336,29 @@ void OptionsViewController::DidActivate(bool firstActivation, bool addedToHierar
 
     cDeleteButton = BSML::Lite::CreateUIButton(cButtonsParent, "Delete", Editor::Remove);
     BSML::Lite::AddHoverHint(cDeleteButton, "Delete this counter");
-    Utils::SetLayoutSize(cDeleteButton, 18, 9);
+    MUI::SetLayoutSize(cDeleteButton, 18, 9);
 
     cDeselectButton = BSML::Lite::CreateUIButton(cButtonsParent, "Deselect", Editor::Deselect);
     BSML::Lite::AddHoverHint(cDeselectButton, "Deselect this counter");
-    Utils::SetLayoutSize(cDeselectButton, 18, 9);
+    MUI::SetLayoutSize(cDeselectButton, 18, 9);
 
     cCopyButton = BSML::Lite::CreateUIButton(cButtonsParent, "Copy", Editor::CopyComponent);
     BSML::Lite::AddHoverHint(cCopyButton, "Copy this counter to paste into another group");
-    Utils::SetLayoutSize(cCopyButton, 18, 9);
+    MUI::SetLayoutSize(cCopyButton, 18, 9);
 
     cDuplicateButton = BSML::Lite::CreateUIButton(cButtonsParent, "Duplicate", Editor::Duplicate);
     BSML::Lite::AddHoverHint(cDuplicateButton, "Duplicate this counter inside this group");
-    Utils::SetLayoutSize(cDuplicateButton, 18, 9);
+    MUI::SetLayoutSize(cDuplicateButton, 18, 9);
 
     Object::Destroy(componentParent->GetComponentInParent<BSML::ScrollViewContent*>(true));
     auto componentTop = Utils::GetScrollViewTop(componentParent);
     // kinda janky spacing for the delete/deselect buttons
     componentTop->sizeDelta = {-5, -10};
     componentTop->anchoredPosition = {0, 4};
-    componentParent->GetComponent<UI::VerticalLayoutGroup*>()->spacing = 0;
+    componentParent->GetComponent<UUI::VerticalLayoutGroup*>()->spacing = 0;
     float width = background->GetComponent<RectTransform*>()->sizeDelta.x;
     componentParent->GetComponent<RectTransform*>()->sizeDelta = {width - 20, 0};
-    Utils::SetChildrenWidth(componentParent->transform, width - 20);
+    MUI::SetChildrenWidth(componentParent->transform, width - 20);
 
     uiInitialized = true;
     UpdateUI();
@@ -1404,21 +1406,21 @@ void OptionsViewController::UpdateSimpleUI() {
     if (group) {
         auto& state = Editor::GetSelectedGroup(-1);
         if (state.Detached) {
-            Utils::SetIncrementValue(gDetPosIncrementX, state.DetachedPosition.x);
-            Utils::SetIconButtonSprite(gDetPosLockX, state.LockPosX ? lockSprite : unlockSprite);
-            Utils::SetIncrementValue(gDetPosIncrementY, state.DetachedPosition.y);
-            Utils::SetIconButtonSprite(gDetPosLockY, state.LockPosY ? lockSprite : unlockSprite);
-            Utils::SetIncrementValue(gDetPosIncrementZ, state.DetachedPosition.z);
-            Utils::SetIconButtonSprite(gDetPosLockZ, state.LockPosZ ? lockSprite : unlockSprite);
+            MUI::SetIncrementValue(gDetPosIncrementX, state.DetachedPosition.x);
+            MUI::SetIconButtonSprite(gDetPosLockX, state.LockPosX ? lockSprite : unlockSprite);
+            MUI::SetIncrementValue(gDetPosIncrementY, state.DetachedPosition.y);
+            MUI::SetIconButtonSprite(gDetPosLockY, state.LockPosY ? lockSprite : unlockSprite);
+            MUI::SetIncrementValue(gDetPosIncrementZ, state.DetachedPosition.z);
+            MUI::SetIconButtonSprite(gDetPosLockZ, state.LockPosZ ? lockSprite : unlockSprite);
             gDetRotSliderX->set_Value(state.DetachedRotation.x);
-            Utils::SetIconButtonSprite(gDetRotLockX, state.LockRotX ? lockSprite : unlockSprite);
+            MUI::SetIconButtonSprite(gDetRotLockX, state.LockRotX ? lockSprite : unlockSprite);
             gDetRotSliderY->set_Value(state.DetachedRotation.y);
-            Utils::SetIconButtonSprite(gDetRotLockY, state.LockRotY ? lockSprite : unlockSprite);
+            MUI::SetIconButtonSprite(gDetRotLockY, state.LockRotY ? lockSprite : unlockSprite);
             gDetRotSliderZ->set_Value(state.DetachedRotation.z);
-            Utils::SetIconButtonSprite(gDetRotLockZ, state.LockRotZ ? lockSprite : unlockSprite);
+            MUI::SetIconButtonSprite(gDetRotLockZ, state.LockRotZ ? lockSprite : unlockSprite);
         } else {
-            Utils::SetIncrementValue(gPosIncrementX, state.Position.x);
-            Utils::SetIncrementValue(gPosIncrementY, state.Position.y);
+            MUI::SetIncrementValue(gPosIncrementX, state.Position.x);
+            MUI::SetIncrementValue(gPosIncrementY, state.Position.y);
             gRotSlider->set_Value(state.Rotation);
         }
         gPosIncrementX->gameObject->active = !state.Detached;
@@ -1434,8 +1436,8 @@ void OptionsViewController::UpdateSimpleUI() {
         BSML::Lite::SetButtonText(gDetachButton, state.Detached ? "Attach" : "Detach");
     } else if (component) {
         auto& state = Editor::GetSelectedComponent(-1);
-        Utils::SetIncrementValue(cPosIncrementX, state.Position.x);
-        Utils::SetIncrementValue(cPosIncrementY, state.Position.y);
+        MUI::SetIncrementValue(cPosIncrementX, state.Position.x);
+        MUI::SetIncrementValue(cPosIncrementY, state.Position.y);
         cRotSlider->set_Value(state.Rotation);
         cScaleSliderX->set_Value(CalculateScaleInverse(state.Scale.x));
         cScaleSliderY->set_Value(CalculateScaleInverse(state.Scale.y));
@@ -1447,7 +1449,7 @@ void OptionsViewController::UpdateSimpleUI() {
         auto colorCollapse = (CollapseController*) colorCollapseComponent;
         colorCollapse->SetContentActive(cGradientToggle, supportsGradient);
         if (supportsGradient) {
-            Utils::InstantSetToggle(cGradientToggle, state.GradientOptions.Enabled);
+            MUI::InstantSetToggle(cGradientToggle, state.GradientOptions.Enabled);
             colorCollapse->SetContentActive(gradientCollapseComponent, state.GradientOptions.Enabled);
             cGradientDirectionDropdown->dropdown->SelectCellWithIdx(state.GradientOptions.Direction);
             // update hsv panels
@@ -1463,9 +1465,9 @@ void OptionsViewController::UpdateSimpleUI() {
             }
         } else
             colorCollapse->SetContentActive(gradientCollapseComponent, false);
-        Utils::SetDropdownValue(cColorSourceDropdown, state.ColorSource);
-        Utils::SetDropdownValue(cEnableSourceDropdown, state.EnableSource);
-        Utils::InstantSetToggle(cInvertEnableToggle, state.InvertEnable);
+        MUI::SetDropdownValue(cColorSourceDropdown, state.ColorSource);
+        MUI::SetDropdownValue(cEnableSourceDropdown, state.EnableSource);
+        MUI::InstantSetToggle(cInvertEnableToggle, state.InvertEnable);
     } else
         SettingsFlowCoordinator::PresentTemplates();
 
@@ -1734,10 +1736,6 @@ float MenuDragger::GetPointerPosX(EventSystems::PointerEventData* eventData) {
     return rootCanvas->transform->InverseTransformPoint({screenPos.x, screenPos.y, 0}).x;
 }
 
-void EndDragHandler::OnPointerUp(EventSystems::PointerEventData* eventData) {
-    callback();
-}
-
 void SpritesListCell::OnImageClicked(int idx) {
     int realIdx = idx + imageStartIdx;
     auto source = (SpritesListSource*) ((HMUI::TableView*) tableCellOwner)->dataSource;
@@ -1750,11 +1748,11 @@ void SpritesListCell::SetImageStartIdx(int idx) {
     while (layout->GetChildCount() > 0)
         Object::DestroyImmediate(layout->GetChild(0)->gameObject);
 
-    for (int i = 0; i < imagesPerCell; i++) {
+    for (int i = 0; i < ImagesPerCell; i++) {
         if (i + idx < ImageSpriteCache::NumberOfSprites()) {
             images[i] = BSML::Lite::CreateClickableImage(layout, ImageSpriteCache::GetSpriteIdx(i + idx), [this, i]() { OnImageClicked(i); });
             images[i]->preserveAspect = true;
-            images[i]->GetComponent<UI::LayoutElement*>()->preferredWidth = cellSize;
+            images[i]->GetComponent<UUI::LayoutElement*>()->preferredWidth = CellSize;
         } else
             images[i] = nullptr;
     }
@@ -1763,18 +1761,18 @@ void SpritesListCell::SetImageStartIdx(int idx) {
 SpritesListCell* SpritesListCell::CreateNew(int imagesStartIdx, StringW reuseIdentifier) {
     auto object = GameObject::New_ctor("QountersSpritesListCell");
 
-    object->AddComponent<RectTransform*>()->sizeDelta = {0, cellSize};
+    object->AddComponent<RectTransform*>()->sizeDelta = {0, CellSize};
 
     auto ret = object->AddComponent<SpritesListCell*>();
     ret->reuseIdentifier = reuseIdentifier;
 
     auto layout = BSML::Lite::CreateHorizontalLayoutGroup(ret);
-    layout->spacing = imageSpacing;
+    layout->spacing = ImageSpacing;
     layout->childForceExpandWidth = false;
     layout->childAlignment = TextAnchor::MiddleCenter;
-    layout->GetComponent<UI::ContentSizeFitter*>()->verticalFit = UI::ContentSizeFitter::FitMode::Unconstrained;
+    layout->GetComponent<UUI::ContentSizeFitter*>()->verticalFit = UUI::ContentSizeFitter::FitMode::Unconstrained;
 
-    ret->images = ArrayW<BSML::ClickableImage*>(imagesPerCell);
+    ret->images = ArrayW<BSML::ClickableImage*>(ImagesPerCell);
     ret->layout = layout->rectTransform;
     ret->SetImageStartIdx(imagesStartIdx);
 
@@ -1782,22 +1780,22 @@ SpritesListCell* SpritesListCell::CreateNew(int imagesStartIdx, StringW reuseIde
 }
 
 HMUI::TableCell* SpritesListSource::CellForIdx(HMUI::TableView* tableView, int idx) {
-    auto ret = tableView->DequeueReusableCellForIdentifier(reuseIdentifier).try_cast<SpritesListCell>().value_or(nullptr);
+    auto ret = tableView->DequeueReusableCellForIdentifier(ReuseIdentifier).try_cast<SpritesListCell>().value_or(nullptr);
 
     if (!ret)
-        ret = SpritesListCell::CreateNew(idx * SpritesListCell::imagesPerCell, reuseIdentifier);
+        ret = SpritesListCell::CreateNew(idx * SpritesListCell::ImagesPerCell, ReuseIdentifier);
     else
-        ret->SetImageStartIdx(idx * SpritesListCell::imagesPerCell);
+        ret->SetImageStartIdx(idx * SpritesListCell::ImagesPerCell);
 
     return ret;
 }
 
 float SpritesListSource::CellSize() {
-    return SpritesListCell::cellSize;
+    return SpritesListCell::CellSize;
 }
 
 int SpritesListSource::NumberOfCells() {
-    return (ImageSpriteCache::NumberOfSprites() + SpritesListCell::imagesPerCell - 1) / SpritesListCell::imagesPerCell;
+    return (ImageSpriteCache::NumberOfSprites() + SpritesListCell::ImagesPerCell - 1) / SpritesListCell::ImagesPerCell;
 }
 
 void SpritesListSource::OnImageClicked(int imageIdx) {

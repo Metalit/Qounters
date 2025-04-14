@@ -20,4 +20,6 @@ namespace Qounters::Playtest {
     void SetStarsBL(float value);
     void SetRankedSS(bool value);
     void SetStarsSS(float value);
+
+    float GetOverridePBRatio();
 }

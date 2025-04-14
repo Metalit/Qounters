@@ -5,7 +5,7 @@
   "info": {
     "name": "Qounters++",
     "id": "qounters++",
-    "version": "1.0.1",
+    "version": "1.1.0",
     "url": "https://github.com/Metalit/QountersPlusPlus",
     "additionalData": {
       "overrideSoName": "libqountersplusplus.so"
@@ -44,49 +44,42 @@
   "dependencies": [
     {
       "id": "beatsaber-hook",
-      "versionRange": "^5.1.9",
-      "additionalData": {
-        "extraFiles": [
-          "src/inline-hook"
-        ]
-      }
-    },
-    {
-      "id": "bs-cordl",
-      "versionRange": "^3700.0.0",
+      "versionRange": "^6.4.0",
       "additionalData": {}
     },
     {
-      "id": "paper",
-      "versionRange": "^3.6.1",
+      "id": "bs-cordl",
+      "versionRange": "^4004.0.0",
+      "additionalData": {}
+    },
+    {
+      "id": "paper2_scotland2",
+      "versionRange": "^4.5.0",
       "additionalData": {}
     },
     {
       "id": "scotland2",
-      "versionRange": "^0.1.0",
+      "versionRange": "^0.1.6",
       "additionalData": {
         "includeQmod": false
       }
     },
     {
       "id": "custom-types",
-      "versionRange": "^0.17.10",
+      "versionRange": "^0.18.2",
       "additionalData": {}
     },
     {
       "id": "rapidjson-macros",
-      "versionRange": "^2.0.0",
+      "versionRange": "^2.1.0",
       "additionalData": {}
     },
     {
       "id": "config-utils",
       "versionRange": "^2.0.0",
-      "additionalData": {}
-    },
-    {
-      "id": "song-details",
-      "versionRange": "^1.0.2",
-      "additionalData": {}
+      "additionalData": {
+        "private": true
+      }
     },
     {
       "id": "bsml",
@@ -94,13 +87,13 @@
       "additionalData": {}
     },
     {
-      "id": "web-utils",
-      "versionRange": "^0.6.6",
+      "id": "songcore",
+      "versionRange": "^1.1.15",
       "additionalData": {}
     },
     {
-      "id": "songcore",
-      "versionRange": "^1.1.15",
+      "id": "metacore",
+      "versionRange": "^1.0.0",
       "additionalData": {}
     }
   ]

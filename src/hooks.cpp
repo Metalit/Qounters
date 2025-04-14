@@ -1,47 +1,24 @@
 #include "hooks.hpp"
 
-#include "GlobalNamespace/AudioTimeSyncController.hpp"
-#include "GlobalNamespace/BeatmapLevelsModel.hpp"
-#include "GlobalNamespace/BeatmapObjectExecutionRatingsRecorder.hpp"
-#include "GlobalNamespace/BeatmapObjectManager.hpp"
 #include "GlobalNamespace/CoreGameHUDController.hpp"
-#include "GlobalNamespace/CutScoreBuffer.hpp"
 #include "GlobalNamespace/EnvironmentOverrideSettingsPanelController.hpp"
 #include "GlobalNamespace/FlyingGameHUDRotation.hpp"
-#include "GlobalNamespace/GameEnergyCounter.hpp"
 #include "GlobalNamespace/LayerMasks.hpp"
-#include "GlobalNamespace/LevelBar.hpp"
-#include "GlobalNamespace/MissionDataSO.hpp"
-#include "GlobalNamespace/MissionLevelDetailViewController.hpp"
-#include "GlobalNamespace/MissionNode.hpp"
 #include "GlobalNamespace/MultiplayerIntroAnimationController.hpp"
 #include "GlobalNamespace/MultiplayerLocalActivePlayerGameplayManager.hpp"
 #include "GlobalNamespace/MultiplayerLocalActivePlayerInGameMenuViewController.hpp"
 #include "GlobalNamespace/MultiplayerSessionManager.hpp"
-#include "GlobalNamespace/NoteController.hpp"
-#include "GlobalNamespace/NoteCutInfo.hpp"
 #include "GlobalNamespace/PauseController.hpp"
-#include "GlobalNamespace/ScoreController.hpp"
-#include "GlobalNamespace/ScoreModel.hpp"
-#include "GlobalNamespace/ScoreMultiplierCounter.hpp"
-#include "GlobalNamespace/ScoringElement.hpp"
-#include "GlobalNamespace/StandardLevelDetailView.hpp"
 #include "GlobalNamespace/UIKeyboardManager.hpp"
 #include "HMUI/CurvedCanvasSettings.hpp"
 #include "HMUI/CurvedCanvasSettingsHelper.hpp"
 #include "UnityEngine/Sprites/DataUtility.hpp"
 #include "UnityEngine/Time.hpp"
 #include "VRUIControls/VRGraphicRaycaster.hpp"
-#include "beatsaber-hook/shared/utils/hooking.hpp"
 #include "config.hpp"
-#include "customtypes/components.hpp"
-#include "customtypes/settings.hpp"
 #include "editor.hpp"
 #include "environment.hpp"
-#include "events.hpp"
-#include "game.hpp"
 #include "gameplay.hpp"
-#include "internals.hpp"
 #include "main.hpp"
 #include "pp.hpp"
 #include "qounters.hpp"
@@ -56,185 +33,6 @@ static bool wasHidden = false;
 static bool initialized = false;
 
 MAKE_HOOK_MATCH(
-    ScoreController_DespawnScoringElement, &ScoreController::DespawnScoringElement, void, ScoreController* self, ScoringElement* scoringElement
-) {
-    ScoreController_DespawnScoringElement(self, scoringElement);
-
-    int cutScore = scoringElement->cutScore * scoringElement->multiplier;
-    int maxCutScore = scoringElement->maxPossibleCutScore * scoringElement->maxMultiplier;
-
-    bool badCut = scoringElement->multiplierEventType == ScoreMultiplierCounter::MultiplierEventType::Negative &&
-                  scoringElement->wouldBeCorrectCutBestPossibleMultiplierEventType == ScoreMultiplierCounter::MultiplierEventType::Positive &&
-                  cutScore == 0 && maxCutScore > 0;
-
-    // NoteScoreDefinition fixedCutScore, for now only this case
-    bool isGoodScoreFixed = scoringElement->noteData->gameplayType == NoteData::GameplayType::BurstSliderElement;
-
-    if (scoringElement->noteData->colorType == ColorType::ColorA) {
-        Internals::leftScore += cutScore;
-        Internals::leftMaxScore += maxCutScore;
-        if (badCut) {
-            if (isGoodScoreFixed)
-                Internals::leftMissedFixedScore += maxCutScore;
-            else
-                Internals::leftMissedMaxScore += maxCutScore;
-        } else
-            Internals::leftMissedFixedScore += (scoringElement->cutScore * scoringElement->maxMultiplier) - cutScore;
-    } else {
-        Internals::rightScore += cutScore;
-        Internals::rightMaxScore += maxCutScore;
-        if (badCut) {
-            if (isGoodScoreFixed)
-                Internals::rightMissedFixedScore += maxCutScore;
-            else
-                Internals::rightMissedMaxScore += maxCutScore;
-        } else
-            Internals::rightMissedFixedScore += (scoringElement->cutScore * scoringElement->maxMultiplier) - cutScore;
-    }
-    Events::Broadcast((int) Events::ScoreChanged);
-}
-
-MAKE_HOOK_MATCH(
-    BeatmapObjectManager_HandleNoteControllerNoteWasCut,
-    &BeatmapObjectManager::HandleNoteControllerNoteWasCut,
-    void,
-    BeatmapObjectManager* self,
-    NoteController* noteController,
-    ByRef<NoteCutInfo> info
-) {
-    BeatmapObjectManager_HandleNoteControllerNoteWasCut(self, noteController, info);
-
-    bool left = info->saberType == SaberType::SaberA;
-    bool bomb = noteController->noteData->gameplayType == NoteData::GameplayType::Bomb;
-    if (!bomb && Internals::IsFakeNote(noteController->noteData))
-        return;
-
-    if (info->allIsOK) {
-        Internals::combo++;
-        if (left)
-            Internals::leftCombo++;
-        else
-            Internals::rightCombo++;
-    } else {
-        Internals::combo = 0;
-        if (left) {
-            if (bomb)
-                Internals::bombsLeftHit++;
-            else
-                Internals::notesLeftBadCut++;
-            Internals::leftCombo = 0;
-        } else {
-            if (bomb)
-                Internals::bombsRightHit++;
-            else
-                Internals::notesRightBadCut++;
-            Internals::rightCombo = 0;
-        }
-        if (bomb)
-            Events::Broadcast((int) Events::BombCut);
-        else
-            Events::Broadcast((int) Events::NoteCut);
-    }
-    Events::Broadcast((int) Events::ComboChanged);
-}
-
-MAKE_HOOK_MATCH(
-    BeatmapObjectManager_HandleNoteControllerNoteWasMissed,
-    &BeatmapObjectManager::HandleNoteControllerNoteWasMissed,
-    void,
-    BeatmapObjectManager* self,
-    NoteController* noteController
-) {
-    BeatmapObjectManager_HandleNoteControllerNoteWasMissed(self, noteController);
-
-    if (noteController->noteData->gameplayType == NoteData::GameplayType::Bomb || Internals::IsFakeNote(noteController->noteData))
-        return;
-
-    Internals::combo = 0;
-    if (noteController->noteData->colorType == ColorType::ColorA) {
-        Internals::leftCombo = 0;
-        Internals::notesLeftMissed++;
-    } else {
-        Internals::rightCombo = 0;
-        Internals::notesRightMissed++;
-    }
-    Events::Broadcast((int) Events::NoteMissed);
-    Events::Broadcast((int) Events::ComboChanged);
-}
-
-MAKE_HOOK_MATCH(
-    CutScoreBuffer_HandleSaberSwingRatingCounterDidFinish,
-    &CutScoreBuffer::HandleSaberSwingRatingCounterDidFinish,
-    void,
-    CutScoreBuffer* self,
-    ISaberSwingRatingCounter* swingRatingCounter
-) {
-    CutScoreBuffer_HandleSaberSwingRatingCounterDidFinish(self, swingRatingCounter);
-
-    if (self->noteCutInfo.allIsOK && Internals::ShouldCountNote(self->noteCutInfo.noteData)) {
-        int after = self->afterCutScore;
-        if (self->noteScoreDefinition->maxAfterCutScore == 0)  // TODO: selectively exclude from averages?
-            after = 30;
-        if (self->noteCutInfo.saberType == SaberType::SaberA) {
-            Internals::notesLeftCut++;
-            Internals::leftPreSwing += self->beforeCutScore;
-            Internals::leftPostSwing += after;
-            Internals::leftAccuracy += self->centerDistanceCutScore;
-            Internals::leftTimeDependence += std::abs(self->noteCutInfo.cutNormal.z);
-        } else {
-            Internals::notesRightCut++;
-            Internals::rightPreSwing += self->beforeCutScore;
-            Internals::rightPostSwing += after;
-            Internals::rightAccuracy += self->centerDistanceCutScore;
-            Internals::rightTimeDependence += std::abs(self->noteCutInfo.cutNormal.z);
-        }
-        Events::Broadcast((int) Events::NoteCut);
-    }
-}
-
-MAKE_HOOK_MATCH(
-    BeatmapObjectExecutionRatingsRecorder_HandlePlayerHeadDidEnterObstacle,
-    &BeatmapObjectExecutionRatingsRecorder::HandlePlayerHeadDidEnterObstacle,
-    void,
-    BeatmapObjectExecutionRatingsRecorder* self,
-    ObstacleController* obstacleController
-) {
-    BeatmapObjectExecutionRatingsRecorder_HandlePlayerHeadDidEnterObstacle(self, obstacleController);
-
-    Internals::wallsHit++;
-    Internals::combo = 0;
-    // TODO: should left and right combos go to 0 as well? depending on location of wall (lol)?
-    Events::Broadcast((int) Events::WallHit);
-    Events::Broadcast((int) Events::ComboChanged);
-}
-
-MAKE_HOOK_MATCH(GameEnergyCounter_ProcessEnergyChange, &GameEnergyCounter::ProcessEnergyChange, void, GameEnergyCounter* self, float energyChange) {
-
-    bool wasAbove0 = !self->_didReach0Energy;
-
-    GameEnergyCounter_ProcessEnergyChange(self, energyChange);
-
-    if (!Environment::InSettings() && Internals::noFail && wasAbove0 && self->_didReach0Energy) {
-        Internals::negativeMods -= 0.5;
-        Events::Broadcast((int) Events::ScoreChanged);
-    }
-    Internals::health = self->energy;
-    Events::Broadcast((int) Events::HealthChanged);
-}
-
-MAKE_HOOK_MATCH(AudioTimeSyncController_Update, &AudioTimeSyncController::Update, void, AudioTimeSyncController* self) {
-
-    AudioTimeSyncController_Update(self);
-
-    if (!initialized)
-        return;
-
-    Internals::DoSlowUpdate();
-    Internals::songTime = self->songTime;
-    Events::Broadcast((int) Events::Update);
-}
-
-MAKE_HOOK_MATCH(
     CoreGameHUDController_Initialize, &CoreGameHUDController::Initialize, void, CoreGameHUDController* self, CoreGameHUDController::InitData* initData
 ) {
     if (!getConfig().Enabled.GetValue()) {
@@ -245,18 +43,10 @@ MAKE_HOOK_MATCH(
     initData->advancedHUD = true;
     wasHidden = initData->hide;
 
-    ObjectSignal::CreateDestroySignal([]() {
-        logger.info("Qounters end");
-        initialized = false;
-        HUD::Reset();
-        rotationalAnchor = nullptr;
-    });
-
     if (!Environment::InSettings() && !wasHidden && self->isActiveAndEnabled) {
         logger.info("Qounters start");
         if (self->name == "FlyingGameHUD")
             rotationalAnchor = UnityEngine::GameObject::New_ctor("QountersRotationalAnchor")->transform;
-        Internals::Initialize();
         HUD::SetupObjects();
         HUD::CreateQounters();
         initialized = true;
@@ -278,7 +68,6 @@ MAKE_HOOK_MATCH(
 
     if (!Environment::InSettings() && !wasHidden && !initialized) {
         logger.info("Qounters start");
-        Internals::Initialize();
         HUD::SetupObjects();
         HUD::CreateQounters();
         initialized = true;
@@ -291,43 +80,6 @@ MAKE_HOOK_MATCH(FlyingGameHUDRotation_LateUpdate, &FlyingGameHUDRotation::LateUp
 
     if (rotationalAnchor)
         rotationalAnchor->rotation = self->transform->rotation;
-}
-
-MAKE_HOOK_MATCH(
-    StandardLevelDetailView_SetContentForBeatmapData, &StandardLevelDetailView::SetContentForBeatmapData, void, StandardLevelDetailView* self
-) {
-    if (self->beatmapKey.IsValid()) {
-        PP::GetMapInfo(self->beatmapKey);
-        Gameplay::SetLevel(self->_beatmapLevel, self->beatmapKey, true);
-    }
-    if (auto signal = self->gameObject->AddComponent<ObjectSignal*>()) {
-        signal->onEnable = [self]() {
-            Gameplay::SetLevel(self->_beatmapLevel, self->beatmapKey, true);
-        };
-        signal->onDisable = Gameplay::ClearLevel;
-    }
-
-    StandardLevelDetailView_SetContentForBeatmapData(self);
-}
-
-MAKE_HOOK_MATCH(
-    MissionLevelDetailViewController_RefreshContent, &MissionLevelDetailViewController::RefreshContent, void, MissionLevelDetailViewController* self
-) {
-    auto key = self->missionNode->missionData->beatmapKey;
-    if (key.IsValid()) {
-        PP::GetMapInfo(key);
-        if (auto level = self->_levelBar->_beatmapLevelsModel->GetBeatmapLevel(key.levelId))
-            Gameplay::SetLevel(level, key, false);
-    }
-    if (auto signal = self->gameObject->AddComponent<ObjectSignal*>()) {
-        signal->onEnable = [model = self->_levelBar->_beatmapLevelsModel, key]() {
-            if (auto level = model->GetBeatmapLevel(key.levelId))
-                Gameplay::SetLevel(level, key, false);
-        };
-        signal->onDisable = Gameplay::ClearLevel;
-    }
-
-    MissionLevelDetailViewController_RefreshContent(self);
 }
 
 MAKE_HOOK_MATCH(
@@ -421,16 +173,6 @@ MAKE_HOOK_MATCH(
     self->_blockingMask = mask;
 }
 
-MAKE_HOOK_MATCH(
-    InputFieldView_DeactivateKeyboard, &HMUI::InputFieldView::DeactivateKeyboard, void, HMUI::InputFieldView* self, HMUI::UIKeyboard* keyboard
-) {
-    InputFieldView_DeactivateKeyboard(self, keyboard);
-
-    auto handler = self->GetComponent<KeyboardCloseHandler*>();
-    if (handler && handler->closeCallback)
-        handler->closeCallback();
-}
-
 MAKE_HOOK_MATCH(UIKeyboardManager_OpenKeyboardFor, &UIKeyboardManager::OpenKeyboardFor, void, UIKeyboardManager* self, HMUI::InputFieldView* input) {
     if (auto inputModal = input->GetComponentInParent<HMUI::ModalView*>()) {
         auto inputModalCanvas = inputModal->GetComponent<UnityEngine::Canvas*>();
@@ -439,14 +181,6 @@ MAKE_HOOK_MATCH(UIKeyboardManager_OpenKeyboardFor, &UIKeyboardManager::OpenKeybo
     }
 
     UIKeyboardManager_OpenKeyboardFor(self, input);
-}
-
-MAKE_HOOK_MATCH(UIKeyboardManager_HandleKeyboardOkButton, &UIKeyboardManager::HandleKeyboardOkButton, void, UIKeyboardManager* self) {
-    auto handler = self->_selectedInput->GetComponent<KeyboardCloseHandler*>();
-    if (handler && handler->okCallback)
-        handler->okCallback();
-
-    UIKeyboardManager_HandleKeyboardOkButton(self);
 }
 
 // I hate having to do this
@@ -552,31 +286,4 @@ MAKE_HOOK_MATCH(ImageView_OnPopulateMesh, &HMUI::ImageView::OnPopulateMesh, void
         PopulateMeshHSVGradient(self, toFill, hsv->modified, hsv->modifier, hsv->elements);
     else
         ImageView_OnPopulateMesh(self, toFill);
-}
-
-void Hooks::Install() {
-    INSTALL_HOOK(logger, ScoreController_DespawnScoringElement);
-    INSTALL_HOOK(logger, BeatmapObjectManager_HandleNoteControllerNoteWasCut);
-    INSTALL_HOOK(logger, BeatmapObjectManager_HandleNoteControllerNoteWasMissed);
-    INSTALL_HOOK(logger, CutScoreBuffer_HandleSaberSwingRatingCounterDidFinish);
-    INSTALL_HOOK(logger, BeatmapObjectExecutionRatingsRecorder_HandlePlayerHeadDidEnterObstacle);
-    INSTALL_HOOK(logger, GameEnergyCounter_ProcessEnergyChange);
-    INSTALL_HOOK(logger, AudioTimeSyncController_Update);
-    INSTALL_HOOK(logger, CoreGameHUDController_Initialize);
-    INSTALL_HOOK(logger, MultiplayerIntroAnimationController_BindTimeline);
-    INSTALL_HOOK(logger, FlyingGameHUDRotation_LateUpdate);
-    INSTALL_HOOK(logger, StandardLevelDetailView_SetContentForBeatmapData);
-    INSTALL_HOOK(logger, MissionLevelDetailViewController_RefreshContent);
-    INSTALL_HOOK(logger, EnvironmentOverrideSettingsPanelController_HandleDropDownDidSelectCellWithIdx);
-    INSTALL_HOOK(logger, EnvironmentOverrideSettingsPanelController_HandleOverrideEnvironmentsToggleValueChanged);
-    INSTALL_HOOK(logger, PauseController_Pause);
-    INSTALL_HOOK(logger, MultiplayerLocalActivePlayerInGameMenuViewController_ShowMenu);
-    INSTALL_HOOK(logger, MultiplayerLocalActivePlayerInGameMenuViewController_HideMenu);
-    INSTALL_HOOK(logger, MultiplayerLocalActivePlayerGameplayManager_PerformPlayerFail);
-    INSTALL_HOOK(logger, MultiplayerSessionManager_get_localPlayer);
-    INSTALL_HOOK(logger, VRGraphicRaycaster_Raycast);
-    INSTALL_HOOK(logger, InputFieldView_DeactivateKeyboard);
-    INSTALL_HOOK(logger, UIKeyboardManager_OpenKeyboardFor);
-    INSTALL_HOOK(logger, UIKeyboardManager_HandleKeyboardOkButton);
-    INSTALL_HOOK(logger, ImageView_OnPopulateMesh);
 }

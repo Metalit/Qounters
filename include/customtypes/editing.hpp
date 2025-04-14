@@ -20,7 +20,7 @@
 
 #define CAST_METHOD(c, m, ...) static_cast<void (c::*)(__VA_ARGS__)>(&c::m)
 
-DECLARE_CLASS_CODEGEN(Qounters, Outline, UUI::Graphic,
+DECLARE_CLASS_CODEGEN(Qounters, Outline, UUI::Graphic) {
     DECLARE_INSTANCE_METHOD(void, Awake);
     DECLARE_INSTANCE_METHOD(void, OnDestroy);
 
@@ -42,10 +42,10 @@ DECLARE_CLASS_CODEGEN(Qounters, Outline, UUI::Graphic,
    public:
     static UnityEngine::Material* material;
     static int count;
-    static Outline* Create(UnityEngine::Component* obj);
-)
+    static Outline* Create(UnityEngine::Component * obj);
+};
 
-DECLARE_CLASS_CODEGEN(Qounters, CanvasHighlight, UUI::Graphic,
+DECLARE_CLASS_CODEGEN(Qounters, CanvasHighlight, UUI::Graphic) {
     DECLARE_INSTANCE_METHOD(void, OnEnable);
     DECLARE_INSTANCE_METHOD(void, SetHighlighted, bool value);
     DECLARE_OVERRIDE_METHOD_MATCH(void, OnPopulateMesh, CAST_METHOD(UUI::Graphic, OnPopulateMesh, UUI::VertexHelper*), UUI::VertexHelper* vh);
@@ -53,13 +53,9 @@ DECLARE_CLASS_CODEGEN(Qounters, CanvasHighlight, UUI::Graphic,
     DECLARE_DEFAULT_CTOR();
 
     DECLARE_INSTANCE_FIELD_DEFAULT(bool, highlighted, false);
-)
+};
 
-#define INTERFACES std::vector<Il2CppClass*>({ \
-    classof(UUI::ILayoutController*), \
-})
-
-DECLARE_CLASS_CODEGEN_INTERFACES(Qounters, TextOutlineSizer, UES::UIBehaviour, INTERFACES,
+DECLARE_CLASS_CODEGEN_INTERFACES(Qounters, TextOutlineSizer, UES::UIBehaviour, UUI::ILayoutController*) {
     DECLARE_INSTANCE_METHOD(void, OnEnable);
     DECLARE_INSTANCE_METHOD(void, OnDisable);
     DECLARE_OVERRIDE_METHOD_MATCH(void, SetLayoutHorizontal, &UUI::ILayoutController::SetLayoutHorizontal);
@@ -79,9 +75,9 @@ DECLARE_CLASS_CODEGEN_INTERFACES(Qounters, TextOutlineSizer, UES::UIBehaviour, I
 
    private:
     Outline* outline = nullptr;
-)
+};
 
-DECLARE_CLASS_CODEGEN(Qounters, GroupOutlineSizer, UnityEngine::MonoBehaviour,
+DECLARE_CLASS_CODEGEN(Qounters, GroupOutlineSizer, UnityEngine::MonoBehaviour) {
     DECLARE_INSTANCE_METHOD(void, OnEnable);
     DECLARE_INSTANCE_METHOD(void, Update);
 
@@ -95,18 +91,12 @@ DECLARE_CLASS_CODEGEN(Qounters, GroupOutlineSizer, UnityEngine::MonoBehaviour,
 
    private:
     Outline* outline = nullptr;
-)
+};
 
-#undef INTERFACES
-
-#define INTERFACES std::vector<Il2CppClass*>({ \
-    classof(UES::IEventSystemHandler*), \
-    classof(UES::IInitializePotentialDragHandler*), \
-})
 // IEventSystemHandler is needed for pointer handlers
 // and IInitializePotentialDragHandler for dragging
 
-DECLARE_CLASS_CODEGEN_INTERFACES(Qounters, EditingBase, UnityEngine::MonoBehaviour, INTERFACES,
+DECLARE_CLASS_CODEGEN_INTERFACES(Qounters, EditingBase, UnityEngine::MonoBehaviour, UES::IEventSystemHandler*, UES::IInitializePotentialDragHandler*) {
     DECLARE_INSTANCE_METHOD(void, Awake);
 
     DECLARE_INSTANCE_METHOD(void, BasePointerEnter);
@@ -119,7 +109,7 @@ DECLARE_CLASS_CODEGEN_INTERFACES(Qounters, EditingBase, UnityEngine::MonoBehavio
     DECLARE_INSTANCE_FIELD_DEFAULT(UnityEngine::RectTransform*, rectTransform, nullptr);
     DECLARE_INSTANCE_FIELD_DEFAULT(Qounters::Outline*, outline, nullptr);
 
-    DECLARE_INSTANCE_METHOD(UnityEngine::Vector2, GetPointerPos, UES::PointerEventData* eventData);
+    DECLARE_INSTANCE_METHOD(UnityEngine::Vector2, GetPointerPos, UES::PointerEventData * eventData);
 
     DECLARE_INSTANCE_METHOD(void, Select);
     DECLARE_INSTANCE_METHOD(void, Deselect);
@@ -132,18 +122,9 @@ DECLARE_CLASS_CODEGEN_INTERFACES(Qounters, EditingBase, UnityEngine::MonoBehavio
     UnityEngine::Vector2 grabOffset = {0, 0};
     float dragStart = 0;
     int dragActionId;
-)
+};
 
-#undef INTERFACES
-
-#define INTERFACES std::vector<Il2CppClass*>({ \
-    classof(UES::IPointerEnterHandler*), \
-    classof(UES::IPointerExitHandler*), \
-    classof(UES::IDragHandler*), \
-    classof(UES::IEndDragHandler*), \
-})
-
-DECLARE_CLASS_CUSTOM_INTERFACES(Qounters, EditingGroup, EditingBase, INTERFACES,
+DECLARE_CLASS_CUSTOM_INTERFACES(Qounters, EditingGroup, EditingBase, UES::IPointerEnterHandler*, UES::IPointerExitHandler*, UES::IDragHandler*, UES::IEndDragHandler*) {
     DECLARE_INSTANCE_METHOD(void, OnEnable);
 
     DECLARE_DEFAULT_CTOR();
@@ -167,10 +148,10 @@ DECLARE_CLASS_CUSTOM_INTERFACES(Qounters, EditingGroup, EditingBase, INTERFACES,
 
     friend class EditingComponent;
 
-    void OnDragNormal(UES::PointerEventData* eventData);
-    void OnEndDragNormal(UES::PointerEventData* eventData);
-    void OnDragDetached(UES::PointerEventData* eventData);
-    void OnEndDragDetached(UES::PointerEventData* eventData);
+    void OnDragNormal(UES::PointerEventData * eventData);
+    void OnEndDragNormal(UES::PointerEventData * eventData);
+    void OnDragDetached(UES::PointerEventData * eventData);
+    void OnEndDragDetached(UES::PointerEventData * eventData);
     Options::Group& GetGroup();
 
     UnityEngine::Vector3 detachedGrabPos;
@@ -178,9 +159,9 @@ DECLARE_CLASS_CUSTOM_INTERFACES(Qounters, EditingGroup, EditingBase, INTERFACES,
 
    public:
     void Init(int groupIdx);
-)
+};
 
-DECLARE_CLASS_CUSTOM_INTERFACES(Qounters, EditingComponent, EditingBase, INTERFACES,
+DECLARE_CLASS_CUSTOM_INTERFACES(Qounters, EditingComponent, EditingBase, UES::IPointerEnterHandler*, UES::IPointerExitHandler*, UES::IDragHandler*, UES::IEndDragHandler*) {
 
     DECLARE_DEFAULT_CTOR();
 
@@ -203,10 +184,9 @@ DECLARE_CLASS_CUSTOM_INTERFACES(Qounters, EditingComponent, EditingBase, INTERFA
     Options::Component& GetComponent();
 
    public:
-    void Init(UUI::Graphic* typeComponent, int componentIdx);
-)
+    void Init(UUI::Graphic * typeComponent, int componentIdx);
+};
 
-#undef INTERFACES
 #undef UUI
 #undef UES
 #undef CAST_METHOD

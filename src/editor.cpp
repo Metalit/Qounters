@@ -15,6 +15,7 @@
 #include "customtypes/editing.hpp"
 #include "customtypes/settings.hpp"
 #include "main.hpp"
+#include "metacore/shared/unity.hpp"
 #include "playtest.hpp"
 #include "qounters.hpp"
 #include "sources.hpp"
@@ -111,7 +112,7 @@ static void SetupAnchors() {
             anchors[i] = nullptr;
             continue;
         }
-        anchors[i] = Utils::GetOrAddComponent<CanvasHighlight*>(anchor);
+        anchors[i] = MetaCore::Engine::GetOrAddComponent<CanvasHighlight*>(anchor);
         anchors[i]->color = {1, 1, 1, 0.2};
         anchors[i]->raycastTarget = false;
     }

@@ -13,9 +13,12 @@
 #include "config.hpp"
 #include "customtypes/components.hpp"
 #include "environment.hpp"
+#include "metacore/shared/ui.hpp"
+#include "metacore/shared/unity.hpp"
 #include "utils.hpp"
 
 using namespace Qounters;
+using namespace MetaCore;
 
 static bool initialized = false;
 
@@ -108,7 +111,7 @@ void Gameplay::GameplaySetupMenu(UnityEngine::GameObject* parent, bool firstActi
         return;
     }
 
-    parent->AddComponent<ObjectSignal*>()->onDestroy = OnDestroy;
+    Engine::SetOnDestroy(parent, OnDestroy);
 
     vertical = BSML::Lite::CreateVerticalLayoutGroup(parent);
     vertical->name = "QountersGameplaySetup";
@@ -118,12 +121,12 @@ void Gameplay::GameplaySetupMenu(UnityEngine::GameObject* parent, bool firstActi
     vertical->spacing = 0.5;
 
     auto horizontal = BSML::Lite::CreateHorizontalLayoutGroup(vertical);
-    Utils::SetLayoutSize(BSML::Lite::CreateText(horizontal, "Current Environment:"), -1, -1, 999);
+    UI::SetLayoutSize(BSML::Lite::CreateText(horizontal, "Current Environment:"), -1, -1, 999);
     environmentText = BSML::Lite::CreateText(horizontal, "");
     BSML::Lite::AddHoverHint(environmentText, "The environment that will be used for the currently selected level");
 
     horizontal = BSML::Lite::CreateHorizontalLayoutGroup(vertical);
-    Utils::SetLayoutSize(BSML::Lite::CreateText(horizontal, "Environment Type:"), -1, -1, 999);
+    UI::SetLayoutSize(BSML::Lite::CreateText(horizontal, "Environment Type:"), -1, -1, 999);
     environmentTypeText = BSML::Lite::CreateText(horizontal, "");
     BSML::Lite::AddHoverHint(environmentText, "The HUD type of the current environment");
 
@@ -154,7 +157,7 @@ void Gameplay::GameplaySetupMenu(UnityEngine::GameObject* parent, bool firstActi
     specificOverrideToggle->transform->Find("NameText")->GetComponent<TMPro::TextMeshProUGUI*>()->fontSizeMin = 4;
     BSML::Lite::AddHoverHint(specificOverrideToggle, "Override the preset for this specific environment");
 
-    Utils::SetChildrenWidth(vertical->transform, 85);
+    UI::SetChildrenWidth(vertical->transform, 85);
 
     settingsButton = BSML::Lite::CreateUIButton(vertical, "Open Settings", Environment::PresentSettings);
     BSML::Lite::AddHoverHint(settingsButton, "Open the preset modification environment");
@@ -206,7 +209,7 @@ void Gameplay::UpdateUI() {
     std::vector<std::string> names;
     for (auto& [name, _] : presets)
         names.emplace_back(name);
-    Utils::SetDropdownValues(presetDropdown, names, getConfig().Preset.GetValue());
+    UI::SetDropdownValues(presetDropdown, names, getConfig().Preset.GetValue());
 
     typeOverrideToggle->gameObject->active = lastEnvironment;
     specificOverrideToggle->gameObject->active = lastEnvironment;
@@ -225,17 +228,17 @@ void Gameplay::UpdateUI() {
 
         auto typePresets = getConfig().TypePresets.GetValue();
         bool hasTypeOverride = typePresets.contains(hudTypeString) && typePresets[hudTypeString].Enabled;
-        Utils::InstantSetToggle(typeOverrideToggle, hasTypeOverride);
+        UI::InstantSetToggle(typeOverrideToggle, hasTypeOverride);
         typePresetDropdown->gameObject->active = hasTypeOverride;
         if (hasTypeOverride)
-            Utils::SetDropdownValues(typePresetDropdown, names, typePresets[hudTypeString].Preset);
+            UI::SetDropdownValues(typePresetDropdown, names, typePresets[hudTypeString].Preset);
 
         auto specificPresets = getConfig().SpecificPresets.GetValue();
         bool hasSpecificOverride = specificPresets.contains(serializedName) && specificPresets[serializedName].Enabled;
-        Utils::InstantSetToggle(specificOverrideToggle, hasSpecificOverride);
+        UI::InstantSetToggle(specificOverrideToggle, hasSpecificOverride);
         specificPresetDropdown->gameObject->active = hasSpecificOverride;
         if (hasSpecificOverride)
-            Utils::SetDropdownValues(specificPresetDropdown, names, specificPresets[serializedName].Preset);
+            UI::SetDropdownValues(specificPresetDropdown, names, specificPresets[serializedName].Preset);
 
         environmentText->text = name;
         environmentTypeText->text = reqs.empty() ? type : fmt::format("{}    <size=66%>{}", type, fmt::join(reqs, ", "));

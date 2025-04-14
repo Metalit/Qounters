@@ -14,6 +14,7 @@
 #include "customtypes/settings.hpp"
 #include "editor.hpp"
 #include "main.hpp"
+#include "metacore/shared/unity.hpp"
 #include "utils.hpp"
 
 DEFINE_TYPE(Qounters, Outline);
@@ -25,6 +26,7 @@ DEFINE_TYPE(Qounters, EditingGroup);
 DEFINE_TYPE(Qounters, EditingComponent);
 
 using namespace Qounters;
+using namespace MetaCore;
 using namespace UnityEngine;
 
 static Color const OffColor = {0.7, 0.7, 0.7, 1};
@@ -294,7 +296,7 @@ void GroupOutlineSizer::Update() {
 
 void EditingBase::Awake() {
     if (!rectTransform)
-        rectTransform = Utils::GetOrAddComponent<RectTransform*>(this);
+        rectTransform = Engine::GetOrAddComponent<RectTransform*>(this);
     if (!outline)
         outline = Outline::Create(this);
     dragActionId = Editor::GetActionId();
@@ -349,7 +351,7 @@ void EditingBase::UpdateColor() {
 
 void EditingGroup::OnEnable() {
     if (!outlineSizer)
-        outlineSizer = Utils::GetOrAddComponent<GroupOutlineSizer*>(this);
+        outlineSizer = Engine::GetOrAddComponent<GroupOutlineSizer*>(this);
 }
 
 void EditingGroup::OnPointerEnter(EventSystems::PointerEventData* eventData) {

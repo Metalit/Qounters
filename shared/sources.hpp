@@ -157,6 +157,8 @@ namespace Qounters::Sources {
             };
             VALUE_DEFAULT(int, Leaderboard, (int) Leaderboards::ScoreSaber);
             VALUE_DEFAULT(int, Decimals, 1);
+
+            static float GetRankedPP(int leaderboard);
         };
         DECLARE_JSON_STRUCT(SaberSpeed) {
             enum class Modes {
@@ -265,6 +267,8 @@ namespace Qounters::Sources {
                 Boost2,
             };
             VALUE_DEFAULT(int, Setting, (int) ColorSettings::LeftSaber);
+
+            static UnityEngine::Color GetColor(int setting);
         };
         DECLARE_JSON_STRUCT(Rank) {
             VALUE_DEFAULT(int, Saber, (int) Types::Sabers::Both);
@@ -277,12 +281,8 @@ namespace Qounters::Sources {
             VALUE_DEFAULT(ConfigUtils::Color, C, ConfigUtils::Color(1, 0.5, 0, 1));
             VALUE_DEFAULT(ConfigUtils::Color, D, ConfigUtils::Color(1, 0, 0, 1));
             VALUE_DEFAULT(ConfigUtils::Color, E, ConfigUtils::Color(1, 0, 0, 1));
-            // parse after SS
-            VALUE_DEFAULT(ConfigUtils::Color, SSS, ConfigUtils::Color(0, 1, 1, 1));
-            DESERIALIZE_FUNCTION(tempDefaultSSS) {
-                if (!jsonValue.HasMember("SSS"))
-                    SSS = SS;
-            }
+            // use value of SS as default when parsing
+            VALUE_DEFAULT(ConfigUtils::Color, SSS, self->SS) = ConfigUtils::Color(0, 1, 1, 1);
         };
         DECLARE_JSON_STRUCT(PersonalBest) {
             VALUE_DEFAULT(ConfigUtils::Color, Better, ConfigUtils::Color(0, 1, 1, 1));
@@ -330,6 +330,8 @@ namespace Qounters::Sources {
                 Both,
             };
             VALUE_DEFAULT(int, Leaderboard, (int) Leaderboards::Either);
+
+            static bool GetIsRanked(int leaderboards);
         };
         DECLARE_JSON_STRUCT(FullCombo) {
             VALUE_DEFAULT(int, Saber, (int) Types::Sabers::Both);

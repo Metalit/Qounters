@@ -13,8 +13,8 @@
 #include "System/Action.hpp"
 #include "UnityEngine/EventSystems/IDragHandler.hpp"
 #include "UnityEngine/EventSystems/IEndDragHandler.hpp"
-#include "UnityEngine/EventSystems/IPointerUpHandler.hpp"
 #include "UnityEngine/EventSystems/IInitializePotentialDragHandler.hpp"
+#include "UnityEngine/EventSystems/IPointerUpHandler.hpp"
 #include "bsml/shared/BSML/Components/ClickableImage.hpp"
 #include "bsml/shared/BSML/Components/CustomListTableData.hpp"
 #include "bsml/shared/BSML/Components/Settings/DropdownListSetting.hpp"
@@ -27,7 +27,7 @@
 
 #define UES UnityEngine::EventSystems
 
-DECLARE_CLASS_CODEGEN(Qounters, SettingsFlowCoordinator, HMUI::FlowCoordinator,
+DECLARE_CLASS_CODEGEN(Qounters, SettingsFlowCoordinator, HMUI::FlowCoordinator) {
     DECLARE_DEFAULT_CTOR();
 
     DECLARE_OVERRIDE_METHOD_MATCH(void, DidActivate, &HMUI::FlowCoordinator::DidActivate, bool, bool, bool);
@@ -69,9 +69,9 @@ DECLARE_CLASS_CODEGEN(Qounters, SettingsFlowCoordinator, HMUI::FlowCoordinator,
     static inline std::function<void()> nextModalCancel = nullptr;
 
     static void MakeNewPreset(std::string name, bool removeOld);
-)
+};
 
-DECLARE_CLASS_CODEGEN(Qounters, SettingsViewController, HMUI::ViewController,
+DECLARE_CLASS_CODEGEN(Qounters, SettingsViewController, HMUI::ViewController) {
     DECLARE_DEFAULT_CTOR();
 
     DECLARE_OVERRIDE_METHOD_MATCH(void, DidActivate, &HMUI::ViewController::DidActivate, bool, bool, bool);
@@ -109,9 +109,9 @@ DECLARE_CLASS_CODEGEN(Qounters, SettingsViewController, HMUI::ViewController,
     bool nameModalIsRename = false;
 
     static inline SettingsViewController* instance = nullptr;
-)
+};
 
-DECLARE_CLASS_CODEGEN(Qounters, PlaytestViewController, HMUI::ViewController,
+DECLARE_CLASS_CODEGEN(Qounters, PlaytestViewController, HMUI::ViewController) {
     DECLARE_DEFAULT_CTOR();
 
     DECLARE_OVERRIDE_METHOD_MATCH(void, DidActivate, &HMUI::ViewController::DidActivate, bool, bool, bool);
@@ -143,9 +143,9 @@ DECLARE_CLASS_CODEGEN(Qounters, PlaytestViewController, HMUI::ViewController,
 
    private:
     static inline PlaytestViewController* instance = nullptr;
-)
+};
 
-DECLARE_CLASS_CODEGEN(Qounters, TemplatesViewController, HMUI::ViewController,
+DECLARE_CLASS_CODEGEN(Qounters, TemplatesViewController, HMUI::ViewController) {
     DECLARE_DEFAULT_CTOR();
 
     DECLARE_OVERRIDE_METHOD_MATCH(void, DidActivate, &HMUI::ViewController::DidActivate, bool, bool, bool);
@@ -165,9 +165,9 @@ DECLARE_CLASS_CODEGEN(Qounters, TemplatesViewController, HMUI::ViewController,
 
    private:
     static inline TemplatesViewController* instance = nullptr;
-)
+};
 
-DECLARE_CLASS_CODEGEN(Qounters, OptionsViewController, HMUI::ViewController,
+DECLARE_CLASS_CODEGEN(Qounters, OptionsViewController, HMUI::ViewController) {
     DECLARE_DEFAULT_CTOR();
 
     DECLARE_OVERRIDE_METHOD_MATCH(void, DidActivate, &HMUI::ViewController::DidActivate, bool, bool, bool);
@@ -249,16 +249,16 @@ DECLARE_CLASS_CODEGEN(Qounters, OptionsViewController, HMUI::ViewController,
 
    private:
     static inline Qounters::OptionsViewController* instance = nullptr;
-)
+};
 
-DECLARE_CLASS_CODEGEN(Qounters, HSVGradientImage, UnityEngine::MonoBehaviour,
+DECLARE_CLASS_CODEGEN(Qounters, HSVGradientImage, UnityEngine::MonoBehaviour) {
     DECLARE_DEFAULT_CTOR();
     DECLARE_INSTANCE_FIELD(int, modified);
     DECLARE_INSTANCE_FIELD(float, modifier);
     DECLARE_INSTANCE_FIELD_DEFAULT(int, elements, 10);
-)
+};
 
-DECLARE_CLASS_CODEGEN(Qounters, HSVController, UnityEngine::MonoBehaviour,
+DECLARE_CLASS_CODEGEN(Qounters, HSVController, UnityEngine::MonoBehaviour) {
     DECLARE_DEFAULT_CTOR();
 
     DECLARE_INSTANCE_FIELD(UnityEngine::Color, baseColor);
@@ -282,16 +282,9 @@ DECLARE_CLASS_CODEGEN(Qounters, HSVController, UnityEngine::MonoBehaviour,
    public:
     std::function<void(UnityEngine::Vector3)> onChange = nullptr;
     std::function<void()> onClose = nullptr;
-)
+};
 
-#define INTERFACES std::vector<Il2CppClass*>({ \
-    classof(UES::IEventSystemHandler*), \
-    classof(UES::IPointerEnterHandler*), \
-    classof(UES::IPointerExitHandler*), \
-    classof(UES::IPointerClickHandler*), \
-})
-
-DECLARE_CLASS_CODEGEN_INTERFACES(Qounters, CollapseController, UnityEngine::MonoBehaviour, INTERFACES,
+DECLARE_CLASS_CODEGEN_INTERFACES(Qounters, CollapseController, UnityEngine::MonoBehaviour, UES::IEventSystemHandler*, UES::IPointerEnterHandler*, UES::IPointerExitHandler*, UES::IPointerClickHandler*) {
     DECLARE_DEFAULT_CTOR();
 
     DECLARE_INSTANCE_FIELD(StringW, title);
@@ -313,23 +306,12 @@ DECLARE_CLASS_CODEGEN_INTERFACES(Qounters, CollapseController, UnityEngine::Mono
     std::map<UnityEngine::Component*, bool> contents;
     void AddContents(std::set<UnityEngine::Component*> const& add);
     void RemoveContents(std::set<UnityEngine::Component*> const& remove);
-    void SetContentActive(UnityEngine::Component* content, bool active);
+    void SetContentActive(UnityEngine::Component * content, bool active);
 
     std::function<void()> onUpdate = nullptr;
-)
+};
 
-#undef INTERFACES
-
-#define INTERFACES std::vector<Il2CppClass*>({ \
-    classof(UES::IEventSystemHandler*), \
-    classof(UES::IPointerEnterHandler*), \
-    classof(UES::IPointerExitHandler*), \
-    classof(UES::IInitializePotentialDragHandler*), \
-    classof(UES::IDragHandler*), \
-    classof(UES::IEndDragHandler*), \
-})
-
-DECLARE_CLASS_CODEGEN_INTERFACES(Qounters, MenuDragger, UnityEngine::MonoBehaviour, INTERFACES,
+DECLARE_CLASS_CODEGEN_INTERFACES(Qounters, MenuDragger, UnityEngine::MonoBehaviour, UES::IEventSystemHandler*, UES::IPointerEnterHandler*, UES::IPointerExitHandler*, UES::IInitializePotentialDragHandler*, UES::IDragHandler*, UES::IEndDragHandler*) {
     DECLARE_DEFAULT_CTOR();
 
     DECLARE_INSTANCE_METHOD(void, OnEnable);
@@ -353,33 +335,9 @@ DECLARE_CLASS_CODEGEN_INTERFACES(Qounters, MenuDragger, UnityEngine::MonoBehavio
     DECLARE_INSTANCE_FIELD(bool, isLeftMenu);
     DECLARE_INSTANCE_FIELD(float, originalPosition);
     DECLARE_INSTANCE_FIELD(float, dragPosition);
-)
+};
 
-#undef INTERFACES
-
-#define INTERFACES std::vector<Il2CppClass*>({ \
-    classof(UES::IEventSystemHandler*), \
-    classof(UES::IPointerUpHandler*), \
-})
-
-DECLARE_CLASS_CODEGEN_INTERFACES(Qounters, EndDragHandler, UnityEngine::MonoBehaviour, INTERFACES,
-    DECLARE_OVERRIDE_METHOD_MATCH(void, OnPointerUp, &UES::IPointerUpHandler::OnPointerUp, UES::PointerEventData* eventData);
-
-    DECLARE_DEFAULT_CTOR();
-
-   public:
-    std::function<void()> callback = nullptr;
-)
-
-DECLARE_CLASS_CODEGEN(Qounters, KeyboardCloseHandler, UnityEngine::MonoBehaviour,
-    DECLARE_DEFAULT_CTOR();
-
-   public:
-    std::function<void()> closeCallback = nullptr;
-    std::function<void()> okCallback = nullptr;
-)
-
-DECLARE_CLASS_CODEGEN(Qounters, SpritesListCell, HMUI::TableCell,
+DECLARE_CLASS_CODEGEN(Qounters, SpritesListCell, HMUI::TableCell) {
     DECLARE_DEFAULT_CTOR();
 
     DECLARE_INSTANCE_FIELD(ArrayW<BSML::ClickableImage*>, images);
@@ -393,23 +351,17 @@ DECLARE_CLASS_CODEGEN(Qounters, SpritesListCell, HMUI::TableCell,
     DECLARE_STATIC_METHOD(SpritesListCell*, CreateNew, int imagesStartIdx, StringW reuseIdentifier);
 
    public:
-    static constexpr int imagesPerCell = 4;
-    static constexpr float imageSpacing = 2;
-    static constexpr float cellSize = 10;
-)
+    static constexpr int ImagesPerCell = 4;
+    static constexpr float ImageSpacing = 2;
+    static constexpr float CellSize = 10;
+};
 
-#undef INTERFACES
-
-#define INTERFACES std::vector<Il2CppClass*>({ \
-    classof(HMUI::TableView::IDataSource*), \
-})
-
-DECLARE_CLASS_CODEGEN_INTERFACES(Qounters, SpritesListSource, UnityEngine::MonoBehaviour, INTERFACES,
+DECLARE_CLASS_CODEGEN_INTERFACES(Qounters, SpritesListSource, UnityEngine::MonoBehaviour, HMUI::TableView::IDataSource*) {
     DECLARE_INSTANCE_FIELD(HMUI::TableView*, tableView);
 
     DECLARE_DEFAULT_CTOR();
 
-    DECLARE_OVERRIDE_METHOD_MATCH(HMUI::TableCell*, CellForIdx, &HMUI::TableView::IDataSource::CellForIdx, HMUI::TableView* tableView, int idx);
+    DECLARE_OVERRIDE_METHOD_MATCH(HMUI::TableCell*, CellForIdx, &HMUI::TableView::IDataSource::CellForIdx, HMUI::TableView * tableView, int idx);
 
     DECLARE_OVERRIDE_METHOD_MATCH(float, CellSize, &HMUI::TableView::IDataSource::CellSize);
     DECLARE_OVERRIDE_METHOD_MATCH(int, NumberOfCells, &HMUI::TableView::IDataSource::NumberOfCells);
@@ -420,8 +372,7 @@ DECLARE_CLASS_CODEGEN_INTERFACES(Qounters, SpritesListSource, UnityEngine::MonoB
     std::function<void(int)> imageClickedCallback;
 
    private:
-    static inline std::string const reuseIdentifier = "QountersCustomListSource";
-)
+    static inline std::string const ReuseIdentifier = "QountersCustomListSource";
+};
 
-#undef INTERFACES
 #undef UES

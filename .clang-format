@@ -49,9 +49,6 @@ InsertNewlineAtEOF: true
 KeepEmptyLinesAtTheStartOfBlocks: true
 LineEnding: LF
 NamespaceIndentation: All
-Macros:
-  - "DECLARE_CLASS_CODEGEN="
-  - "DECLARE_CLASS_CODEGEN_INTERFACES="
 PackConstructorInitializers: CurrentLine
 PenaltyExcessCharacter: 100
 PenaltyReturnTypeOnItsOwnLine: 0

@@ -17,37 +17,19 @@
 #include "UnityEngine/UI/Mask.hpp"
 #include "assets.hpp"
 #include "bsml/shared/BSML-Lite.hpp"
-#include "bsml/shared/Helpers/delegates.hpp"
 #include "bsml/shared/Helpers/utilities.hpp"
 #include "copies.hpp"
 #include "customtypes/editing.hpp"
 #include "customtypes/settings.hpp"
 #include "main.hpp"
+#include "metacore/shared/delegates.hpp"
+#include "metacore/shared/ui.hpp"
 #include "songcore/shared/SongCore.hpp"
 #include "songcore/shared/SongLoader/CustomBeatmapLevel.hpp"
 
 using namespace Qounters;
+using namespace MetaCore;
 using namespace GlobalNamespace;
-
-std::string Utils::FormatDecimals(double num, int decimals) {
-    if (decimals < 0)
-        decimals = 0;
-    std::stringstream stream;
-    stream << std::fixed << std::setprecision(decimals) << num;
-    return stream.str();
-}
-
-std::string Utils::SecondsToString(int value) {
-    int minutes = value / 60;
-    int seconds = value - minutes * 60;
-
-    std::string minutesString = std::to_string(minutes);
-    std::string secondsString = std::to_string(seconds);
-    if (seconds < 10)
-        secondsString = "0" + secondsString;
-
-    return minutesString + ":" + secondsString;
-}
 
 UnityEngine::Vector3 Utils::GetFixedEuler(UnityEngine::Quaternion rotation) {
     auto ret = rotation.eulerAngles;
@@ -108,183 +90,6 @@ std::vector<std::string> Utils::GetSimplifiedRequirements(BeatmapKey beatmap) {
     return ret;
 }
 
-void DisableAllBut(UnityEngine::Transform* original, UnityEngine::Transform* source, std::set<std::string> enabled, std::set<std::string> disabled) {
-    for (int i = 0; i < source->GetChildCount(); i++) {
-        auto child = source->GetChild(i).unsafePtr();
-        std::string name = child->name;
-        if (enabled.contains(name)) {
-            auto loopback = child;
-            while (loopback != original) {
-                loopback->gameObject->active = true;
-                loopback = loopback->parent;
-            }
-        } else {
-            child->gameObject->active = false;
-            if (!disabled.contains(name))
-                DisableAllBut(original, child, enabled, disabled);
-        }
-    }
-}
-
-void Utils::DisableAllBut(UnityEngine::Transform* parent, std::set<std::string> enabled, std::set<std::string> disabled) {
-    if (!enabled.contains(parent->name))
-        DisableAllBut(parent, parent, enabled, disabled);
-}
-
-UnityEngine::Transform* Utils::FindRecursive(UnityEngine::Transform* parent, std::string name) {
-    for (int i = 0; i < parent->GetChildCount(); i++) {
-        auto child = parent->GetChild(i);
-        if (child->name == name)
-            return child;
-    }
-    // breadth first
-    for (int i = 0; i < parent->GetChildCount(); i++) {
-        if (auto ret = FindRecursive(parent->GetChild(i), name))
-            return ret;
-    }
-    return nullptr;
-}
-
-std::string Utils::GetTransformPath(UnityEngine::Transform* parent, UnityEngine::Transform* child) {
-    if (parent == child || !child->IsChildOf(parent))
-        return "";
-    return GetTransformPath(parent, child->parent) + "/" + static_cast<std::string>(child->name);
-}
-
-void Utils::SetRelativeSiblingIndex(UnityEngine::Transform* child, UnityEngine::Transform* ref, int amount) {
-    if (!child->IsChildOf(ref->parent))
-        return;
-    int currentIndex = child->GetSiblingIndex();
-    int otherIndex = ref->GetSiblingIndex();
-    // adjust for moving around if after -> before or before -> after
-    // (unity child order is weird and I don't like it)
-    if (currentIndex < otherIndex && amount > 0)
-        amount--;
-    else if (currentIndex > otherIndex && amount < 0)
-        amount++;
-    child->SetSiblingIndex(otherIndex + amount);
-}
-
-void Utils::SetLayoutSize(UnityEngine::Component* object, float width, float height, float flex) {
-    auto layout = GetOrAddComponent<UnityEngine::UI::LayoutElement*>(object);
-    layout->preferredWidth = width;
-    layout->preferredHeight = height;
-    layout->flexibleWidth = flex;
-}
-
-void Utils::SetChildrenWidth(UnityEngine::Transform* parent, float width) {
-    for (int i = 0; i < parent->GetChildCount(); i++) {
-        bool first = true;
-        for (auto layout : parent->GetChild(i)->GetComponents<UnityEngine::UI::LayoutElement*>()) {
-            if (first)
-                layout->preferredWidth = width;
-            else
-                UnityEngine::Object::Destroy(layout);
-            first = false;
-        }
-    }
-}
-
-void Utils::SetCanvasSorting(UnityEngine::GameObject* canvas, int value) {
-    bool wasActive = canvas->activeSelf;
-    canvas->active = true;
-    auto comp = canvas->GetComponent<UnityEngine::Canvas*>();
-    comp->overrideSorting = true;
-    comp->sortingOrder = value;
-    canvas->active = wasActive;
-}
-
-void Utils::InstantSetToggle(BSML::ToggleSetting* toggle, bool value) {
-    if (toggle->toggle->m_IsOn == value)
-        return;
-    toggle->toggle->m_IsOn = value;
-    auto animatedSwitch = toggle->toggle->GetComponent<HMUI::AnimatedSwitchView*>();
-    animatedSwitch->HandleOnValueChanged(value);
-    animatedSwitch->_switchAmount = value;
-    animatedSwitch->LerpPosition(value);
-    animatedSwitch->LerpColors(value, animatedSwitch->_highlightAmount, animatedSwitch->_disabledAmount);
-}
-
-void Utils::SetIncrementValue(BSML::IncrementSetting* increment, float value) {
-    increment->currentValue = value;
-    increment->UpdateState();
-}
-
-void Utils::SetDropdownValue(BSML::DropdownListSetting* dropdown, std::string value) {
-    auto values = ListW<StringW>(dropdown->values);
-    for (int i = 0; i < values.size(); i++) {
-        if (values[i] == value) {
-            dropdown->set_Value(dropdown->values[i]);
-            break;
-        }
-    }
-}
-
-void Utils::SetDropdownValues(
-    BSML::DropdownListSetting* dropdown, std::vector<std::string> values, std::string selected, std::function<void()> notPresent
-) {
-    auto texts = ListW<System::Object*>::New(values.size());
-    int idx = -1;
-    for (int i = 0; i < values.size(); i++) {
-        texts->Add((System::Object*) StringW(values[i]).convert());
-        if (values[i] == selected)
-            idx = i;
-    }
-    if (idx == -1) {
-        idx = 0;
-        if (notPresent)
-            notPresent();
-    }
-    dropdown->values = texts;
-    dropdown->UpdateChoices();
-    if (!texts.empty())
-        dropdown->set_Value(texts[idx]);
-}
-
-void Utils::SetIconButtonSprite(UnityEngine::UI::Button* button, UnityEngine::Sprite* sprite) {
-    if (auto icon = button->transform->Find("QountersButtonImage"))
-        icon->GetComponent<HMUI::ImageView*>()->sprite = sprite;
-}
-
-UnityEngine::UI::Button* Utils::CreateIconButton(UnityEngine::GameObject* parent, UnityEngine::Sprite* sprite, std::function<void()> onClick) {
-    auto button = BSML::Lite::CreateUIButton(parent, "", onClick);
-    auto icon = BSML::Lite::CreateImage(button, sprite);
-    icon->name = "QountersButtonImage";
-    icon->preserveAspect = true;
-    icon->transform->localScale = {0.8, 0.8, 0.8};
-    SetLayoutSize(button, 8, 8);
-    return button;
-}
-
-BSML::DropdownListSetting* Utils::CreateDropdown(
-    UnityEngine::GameObject* parent,
-    std::string name,
-    std::string value,
-    std::vector<std::string_view> values,
-    std::function<void(std::string)> onChange
-) {
-    auto object = BSML::Lite::CreateDropdown(parent, name, value, values, [onChange](StringW value) { onChange(value); });
-    object->transform->parent->GetComponent<UnityEngine::UI::LayoutElement*>()->preferredHeight = 7;
-    return object;
-}
-
-BSML::DropdownListSetting* Utils::CreateDropdownEnum(
-    UnityEngine::GameObject* parent, std::string name, int value, std::vector<std::string_view> values, std::function<void(int)> onChange
-) {
-    auto object = BSML::Lite::CreateDropdown(parent, name, values[value], values, [onChange, values](StringW value) {
-        for (int i = 0; i < values.size(); i++) {
-            if (value == values[i]) {
-                onChange(i);
-                break;
-            }
-        }
-    });
-    object->transform->parent->GetComponent<UnityEngine::UI::LayoutElement*>()->preferredHeight = 7;
-    if (auto behindModal = parent->GetComponentInParent<HMUI::ModalView*>(true))
-        AddModalAnimations(object->dropdown, behindModal);
-    return object;
-}
-
 BSML::ColorSetting* Utils::CreateColorPicker(
     UnityEngine::GameObject* parent,
     std::string name,
@@ -327,7 +132,7 @@ BSML::ColorSetting* Utils::CreateColorPicker(
     preview->anchoredPosition = {17, -27};
     auto modalView = ret->modalColorPicker->modalView;
     modalView->moveToCenter = true;
-    modalView->add_blockerClickedEvent(BSML::MakeSystemAction([ret, modalView, onClose]() {
+    modalView->add_blockerClickedEvent(Delegates::MakeSystemAction([ret, modalView, onClose]() {
         modalView->Hide();
         ret->currentColor = ret->modalColorPicker->currentColor;
         onClose();
@@ -349,7 +154,7 @@ BSML::ColorSetting* Utils::CreateColorPicker(
     auto currentColorImage = UnityEngine::Object::Instantiate(ret->colorImage, horizontal->transform, false);
     currentColorImage->name = "QountersCurrentColor";
     currentColorImage->preserveAspect = true;
-    SetLayoutSize(currentColorImage, 9, 4);
+    UI::SetLayoutSize(currentColorImage, 9, 4);
     auto pasteButton = BSML::Lite::CreateUIButton(vertical, "       Paste Color", [copyModal, ret, onChange, onClose]() {
         copyModal->Hide();
         if (hasCopied) {
@@ -363,11 +168,11 @@ BSML::ColorSetting* Utils::CreateColorPicker(
     auto copiedColorImage = UnityEngine::Object::Instantiate(ret->colorImage, horizontal->transform, false);
     copiedColorImage->preserveAspect = true;
     copiedColorImage->name = "QountersCopiedColor";
-    SetLayoutSize(copiedColorImage, 9, 4);
+    UI::SetLayoutSize(copiedColorImage, 9, 4);
 
     auto valuePicker = ret->transform->Find("ValuePicker").cast<UnityEngine::RectTransform>();
     valuePicker->anchoredPosition = {-9, 0};
-    auto button = CreateIconButton(ret->gameObject, copySprite, [copyModal, ret, currentColorImage, pasteButton, copiedColorImage]() {
+    auto button = UI::CreateIconButton(ret->gameObject, copySprite, [copyModal, ret, currentColorImage, pasteButton, copiedColorImage]() {
         currentColorImage->color = ret->get_currentColor();
         copiedColorImage->color = hasCopied ? copied : UnityEngine::Color(1, 1, 1, 0.3);
         pasteButton->interactable = hasCopied;
@@ -393,10 +198,9 @@ HMUI::ColorGradientSlider* CreateGradientSlider(
     }
     auto ret = UnityEngine::Object::Instantiate(sliderTemplate.ptr(), parent->transform, false);
     ret->gameObject->name = "QountersGradientSlider";
-    ret->normalizedValueDidChangeEvent =
-        BSML::MakeSystemAction((std::function<void(UnityW<HMUI::TextSlider>, float)>) [onChange](UnityW<HMUI::TextSlider>, float val) {
-            onChange(val * 2 - 1);  // (0, 1) -> (-1, 1)
-        });
+    ret->normalizedValueDidChangeEvent = Delegates::MakeSystemAction([onChange](UnityW<HMUI::TextSlider>, float val) {
+        onChange(val * 2 - 1);  // (0, 1) -> (-1, 1)
+    });
     ret->SetColors({1, 1, 1, 1}, {1, 1, 1, 1});
     for (auto& img : ret->_gradientImages) {
         auto hsv = img->gameObject->AddComponent<HSVGradientImage*>();
@@ -421,10 +225,10 @@ HSVController* Utils::CreateHSVModifierPicker(
     ret->onChange = onChange;
     ret->onClose = onClose;
     ret->nameText = BSML::Lite::CreateText(layout, name);
-    SetLayoutSize(ret->nameText, -1, -1, 999);
+    UI::SetLayoutSize(ret->nameText, -1, -1, 999);
     ret->openButton = BSML::Lite::CreateUIButton(layout, "H+0 S+0 V+0", [ret]() { ret->Show(); });
     auto modal = BSML::Lite::CreateModal(parent, false);
-    modal->add_blockerClickedEvent(BSML::MakeSystemAction([ret]() { ret->Hide(); }));
+    modal->add_blockerClickedEvent(Delegates::MakeSystemAction([ret]() { ret->Hide(); }));
     modal->GetComponent<UnityEngine::RectTransform*>()->sizeDelta = {50, 40};
     ret->modal = modal;
     // go a little extra on the sides because of the padding
@@ -453,14 +257,14 @@ CollapseController* Utils::CreateCollapseArea(UnityEngine::GameObject* parent, s
     ret->title = title;
     ret->text = BSML::Lite::CreateText(layout, "", TMPro::FontStyles::Normal, 3.5);
     ret->line = BSML::Lite::CreateImage(layout, BSML::Utilities::ImageResources::GetWhitePixel());
-    SetLayoutSize(ret->line, 0, 0.4, 999);
+    UI::SetLayoutSize(ret->line, 0, 0.4, 999);
     ret->UpdateOpen();
     // update colors
     ret->OnPointerExit(nullptr);
 
     if (copyId >= 0) {
         auto copyImage = BSML::Lite::CreateClickableImage(layout, copySprite);
-        SetLayoutSize(copyImage, 3, 3);
+        UI::SetLayoutSize(copyImage, 3, 3);
         BSML::Lite::AddHoverHint(copyImage, "Copy and paste these options");
         auto copyModal = BSML::Lite::CreateModal(copyImage);
         auto modalRect = copyModal->GetComponent<UnityEngine::RectTransform*>();
@@ -473,12 +277,12 @@ CollapseController* Utils::CreateCollapseArea(UnityEngine::GameObject* parent, s
             copyModal->Hide();
             Copies::Copy(copyEnum);
         });
-        SetLayoutSize(copyButton, 20, -1);
+        UI::SetLayoutSize(copyButton, 20, -1);
         auto pasteButton = BSML::Lite::CreateUIButton(vertical, "Paste", [copyModal, copyEnum]() {
             copyModal->HMUI::ModalView::Hide(false, nullptr);
             Copies::Paste(copyEnum);
         });
-        SetLayoutSize(pasteButton, 20, -1);
+        UI::SetLayoutSize(pasteButton, 20, -1);
         copyImage->onClick += [copyModal, pasteButton, copyEnum]() {
             pasteButton->interactable = Copies::HasCopy(copyEnum);
             copyModal->Show();
@@ -517,7 +321,7 @@ MenuDragger* Utils::CreateMenuDragger(UnityEngine::GameObject* parent, bool isLe
     img->sizeDelta = {40, 1};
     ret->isLeftMenu = isLeftMenu;
     padding->active = true;
-    SetCanvasSorting(padding, 6);
+    UI::SetCanvasSorting(padding, 6);
     return ret;
 }
 
@@ -532,68 +336,6 @@ void AnimateModal(HMUI::ModalView* modal, bool out) {
         bg->color = {1, 1, 1, 1};
         canvas->alpha = 1;
     }
-}
-
-void Utils::AddModalAnimations(HMUI::SimpleTextDropdown* dropdown, HMUI::ModalView* behindModal) {
-    dropdown->_button->onClick->AddListener(BSML::MakeUnityAction([behindModal]() { AnimateModal(behindModal, true); }));
-    dropdown->add_didSelectCellWithIdxEvent(BSML::MakeSystemAction(
-        (std::function<void(UnityW<HMUI::DropdownWithTableView>, int)>) [behindModal](auto, int) { AnimateModal(behindModal, false); }
-    ));
-    dropdown->_modalView->add_blockerClickedEvent(BSML::MakeSystemAction([behindModal]() { AnimateModal(behindModal, false); }));
-    dropdown->_modalView->_animateParentCanvas = false;
-}
-
-void Utils::AddSliderEndDrag(BSML::SliderSetting* slider, std::function<void(float)> onEndDrag) {
-    std::function<void()> boundCallback = [slider = slider->slider, onEndDrag]() {
-        onEndDrag(slider->value);
-    };
-    GetOrAddComponent<EndDragHandler*>(slider->slider)->callback = boundCallback;
-    if (slider->showButtons && slider->incButton && slider->decButton) {
-        slider->incButton->onClick->AddListener(BSML::MakeUnityAction(boundCallback));
-        slider->decButton->onClick->AddListener(BSML::MakeUnityAction(boundCallback));
-    }
-}
-
-void Utils::AddStringSettingOnClose(HMUI::InputFieldView* input, std::function<void(std::string)> onKeyboardClosed) {
-    std::function<void()> boundCallback = [input, onKeyboardClosed]() {
-        onKeyboardClosed(input->text);
-    };
-    GetOrAddComponent<KeyboardCloseHandler*>(input)->closeCallback = boundCallback;
-    input->_buttonBinder->AddBinding(input->_clearSearchButton, BSML::MakeSystemAction(boundCallback));
-}
-
-void Utils::AddIncrementIncrement(BSML::IncrementSetting* setting, float increment) {
-    auto transform = setting->transform->Find("ValuePicker").cast<UnityEngine::RectTransform>();
-    transform->anchoredPosition = {-6, 0};
-
-    auto leftButton = BSML::Lite::CreateUIButton(transform, "", "DecButton", {-20, 0}, {6, 8}, [setting, increment]() {
-        setting->currentValue -= increment;
-        setting->EitherPressed();
-    });
-    auto rightButton = BSML::Lite::CreateUIButton(transform, "", "IncButton", {7, 0}, {8, 8}, [setting, increment]() {
-        setting->currentValue += increment;
-        setting->EitherPressed();
-    });
-}
-
-BSML::SliderSetting* Utils::ReparentSlider(BSML::SliderSetting* slider, BSML::Lite::TransformWrapper parent, float width) {
-    auto newSlider = slider->slider->gameObject->AddComponent<BSML::SliderSetting*>();
-    newSlider->slider = slider->slider;
-    newSlider->onChange = std::move(slider->onChange);
-    newSlider->formatter = std::move(slider->formatter);
-    newSlider->isInt = slider->isInt;
-    newSlider->increments = slider->increments;
-    newSlider->slider->minValue = slider->slider->minValue;
-    newSlider->slider->maxValue = slider->slider->maxValue;
-    auto transform = newSlider->GetComponent<UnityEngine::RectTransform*>();
-    transform->sizeDelta = {width, 0};
-    transform->SetParent(parent->transform, false);
-    newSlider->slider->valueSize = newSlider->slider->_containerRect->rect.width / 2;
-    UnityEngine::Object::DestroyImmediate(slider->gameObject);
-    // due to the weird way bsml does string formatting for sliders,
-    // this needs to be called after destroying the old slider
-    newSlider->Setup();
-    return newSlider;
 }
 
 void Utils::RebuildWithScrollPosition(UnityEngine::GameObject* scrollView) {

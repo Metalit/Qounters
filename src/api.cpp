@@ -2,6 +2,7 @@
 
 #include "editor.hpp"
 #include "environment.hpp"
+#include "playtest.hpp"
 #include "sources.hpp"
 #include "templates.hpp"
 #include "utils.hpp"
@@ -40,13 +41,6 @@ void API::FinalizeAction() {
     Editor::FinalizeAction();
 }
 
-void API::AddSliderEndDrag(BSML::SliderSetting* slider, std::function<void(float)> onEndDrag) {
-    Utils::AddSliderEndDrag(slider, onEndDrag);
-}
-void API::AddStringSettingOnClose(HMUI::InputFieldView* input, std::function<void(std::string)> onKeyboardClosed) {
-    Utils::AddStringSettingOnClose(input, onKeyboardClosed);
-}
-
 BSML::ColorSetting* API::CreateColorPicker(
     UnityEngine::GameObject* parent,
     std::string name,
@@ -55,6 +49,10 @@ BSML::ColorSetting* API::CreateColorPicker(
     std::function<void()> onClose
 ) {
     return Utils::CreateColorPicker(parent, name, value, onChange, onClose);
+}
+
+float API::GetPlaytestPB() {
+    return Playtest::GetOverridePBRatio();
 }
 
 bool API::InSettings() {
