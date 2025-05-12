@@ -270,6 +270,7 @@ static void CopyFields(Transform* base, Transform* target, int component) {
         case BaseGameGraphic::Objects::ProgressBar: {
             auto baseComp = base->GetComponent<SongProgressUIController*>();
             auto targetComp = target->GetComponent<SongProgressUIController*>();
+            targetComp->_songController = baseComp->_songController;
             targetComp->_audioTimeSource = (IAudioTimeSource*) CRASH_UNLESS(il2cpp_utils::New<SongTimeSource*>());
             break;
         }

@@ -20,6 +20,8 @@
 #include "environment.hpp"
 #include "gameplay.hpp"
 #include "main.hpp"
+#include "metacore/shared/events.hpp"
+#include "metacore/shared/internals.hpp"
 #include "pp.hpp"
 #include "qounters.hpp"
 #include "utils.hpp"
@@ -29,10 +31,23 @@ using namespace GlobalNamespace;
 using namespace VRUIControls;
 
 static UnityEngine::Transform* rotationalAnchor = nullptr;
-static bool wasHidden = false;
+static bool hidden = false;
 static bool initialized = false;
 
-MAKE_HOOK_MATCH(
+static void TryInitialize() {
+    if (!getConfig().Enabled.GetValue() || Environment::InSettings() || hidden || initialized)
+        return;
+    if (!MetaCore::Internals::stateValid)
+        MetaCore::Events::AddCallback(MetaCore::Events::GameplaySceneStarted, TryInitialize, true);
+    else {
+        logger.info("Qounters start");
+        HUD::SetupObjects();
+        HUD::CreateQounters();
+        initialized = true;
+    }
+}
+
+MAKE_AUTO_HOOK_MATCH(
     CoreGameHUDController_Initialize, &CoreGameHUDController::Initialize, void, CoreGameHUDController* self, CoreGameHUDController::InitData* initData
 ) {
     if (!getConfig().Enabled.GetValue()) {
@@ -41,21 +56,13 @@ MAKE_HOOK_MATCH(
     }
 
     initData->advancedHUD = true;
-    wasHidden = initData->hide;
-
-    if (!Environment::InSettings() && !wasHidden && self->isActiveAndEnabled) {
-        logger.info("Qounters start");
-        if (self->name == "FlyingGameHUD")
-            rotationalAnchor = UnityEngine::GameObject::New_ctor("QountersRotationalAnchor")->transform;
-        HUD::SetupObjects();
-        HUD::CreateQounters();
-        initialized = true;
-    }
+    hidden = initData->hide;
+    TryInitialize();
 
     CoreGameHUDController_Initialize(self, initData);
 }
 
-MAKE_HOOK_MATCH(
+MAKE_AUTO_HOOK_MATCH(
     MultiplayerIntroAnimationController_BindTimeline,
     &MultiplayerIntroAnimationController::BindTimeline,
     void,
@@ -63,26 +70,17 @@ MAKE_HOOK_MATCH(
 ) {
     MultiplayerIntroAnimationController_BindTimeline(self);
 
-    if (!getConfig().Enabled.GetValue())
-        return;
-
-    if (!Environment::InSettings() && !wasHidden && !initialized) {
-        logger.info("Qounters start");
-        HUD::SetupObjects();
-        HUD::CreateQounters();
-        initialized = true;
-    }
+    TryInitialize();
 }
 
-MAKE_HOOK_MATCH(FlyingGameHUDRotation_LateUpdate, &FlyingGameHUDRotation::LateUpdate, void, FlyingGameHUDRotation* self) {
-
+MAKE_AUTO_HOOK_MATCH(FlyingGameHUDRotation_LateUpdate, &FlyingGameHUDRotation::LateUpdate, void, FlyingGameHUDRotation* self) {
     FlyingGameHUDRotation_LateUpdate(self);
 
     if (rotationalAnchor)
         rotationalAnchor->rotation = self->transform->rotation;
 }
 
-MAKE_HOOK_MATCH(
+MAKE_AUTO_HOOK_MATCH(
     EnvironmentOverrideSettingsPanelController_HandleDropDownDidSelectCellWithIdx,
     &EnvironmentOverrideSettingsPanelController::HandleDropDownDidSelectCellWithIdx,
     void,
@@ -95,7 +93,7 @@ MAKE_HOOK_MATCH(
     Gameplay::UpdateEnvironment();
 }
 
-MAKE_HOOK_MATCH(
+MAKE_AUTO_HOOK_MATCH(
     EnvironmentOverrideSettingsPanelController_HandleOverrideEnvironmentsToggleValueChanged,
     &EnvironmentOverrideSettingsPanelController::HandleOverrideEnvironmentsToggleValueChanged,
     void,
@@ -107,12 +105,12 @@ MAKE_HOOK_MATCH(
     Gameplay::UpdateEnvironment();
 }
 
-MAKE_HOOK_MATCH(PauseController_Pause, &PauseController::Pause, void, PauseController* self) {
+MAKE_AUTO_HOOK_MATCH(PauseController_Pause, &PauseController::Pause, void, PauseController* self) {
     if (!Environment::InSettings())
         PauseController_Pause(self);
 }
 
-MAKE_HOOK_MATCH(
+MAKE_AUTO_HOOK_MATCH(
     MultiplayerLocalActivePlayerInGameMenuViewController_ShowMenu,
     &MultiplayerLocalActivePlayerInGameMenuViewController::ShowMenu,
     void,
@@ -122,7 +120,7 @@ MAKE_HOOK_MATCH(
         MultiplayerLocalActivePlayerInGameMenuViewController_ShowMenu(self);
 }
 
-MAKE_HOOK_MATCH(
+MAKE_AUTO_HOOK_MATCH(
     MultiplayerLocalActivePlayerInGameMenuViewController_HideMenu,
     &MultiplayerLocalActivePlayerInGameMenuViewController::HideMenu,
     void,
@@ -132,7 +130,7 @@ MAKE_HOOK_MATCH(
         MultiplayerLocalActivePlayerInGameMenuViewController_HideMenu(self);
 }
 
-MAKE_HOOK_MATCH(
+MAKE_AUTO_HOOK_MATCH(
     MultiplayerLocalActivePlayerGameplayManager_PerformPlayerFail,
     &MultiplayerLocalActivePlayerGameplayManager::PerformPlayerFail,
     void,
@@ -142,7 +140,7 @@ MAKE_HOOK_MATCH(
         MultiplayerLocalActivePlayerGameplayManager_PerformPlayerFail(self);
 }
 
-MAKE_HOOK_MATCH(
+MAKE_AUTO_HOOK_MATCH(
     MultiplayerSessionManager_get_localPlayer, &MultiplayerSessionManager::get_localPlayer, IConnectedPlayer*, MultiplayerSessionManager* self
 ) {
     auto ret = MultiplayerSessionManager_get_localPlayer(self);
@@ -152,7 +150,7 @@ MAKE_HOOK_MATCH(
     return ret;
 }
 
-MAKE_HOOK_MATCH(
+MAKE_AUTO_HOOK_MATCH(
     VRGraphicRaycaster_Raycast,
     &VRGraphicRaycaster::Raycast,
     void,
@@ -173,7 +171,9 @@ MAKE_HOOK_MATCH(
     self->_blockingMask = mask;
 }
 
-MAKE_HOOK_MATCH(UIKeyboardManager_OpenKeyboardFor, &UIKeyboardManager::OpenKeyboardFor, void, UIKeyboardManager* self, HMUI::InputFieldView* input) {
+MAKE_AUTO_HOOK_MATCH(
+    UIKeyboardManager_OpenKeyboardFor, &UIKeyboardManager::OpenKeyboardFor, void, UIKeyboardManager* self, HMUI::InputFieldView* input
+) {
     if (auto inputModal = input->GetComponentInParent<HMUI::ModalView*>()) {
         auto inputModalCanvas = inputModal->GetComponent<UnityEngine::Canvas*>();
         auto keyboardModalCanvas = self->_keyboardModalView->GetComponent<UnityEngine::Canvas*>();
@@ -280,8 +280,7 @@ void PopulateMeshHSVGradient(HMUI::ImageView* self, UnityEngine::UI::VertexHelpe
     }
 }
 
-MAKE_HOOK_MATCH(ImageView_OnPopulateMesh, &HMUI::ImageView::OnPopulateMesh, void, HMUI::ImageView* self, UnityEngine::UI::VertexHelper* toFill) {
-
+MAKE_AUTO_HOOK_MATCH(ImageView_OnPopulateMesh, &HMUI::ImageView::OnPopulateMesh, void, HMUI::ImageView* self, UnityEngine::UI::VertexHelper* toFill) {
     if (auto hsv = self->GetComponent<HSVGradientImage*>())
         PopulateMeshHSVGradient(self, toFill, hsv->modified, hsv->modifier, hsv->elements);
     else

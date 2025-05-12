@@ -419,6 +419,7 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
     transform->SetParent(toggle->transform, false);
     transform->anchoredPosition = {-20, 0.25};
     Object::Destroy(transform->Find("NameText")->gameObject);
+    Object::Destroy(transform->Find("ColorTypeDropdown")->gameObject);
 
     colorEditButton = transform->Find("EditButton")->GetComponent<UUI::Button*>();
     BSML::Lite::AddHoverHint(colorEditButton, "Edit this color scheme");
@@ -615,8 +616,8 @@ void SettingsViewController::UpdateColors() {
     else
         Internals::colors() = Environment::CurrentSettingsEnvironment()->colorScheme->colorScheme;
     // doesn't update any already spawned notes/walls, but idc
-    if (auto colorManager = Object::FindObjectOfType<GlobalNamespace::NoteCutCoreEffectsSpawner*>(true)->_colorManager)
-        colorManager->SetColorScheme(Internals::colors());
+    if (auto spawner = Object::FindObjectOfType<GlobalNamespace::NoteCutCoreEffectsSpawner*>(true))
+        spawner->_colorManager->SetColorScheme(Internals::colors());
     if (auto env = Object::FindObjectOfType<GlobalNamespace::EnvironmentColorManager*>(true))
         env->SetColorScheme(Internals::colors());
     if (auto bg = Object::FindObjectOfType<GlobalNamespace::BloomPrePassBackgroundColorsGradientFromColorSchemeColors*>(true))
@@ -624,7 +625,6 @@ void SettingsViewController::UpdateColors() {
     PlaytestViewController::GetInstance()->UpdateUI();
     Environment::UpdateSaberColors();
     Environment::RunLightingEvents();
-    MetaCore::Events::Broadcast(MetaCore::Events::MapSelected);
 }
 
 void SettingsViewController::UpdateUI() {

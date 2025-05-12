@@ -1,5 +1,6 @@
 #include "gameplay.hpp"
 
+#include "GlobalNamespace/CampaignFlowCoordinator.hpp"
 #include "GlobalNamespace/EnvironmentsListModel.hpp"
 #include "GlobalNamespace/GameServerLobbyFlowCoordinator.hpp"
 #include "GlobalNamespace/OverrideEnvironmentSettings.hpp"
@@ -13,6 +14,8 @@
 #include "config.hpp"
 #include "customtypes/components.hpp"
 #include "environment.hpp"
+#include "metacore/shared/events.hpp"
+#include "metacore/shared/songs.hpp"
 #include "metacore/shared/ui.hpp"
 #include "metacore/shared/unity.hpp"
 #include "utils.hpp"
@@ -32,15 +35,16 @@ static BSML::DropdownListSetting* specificPresetDropdown;
 static BSML::ToggleSetting* specificOverrideToggle;
 static UnityEngine::UI::Button* settingsButton;
 
-static GlobalNamespace::BeatmapLevel* beatmapLevel = nullptr;
-static GlobalNamespace::BeatmapKey beatmapKey;
-static bool canOverrideEnvironment;
 static GlobalNamespace::EnvironmentInfoSO* lastEnvironment = nullptr;
-static bool environmentIsOverride;
 
 static bool IsMultiplayer() {
     auto flowCoordinator = BSML::Helpers::GetMainFlowCoordinator()->YoungestChildFlowCoordinatorOrSelf();
     return Utils::ptr_cast<GlobalNamespace::GameServerLobbyFlowCoordinator>(flowCoordinator.ptr());
+}
+
+static bool IsCampaign() {
+    auto flowCoordinator = BSML::Helpers::GetMainFlowCoordinator()->YoungestChildFlowCoordinatorOrSelf();
+    return Utils::ptr_cast<GlobalNamespace::CampaignFlowCoordinator>(flowCoordinator.ptr());
 }
 
 static void SetNameText(UnityEngine::Component* setting, std::string text, float scale) {
@@ -166,38 +170,21 @@ void Gameplay::GameplaySetupMenu(UnityEngine::GameObject* parent, bool firstActi
     UpdateUI();
 }
 
-void Gameplay::SetLevel(GlobalNamespace::BeatmapLevel* level, GlobalNamespace::BeatmapKey key, bool enableOverride) {
-    beatmapLevel = level;
-    beatmapKey = key;
-    canOverrideEnvironment = enableOverride;
-    UpdateEnvironment();
-}
-
-void Gameplay::ClearLevel() {
-    beatmapLevel = nullptr;
-    beatmapKey = {};
-    lastEnvironment = nullptr;
-    UpdateUI();
-}
-
 void Gameplay::UpdateEnvironment() {
+    auto beatmapLevel = MetaCore::Songs::GetSelectedLevel(false);
     if (!beatmapLevel)
         return;
+    auto beatmapKey = MetaCore::Songs::GetSelectedKey(false);
     auto beatmapEnv = beatmapLevel->GetEnvironmentName(beatmapKey.beatmapCharacteristic, beatmapKey.difficulty);
     auto data = BSML::Helpers::GetMainFlowCoordinator()->_playerDataModel;
-    if (IsMultiplayer()) {
+    if (!IsMultiplayer()) {
+        lastEnvironment = data->_playerDataFileModel->_environmentsListModel->GetEnvironmentInfoBySerializedName(beatmapEnv._environmentName);
+        auto override = data->_playerData->overrideEnvironmentSettings;
+        if (!IsCampaign() && lastEnvironment && override && override->overrideEnvironments)
+            lastEnvironment = override->GetOverrideEnvironmentInfoForType(lastEnvironment->environmentType);
+    } else
         lastEnvironment =
             data->_playerDataFileModel->_environmentsListModel->GetFirstEnvironmentInfoWithType(GlobalNamespace::EnvironmentType::Multiplayer);
-        environmentIsOverride = true;
-    } else {
-        lastEnvironment = data->_playerDataFileModel->_environmentsListModel->GetEnvironmentInfoBySerializedName(beatmapEnv._environmentName);
-        environmentIsOverride = false;
-        auto override = data->_playerData->overrideEnvironmentSettings;
-        if (canOverrideEnvironment && lastEnvironment && override && override->overrideEnvironments) {
-            lastEnvironment = override->GetOverrideEnvironmentInfoForType(lastEnvironment->environmentType);
-            environmentIsOverride = true;
-        }
-    }
     UpdateUI();
 }
 
@@ -221,7 +208,7 @@ void Gameplay::UpdateUI() {
         int hudType = (int) Environment::GetHUDType(lastEnvironment->serializedName);
         auto type = Environment::HUDTypeStrings[hudType];
         std::string name = lastEnvironment->environmentName;
-        auto reqs = Utils::GetSimplifiedRequirements(beatmapKey);
+        auto reqs = Utils::GetSimplifiedRequirements(MetaCore::Songs::GetSelectedKey(false));
 
         std::string hudTypeString = std::to_string(hudType);
         std::string serializedName = lastEnvironment->serializedName;
@@ -258,4 +245,13 @@ void Gameplay::UpdateUI() {
         UnityEngine::UI::LayoutRebuilder::ForceRebuildLayoutImmediate(vertical->rectTransform);
         BSML::MainThreadScheduler::ScheduleNextFrame([]() { vertical->SetDirty(); });
     }
+}
+
+ON_EVENT(MetaCore::Events::MapSelected) {
+    Gameplay::UpdateEnvironment();
+}
+
+ON_EVENT(MetaCore::Events::MapDeselected) {
+    lastEnvironment = nullptr;
+    Gameplay::UpdateUI();
 }

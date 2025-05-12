@@ -6,8 +6,6 @@
 
 namespace Qounters::Gameplay {
     void GameplaySetupMenu(UnityEngine::GameObject* parent, bool firstActivation);
-    void SetLevel(GlobalNamespace::BeatmapLevel* level, GlobalNamespace::BeatmapKey key, bool enableOverride);
-    void ClearLevel();
     void UpdateEnvironment();
     void UpdateUI();
 }

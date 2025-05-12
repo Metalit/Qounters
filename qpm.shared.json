@@ -94,7 +94,7 @@
       },
       {
         "id": "metacore",
-        "versionRange": "^1.0.0",
+        "versionRange": "^1.2.0",
         "additionalData": {}
       }
     ]
@@ -103,13 +103,16 @@
     {
       "dependency": {
         "id": "metacore",
-        "versionRange": "=1.0.0",
+        "versionRange": "=1.2.0",
         "additionalData": {
+          "soLink": "https://github.com/Metalit/MetaCore/releases/download/v1.2.0/libmetacore.so",
           "overrideSoName": "libmetacore.so",
+          "modLink": "https://github.com/Metalit/MetaCore/releases/download/v1.2.0/MetaCore.qmod",
+          "branchName": "version/v1_2_0",
           "cmake": true
         }
       },
-      "version": "1.0.0"
+      "version": "1.2.0"
     },
     {
       "dependency": {
@@ -126,12 +129,12 @@
     {
       "dependency": {
         "id": "paper2_scotland2",
-        "versionRange": "=4.6.1",
+        "versionRange": "=4.6.4",
         "additionalData": {
-          "soLink": "https://github.com/Fernthedev/paperlog/releases/download/v4.6.1/libpaper2_scotland2.so",
+          "soLink": "https://github.com/Fernthedev/paperlog/releases/download/v4.6.4/libpaper2_scotland2.so",
           "overrideSoName": "libpaper2_scotland2.so",
-          "modLink": "https://github.com/Fernthedev/paperlog/releases/download/v4.6.1/paper2_scotland2.qmod",
-          "branchName": "version/v4_6_1",
+          "modLink": "https://github.com/Fernthedev/paperlog/releases/download/v4.6.4/paper2_scotland2.qmod",
+          "branchName": "version/v4_6_4",
           "compileOptions": {
             "systemIncludes": [
               "shared/utfcpp/source"
@@ -140,21 +143,21 @@
           "cmake": false
         }
       },
-      "version": "4.6.1"
+      "version": "4.6.4"
     },
     {
       "dependency": {
         "id": "config-utils",
-        "versionRange": "=2.0.2",
+        "versionRange": "=2.0.3",
         "additionalData": {
           "headersOnly": true,
-          "soLink": "https://github.com/darknight1050/config-utils/releases/download/v2.0.2/libconfig-utils_test.so",
+          "soLink": "https://github.com/darknight1050/config-utils/releases/download/v2.0.3/libconfig-utils_test.so",
           "overrideSoName": "libconfig-utils_test.so",
-          "branchName": "version/v2_0_2",
+          "branchName": "version/v2_0_3",
           "cmake": true
         }
       },
-      "version": "2.0.2"
+      "version": "2.0.3"
     },
     {
       "dependency": {

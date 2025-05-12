@@ -28,19 +28,6 @@ To make a custom event in your mod, simply use `RegisterCustomEvent()`. Put in y
 
 Events can be used for another type of integration with `internals.hpp`. The variables in that file represent the state of the game, and you should only change them if you modify that yourself in a way that Qounters++ might not pick up on. Make sure to broadcast any necessary events if you do. I'm not sure where this might be used outside of my replay mod, but it's available.
 
-### Events Reference
-
-- ScoreChanged: Any change to the score or max score
-- NoteCut: Any basic or chain note was cut
-- NoteMissed: And basic or chain note was missed
-- BombCut: Any bomb was cut
-- WallHit: Any wall was entered
-- ComboChanged: Any change to the combo
-- HealthChanged: Any change to the health/energy
-- Update: Once per frame after the song time updates
-- SlowUpdate: Called 4 times a second
-- MapInfo: Information about the map not changed by gameplay actions, such as personal best, max possible score, star rating, etc
-
 ## Credits
 
 - [danrouse](https://github.com/danrouse) for the original port to quest, Qounters-
