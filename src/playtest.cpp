@@ -22,6 +22,7 @@
 #include "beatsaber-hook/shared/utils/il2cpp-utils.hpp"
 #include "customtypes/settings.hpp"
 #include "environment.hpp"
+#include "events.hpp"
 #include "main.hpp"
 #include "metacore/shared/events.hpp"
 #include "metacore/shared/internals.hpp"
@@ -33,6 +34,7 @@
 using namespace Qounters;
 using namespace MetaCore;
 using namespace GlobalNamespace;
+namespace MEvents = MetaCore::Events;
 
 static ScoreController* scoreController;
 static AudioTimeSyncController* audioController;
@@ -82,7 +84,7 @@ void Playtest::Update() {
     if (audioController)
         audioController->_songTime += UnityEngine::Time::get_deltaTime();
     Internals::DoSlowUpdate();
-    Events::Broadcast(Events::Update);
+    MEvents::Broadcast(MEvents::Update);
 }
 
 void Playtest::SetEnabled(bool enabled) {
@@ -193,7 +195,7 @@ void Playtest::SpawnNote(bool left, bool chain) {
     if (Internals::personalBest() != -1)
         SetPersonalBest(0);
     else
-        Events::Broadcast(Events::MapSelected);
+        Events::BroadcastQountersEvent(Events::MapInfo);
 }
 
 void Playtest::SpawnWall() {
@@ -247,17 +249,17 @@ void Playtest::ResetNotes() {
     Internals::rightMissedMaxScore() = 0;
     Internals::leftMissedFixedScore() = 0;
     Internals::rightMissedFixedScore() = 0;
-    Events::Broadcast(Events::ScoreChanged);
-    Events::Broadcast(Events::NoteCut);
-    Events::Broadcast(Events::NoteMissed);
-    Events::Broadcast(Events::BombCut);
-    Events::Broadcast(Events::WallHit);
-    Events::Broadcast(Events::ComboChanged);
-    Events::Broadcast(Events::HealthChanged);
+    MEvents::Broadcast(MEvents::ScoreChanged);
+    MEvents::Broadcast(MEvents::NoteCut);
+    MEvents::Broadcast(MEvents::NoteMissed);
+    MEvents::Broadcast(MEvents::BombCut);
+    MEvents::Broadcast(MEvents::WallHit);
+    MEvents::Broadcast(MEvents::ComboChanged);
+    MEvents::Broadcast(MEvents::HealthChanged);
     if (Internals::personalBest() != -1)
         SetPersonalBest(0);
     else
-        Events::Broadcast(Events::MapSelected);
+        Events::BroadcastQountersEvent(Events::MapInfo);
     if (maxMultiplier)
         maxMultiplier->Reset();
     PlaytestViewController::GetInstance()->UpdateUI();
@@ -291,42 +293,42 @@ void Playtest::SetPersonalBest(float value) {
         Internals::personalBest() = -1;
     else
         Internals::personalBest() = Stats::GetSongMaxScore() * value / 100;
-    Events::Broadcast(Events::MapSelected);
+    Events::BroadcastQountersEvent(Events::MapInfo);
 }
 
 void Playtest::SetSongTime(float value) {
     Internals::songTime() = value;
-    Events::Broadcast(Events::Update);
+    MEvents::Broadcast(MEvents::Update);
 };
 
 void Playtest::SetPositiveModifiers(float value) {
     Internals::positiveMods() = value * 0.01;
-    Events::Broadcast(Events::ScoreChanged);
+    MEvents::Broadcast(MEvents::ScoreChanged);
 };
 
 void Playtest::SetNegativeModifiers(float value) {
     Internals::negativeMods() = value * 0.01;
-    Events::Broadcast(Events::ScoreChanged);
+    MEvents::Broadcast(MEvents::ScoreChanged);
 };
 
 void Playtest::SetRankedBL(bool value) {
     PP::blSongValid = value;
-    Events::Broadcast(Events::MapSelected);
+    Events::BroadcastQountersEvent(Events::MapInfo);
 };
 
 void Playtest::SetStarsBL(float value) {
     settingsStarsBL = value;
-    Events::Broadcast(Events::MapSelected);
+    Events::BroadcastQountersEvent(Events::MapInfo);
 };
 
 void Playtest::SetRankedSS(bool value) {
     PP::ssSongValid = value;
-    Events::Broadcast(Events::MapSelected);
+    Events::BroadcastQountersEvent(Events::MapInfo);
 };
 
 void Playtest::SetStarsSS(float value) {
     settingsStarsSS = value;
-    Events::Broadcast(Events::MapSelected);
+    Events::BroadcastQountersEvent(Events::MapInfo);
 };
 
 float Playtest::GetOverridePBRatio() {

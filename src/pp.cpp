@@ -10,6 +10,7 @@
 #include "events.hpp"
 #include "main.hpp"
 #include "metacore/shared/events.hpp"
+#include "metacore/shared/songs.hpp"
 
 using namespace Qounters;
 using namespace GlobalNamespace;
@@ -64,14 +65,17 @@ static void OnMapInfo(std::optional<MetaCore::PP::BLSongDiff> bl, std::optional<
         PP::latestScoresaberSong = *ss;
         PP::ssSongValid = true;
     }
-    MetaCore::Events::Broadcast(MOD_ID, Events::PPInfo);
+    Events::BroadcastQountersEvent(Events::MapInfo);
 }
 
 void PP::GetMapInfo(BeatmapKey map) {
+    if (!map.IsValid())
+        return;
+
     blSongValid = false;
     ssSongValid = false;
     latestRequest = map;
-    MetaCore::Events::Broadcast(MOD_ID, Events::PPInfo);
+    Events::BroadcastQountersEvent(Events::MapInfo);
 
     MetaCore::PP::GetMapInfo(map, [map](std::optional<MetaCore::PP::BLSongDiff> bl, std::optional<MetaCore::PP::SSSongDiff> ss) {
         if (latestRequest.Equals(map))
@@ -83,5 +87,9 @@ void PP::Reset() {
     blSongValid = false;
     ssSongValid = false;
     latestRequest = {nullptr, 0, nullptr};
-    MetaCore::Events::Broadcast(MOD_ID, Events::PPInfo);
+    Events::BroadcastQountersEvent(Events::MapInfo);
+}
+
+ON_EVENT(MetaCore::Events::MapSelected) {
+    PP::GetMapInfo(MetaCore::Songs::GetSelectedKey());
 }

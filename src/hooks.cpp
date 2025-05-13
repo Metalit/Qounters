@@ -44,6 +44,9 @@ static void TryInitialize() {
         HUD::SetupObjects();
         HUD::CreateQounters();
         initialized = true;
+        auto reset = []() { HUD::Reset(true); };
+        MetaCore::Events::AddCallback(MetaCore::Events::MapEnded, reset, true);
+        MetaCore::Events::AddCallback(MetaCore::Events::MapRestarted, reset, true);
     }
 }
 

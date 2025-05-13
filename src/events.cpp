@@ -7,6 +7,8 @@
 
 using namespace Qounters;
 
+static int infoEvent;
+
 static std::map<int, std::vector<std::pair<Types::Sources, std::string>>> eventSourceRegistry = {
     {(int) MetaCore::Events::ScoreChanged,
      {
@@ -72,12 +74,11 @@ static std::map<int, std::vector<std::pair<Types::Sources, std::string>>> eventS
          {Types::Sources::Text, Sources::Text::SaberSpeedName},
          {Types::Sources::Text, Sources::Text::SpinometerName},
      }},
-    {(int) MetaCore::Events::MapSelected,
+    {infoEvent,
      {
-         {Types::Sources::Text, Sources::Text::RankName},
+         {Types::Sources::Text, Sources::Text::PPName},
          {Types::Sources::Text, Sources::Text::PersonalBestName},
          {Types::Sources::Text, Sources::Text::NotesName},
-         {Types::Sources::Text, Sources::Text::PPName},
          {Types::Sources::Color, Sources::Color::PlayerName},
          {Types::Sources::Color, Sources::Color::PersonalBestName},
          {Types::Sources::Enable, Sources::Enable::RankedName},
@@ -100,7 +101,11 @@ void Events::RegisterToQountersEvent(Types::Sources sourceType, std::string sour
     RegisterToEvent(sourceType, source, MOD_ID, event);
 }
 
-void OnEvent(int event) {
+void Events::BroadcastQountersEvent(int event) {
+    MetaCore::Events::Broadcast(MOD_ID, event);
+}
+
+static void OnEvent(int event) {
     if (!eventSourceRegistry.contains(event))
         return;
     for (auto& [sourceType, source] : eventSourceRegistry[event])
@@ -109,5 +114,6 @@ void OnEvent(int event) {
 
 AUTO_FUNCTION {
     MetaCore::Events::AddCallback(OnEvent);
-    MetaCore::Events::RegisterEvent(MOD_ID, Events::PPInfo);
+    // seems like this function happens before eventSourceRegistry is initialized
+    infoEvent = MetaCore::Events::RegisterEvent(MOD_ID, Events::MapInfo);
 }
