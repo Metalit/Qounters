@@ -295,6 +295,7 @@ static void DismissFlowCoordinator() {
 void Environment::DismissSettings() {
     logger.debug("Dismissing environment");
 
+    Internals::Finish(true);
     HUD::Reset();
 
     Editor::SetPreviewMode(false);
@@ -333,6 +334,9 @@ void Environment::SetPlayerActive(bool active) {
 void Environment::UpdateSaberColors() {
     auto sabers = localPlayer->GetComponentsInChildren<SaberModelController*>();
     for (auto& saber : sabers) {
+        // lapiz just adds custom sabers as children instead of replacing the normal one
+        if (saber->GetComponentInChildren<SaberModelController*>())
+            continue;
         if (auto container = saber->GetComponentInParent<SaberModelContainer*>()) {
             saber->Init(container->transform, container->_saber, container->_initData->trailTintColor);
             if (auto ree = container->transform->Find("ReeSaber")) {
@@ -420,7 +424,6 @@ void Environment::OnSceneStart() {
     if (auto multiplayerController = Object::FindObjectOfType<MultiplayerController*>())
         OnMultiplayerSceneStart(multiplayerController);
 
-    Internals::Initialize();
     HUD::SetupObjects();
 
     menuEnvironment->transform->root->gameObject->active = true;
