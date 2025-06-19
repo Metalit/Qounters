@@ -458,7 +458,7 @@ UI::Graphic* PremadeParent::GetGraphic() {
 }
 
 float SongTimeSource::get_songTime() {
-    return Internals::songTime();
+    return Internals::songTime;
 }
 
 float SongTimeSource::get_lastFrameDeltaSongTime() {
@@ -466,15 +466,15 @@ float SongTimeSource::get_lastFrameDeltaSongTime() {
 }
 
 float SongTimeSource::get_songEndTime() {
-    return Internals::songLength();
+    return Internals::songLength;
 }
 
 float SongTimeSource::get_songLength() {
-    return Internals::songLength();
+    return Internals::songLength;
 }
 
 float SongTimeSource::get_timeScale() {
-    return 1;
+    return Internals::songSpeed;
 }
 
 bool SongTimeSource::get_isReady() {

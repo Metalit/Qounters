@@ -70,12 +70,12 @@ static void DespawnObjects() {
         std::vector<IBeatmapObjectController*> copy = {objects.begin(), objects.end()};
         for (auto& object : copy) {
             object->Pause(false);
-            if (il2cpp_utils::try_cast<NoteController>(object).has_value())
-                cast->Despawn((NoteController*) object);
-            else if (il2cpp_utils::try_cast<ObstacleController>(object).has_value())
-                cast->Despawn((ObstacleController*) object);
-            else if (il2cpp_utils::try_cast<SliderController>(object).has_value())
-                cast->Despawn((SliderController*) object);
+            if (auto controller = il2cpp_utils::try_cast<NoteController>(object))
+                cast->Despawn(*controller);
+            else if (auto controller = il2cpp_utils::try_cast<ObstacleController>(object))
+                cast->Despawn(*controller);
+            else if (auto controller = il2cpp_utils::try_cast<SliderController>(object))
+                cast->Despawn(*controller);
         }
     }
 }
@@ -182,17 +182,20 @@ void Playtest::SpawnNote(bool left, bool chain) {
         spawner->HandleNoteDataCallback(data);
 
     // chain links not counted
-    if (left)
-        Internals::songNotesLeft()++;
-    else
-        Internals::songNotesRight()++;
+    if (left) {
+        Internals::remainingNotesLeft++;
+        Internals::songNotesLeft++;
+    } else {
+        Internals::remainingNotesRight++;
+        Internals::songNotesRight++;
+    }
 
-    if (Internals::songMaxScore() == 1)
-        Internals::songMaxScore() = 0;
-    Internals::songMaxScore() += ScoreModel::GetNoteScoreDefinition(data->scoringType)->maxCutScore * PositiveMultiplier();
+    if (Internals::songMaxScore == 1)
+        Internals::songMaxScore = 0;
+    Internals::songMaxScore += ScoreModel::GetNoteScoreDefinition(data->scoringType)->maxCutScore * PositiveMultiplier();
     for (int i = 0; i < chainSegments; i++)
-        Internals::songMaxScore() += segmentMaxCut * PositiveMultiplier();
-    if (Internals::personalBest() != -1)
+        Internals::songMaxScore += segmentMaxCut * PositiveMultiplier();
+    if (Internals::personalBest != -1)
         SetPersonalBest(0);
     else
         Events::BroadcastQountersEvent(Events::MapInfo);
@@ -215,40 +218,51 @@ void Playtest::SpawnBomb() {
         spawner->HandleNoteDataCallback(GlobalNamespace::NoteData::CreateBombNoteData(time, 0, 0, index, GlobalNamespace::NoteLineLayer::Base));
 }
 
+static void ResetNoteTrackers() {
+    Internals::leftScore = 0;
+    Internals::rightScore = 0;
+    Internals::leftMaxScore = 0;
+    Internals::rightMaxScore = 0;
+    Internals::songMaxScore = 1;
+    Internals::leftCombo = 0;
+    Internals::rightCombo = 0;
+    Internals::combo = 0;
+    Internals::highestLeftCombo = 0;
+    Internals::highestRightCombo = 0;
+    Internals::highestCombo = 0;
+    Internals::multiplier = 1;
+    Internals::multiplierProgress = 0;
+    Internals::health = 0.5;
+    Internals::notesLeftCut = 0;
+    Internals::notesRightCut = 0;
+    Internals::notesLeftBadCut = 0;
+    Internals::notesRightBadCut = 0;
+    Internals::notesLeftMissed = 0;
+    Internals::notesRightMissed = 0;
+    Internals::bombsLeftHit = 0;
+    Internals::bombsRightHit = 0;
+    Internals::wallsHit = 0;
+    Internals::remainingNotesLeft = 0;
+    Internals::remainingNotesRight = 0;
+    Internals::songNotesLeft = 0;
+    Internals::songNotesRight = 0;
+    Internals::leftPreSwing = 0;
+    Internals::rightPreSwing = 0;
+    Internals::leftPostSwing = 0;
+    Internals::rightPostSwing = 0;
+    Internals::leftAccuracy = 0;
+    Internals::rightAccuracy = 0;
+    Internals::leftTimeDependence = 0;
+    Internals::rightTimeDependence = 0;
+    Internals::leftMissedMaxScore = 0;
+    Internals::rightMissedMaxScore = 0;
+    Internals::leftMissedFixedScore = 0;
+    Internals::rightMissedFixedScore = 0;
+}
+
 void Playtest::ResetNotes() {
     ResetGameControllers();
-    Internals::leftScore() = 0;
-    Internals::rightScore() = 0;
-    Internals::leftMaxScore() = 0;
-    Internals::rightMaxScore() = 0;
-    Internals::songMaxScore() = 1;
-    Internals::leftCombo() = 0;
-    Internals::rightCombo() = 0;
-    Internals::combo() = 0;
-    Internals::health() = 0.5;
-    Internals::notesLeftCut() = 0;
-    Internals::notesRightCut() = 0;
-    Internals::notesLeftBadCut() = 0;
-    Internals::notesRightBadCut() = 0;
-    Internals::notesLeftMissed() = 0;
-    Internals::notesRightMissed() = 0;
-    Internals::bombsLeftHit() = 0;
-    Internals::bombsRightHit() = 0;
-    Internals::wallsHit() = 0;
-    Internals::songNotesLeft() = 0;
-    Internals::songNotesRight() = 0;
-    Internals::leftPreSwing() = 0;
-    Internals::rightPreSwing() = 0;
-    Internals::leftPostSwing() = 0;
-    Internals::rightPostSwing() = 0;
-    Internals::leftAccuracy() = 0;
-    Internals::rightAccuracy() = 0;
-    Internals::leftTimeDependence() = 0;
-    Internals::rightTimeDependence() = 0;
-    Internals::leftMissedMaxScore() = 0;
-    Internals::rightMissedMaxScore() = 0;
-    Internals::leftMissedFixedScore() = 0;
-    Internals::rightMissedFixedScore() = 0;
+    ResetNoteTrackers();
     MEvents::Broadcast(MEvents::ScoreChanged);
     MEvents::Broadcast(MEvents::NoteCut);
     MEvents::Broadcast(MEvents::NoteMissed);
@@ -256,7 +270,7 @@ void Playtest::ResetNotes() {
     MEvents::Broadcast(MEvents::WallHit);
     MEvents::Broadcast(MEvents::ComboChanged);
     MEvents::Broadcast(MEvents::HealthChanged);
-    if (Internals::personalBest() != -1)
+    if (Internals::personalBest != -1)
         SetPersonalBest(0);
     else
         Events::BroadcastQountersEvent(Events::MapInfo);
@@ -266,11 +280,11 @@ void Playtest::ResetNotes() {
 }
 
 void Playtest::ResetAll() {
-    ResetGameControllers();
-    // may have been changed by settings
-    auto colors = Internals::colors();
-    Internals::currentState = Internals::startingState;
-    Internals::colors() = colors;
+    ResetNoteTrackers();
+    Internals::songTime = 0;
+    Internals::noFail = false;
+    Internals::positiveMods = 0;
+    Internals::negativeMods = 0;
     PP::blSongValid = false;
     settingsStarsBL = 10;
     PP::ssSongValid = false;
@@ -290,24 +304,24 @@ void Playtest::SetPersonalBest(float value) {
     else if (value > 0)
         lastPbValue = value;
     if (value == -1)
-        Internals::personalBest() = -1;
+        Internals::personalBest = -1;
     else
-        Internals::personalBest() = Stats::GetSongMaxScore() * value / 100;
+        Internals::personalBest = Stats::GetSongMaxScore() * value / 100;
     Events::BroadcastQountersEvent(Events::MapInfo);
 }
 
 void Playtest::SetSongTime(float value) {
-    Internals::songTime() = value;
+    Internals::songTime = value;
     MEvents::Broadcast(MEvents::Update);
 };
 
 void Playtest::SetPositiveModifiers(float value) {
-    Internals::positiveMods() = value * 0.01;
+    Internals::positiveMods = value * 0.01;
     MEvents::Broadcast(MEvents::ScoreChanged);
 };
 
 void Playtest::SetNegativeModifiers(float value) {
-    Internals::negativeMods() = value * 0.01;
+    Internals::negativeMods = value * 0.01;
     MEvents::Broadcast(MEvents::ScoreChanged);
 };
 
@@ -332,5 +346,5 @@ void Playtest::SetStarsSS(float value) {
 };
 
 float Playtest::GetOverridePBRatio() {
-    return Internals::personalBest() == -1 ? -1 : lastPbValue;
+    return Internals::personalBest == -1 ? -1 : lastPbValue;
 }

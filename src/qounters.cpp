@@ -540,8 +540,8 @@ void HUD::CreateQounterGroup(Options::Group const& qounterGroup, int groupIdx, b
 static Options::Preset GetPreset() {
     auto presets = getConfig().Presets.GetValue();
 
-    if (Internals::environment()) {
-        std::string serializedName = Internals::environment()->serializedName;
+    if (Internals::environment) {
+        std::string serializedName = Internals::environment->serializedName;
         auto specificPresets = getConfig().SpecificPresets.GetValue();
         if (specificPresets.contains(serializedName) && specificPresets[serializedName].Enabled) {
             auto ret = specificPresets[serializedName].Preset;
@@ -551,7 +551,7 @@ static Options::Preset GetPreset() {
             specificPresets[serializedName].Preset = presets.begin()->first;
         }
 
-        std::string hudTypeString = std::to_string((int) Environment::GetHUDType(Internals::environment()->serializedName));
+        std::string hudTypeString = std::to_string((int) Environment::GetHUDType(Internals::environment->serializedName));
         auto typePresets = getConfig().TypePresets.GetValue();
         if (typePresets.contains(hudTypeString) && typePresets[hudTypeString].Enabled) {
             auto ret = typePresets[hudTypeString].Preset;
@@ -573,7 +573,7 @@ static Options::Preset GetPreset() {
 void HUD::CreateQounters() {
     if (GetHUD().second == HUD::Type::Unsupported)
         return;
-    if (getConfig().Noodle.GetValue() && !Utils::GetSimplifiedRequirements(Internals::beatmapKey()).empty())
+    if (getConfig().Noodle.GetValue() && !Utils::GetSimplifiedRequirements(Internals::beatmapKey).empty())
         return;
 
     auto preset = GetPreset();

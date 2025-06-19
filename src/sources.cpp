@@ -124,16 +124,16 @@ std::vector<std::string_view> const Sources::RankedStatusLeaderboardStrings = {
 };
 
 float Sources::Text::PP::GetRankedPP(int leaderboard) {
-    int score = Internals::leftScore() + Internals::rightScore();
-    int max = Internals::leftMaxScore() + Internals::rightMaxScore();
+    int score = Internals::leftScore + Internals::rightScore;
+    int max = Internals::leftMaxScore + Internals::rightMaxScore;
     float percent = max > 0 ? score / (double) max : 0.95;
-    bool failed = Internals::health() <= 0;
+    bool failed = Internals::health <= 0;
 
     switch ((Leaderboards) leaderboard) {
         case Leaderboards::BeatLeader:
-            return Qounters::PP::CalculateBL(percent, Internals::modifiers(), failed);
+            return Qounters::PP::CalculateBL(percent, Internals::modifiers, failed);
         case Leaderboards::ScoreSaber:
-            return Qounters::PP::CalculateSS(percent, Internals::modifiers(), failed);
+            return Qounters::PP::CalculateSS(percent, Internals::modifiers, failed);
     }
     return 0;
 }
@@ -153,24 +153,24 @@ bool Sources::Enable::Ranked::GetIsRanked(int leaderboards) {
 }
 
 UnityEngine::Color Sources::Color::Player::GetColor(int setting) {
-    if (!Internals::colors())
+    if (!Internals::colors)
         return UnityEngine::Color::get_white();
 
     switch ((ColorSettings) setting) {
         case ColorSettings::LeftSaber:
-            return Internals::colors()->saberAColor;
+            return Internals::colors->saberAColor;
         case ColorSettings::RightSaber:
-            return Internals::colors()->saberBColor;
+            return Internals::colors->saberBColor;
         case ColorSettings::Lights1:
-            return Internals::colors()->environmentColor0;
+            return Internals::colors->environmentColor0;
         case ColorSettings::Lights2:
-            return Internals::colors()->environmentColor1;
+            return Internals::colors->environmentColor1;
         case ColorSettings::Walls:
-            return Internals::colors()->obstaclesColor;
+            return Internals::colors->obstaclesColor;
         case ColorSettings::Boost1:
-            return Internals::colors()->environmentColor0Boost;
+            return Internals::colors->environmentColor0Boost;
         case ColorSettings::Boost2:
-            return Internals::colors()->environmentColor1Boost;
+            return Internals::colors->environmentColor1Boost;
     }
     return UnityEngine::Color::get_white();
 }

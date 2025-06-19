@@ -612,14 +612,14 @@ void SettingsViewController::ColorCellSelected(int idx) {
 void SettingsViewController::UpdateColors() {
     GetColorSchemeTemplate()->Refresh();
     if (getConfig().OverrideColor.GetValue())
-        Internals::colors() = colorSchemeSettings->GetColorSchemeForId(getConfig().ColorScheme.GetValue());
+        Internals::colors = colorSchemeSettings->GetColorSchemeForId(getConfig().ColorScheme.GetValue());
     else
-        Internals::colors() = Environment::CurrentSettingsEnvironment()->colorScheme->colorScheme;
+        Internals::colors = Environment::CurrentSettingsEnvironment()->colorScheme->colorScheme;
     // doesn't update any already spawned notes/walls, but idc
     if (auto spawner = Object::FindObjectOfType<GlobalNamespace::NoteCutCoreEffectsSpawner*>(true))
-        spawner->_colorManager->SetColorScheme(Internals::colors());
+        spawner->_colorManager->SetColorScheme(Internals::colors);
     if (auto env = Object::FindObjectOfType<GlobalNamespace::EnvironmentColorManager*>(true))
-        env->SetColorScheme(Internals::colors());
+        env->SetColorScheme(Internals::colors);
     if (auto bg = Object::FindObjectOfType<GlobalNamespace::BloomPrePassBackgroundColorsGradientFromColorSchemeColors*>(true))
         bg->Start();
     PlaytestViewController::GetInstance()->UpdateUI();

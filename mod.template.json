@@ -6,7 +6,7 @@
   "author": "Metalit",
   "version": "${version}",
   "packageId": "com.beatgames.beatsaber",
-  "packageVersion": "1.40.4_5283",
+  "packageVersion": "1.40.6_6407",
   "description": "Add endlessly customizable counters to your ingame UI!",
   "coverImage": "cover.png",
   "dependencies": [],
