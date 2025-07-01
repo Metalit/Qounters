@@ -34,6 +34,13 @@ static UnityEngine::Transform* rotationalAnchor = nullptr;
 static bool hidden = false;
 static bool initialized = false;
 
+static void Finish() {
+    HUD::Reset(true);
+    rotationalAnchor = nullptr;
+    hidden = false;
+    initialized = false;
+}
+
 static void TryInitialize() {
     if (!getConfig().Enabled.GetValue() || Environment::InSettings() || hidden || initialized)
         return;
@@ -44,9 +51,8 @@ static void TryInitialize() {
         HUD::SetupObjects();
         HUD::CreateQounters();
         initialized = true;
-        auto reset = []() { HUD::Reset(true); };
-        MetaCore::Events::AddCallback(MetaCore::Events::MapEnded, reset, true);
-        MetaCore::Events::AddCallback(MetaCore::Events::MapRestarted, reset, true);
+        MetaCore::Events::AddCallback(MetaCore::Events::MapEnded, Finish, true);
+        MetaCore::Events::AddCallback(MetaCore::Events::MapRestarted, Finish, true);
     }
 }
 
