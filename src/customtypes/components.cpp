@@ -31,7 +31,6 @@ DEFINE_TYPE(Qounters, SongTimeSource);
 DEFINE_TYPE(Qounters, ImageSpriteCache);
 
 using namespace Qounters;
-using namespace MetaCore;
 using namespace GlobalNamespace;
 using namespace UnityEngine;
 
@@ -212,7 +211,7 @@ Shape* Shape::Create(Transform* parent) {
 
 void TextGradient::OnEnable() {
     if (!delegate) {
-        delegate = Delegates::MakeSystemAction([this](UnityW<Object> changed) {
+        delegate = MetaCore::Delegates::MakeSystemAction([this](UnityW<Object> changed) {
             if (changed == text)
                 UpdateGradient();
         });
@@ -315,7 +314,7 @@ void BaseGameGraphic::SetComponent(int comp) {
     instance->SetParent(transform, false);
     instance->gameObject->active = true;
 
-    auto rect = Engine::GetOrAddComponent<RectTransform*>(instance);
+    auto rect = MetaCore::Engine::GetOrAddComponent<RectTransform*>(instance);
     rect->anchorMin = {0.5, 0.5};
     rect->anchorMax = {0.5, 0.5};
     rect->anchoredPosition = {0, 0};
@@ -348,7 +347,7 @@ void BaseGameGraphic::SetChildColors() {
     float origAlhpa = modColor.a;
 
     for (auto graphic : graphics) {
-        auto path = Engine::GetTransformPath(instance, graphic->transform);
+        auto path = MetaCore::Engine::GetTransformPath(instance, graphic->transform);
         if (!alphaIndex[component].contains(path))
             continue;
         modColor.a = origAlhpa * alphaIndex[component][path];
@@ -373,11 +372,11 @@ static Transform* GetBase(int component) {
         return nullptr;
     switch ((BaseGameGraphic::Objects) component) {
         case BaseGameGraphic::Objects::Multiplier:
-            return Engine::FindRecursive(hud, "MultiplierCanvas");
+            return MetaCore::Engine::FindRecursive(hud, "MultiplierCanvas");
         case BaseGameGraphic::Objects::ProgressBar:
-            return Engine::FindRecursive(hud, "SongProgressCanvas");
+            return MetaCore::Engine::FindRecursive(hud, "SongProgressCanvas");
         case BaseGameGraphic::Objects::HealthBar:
-            return Engine::FindRecursive(hud, "EnergyPanel");
+            return MetaCore::Engine::FindRecursive(hud, "EnergyPanel");
     }
 }
 
@@ -424,7 +423,7 @@ void BaseGameGraphic::MakeClones() {
         alphaIndex[i] = {};
         auto graphics = base->GetComponentsInChildren<UI::Graphic*>();
         for (auto graphic : graphics) {
-            std::string path = Engine::GetTransformPath(base, graphic->transform);
+            std::string path = MetaCore::Engine::GetTransformPath(base, graphic->transform);
             alphaIndex[i][path] = graphic->color.a;
             logger.debug("{:.2f} alpha for {} {}", graphic->color.a, i, path.c_str());
         }
@@ -440,7 +439,7 @@ void PremadeParent::Update() {
     if (!GetGraphic())
         return;
     if (!rectTransform)
-        rectTransform = Engine::GetOrAddComponent<RectTransform*>(this);
+        rectTransform = MetaCore::Engine::GetOrAddComponent<RectTransform*>(this);
     rectTransform->sizeDelta = graphic->rectTransform->sizeDelta;
     if (updateColor)
         graphic->color = color;
@@ -458,7 +457,7 @@ UI::Graphic* PremadeParent::GetGraphic() {
 }
 
 float SongTimeSource::get_songTime() {
-    return Internals::songTime;
+    return MetaCore::Internals::songTime;
 }
 
 float SongTimeSource::get_lastFrameDeltaSongTime() {
@@ -466,15 +465,15 @@ float SongTimeSource::get_lastFrameDeltaSongTime() {
 }
 
 float SongTimeSource::get_songEndTime() {
-    return Internals::songLength;
+    return MetaCore::Internals::songLength;
 }
 
 float SongTimeSource::get_songLength() {
-    return Internals::songLength;
+    return MetaCore::Internals::songLength;
 }
 
 float SongTimeSource::get_timeScale() {
-    return Internals::songSpeed;
+    return MetaCore::Internals::songSpeed;
 }
 
 bool SongTimeSource::get_isReady() {

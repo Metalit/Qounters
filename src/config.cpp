@@ -15,11 +15,9 @@
 #include "utils.hpp"
 
 using namespace Qounters;
-using namespace MetaCore;
 using namespace UnityEngine;
-
-#define MUI MetaCore::UI
-#define UUI UnityEngine::UI
+namespace MUI = MetaCore::UI;
+namespace UUI = UnityEngine::UI;
 
 std::vector<std::string_view> const Options::SaberStrings = {
     "Left",

@@ -68,9 +68,8 @@ DEFINE_TYPE(Qounters, SpritesListSource);
 using namespace Qounters;
 using namespace MetaCore;
 using namespace UnityEngine;
-
-#define MUI MetaCore::UI
-#define UUI UnityEngine::UI
+namespace MUI = MetaCore::UI;
+namespace UUI = UnityEngine::UI;
 
 float settingsStarsBL = 10;
 float settingsStarsSS = 10;

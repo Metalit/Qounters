@@ -17,11 +17,9 @@
 #include "utils.hpp"
 
 using namespace Qounters;
-using namespace MetaCore;
 using namespace UnityEngine;
-
-#define MUI MetaCore::UI
-#define UUI UnityEngine::UI
+namespace MUI = MetaCore::UI;
+namespace UUI = UnityEngine::UI;
 
 static void DisableGradient(UUI::Graphic* component) {
     if (auto image = Utils::ptr_cast<HMUI::ImageView>(component)) {
@@ -55,7 +53,7 @@ static void SetGradient(UUI::Graphic* component, Options::Gradient const& option
         shape->endColor = endColor;
         shape->SetVerticesDirty();
     } else if (auto text = Utils::ptr_cast<TMPro::TextMeshProUGUI>(component)) {
-        auto gradient = Engine::GetOrAddComponent<TextGradient*>(text);
+        auto gradient = MetaCore::Engine::GetOrAddComponent<TextGradient*>(text);
         gradient->gradientDirection = options.Direction;
         gradient->startColor = startColor;
         gradient->endColor = endColor;
@@ -412,11 +410,11 @@ static std::map<HUD::Type, std::map<Options::Group::Anchors, std::tuple<std::str
 static RectTransform* GetCanvas(std::string parentName, Transform* hud, Vector3 fallback, Vector3 fallbackRot) {
     static ConstString name("QountersCanvas");
 
-    auto parent = Engine::FindRecursive(hud, parentName);
+    auto parent = MetaCore::Engine::FindRecursive(hud, parentName);
     if (!parent && !parentName.starts_with("Qounters")) {
         logger.info("Failed to find parent {}!", parentName);
         parentName = "Qounters" + parentName;
-        parent = Engine::FindRecursive(hud, parentName);
+        parent = MetaCore::Engine::FindRecursive(hud, parentName);
     }
     if (!parent) {
         logger.info("Creating custom parent object {}", parentName);
@@ -540,8 +538,8 @@ void HUD::CreateQounterGroup(Options::Group const& qounterGroup, int groupIdx, b
 static Options::Preset GetPreset() {
     auto presets = getConfig().Presets.GetValue();
 
-    if (Internals::environment) {
-        std::string serializedName = Internals::environment->serializedName;
+    if (MetaCore::Internals::environment) {
+        std::string serializedName = MetaCore::Internals::environment->serializedName;
         auto specificPresets = getConfig().SpecificPresets.GetValue();
         if (specificPresets.contains(serializedName) && specificPresets[serializedName].Enabled) {
             auto ret = specificPresets[serializedName].Preset;
@@ -551,7 +549,7 @@ static Options::Preset GetPreset() {
             specificPresets[serializedName].Preset = presets.begin()->first;
         }
 
-        std::string hudTypeString = std::to_string((int) Environment::GetHUDType(Internals::environment->serializedName));
+        std::string hudTypeString = std::to_string((int) Environment::GetHUDType(MetaCore::Internals::environment->serializedName));
         auto typePresets = getConfig().TypePresets.GetValue();
         if (typePresets.contains(hudTypeString) && typePresets[hudTypeString].Enabled) {
             auto ret = typePresets[hudTypeString].Preset;
@@ -573,7 +571,7 @@ static Options::Preset GetPreset() {
 void HUD::CreateQounters() {
     if (GetHUD().second == HUD::Type::Unsupported)
         return;
-    if (getConfig().Noodle.GetValue() && !Utils::GetSimplifiedRequirements(Internals::beatmapKey).empty())
+    if (getConfig().Noodle.GetValue() && !Utils::GetSimplifiedRequirements(MetaCore::Internals::beatmapKey).empty())
         return;
 
     auto preset = GetPreset();
@@ -601,7 +599,7 @@ void HUD::SetupObjects() {
 
     for (int i = 0; i <= (int) Options::Group::Anchors::AnchorMax; i++)
         GetAnchor(i);
-    Engine::DisableAllBut(hud, {"QountersCanvas", "EnergyPanel"});
+    MetaCore::Engine::DisableAllBut(hud, {"QountersCanvas", "EnergyPanel"});
 }
 
 static void UpdateTexts(std::string source) {

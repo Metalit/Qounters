@@ -7,10 +7,8 @@
 #include "utils.hpp"
 
 using namespace Qounters;
-using namespace MetaCore;
 using namespace UnityEngine;
-
-#define MUI MetaCore::UI
+namespace MUI = MetaCore::UI;
 
 void Sources::Text::StaticUI(GameObject* parent, UnparsedJSON unparsed) {
     static Static opts;

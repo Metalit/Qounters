@@ -72,7 +72,6 @@
 #include "utils.hpp"
 
 using namespace Qounters;
-using namespace MetaCore;
 using namespace GlobalNamespace;
 using namespace UnityEngine;
 
@@ -295,7 +294,7 @@ static void DismissFlowCoordinator() {
 void Environment::DismissSettings() {
     logger.debug("Dismissing environment");
 
-    Internals::Finish(true, false);
+    MetaCore::Internals::Finish(true, false);
     HUD::Reset();
 
     Editor::SetPreviewMode(false);
@@ -411,11 +410,11 @@ static void OnMultiplayerSceneStart(MultiplayerController* multiplayerController
     objects->Find("MultiplayerLocalActivePlayerInGameMenuViewController")->gameObject->active = false;
     auto enabled = EnabledGameplayObjects;
     enabled.emplace("BeatmapObjectSpawnController");
-    Engine::DisableAllBut(objects->Find("GameplayCore"), enabled);
+    MetaCore::Engine::DisableAllBut(objects->Find("GameplayCore"), enabled);
 
     localPlayer = objects->Find("LocalPlayerGameCore")->gameObject;
     localPlayer->active = false;
-    Engine::FindRecursive(localPlayer->transform, "MainCamera")->gameObject->active = false;
+    MetaCore::Engine::FindRecursive(localPlayer->transform, "MainCamera")->gameObject->active = false;
 }
 
 void Environment::OnSceneStart() {
@@ -434,11 +433,11 @@ void Environment::OnSceneStart() {
         auto transform = gameplay->transform;
         auto enabled = EnabledGameplayObjects;
         enabled.emplace("LocalPlayerGameCore");
-        Engine::DisableAllBut(transform, enabled);
+        MetaCore::Engine::DisableAllBut(transform, enabled);
         // disable local player, but not recursively
         localPlayer = transform->Find("LocalPlayerGameCore")->gameObject;
         localPlayer->active = false;
-        Engine::FindRecursive(localPlayer->transform, "MainCamera")->gameObject->active = false;
+        MetaCore::Engine::FindRecursive(localPlayer->transform, "MainCamera")->gameObject->active = false;
     }
 
     auto newInput = Utils::GetCurrentInputModule();
