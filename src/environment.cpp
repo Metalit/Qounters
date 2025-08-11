@@ -295,7 +295,7 @@ static void DismissFlowCoordinator() {
 void Environment::DismissSettings() {
     logger.debug("Dismissing environment");
 
-    Internals::Finish(true);
+    Internals::Finish(true, false);
     HUD::Reset();
 
     Editor::SetPreviewMode(false);
