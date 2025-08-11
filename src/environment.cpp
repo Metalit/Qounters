@@ -333,11 +333,11 @@ void Environment::SetPlayerActive(bool active) {
 void Environment::UpdateSaberColors() {
     auto sabers = localPlayer->GetComponentsInChildren<SaberModelController*>();
     for (auto& saber : sabers) {
-        // lapiz just adds custom sabers as children instead of replacing the normal one
-        if (saber->GetComponentInChildren<SaberModelController*>())
-            continue;
         if (auto container = saber->GetComponentInParent<SaberModelContainer*>()) {
-            saber->Init(container->transform, container->_saber, container->_initData->trailTintColor);
+            auto transform = container->transform;
+            if (saber->name->Contains("CustomSaberAPI"))  // fix this in next custom models release
+                transform = saber->transform;
+            saber->Init(transform, container->_saber, container->_initData->trailTintColor);
             if (auto ree = container->transform->Find("ReeSaber")) {
                 ree->gameObject->active = false;
                 ree->gameObject->active = true;
