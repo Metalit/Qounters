@@ -870,7 +870,7 @@ void Sources::Enable::PercentageUI(UnityEngine::GameObject* parent, UnparsedJSON
     auto slider = BSML::Lite::CreateSliderSetting(parent, "Percentage", 1, opts.Percent, 0, 100, 0, true, {0, 0}, [](float val) {
         static int id = Editor::GetActionId();
         opts.Percent = val;
-        Editor::SetSourceOptions(id, opts);
+        Editor::SetEnableOptions(id, opts);
     });
     MUI::AddSliderEndDrag(slider, [](float) { Editor::FinalizeAction(); });
     slider->GetComponent<RectTransform*>()->sizeDelta = {0, 8};
