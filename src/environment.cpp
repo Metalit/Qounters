@@ -309,6 +309,7 @@ void Environment::DismissSettings() {
 void Environment::RefreshSettings() {
     logger.debug("Refreshing environment");
 
+    MetaCore::Internals::Finish(true, false);
     HUD::Reset();
 
     DismissFlowCoordinator();
