@@ -667,7 +667,7 @@ void SettingsViewController::UpdateUI() {
     if (selectedScheme->isEditable)
         colorEditor->SetColorScheme(selectedScheme);
 
-    colorToggleName->text = getConfig().OverrideColor.GetValue() ? "..." : "Override Environment Colors";
+    colorToggleName->text = getConfig().OverrideColor.GetValue() ? "" : "Override Environment Colors";
 
     colorDropdown->transform->parent->gameObject->active = getConfig().OverrideColor.GetValue();
     auto list = colorSchemeSettings->_colorSchemesList;
