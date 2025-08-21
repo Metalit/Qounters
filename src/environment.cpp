@@ -66,6 +66,7 @@
 #include "customtypes/settings.hpp"
 #include "editor.hpp"
 #include "main.hpp"
+#include "metacore/shared/input.hpp"
 #include "metacore/shared/internals.hpp"
 #include "metacore/shared/unity.hpp"
 #include "qounters.hpp"
@@ -276,7 +277,7 @@ void Environment::PresentSettings() {
 
     menuEnvironment = Object::FindObjectOfType<MenuEnvironmentManager*>();
     songPreview = Object::FindObjectOfType<SongPreviewPlayer*>();
-    vrInput = Utils::GetCurrentInputModule();
+    vrInput = MetaCore::Input::GetCurrentInputModule();
     keyboardManager = Object::FindObjectOfType<UIKeyboardManager*>();
     menuEnv = GameObject::Find("MenuEnvironmentCore");
 
@@ -441,7 +442,7 @@ void Environment::OnSceneStart() {
         MetaCore::Engine::FindRecursive(localPlayer->transform, "MainCamera")->gameObject->active = false;
     }
 
-    auto newInput = Utils::GetCurrentInputModule();
+    auto newInput = MetaCore::Input::GetCurrentInputModule();
     logger.debug("found input module {} (old was {})", fmt::ptr(newInput), fmt::ptr(vrInput));
     if (newInput && newInput != vrInput) {
         keyboardManager->_vrInputModule = newInput->i___GlobalNamespace__IVRInputModule();

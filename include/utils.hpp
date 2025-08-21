@@ -6,12 +6,7 @@
 #include "UnityEngine/GameObject.hpp"
 #include "UnityEngine/Transform.hpp"
 #include "UnityEngine/UI/Toggle.hpp"
-#include "VRUIControls/VRInputModule.hpp"
 #include "bsml/shared/BSML/Components/Settings/ColorSetting.hpp"
-#include "bsml/shared/BSML/Components/Settings/DropdownListSetting.hpp"
-#include "bsml/shared/BSML/Components/Settings/IncrementSetting.hpp"
-#include "bsml/shared/BSML/Components/Settings/SliderSetting.hpp"
-#include "bsml/shared/BSML/Components/Settings/ToggleSetting.hpp"
 #include "customtypes/settings.hpp"
 
 namespace Qounters::Utils {
@@ -51,5 +46,4 @@ namespace Qounters::Utils {
     void RebuildWithScrollPosition(UnityEngine::GameObject* scrollView);
 
     UnityEngine::RectTransform* GetScrollViewTop(UnityEngine::GameObject* scrollView);
-    VRUIControls::VRInputModule* GetCurrentInputModule();
 }

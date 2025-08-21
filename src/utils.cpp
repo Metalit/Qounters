@@ -351,16 +351,3 @@ void Utils::RebuildWithScrollPosition(UnityEngine::GameObject* scrollView) {
 UnityEngine::RectTransform* Utils::GetScrollViewTop(UnityEngine::GameObject* scrollView) {
     return scrollView->transform->parent->parent->parent->GetComponent<UnityEngine::RectTransform*>();
 }
-
-VRUIControls::VRInputModule* Utils::GetCurrentInputModule() {
-    auto eventSystem = UnityEngine::EventSystems::EventSystem::get_current();
-    if (!eventSystem) {
-        auto eventSystems = UnityEngine::Resources::FindObjectsOfTypeAll<UnityEngine::EventSystems::EventSystem*>();
-        eventSystem = eventSystems->FirstOrDefault([](auto e) { return e->isActiveAndEnabled; });
-        if (!eventSystem)
-            eventSystem = eventSystems->FirstOrDefault();
-    }
-    if (!eventSystem)
-        return nullptr;
-    return eventSystem->GetComponent<VRUIControls::VRInputModule*>();
-}

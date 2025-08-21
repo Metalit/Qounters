@@ -16,6 +16,7 @@
 #include "customtypes/settings.hpp"
 #include "main.hpp"
 #include "metacore/shared/unity.hpp"
+#include "metacore/shared/input.hpp"
 #include "playtest.hpp"
 #include "qounters.hpp"
 #include "sources.hpp"
@@ -161,7 +162,7 @@ static void InitializeInternal(Options::Preset const& inPreset, bool newEnvironm
     runningUndo = false;
     disableActions = false;
     previewMode = false;
-    vrInput = Utils::GetCurrentInputModule();
+    vrInput = MetaCore::Input::GetCurrentInputModule();
     if (newEnvironment) {
         SetupAnchors();
         CreateDragCanvases();
