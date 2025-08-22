@@ -44,6 +44,7 @@
 #include "GlobalNamespace/SongPreviewPlayer.hpp"
 #include "GlobalNamespace/StandardLevelScenesTransitionSetupDataSO.hpp"
 #include "GlobalNamespace/UIKeyboardManager.hpp"
+#include "GlobalNamespace/VRController.hpp"
 #include "GlobalNamespace/VRRenderingParamsSetup.hpp"
 #include "HMUI/ScreenSystem.hpp"
 #include "HMUI/ViewController.hpp"
@@ -80,6 +81,8 @@ static MenuEnvironmentManager* menuEnvironment;
 static SongPreviewPlayer* songPreview;
 static VRUIControls::VRInputModule* vrInput;
 static UIKeyboardManager* keyboardManager;
+static Transform* leftController;
+static Transform* rightController;
 static GameObject* menuEnv;
 static bool wasNoTextsAndHuds = false;
 static GameObject* localPlayer;
@@ -328,6 +331,12 @@ EnvironmentInfoSO* Environment::CurrentSettingsEnvironment() {
 
 void Environment::SetPlayerActive(bool active) {
     localPlayer->active = active;
+    for (auto controller : {leftController, rightController}) {
+        for (int i = 0; i < controller->childCount; i++) {
+            if (controller->GetChild(i)->name->Contains("CustomModels"))
+                controller->GetChild(i)->gameObject->active = !active;
+        }
+    }
     // reesabers doesn't seem to use the right color scheme even initially
     UpdateSaberColors();
 }
@@ -452,6 +461,8 @@ void Environment::OnSceneStart() {
         vrInput->_vrPointer->_leftVRController->gameObject->active = false;
         vrInput->_vrPointer->_rightVRController->gameObject->active = false;
     }
+    leftController = newInput->_vrPointer->_leftVRController->_viewAnchorTransform;
+    rightController = newInput->_vrPointer->_rightVRController->_viewAnchorTransform;
 
     menuEnv->active = false;
 
@@ -507,6 +518,8 @@ void Environment::OnSceneEnd() {
         keyboardManager->OnDestroy();
         keyboardManager->_vrInputModule = vrInput->i___GlobalNamespace__IVRInputModule();
     }
+    leftController = nullptr;
+    rightController = nullptr;
     menuEnv->active = true;
     Object::FindObjectOfType<FadeInOutController*>()->FadeIn();
     localPlayer = nullptr;
