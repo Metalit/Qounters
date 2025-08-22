@@ -9,7 +9,7 @@
 
 using namespace Qounters;
 
-void API::RegisterTemplate(std::string title, Types::TemplateUIFn function) {
+void API::RegisterTemplate(std::string section, std::string title, Types::TemplateUIFn function) {
     Templates::registration.emplace_back(title, function);
 }
 void API::RegisterPremade(std::string mod, std::string name, Types::PremadeFn creation, Types::PremadeUIFn uiFunction, Types::PremadeUpdateFn update) {

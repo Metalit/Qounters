@@ -97,7 +97,7 @@ void Events::RegisterToEvent(Types::Sources sourceType, std::string source, std:
     RegisterToEvent(sourceType, source, MetaCore::Events::FindEvent(mod, event));
 }
 
-void Events::RegisterToQountersEvent(Types::Sources sourceType, std::string source, std::string mod, int event) {
+void Events::RegisterToQountersEvent(Types::Sources sourceType, std::string source, int event) {
     RegisterToEvent(sourceType, source, MOD_ID, event);
 }
 
