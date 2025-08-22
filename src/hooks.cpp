@@ -192,6 +192,64 @@ MAKE_AUTO_HOOK_MATCH(
     UIKeyboardManager_OpenKeyboardFor(self, input);
 }
 
+// temp fix, should be in BSML (will be way easier to do there too)
+#include "System/Action_2.hpp"
+
+static bool ShouldRound(HMUI::RangeValuesTextSlider* self) {
+    auto parent = self->transform->parent;
+    if (!parent)
+        return false;
+    auto comp = parent->GetComponent<BSML::SliderSetting*>();
+    return comp && comp->isInt;
+}
+
+MAKE_AUTO_HOOK_MATCH(
+    RangeValuesTextSlider_ConvertFromNormalizedValue,
+    &HMUI::RangeValuesTextSlider::ConvertFromNormalizedValue,
+    float,
+    HMUI::RangeValuesTextSlider* self,
+    float normalizedValue
+) {
+    float ret = RangeValuesTextSlider_ConvertFromNormalizedValue(self, normalizedValue);
+    if (ShouldRound(self))
+        return std::round(ret);
+    return ret;
+}
+
+// seems like the above method gets inlined in these
+MAKE_AUTO_HOOK_MATCH(RangeValuesTextSlider_get_value, &HMUI::RangeValuesTextSlider::get_value, float, HMUI::RangeValuesTextSlider* self) {
+    float ret = RangeValuesTextSlider_get_value(self);
+    if (ShouldRound(self))
+        return std::round(ret);
+    return ret;
+}
+
+MAKE_AUTO_HOOK_MATCH(
+    RangeValuesTextSlider_TextForNormalizedValue,
+    &HMUI::RangeValuesTextSlider::TextForNormalizedValue,
+    StringW,
+    HMUI::RangeValuesTextSlider* self,
+    float normalizedValue
+) {
+    if (ShouldRound(self))
+        return self->TextForValue(std::round(normalizedValue * (self->_maxValue - self->_minValue) + self->_minValue));
+    return RangeValuesTextSlider_TextForNormalizedValue(self, normalizedValue);
+}
+
+MAKE_AUTO_HOOK_MATCH(
+    RangeValuesTextSlider_HandleNormalizedValueDidChange,
+    &HMUI::RangeValuesTextSlider::HandleNormalizedValueDidChange,
+    void,
+    HMUI::RangeValuesTextSlider* self,
+    HMUI::TextSlider* slider,
+    float normalizedValue
+) {
+    if (ShouldRound(self) && !System::MulticastDelegate::op_Equality(self->valueDidChangeEvent, nullptr))
+        self->valueDidChangeEvent->Invoke(self, std::round(normalizedValue * (self->_maxValue - self->_minValue) + self->_minValue));
+    else
+        RangeValuesTextSlider_HandleNormalizedValueDidChange(self, slider, normalizedValue);
+}
+
 // I hate having to do this
 void PopulateMeshHSVGradient(HMUI::ImageView* self, UnityEngine::UI::VertexHelper* toFill, int modIdx, float modifier, int elementTarget) {
     using namespace UnityEngine;
