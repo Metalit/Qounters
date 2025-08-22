@@ -107,7 +107,7 @@ namespace Qounters::Sources {
         DECLARE_JSON_STRUCT(PBGap) {
             VALUE_DEFAULT(bool, Percentage, false);
             VALUE_DEFAULT(int, Decimals, 2);
-            VALUE_DEFAULT(bool, Sign, false);
+            VALUE_DEFAULT(bool, Sign, true);
             VALUE_DEFAULT(int, Separator, (int) Types::Separators::None);
         };
         DECLARE_JSON_STRUCT(Combo) {
