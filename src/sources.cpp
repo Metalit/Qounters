@@ -18,6 +18,7 @@ std::vector<std::pair<std::string, std::pair<Types::SourceFn<std::string>, Types
     {Sources::Text::ScoreName, {Sources::Text::GetScore, Sources::Text::ScoreUI}},
     {Sources::Text::RankName, {Sources::Text::GetRank, Sources::Text::RankUI}},
     {Sources::Text::PersonalBestName, {Sources::Text::GetPersonalBest, Sources::Text::PersonalBestUI}},
+    {Sources::Text::PBGapName, {Sources::Text::GetPBGap, Sources::Text::PBGapUI}},
     {Sources::Text::ComboName, {Sources::Text::GetCombo, Sources::Text::ComboUI}},
     {Sources::Text::MultiplierName, {Sources::Text::GetMultiplier, Sources::Text::MultiplierUI}},
     {Sources::Text::HealthName, {Sources::Text::GetHealth, Sources::Text::HealthUI}},
@@ -188,16 +189,9 @@ std::string Sources::Text::GetScore(UnparsedJSON unparsed) {
         ratio *= 100;
         return Strings::FormatDecimals(ratio, opts.Decimals) + "%";
     } else {
-        // spaces between every three digits, and pad zeroes if below 100
-        auto number = fmt::format("{:03}", score);
         if (score < 1000)
-            return number;
-        size_t len = number.size();
-        for (int i = 1; i <= (len - 1) / 3; i++) {
-            size_t split = len - 3 * i;
-            number = number.substr(0, split) + " " + number.substr(split);
-        }
-        return number;
+            return fmt::format("{:03}", score);
+        return Strings::FormatNumber(score, opts.Separator);
     }
 }
 std::string Sources::Text::GetRank(UnparsedJSON unparsed) {
@@ -236,6 +230,7 @@ std::string Sources::Text::GetRank(UnparsedJSON unparsed) {
 std::string Sources::Text::GetPersonalBest(UnparsedJSON unparsed) {
     auto opts = unparsed.Parse<PersonalBest>();
 
+
     int best = Stats::GetBestScore();
     if (best == -1) {
         if (opts.HideFirstScore)
@@ -253,9 +248,51 @@ std::string Sources::Text::GetPersonalBest(UnparsedJSON unparsed) {
             ratio = max > 0 ? best / (Stats::GetModifierMultiplier(true, true) * max) : 1;
         text = Strings::FormatDecimals(ratio * 100, opts.Decimals) + "%";
     } else
-        text = Environment::InSettings() && max == 1 ? "0" : std::to_string(best);
+        text = Environment::InSettings() && max == 1 ? "0" : Strings::FormatNumber(best, opts.Separator);
     return opts.Label ? "PB: " + text : text;
 }
+
+std::string Sources::Text::GetPBGap(UnparsedJSON unparsed) {
+    auto opts = unparsed.Parse<PBGap>();
+    int best = Stats::GetBestScore();
+    if (best == -1) {
+        best = 0;
+    }
+    int songMax = Stats::GetSongMaxScore();
+    double current = Stats::GetScore((int) Types::Sabers::Both);
+    // PB modifiers would be applied to best score
+    current *= Stats::GetModifierMultiplier(true, true);
+    int max = Stats::GetMaxScore((int) Types::Sabers::Both);
+
+    double bestRatio = songMax > 0 ? (static_cast<double>(best) / songMax) : 1.0;
+    double ratio = max > 0 ? (current / max) : 1.0;
+
+
+    // rounded absolute difference
+
+    std::string text;
+
+    if (opts.Percentage) {
+        // percentage difference relative to current max
+        double percentDiff = (max > 0) ? ((ratio - bestRatio) * 100.0) : 0.0;
+        if (opts.Sign) {
+            text = (percentDiff >= 0 ? "+" : "") + Strings::FormatDecimals(percentDiff, opts.Decimals) + "%";
+        } else {
+            text = Strings::FormatDecimals(std::abs(percentDiff), opts.Decimals) + "%";
+        }
+    } else {
+        int difference = static_cast<int>(std::round((ratio - bestRatio) * max));
+        // raw score difference
+        if (opts.Sign) {
+            text = (difference >= 0 ? "+" : "") + Strings::FormatNumber(difference, opts.Separator);
+        } else {
+            text = Strings::FormatNumber(std::abs(difference), opts.Separator);
+        }
+    }
+
+    return text;
+}
+
 std::string Sources::Text::GetCombo(UnparsedJSON unparsed) {
     auto opts = unparsed.Parse<Combo>();
 

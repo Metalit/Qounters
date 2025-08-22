@@ -49,6 +49,14 @@ void Sources::Text::ScoreUI(GameObject* parent, UnparsedJSON unparsed) {
         Editor::FinalizeAction();
     });
     BSML::Lite::AddHoverHint(percentage, "Show the score as a percentage instead of absolute value");
+
+    auto separator = MUI::CreateDropdownEnum(parent, "Separator", opts.Separator, Options::SeparatorStrings, [](int val) {
+        static int id = Editor::GetActionId();
+        opts.Separator = val;
+        Editor::SetSourceOptions(id, opts);
+        Editor::FinalizeAction();
+    });
+    BSML::Lite::AddHoverHint(separator, "The separator to use in the number if absolute value");
 }
 void Sources::Text::RankUI(GameObject* parent, UnparsedJSON unparsed) {
     static Rank opts;
@@ -113,6 +121,48 @@ void Sources::Text::PersonalBestUI(GameObject* parent, UnparsedJSON unparsed) {
         Editor::FinalizeAction();
     });
     BSML::Lite::AddHoverHint(label, "Labels the text with \"PB: \"");
+
+    auto separator = MUI::CreateDropdownEnum(parent, "Separator", opts.Separator, Options::SeparatorStrings, [](int val) {
+        static int id = Editor::GetActionId();
+        opts.Separator = val;
+        Editor::SetSourceOptions(id, opts);
+        Editor::FinalizeAction();
+    });
+    BSML::Lite::AddHoverHint(separator, "The separator to use in the number if absolute value");
+}
+void Sources::Text::PBGapUI(GameObject* parent, UnparsedJSON unparsed) {
+    static PBGap opts;
+    opts = unparsed.Parse<PBGap>();
+    auto percentage = BSML::Lite::CreateToggle(parent, "Percentage", opts.Percentage, [](bool val) {
+        static int id = Editor::GetActionId();
+        opts.Percentage = val;
+        Editor::SetSourceOptions(id, opts);
+        Editor::FinalizeAction();
+    });
+    BSML::Lite::AddHoverHint(percentage, "Display the difference from personal best as a percentage instead of absolute value");
+        auto decimals = BSML::Lite::CreateIncrementSetting(parent, "Decimals", 0, 1, opts.Decimals, 0, 10, [](float val) {
+            static int id = Editor::GetActionId();
+            opts.Decimals = val;
+            Editor::SetSourceOptions(id, opts);
+            Editor::FinalizeAction();
+        });
+    BSML::Lite::AddHoverHint(decimals, "The number of decimals to show, if a percentage");
+
+    auto sign = BSML::Lite::CreateToggle(parent, "Sign", opts.Sign, [](bool val) {
+        static int id = Editor::GetActionId();
+        opts.Sign = val;
+        Editor::SetSourceOptions(id, opts);
+        Editor::FinalizeAction();
+    });
+    BSML::Lite::AddHoverHint(sign, "Display a positive or negative sign next to the difference");
+
+    auto separator = MUI::CreateDropdownEnum(parent, "Separator", opts.Separator, Options::SeparatorStrings, [](int val) {
+        static int id = Editor::GetActionId();
+        opts.Separator = val;
+        Editor::SetSourceOptions(id, opts);
+        Editor::FinalizeAction();
+    });
+    BSML::Lite::AddHoverHint(separator, "The separator to use in the number if absolute value");
 }
 void Sources::Text::ComboUI(GameObject* parent, UnparsedJSON unparsed) {
     static Combo opts;

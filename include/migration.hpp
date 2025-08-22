@@ -32,6 +32,13 @@ namespace Qounters::Migration {
         VALUE(std::string, DefaultColor);
     };
 
+    DECLARE_JSON_STRUCT(PBGap) {
+        VALUE(bool, Enabled);
+        VALUE(std::string, Position);
+        VALUE(float, Distance);
+        VALUE(int, TextSize);
+    };
+
     DECLARE_JSON_STRUCT(AverageCut) {
         VALUE(bool, Enabled);
         VALUE(std::string, Position);

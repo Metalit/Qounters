@@ -68,6 +68,7 @@ namespace Qounters::Sources {
         inline std::string const ScoreName = "Score";
         inline std::string const RankName = "Rank";
         inline std::string const PersonalBestName = "Personal Best";
+        inline std::string const PBGapName = "PB Gap";
         inline std::string const ComboName = "Combo";
         inline std::string const MultiplierName = "Multiplier";
         inline std::string const HealthName = "Health";
@@ -89,6 +90,7 @@ namespace Qounters::Sources {
             VALUE_DEFAULT(int, Saber, (int) Types::Sabers::Both);
             VALUE_DEFAULT(int, Decimals, 1);
             VALUE_DEFAULT(bool, Percentage, true);
+            VALUE_DEFAULT(int, Separator, (int) Types::Separators::Gap);
         };
         DECLARE_JSON_STRUCT(Rank) {
             VALUE_DEFAULT(int, Saber, (int) Types::Sabers::Both);
@@ -100,6 +102,13 @@ namespace Qounters::Sources {
             VALUE_DEFAULT(bool, Percentage, true);
             VALUE_DEFAULT(bool, HideFirstScore, true);
             VALUE_DEFAULT(bool, Label, true);
+            VALUE_DEFAULT(int, Separator, (int) Types::Separators::None);
+        };
+        DECLARE_JSON_STRUCT(PBGap) {
+            VALUE_DEFAULT(bool, Percentage, false);
+            VALUE_DEFAULT(int, Decimals, 2);
+            VALUE_DEFAULT(bool, Sign, false);
+            VALUE_DEFAULT(int, Separator, (int) Types::Separators::None);
         };
         DECLARE_JSON_STRUCT(Combo) {
             VALUE_DEFAULT(int, Saber, (int) Types::Sabers::Both);
@@ -186,6 +195,7 @@ namespace Qounters::Sources {
         std::string GetScore(UnparsedJSON options);
         std::string GetRank(UnparsedJSON options);
         std::string GetPersonalBest(UnparsedJSON options);
+        std::string GetPBGap(UnparsedJSON options);
         std::string GetCombo(UnparsedJSON options);
         std::string GetMultiplier(UnparsedJSON options);
         std::string GetHealth(UnparsedJSON options);

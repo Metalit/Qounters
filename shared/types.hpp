@@ -18,6 +18,13 @@ namespace Qounters::Types {
         Enable,
     };
 
+    enum class Separators {
+        None,
+        Gap,
+        Comma,
+        Period,
+    };
+
     template <class T>
     using SourceFn = std::function<T(UnparsedJSON)>;
     using SourceUIFn = std::function<void(UnityEngine::GameObject*, UnparsedJSON)>;

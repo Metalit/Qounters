@@ -10,6 +10,7 @@ namespace Qounters::Options {
     extern std::vector<std::string_view> const FillStrings;
     extern std::vector<std::string_view> const TypeStrings;
     extern std::vector<std::string_view> const AnchorStrings;
+    extern std::vector<std::string_view> const SeparatorStrings;
     extern std::vector<std::string_view> const BaseGameObjectStrings;
 
     DECLARE_JSON_STRUCT(Gradient) {
