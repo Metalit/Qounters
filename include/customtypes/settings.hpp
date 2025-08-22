@@ -2,6 +2,7 @@
 
 #include "GlobalNamespace/ColorManager.hpp"
 #include "GlobalNamespace/ColorSchemeDropdown.hpp"
+#include "GlobalNamespace/UIKeyboardManager.hpp"
 #include "GlobalNamespace/ColorSchemesSettings.hpp"
 #include "GlobalNamespace/EditColorSchemeController.hpp"
 #include "GlobalNamespace/EnvironmentInfoSO.hpp"
@@ -44,6 +45,7 @@ DECLARE_CLASS_CODEGEN(Qounters, SettingsFlowCoordinator, HMUI::FlowCoordinator) 
     DECLARE_STATIC_METHOD(void, RefreshScene);
     DECLARE_STATIC_METHOD(void, OnModalConfirm);
     DECLARE_STATIC_METHOD(void, OnModalCancel);
+    DECLARE_STATIC_METHOD(void, CloseKeyboard);
 
     DECLARE_STATIC_METHOD(void, SelectPreset, StringW name);
     DECLARE_STATIC_METHOD(void, RenamePreset, StringW name);
@@ -55,6 +57,7 @@ DECLARE_CLASS_CODEGEN(Qounters, SettingsFlowCoordinator, HMUI::FlowCoordinator) 
     DECLARE_INSTANCE_FIELD_DEFAULT(float, oldRadius, -1);
     DECLARE_INSTANCE_FIELD(UnityEngine::GameObject*, leftDragger);
     DECLARE_INSTANCE_FIELD(UnityEngine::GameObject*, rightDragger);
+    DECLARE_INSTANCE_FIELD(GlobalNamespace::UIKeyboardManager*, keyboardManager);
 
     DECLARE_STATIC_METHOD(Qounters::SettingsFlowCoordinator*, GetInstance);
     DECLARE_STATIC_METHOD(float, GetRadius);

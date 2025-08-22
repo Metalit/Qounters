@@ -15,8 +15,8 @@
 #include "customtypes/editing.hpp"
 #include "customtypes/settings.hpp"
 #include "main.hpp"
-#include "metacore/shared/unity.hpp"
 #include "metacore/shared/input.hpp"
+#include "metacore/shared/unity.hpp"
 #include "playtest.hpp"
 #include "qounters.hpp"
 #include "sources.hpp"
@@ -336,8 +336,9 @@ void Editor::SelectEditing(EditingBase* object) {
         selected->Deselect();
     selected = object;
 
-    auto options = OptionsViewController::GetInstance();
+    SettingsFlowCoordinator::CloseKeyboard();
 
+    auto options = OptionsViewController::GetInstance();
     if (auto group = Utils::ptr_cast<EditingGroup>(object)) {
         selectedGroupIdx = group->GetGroupIdx();
         selectedComponentIdx = -1;
@@ -358,6 +359,7 @@ void Editor::Deselect() {
         selected->Deselect();
     selected = nullptr;
 
+    SettingsFlowCoordinator::CloseKeyboard();
     SettingsFlowCoordinator::PresentTemplates();
 }
 

@@ -146,6 +146,8 @@ void SettingsFlowCoordinator::DidActivate(bool firstActivation, bool addedToHier
 
     if (!blankViewController)
         blankViewController = BSML::Helpers::CreateViewController();
+    if (!keyboardManager)
+        keyboardManager = Object::FindObjectOfType<GlobalNamespace::UIKeyboardManager*>(true);
 
     ProvideInitialViewControllers(
         blankViewController, SettingsViewController::GetInstance(), TemplatesViewController::GetInstance(), nullptr, nullptr
@@ -224,6 +226,11 @@ void SettingsFlowCoordinator::OnModalCancel() {
     if (nextModalCancel)
         nextModalCancel();
     SettingsViewController::GetInstance()->HideConfirmModal();
+}
+
+void SettingsFlowCoordinator::CloseKeyboard() {
+    if (auto manager = GetInstance()->keyboardManager)
+        manager->CloseKeyboard();
 }
 
 void SettingsFlowCoordinator::SelectPreset(StringW name) {
