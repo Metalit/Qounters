@@ -9,6 +9,7 @@
 #include "pp.hpp"
 #include "sourceui.hpp"
 #include "utils.hpp"
+#include "functions/format.hpp"
 
 using namespace Qounters;
 using namespace MetaCore;
@@ -191,7 +192,7 @@ std::string Sources::Text::GetScore(UnparsedJSON unparsed) {
     } else {
         if (score < 1000)
             return fmt::format("{:03}", score);
-        return Strings::FormatNumber(score, opts.Separator);
+        return Format::FormatNumber(score, opts.Separator);
     }
 }
 std::string Sources::Text::GetRank(UnparsedJSON unparsed) {
@@ -248,7 +249,7 @@ std::string Sources::Text::GetPersonalBest(UnparsedJSON unparsed) {
             ratio = max > 0 ? best / (Stats::GetModifierMultiplier(true, true) * max) : 1;
         text = Strings::FormatDecimals(ratio * 100, opts.Decimals) + "%";
     } else
-        text = Environment::InSettings() && max == 1 ? "0" : Strings::FormatNumber(best, opts.Separator);
+        text = Environment::InSettings() && max == 1 ? "0" : Format::FormatNumber(best, opts.Separator);
     return opts.Label ? "PB: " + text : text;
 }
 
@@ -267,9 +268,6 @@ std::string Sources::Text::GetPBGap(UnparsedJSON unparsed) {
     double bestRatio = songMax > 0 ? (static_cast<double>(best) / songMax) : 1.0;
     double ratio = max > 0 ? (current / max) : 1.0;
 
-
-    // rounded absolute difference
-
     std::string text;
 
     if (opts.Percentage) {
@@ -284,9 +282,9 @@ std::string Sources::Text::GetPBGap(UnparsedJSON unparsed) {
         int difference = static_cast<int>(std::round((ratio - bestRatio) * max));
         // raw score difference
         if (opts.Sign) {
-            text = (difference >= 0 ? "+" : "") + Strings::FormatNumber(difference, opts.Separator);
+            text = (difference >= 0 ? "+" : "") + Format::FormatNumber(difference, opts.Separator);
         } else {
-            text = Strings::FormatNumber(std::abs(difference), opts.Separator);
+            text = Format::FormatNumber(std::abs(difference), opts.Separator);
         }
     }
 

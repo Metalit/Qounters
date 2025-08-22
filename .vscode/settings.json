@@ -112,6 +112,12 @@
         "xstddef": "cpp",
         "xtr1common": "cpp",
         "xtree": "cpp",
-        "xutility": "cpp"
+        "xutility": "cpp",
+        "execution": "cpp",
+        "format": "cpp",
+        "numbers": "cpp",
+        "print": "cpp",
+        "stop_token": "cpp",
+        "__verbose_abort": "cpp"
     }
 }

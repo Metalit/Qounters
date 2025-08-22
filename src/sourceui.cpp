@@ -56,7 +56,7 @@ void Sources::Text::ScoreUI(GameObject* parent, UnparsedJSON unparsed) {
         Editor::SetSourceOptions(id, opts);
         Editor::FinalizeAction();
     });
-    BSML::Lite::AddHoverHint(separator, "The separator to use in the number if absolute value");
+    BSML::Lite::AddHoverHint(separator, "The thousands separator style to use if absolute value");
 }
 void Sources::Text::RankUI(GameObject* parent, UnparsedJSON unparsed) {
     static Rank opts;
@@ -128,7 +128,7 @@ void Sources::Text::PersonalBestUI(GameObject* parent, UnparsedJSON unparsed) {
         Editor::SetSourceOptions(id, opts);
         Editor::FinalizeAction();
     });
-    BSML::Lite::AddHoverHint(separator, "The separator to use in the number if absolute value");
+    BSML::Lite::AddHoverHint(separator, "The thousands separator style to use if absolute value");
 }
 void Sources::Text::PBGapUI(GameObject* parent, UnparsedJSON unparsed) {
     static PBGap opts;
@@ -162,7 +162,7 @@ void Sources::Text::PBGapUI(GameObject* parent, UnparsedJSON unparsed) {
         Editor::SetSourceOptions(id, opts);
         Editor::FinalizeAction();
     });
-    BSML::Lite::AddHoverHint(separator, "The separator to use in the number if absolute value");
+    BSML::Lite::AddHoverHint(separator, "The thousands separator style to use if absolute value");
 }
 void Sources::Text::ComboUI(GameObject* parent, UnparsedJSON unparsed) {
     static Combo opts;
