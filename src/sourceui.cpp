@@ -301,6 +301,14 @@ void Sources::Text::NotesUI(GameObject* parent, UnparsedJSON unparsed) {
         Editor::FinalizeAction();
     });
     BSML::Lite::AddHoverHint(display, "The note-related value to show");
+
+    auto decimals = BSML::Lite::CreateIncrementSetting(parent, "Decimals", 0, 1, opts.Decimals, 0, 10, [](float val) {
+        static int id = Editor::GetActionId();
+        opts.Decimals = val;
+        Editor::SetSourceOptions(id, opts);
+        Editor::FinalizeAction();
+    });
+    BSML::Lite::AddHoverHint(decimals, "The number of decimals to show, if a percentage");
 }
 void Sources::Text::PPUI(GameObject* parent, UnparsedJSON unparsed) {
     static PP opts;

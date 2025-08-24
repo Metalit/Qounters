@@ -399,7 +399,7 @@ void Templates::ScoreUI(UnityEngine::GameObject* parent) {
         BSML::Lite::CreateToggle(parent, "Show Rank", rank, [](bool val) { rank = val; }), "Shows the rank of the current score percentage"
     );
     BSML::Lite::AddHoverHint(
-        BSML::Lite::CreateIncrementSetting(parent, "Percentage Decimals", 0, 1, decimals, [](float val) { decimals = val; }),
+        BSML::Lite::CreateIncrementSetting(parent, "Percentage Decimals", 0, 1, decimals, 0, 10, [](float val) { decimals = val; }),
         "The number of decimals in the score percentage"
     );
     BSML::Lite::AddHoverHint(
@@ -424,7 +424,7 @@ void Templates::PersonalBestUI(UnityEngine::GameObject* parent) {
         "Shows 0 if you have no personal best instead of \"--\""
     );
     BSML::Lite::AddHoverHint(
-        BSML::Lite::CreateIncrementSetting(parent, "Decimals", 0, 1, decimals, [](float val) { decimals = val; }),
+        BSML::Lite::CreateIncrementSetting(parent, "Decimals", 0, 1, decimals, 0, 10, [](float val) { decimals = val; }),
         "The number of decimals in the personal best percentage, if shown"
     );
     CreateButtons(parent, []() { AddPersonalBest(anchor, {0, 0}, absolute, hideFirst, decimals); });
@@ -444,7 +444,7 @@ void Templates::AverageCutUI(UnityEngine::GameObject* parent) {
         "Show separate averages for the preswing, postswing, and accuracy"
     );
     BSML::Lite::AddHoverHint(
-        BSML::Lite::CreateIncrementSetting(parent, "Decimals", 0, 1, decimals, [](float val) { decimals = val; }),
+        BSML::Lite::CreateIncrementSetting(parent, "Decimals", 0, 1, decimals, 0, 10, [](float val) { decimals = val; }),
         "The number of decimals in the averages"
     );
     CreateButtons(parent, []() { AddAverageCut(anchor, {0, 0}, splitSaber, splitCut, decimals); });
@@ -460,11 +460,11 @@ void Templates::TimeDependenceUI(UnityEngine::GameObject* parent) {
         BSML::Lite::CreateToggle(parent, "Split Sabers", splitSaber, [](bool val) { splitSaber = val; }), "Show separate time dependencies per saber"
     );
     BSML::Lite::AddHoverHint(
-        BSML::Lite::CreateIncrementSetting(parent, "Decimals", 0, 1, decimals, [](float val) { decimals = val; }),
+        BSML::Lite::CreateIncrementSetting(parent, "Decimals", 0, 1, decimals, 0, 10, [](float val) { decimals = val; }),
         "The number of decimals (after the decimal point) to show"
     );
     BSML::Lite::AddHoverHint(
-        BSML::Lite::CreateIncrementSetting(parent, "Decimal Offset", 0, 1, decimalOffset, [](float val) { decimalOffset = val; }),
+        BSML::Lite::CreateIncrementSetting(parent, "Decimal Offset", 0, 1, decimalOffset, 0, 10, [](float val) { decimalOffset = val; }),
         "Multiplies the time dependence, so 0.1 could be displayed as 1.0 or 10.0"
     );
     CreateButtons(parent, []() { AddTimeDependence(anchor, {0, 0}, splitSaber, decimals, decimalOffset); });
@@ -480,7 +480,7 @@ void Templates::NotesUI(UnityEngine::GameObject* parent) {
         "The note-related value to show"
     );
     BSML::Lite::AddHoverHint(
-        BSML::Lite::CreateIncrementSetting(parent, "Percentage Decimals", 0, 1, decimals, [](float val) { decimals = val; }),
+        BSML::Lite::CreateIncrementSetting(parent, "Percentage Decimals", 0, 1, decimals, 0, 10, [](float val) { decimals = val; }),
         "The number of decimals in any percentages"
     );
     CreateButtons(parent, []() { AddNotes(anchor, {0, 0}, display, decimals); });
@@ -549,7 +549,7 @@ void Templates::PPUI(UnityEngine::GameObject* parent) {
         "Disable displaying individual leaderboards when the map is not ranked on them"
     );
     BSML::Lite::AddHoverHint(
-        BSML::Lite::CreateIncrementSetting(parent, "Decimals", 0, 1, decimals, [](float val) { decimals = val; }),
+        BSML::Lite::CreateIncrementSetting(parent, "Decimals", 0, 1, decimals, 0, 10, [](float val) { decimals = val; }),
         "The number of decimals in the PP values"
     );
     CreateButtons(parent, []() { AddPP(anchor, {0, 0}, beatleader, scoresaber, hideUnranked, decimals); });
@@ -569,7 +569,7 @@ void Templates::SaberSpeedUI(UnityEngine::GameObject* parent) {
         "Show the average speed from the last 5 seconds instead of all time"
     );
     BSML::Lite::AddHoverHint(
-        BSML::Lite::CreateIncrementSetting(parent, "Decimals", 0, 1, decimals, [](float val) { decimals = val; }),
+        BSML::Lite::CreateIncrementSetting(parent, "Decimals", 0, 1, decimals, 0, 10, [](float val) { decimals = val; }),
         "The number of decimals in the saber speeds"
     );
     CreateButtons(parent, []() { AddSaberSpeed(anchor, {0, 0}, split, last5Secs, decimals); });
@@ -608,7 +608,7 @@ void Templates::FCPercentUI(UnityEngine::GameObject* parent) {
         BSML::Lite::CreateToggle(parent, "Hide With FC", hideInFC, [](bool val) { hideInFC = val; }), "Hide FC percentages with a full combo"
     );
     BSML::Lite::AddHoverHint(
-        BSML::Lite::CreateIncrementSetting(parent, "Decimals", 0, 1, decimals, [](float val) { decimals = val; }),
+        BSML::Lite::CreateIncrementSetting(parent, "Decimals", 0, 1, decimals, 0, 10, [](float val) { decimals = val; }),
         "The number of decimals in the FC percentages"
     );
     CreateButtons(parent, []() { AddFCPercent(anchor, {0, 0}, split, saberColors, hideInFC, decimals); });
