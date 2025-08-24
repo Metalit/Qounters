@@ -24,6 +24,7 @@
 #include "GlobalNamespace/GameplayCoreSceneSetupData.hpp"
 #include "GlobalNamespace/IBeatmapLevelLoader.hpp"
 #include "GlobalNamespace/ISortedList_1.hpp"
+#include "GlobalNamespace/LayerMasks.hpp"
 #include "GlobalNamespace/LevelCompletionResults.hpp"
 #include "GlobalNamespace/MenuEnvironmentManager.hpp"
 #include "GlobalNamespace/MenuTransitionsHelper.hpp"
@@ -84,6 +85,8 @@ static UIKeyboardManager* keyboardManager;
 static Transform* leftController;
 static Transform* rightController;
 static GameObject* menuEnv;
+static int cullingMask;
+static bool debris;
 static bool wasNoTextsAndHuds = false;
 static GameObject* localPlayer;
 static bool inSettings = false;
@@ -245,8 +248,7 @@ static void PresentScene(SimpleLevelStarter* levelStarter, bool refresh) {
     level->GetDifficultyBeatmapData(diff.beatmapCharacteristic, diff.difficulty)->environmentName = currentEnvironment->serializedName;
 
     auto playerData = levelStarter->_playerDataModel->playerData;
-    wasNoTextsAndHuds = playerData->get_playerSpecificSettings()->noTextsAndHuds;
-    playerData->get_playerSpecificSettings()->_noTextsAndHuds = false;
+    playerData->playerSpecificSettings->_noTextsAndHuds = false;
 
     ColorScheme* colors;
     currentColors = getConfig().ColorScheme.GetValue();
@@ -283,8 +285,14 @@ void Environment::PresentSettings() {
     vrInput = MetaCore::Input::GetCurrentInputModule();
     keyboardManager = Object::FindObjectOfType<UIKeyboardManager*>();
     menuEnv = GameObject::Find("MenuEnvironmentCore");
+    cullingMask = Camera::get_main()->cullingMask;
 
     auto levelStarter = GetLevelStarter();
+
+    auto settings = levelStarter->_playerDataModel->_playerData->playerSpecificSettings;
+    wasNoTextsAndHuds = settings->noTextsAndHuds;
+    debris = !settings->_reduceDebris;
+
     levelStarter->_gameScenesManager->_neverUnloadScenes->Add("MenuCore");
     menuEnvironment->ShowEnvironmentType(MenuEnvironmentManager::MenuEnvironmentType::None);
     PresentScene(levelStarter, false);
@@ -498,6 +506,11 @@ void Environment::OnSceneStart() {
 
     if (auto bts = GameObject::Find("BTSEnvironmentCharacterSpawner"))
         bts->active = false;  // the game literally just freezes
+
+    if (debris)
+        Camera::get_main()->cullingMask = cullingMask | (1 << LayerMasks::getStaticF_noteDebrisLayer());
+    else
+        Camera::get_main()->cullingMask = cullingMask & (1 << LayerMasks::getStaticF_noteDebrisLayer());
 }
 
 void Environment::OnSceneEnd() {
@@ -507,7 +520,7 @@ void Environment::OnSceneEnd() {
     auto levelStarter = GetLevelStarter();
     levelStarter->_menuTransitionsHelper->_standardLevelScenesTransitionSetupData->didFinishEvent = nullptr;
     levelStarter->_gameScenesManager->_neverUnloadScenes->Remove("MenuCore");
-    levelStarter->_playerDataModel->playerData->get_playerSpecificSettings()->_noTextsAndHuds = wasNoTextsAndHuds;
+    levelStarter->_playerDataModel->playerData->playerSpecificSettings->_noTextsAndHuds = wasNoTextsAndHuds;
     menuEnvironment->ShowEnvironmentType(MenuEnvironmentManager::MenuEnvironmentType::Default);
     songPreview->CrossfadeToDefault();
     vrInput->gameObject->active = true;
@@ -524,4 +537,5 @@ void Environment::OnSceneEnd() {
     Object::FindObjectOfType<FadeInOutController*>()->FadeIn();
     localPlayer = nullptr;
     localFakeConnectedPlayer = nullptr;
+    Camera::get_main()->cullingMask = cullingMask;
 }
