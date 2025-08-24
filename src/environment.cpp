@@ -63,11 +63,11 @@
 #include "VRUIControls/VRInputModule.hpp"
 #include "Zenject/DiContainer.hpp"
 #include "config.hpp"
-#include "custom-types/shared/delegate.hpp"
 #include "customtypes/components.hpp"
 #include "customtypes/settings.hpp"
 #include "editor.hpp"
 #include "main.hpp"
+#include "metacore/shared/delegates.hpp"
 #include "metacore/shared/input.hpp"
 #include "metacore/shared/internals.hpp"
 #include "metacore/shared/unity.hpp"
@@ -174,12 +174,8 @@ static EnvironmentInfoSO* GetEnvironment(SimpleLevelStarter* levelStarter) {
     return ret;
 }
 
-static inline System::Action_1<Zenject::DiContainer*>* MakeAction(std::function<void(Zenject::DiContainer*)> callback) {
-    return custom_types::MakeDelegate<System::Action_1<Zenject::DiContainer*>*>(callback);
-}
-
 static void Present(SimpleLevelStarter* levelStarter, bool refresh, ScenesTransitionSetupDataSO* setupData) {
-    auto startDelegate = MakeAction([](Zenject::DiContainer*) { Environment::OnSceneStart(); });
+    auto startDelegate = MetaCore::Delegates::MakeSystemAction([](Zenject::DiContainer*) { Environment::OnSceneStart(); });
 
     if (refresh)
         levelStarter->_gameScenesManager->ReplaceScenes(setupData, nullptr, 0.25, nullptr, startDelegate);
@@ -312,10 +308,9 @@ void Environment::DismissSettings() {
     Editor::SetPreviewMode(false);
     inSettings = false;
 
-    DismissFlowCoordinator();
-
-    auto endDelegate = MakeAction([](Zenject::DiContainer*) { OnSceneEnd(); });
-    GetLevelStarter()->_gameScenesManager->PopScenes(0.25, nullptr, endDelegate);
+    auto dismissDelegate = MetaCore::Delegates::MakeSystemAction(DismissFlowCoordinator);
+    auto endDelegate = MetaCore::Delegates::MakeSystemAction([](Zenject::DiContainer*) { OnSceneEnd(); });
+    GetLevelStarter()->_gameScenesManager->PopScenes(0.25, dismissDelegate, endDelegate);
 }
 
 void Environment::RefreshSettings() {
