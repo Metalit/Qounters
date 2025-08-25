@@ -92,7 +92,7 @@ Sources::PremadeInfo* Sources::GetPremadeInfo(std::string const& mod, std::strin
     return nullptr;
 }
 std::vector<std::string_view> const Sources::PBDisplayStrings = {
-    "Personal Best",
+    "Best Score",
     "PB Gap",
 
 };
