@@ -571,8 +571,6 @@ static Options::Preset GetPreset() {
 void HUD::CreateQounters() {
     if (GetHUD().second == HUD::Type::Unsupported)
         return;
-    if (getConfig().Noodle.GetValue() && !Utils::GetSimplifiedRequirements(MetaCore::Internals::beatmapKey).empty())
-        return;
 
     auto preset = GetPreset();
     for (int i = 0; i < preset.Qounters.size(); i++)

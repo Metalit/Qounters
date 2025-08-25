@@ -41,9 +41,10 @@ static void Finish() {
     initialized = false;
 }
 
-static void TryInitialize() {
-    if (!getConfig().Enabled.GetValue() || Environment::InSettings() || hidden || initialized)
-        return;
+static bool TryInitialize() {
+    if (!getConfig().Enabled.GetValue() || Environment::InSettings() || hidden || initialized ||
+        getConfig().Noodle.GetValue() && !Utils::GetSimplifiedRequirements(MetaCore::Internals::beatmapKey).empty())
+        return false;
     if (!MetaCore::Internals::stateValid)
         MetaCore::Events::AddCallback(MetaCore::Events::GameplaySceneStarted, TryInitialize, true);
     else {
@@ -54,19 +55,17 @@ static void TryInitialize() {
         MetaCore::Events::AddCallback(MetaCore::Events::MapEnded, Finish, true);
         MetaCore::Events::AddCallback(MetaCore::Events::MapRestarted, Finish, true);
     }
+    return true;
 }
 
 MAKE_AUTO_HOOK_MATCH(
     CoreGameHUDController_Initialize, &CoreGameHUDController::Initialize, void, CoreGameHUDController* self, CoreGameHUDController::InitData* initData
 ) {
-    if (!getConfig().Enabled.GetValue()) {
-        CoreGameHUDController_Initialize(self, initData);
-        return;
-    }
-
-    initData->advancedHUD = true;
     hidden = initData->hide;
-    TryInitialize();
+    if (TryInitialize()) {
+        initData->advancedHUD = true;
+        initData->showEnergyPanel = true;
+    }
 
     CoreGameHUDController_Initialize(self, initData);
 }
