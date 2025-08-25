@@ -17,6 +17,7 @@ namespace Qounters::Utils {
     std::string GetBeatmapIdentifier(GlobalNamespace::BeatmapKey beatmap);
     std::vector<std::string> GetSimplifiedRequirements(GlobalNamespace::BeatmapKey beatmap);
     std::string FormatNumber(int value, int separator);
+
     double GetScoreRatio(bool includeModifiers = true, int saber = (int) Types::Sabers::Both);
     double GetBestScoreRatio();
 

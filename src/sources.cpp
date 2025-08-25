@@ -232,46 +232,37 @@ std::string Sources::Text::GetRank(UnparsedJSON unparsed) {
 std::string Sources::Text::GetPersonalBest(UnparsedJSON unparsed) {
     auto opts = unparsed.Parse<PersonalBest>();
     bool pbGap = opts.Display == (int) PersonalBest::Displays::PBGap;
+    std::string label = "";
+    if (opts.Label)
+        label = pbGap ? "PB Gap: " : "PB: ";
     int best = Stats::GetBestScore();
     if (best == -1) {
-        if (opts.HideFirstScore && !pbGap)
-            return opts.Label ? "PB: --" : "--";
+        if (opts.HideFirstScore)
+            return label + "--";
         else
             best = 0;
     }
-    int songMax = Stats::GetSongMaxScore();
-    std::string text;
-    int maxScore = Stats::GetMaxScore((int) Types::Sabers::Both);
-    double ratio = Utils::GetScoreRatio();
-    double bestRatio;
-    if (Environment::InSettings())
-        bestRatio = Playtest::GetOverridePBRatio();
-    else
-        bestRatio = songMax > 0 ? (!pbGap ? (double) best / (Stats::GetModifierMultiplier(true, true) * songMax) : Utils::GetBestScoreRatio()) : 1;
-    if (pbGap) {
-        if (opts.Percentage) {
-            double percentDiff = (maxScore > 0) ? ((ratio - bestRatio) * 100.0) : 0.0;
-            if (opts.Sign) {
-                text = (percentDiff >= 0 ? "+" : "") + Strings::FormatDecimals(percentDiff, opts.Decimals) + "%";
-            } else {
-                text = Strings::FormatDecimals(std::abs(percentDiff), opts.Decimals) + "%";
-            }
-        } else {
-            int difference = static_cast<int>(std::round((ratio - bestRatio) * maxScore));
-            if (opts.Sign) {
-                text = (difference >= 0 ? "+" : "") + Utils::FormatNumber(difference, opts.Separator);
-            } else {
-                text = Utils::FormatNumber(std::abs(difference), opts.Separator);
-            }
+    if (opts.Percentage) {
+        double ratio = Utils::GetBestScoreRatio();
+        if (pbGap) {
+            ratio = Utils::GetScoreRatio() - ratio;
+            if (!opts.Sign)
+                ratio = std::abs(ratio);
+            else if (ratio >= 0)
+                label += "+";
         }
-    } else {
-        if (opts.Percentage) {
-            text = Strings::FormatDecimals(bestRatio * 100, opts.Decimals) + "%";
-        } else {
-            text = Environment::InSettings() && songMax == 1 ? "0" : Utils::FormatNumber(best, opts.Separator);
-        }
+        return fmt::format("{}{}%", label, Strings::FormatDecimals(ratio * 100, opts.Decimals));
+    } else if (pbGap) {
+        // scale the difference so that it's the amount of points needed to bring your current score to the right percentage,
+        // instead of the absolute points difference between your current score and your pb
+        double difference = Utils::GetScoreRatio() - Utils::GetBestScoreRatio();
+        best = std::round(difference * Stats::GetMaxScore((int) Types::Sabers::Both));
+        if (!opts.Sign)
+            best = std::abs(best);
+        else if (best >= 0)
+            label += "+";
     }
-    return opts.Label ? (pbGap ? "PB Gap: " : "PB: ") + text : text;
+    return fmt::format("{}{}", label, Utils::FormatNumber(best, opts.Separator));
 }
 std::string Sources::Text::GetCombo(UnparsedJSON unparsed) {
     auto opts = unparsed.Parse<Combo>();

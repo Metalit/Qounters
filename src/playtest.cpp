@@ -190,8 +190,6 @@ void Playtest::SpawnNote(bool left, bool chain) {
         Internals::songNotesRight++;
     }
 
-    if (Internals::songMaxScore == 1)
-        Internals::songMaxScore = 0;
     Internals::songMaxScore += ScoreModel::GetNoteScoreDefinition(data->scoringType)->maxCutScore * PositiveMultiplier();
     for (int i = 0; i < chainSegments; i++)
         Internals::songMaxScore += segmentMaxCut * PositiveMultiplier();
@@ -223,7 +221,7 @@ static void ResetNoteTrackers() {
     Internals::rightScore = 0;
     Internals::leftMaxScore = 0;
     Internals::rightMaxScore = 0;
-    Internals::songMaxScore = 1;
+    Internals::songMaxScore = 0;
     Internals::leftCombo = 0;
     Internals::rightCombo = 0;
     Internals::combo = 0;
@@ -346,5 +344,5 @@ void Playtest::SetStarsSS(float value) {
 };
 
 float Playtest::GetOverridePBRatio() {
-    return Internals::personalBest == -1 ? -1 : lastPbValue;
+    return Internals::personalBest == -1 ? -1 : lastPbValue / 100;
 }

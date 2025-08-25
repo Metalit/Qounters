@@ -22,10 +22,12 @@
 #include "copies.hpp"
 #include "customtypes/editing.hpp"
 #include "customtypes/settings.hpp"
+#include "environment.hpp"
 #include "main.hpp"
 #include "metacore/shared/delegates.hpp"
 #include "metacore/shared/stats.hpp"
 #include "metacore/shared/ui.hpp"
+#include "playtest.hpp"
 #include "songcore/shared/SongCore.hpp"
 #include "songcore/shared/SongLoader/CustomBeatmapLevel.hpp"
 #include "types.hpp"
@@ -119,23 +121,26 @@ std::string Utils::FormatNumber(int value, int separator) {
 }
 
 double Utils::GetScoreRatio(bool includeModifiers, int saber) {
-    double current = Stats::GetScore((int) saber);
-    if (includeModifiers) {
+    int max = Stats::GetMaxScore((int) saber);
+    if (max == 0)
+        return 1;
+    int current = Stats::GetScore((int) saber);
+    if (includeModifiers)
         current *= Stats::GetModifierMultiplier(true, true);
-    }
-    int maxScore = Stats::GetMaxScore((int) saber);
-    double ratio = maxScore > 0 ? current / maxScore : 1.0;
-    return ratio;
+    return current / (double) max;
 }
 
 double Utils::GetBestScoreRatio() {
-    int songMax = Stats::GetSongMaxScore();
-    double best = Stats::GetBestScore();
-    if (best == -1) {
-        best = 0;
-    }
-    double ratio = songMax > 0 ? best / songMax : 1;
-    return ratio;
+    if (Environment::InSettings())
+        return std::max(Playtest::GetOverridePBRatio(), (float) 0);
+    int max = Stats::GetSongMaxScore();
+    if (max == 0)
+        return 1;
+    int best = Stats::GetBestScore();
+    if (best == -1)
+        return 0;
+    best *= Stats::GetModifierMultiplier(true, true);
+    return best / (double) max;
 }
 
 BSML::ColorSetting* Utils::CreateColorPicker(
