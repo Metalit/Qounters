@@ -272,6 +272,13 @@ void Editor::Duplicate() {
             group.DetachedPosition.z -= 0.25;
         else
             group.Position.y -= 5;
+        if (removedComponentIdxs.contains(selectedGroupIdx)) {
+            auto& set = removedComponentIdxs[selectedGroupIdx];
+            for (auto it = set.rbegin(); it != set.rend(); it++) {
+                auto& components = group.Components;
+                components.erase(components.begin() + *it);
+            }
+        }
         AddGroup(std::move(group));
     } else {
         auto component = GetSelectedComponent(-1);

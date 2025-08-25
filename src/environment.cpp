@@ -24,6 +24,7 @@
 #include "GlobalNamespace/GameplayCoreSceneSetupData.hpp"
 #include "GlobalNamespace/IBeatmapLevelLoader.hpp"
 #include "GlobalNamespace/ISortedList_1.hpp"
+#include "GlobalNamespace/LayerMasks.hpp"
 #include "GlobalNamespace/LevelCompletionResults.hpp"
 #include "GlobalNamespace/MenuEnvironmentManager.hpp"
 #include "GlobalNamespace/MenuTransitionsHelper.hpp"
@@ -62,11 +63,11 @@
 #include "VRUIControls/VRInputModule.hpp"
 #include "Zenject/DiContainer.hpp"
 #include "config.hpp"
-#include "custom-types/shared/delegate.hpp"
 #include "customtypes/components.hpp"
 #include "customtypes/settings.hpp"
 #include "editor.hpp"
 #include "main.hpp"
+#include "metacore/shared/delegates.hpp"
 #include "metacore/shared/input.hpp"
 #include "metacore/shared/internals.hpp"
 #include "metacore/shared/unity.hpp"
@@ -84,6 +85,8 @@ static UIKeyboardManager* keyboardManager;
 static Transform* leftController;
 static Transform* rightController;
 static GameObject* menuEnv;
+static int cullingMask;
+static bool debris;
 static bool wasNoTextsAndHuds = false;
 static GameObject* localPlayer;
 static bool inSettings = false;
@@ -171,12 +174,8 @@ static EnvironmentInfoSO* GetEnvironment(SimpleLevelStarter* levelStarter) {
     return ret;
 }
 
-static inline System::Action_1<Zenject::DiContainer*>* MakeAction(std::function<void(Zenject::DiContainer*)> callback) {
-    return custom_types::MakeDelegate<System::Action_1<Zenject::DiContainer*>*>(callback);
-}
-
 static void Present(SimpleLevelStarter* levelStarter, bool refresh, ScenesTransitionSetupDataSO* setupData) {
-    auto startDelegate = MakeAction([](Zenject::DiContainer*) { Environment::OnSceneStart(); });
+    auto startDelegate = MetaCore::Delegates::MakeSystemAction([](Zenject::DiContainer*) { Environment::OnSceneStart(); });
 
     if (refresh)
         levelStarter->_gameScenesManager->ReplaceScenes(setupData, nullptr, 0.25, nullptr, startDelegate);
@@ -245,8 +244,7 @@ static void PresentScene(SimpleLevelStarter* levelStarter, bool refresh) {
     level->GetDifficultyBeatmapData(diff.beatmapCharacteristic, diff.difficulty)->environmentName = currentEnvironment->serializedName;
 
     auto playerData = levelStarter->_playerDataModel->playerData;
-    wasNoTextsAndHuds = playerData->get_playerSpecificSettings()->noTextsAndHuds;
-    playerData->get_playerSpecificSettings()->_noTextsAndHuds = false;
+    playerData->playerSpecificSettings->_noTextsAndHuds = false;
 
     ColorScheme* colors;
     currentColors = getConfig().ColorScheme.GetValue();
@@ -283,8 +281,14 @@ void Environment::PresentSettings() {
     vrInput = MetaCore::Input::GetCurrentInputModule();
     keyboardManager = Object::FindObjectOfType<UIKeyboardManager*>();
     menuEnv = GameObject::Find("MenuEnvironmentCore");
+    cullingMask = Camera::get_main()->cullingMask;
 
     auto levelStarter = GetLevelStarter();
+
+    auto settings = levelStarter->_playerDataModel->_playerData->playerSpecificSettings;
+    wasNoTextsAndHuds = settings->noTextsAndHuds;
+    debris = !settings->_reduceDebris;
+
     levelStarter->_gameScenesManager->_neverUnloadScenes->Add("MenuCore");
     menuEnvironment->ShowEnvironmentType(MenuEnvironmentManager::MenuEnvironmentType::None);
     PresentScene(levelStarter, false);
@@ -304,10 +308,9 @@ void Environment::DismissSettings() {
     Editor::SetPreviewMode(false);
     inSettings = false;
 
-    DismissFlowCoordinator();
-
-    auto endDelegate = MakeAction([](Zenject::DiContainer*) { OnSceneEnd(); });
-    GetLevelStarter()->_gameScenesManager->PopScenes(0.25, nullptr, endDelegate);
+    auto dismissDelegate = MetaCore::Delegates::MakeSystemAction(DismissFlowCoordinator);
+    auto endDelegate = MetaCore::Delegates::MakeSystemAction([](Zenject::DiContainer*) { OnSceneEnd(); });
+    GetLevelStarter()->_gameScenesManager->PopScenes(0.25, dismissDelegate, endDelegate);
 }
 
 void Environment::RefreshSettings() {
@@ -498,6 +501,11 @@ void Environment::OnSceneStart() {
 
     if (auto bts = GameObject::Find("BTSEnvironmentCharacterSpawner"))
         bts->active = false;  // the game literally just freezes
+
+    if (debris)
+        Camera::get_main()->cullingMask = cullingMask | (1 << LayerMasks::getStaticF_noteDebrisLayer());
+    else
+        Camera::get_main()->cullingMask = cullingMask & (1 << LayerMasks::getStaticF_noteDebrisLayer());
 }
 
 void Environment::OnSceneEnd() {
@@ -507,7 +515,7 @@ void Environment::OnSceneEnd() {
     auto levelStarter = GetLevelStarter();
     levelStarter->_menuTransitionsHelper->_standardLevelScenesTransitionSetupData->didFinishEvent = nullptr;
     levelStarter->_gameScenesManager->_neverUnloadScenes->Remove("MenuCore");
-    levelStarter->_playerDataModel->playerData->get_playerSpecificSettings()->_noTextsAndHuds = wasNoTextsAndHuds;
+    levelStarter->_playerDataModel->playerData->playerSpecificSettings->_noTextsAndHuds = wasNoTextsAndHuds;
     menuEnvironment->ShowEnvironmentType(MenuEnvironmentManager::MenuEnvironmentType::Default);
     songPreview->CrossfadeToDefault();
     vrInput->gameObject->active = true;
@@ -524,4 +532,5 @@ void Environment::OnSceneEnd() {
     Object::FindObjectOfType<FadeInOutController*>()->FadeIn();
     localPlayer = nullptr;
     localFakeConnectedPlayer = nullptr;
+    Camera::get_main()->cullingMask = cullingMask;
 }

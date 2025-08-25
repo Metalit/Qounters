@@ -7,7 +7,7 @@
 #include "sources.hpp"
 
 namespace Qounters::API {
-    void RegisterTemplate(std::string title, Types::TemplateUIFn function);
+    void RegisterTemplate(std::string section, std::string title, Types::TemplateUIFn function);
     void RegisterPremade(
         std::string mod, std::string name, Types::PremadeFn creation, Types::PremadeUIFn uiFunction = nullptr, Types::PremadeUpdateFn update = nullptr
     );
