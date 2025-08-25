@@ -1,5 +1,7 @@
 #include "sourceui.hpp"
 
+#include "UnityEngine/Events/UnityAction_1.hpp"
+#include "UnityEngine/UI/Toggle.hpp"
 #include "bsml/shared/BSML-Lite.hpp"
 #include "editor.hpp"
 #include "metacore/shared/ui.hpp"
@@ -34,6 +36,24 @@ void Sources::Text::ScoreUI(GameObject* parent, UnparsedJSON unparsed) {
     });
     BSML::Lite::AddHoverHint(saber, "The saber to show the score for");
 
+    auto percentage = BSML::Lite::CreateToggle(parent, "Percentage", opts.Percentage, [parent](bool val) {
+        static int id = Editor::GetActionId();
+        opts.Percentage = val;
+        // logic to enable/disable decimals
+        auto decimalGO = parent->Find("decimals");
+        auto decimals = decimalGO->GetComponent<BSML::IncrementSetting*>();
+        decimals->set_interactable(val);
+        auto decimalCanvasGroup = decimals->get_gameObject()->GetComponent<UnityEngine::CanvasGroup*>();
+        if (val) {
+            decimalCanvasGroup->set_alpha(1);
+        } else {
+            decimalCanvasGroup->set_alpha(0.5f);  // dimmed
+        }
+        Editor::SetSourceOptions(id, opts);
+        Editor::FinalizeAction();
+    });
+    BSML::Lite::AddHoverHint(percentage, "Show the score as a percentage instead of absolute value");
+
     auto inc = BSML::Lite::CreateIncrementSetting(parent, "Decimals", 0, 1, opts.Decimals, 0, 10, [](float val) {
         static int id = Editor::GetActionId();
         opts.Decimals = val;
@@ -42,14 +62,6 @@ void Sources::Text::ScoreUI(GameObject* parent, UnparsedJSON unparsed) {
     });
     BSML::Lite::AddHoverHint(inc, "The number of decimals in the score, if a percentage");
 
-    auto percentage = BSML::Lite::CreateToggle(parent, "Percentage", opts.Percentage, [](bool val) {
-        static int id = Editor::GetActionId();
-        opts.Percentage = val;
-        Editor::SetSourceOptions(id, opts);
-        Editor::FinalizeAction();
-    });
-    BSML::Lite::AddHoverHint(percentage, "Show the score as a percentage instead of absolute value");
-
     auto separator = MUI::CreateDropdownEnum(parent, "Separator", opts.Separator, Options::SeparatorStrings, [](int val) {
         static int id = Editor::GetActionId();
         opts.Separator = val;
@@ -57,6 +69,16 @@ void Sources::Text::ScoreUI(GameObject* parent, UnparsedJSON unparsed) {
         Editor::FinalizeAction();
     });
     BSML::Lite::AddHoverHint(separator, "The thousands separator style to use if absolute value");
+
+    // logic to set intractability of decimals on initialization
+    inc->set_name("decimals");
+    inc->set_interactable(opts.Percentage);
+    auto decimalCanvasGroup = inc->get_gameObject()->AddComponent<UnityEngine::CanvasGroup*>();
+    if (opts.Percentage) {
+        decimalCanvasGroup->set_alpha(1);
+    } else {
+        decimalCanvasGroup->set_alpha(0.5f);  // dimmed
+    }
 }
 void Sources::Text::RankUI(GameObject* parent, UnparsedJSON unparsed) {
     static Rank opts;
@@ -90,6 +112,23 @@ void Sources::Text::PersonalBestUI(GameObject* parent, UnparsedJSON unparsed) {
     static PersonalBest opts;
     opts = unparsed.Parse<PersonalBest>();
 
+    auto percentage = BSML::Lite::CreateToggle(parent, "Percentage", opts.Percentage, [parent](bool val) {
+        static int id = Editor::GetActionId();
+        opts.Percentage = val;
+        auto decimalGO = parent->Find("decimals");
+        auto decimals = decimalGO->GetComponent<BSML::IncrementSetting*>();
+        decimals->set_interactable(val);
+        auto decimalCanvasGroup = decimals->get_gameObject()->GetComponent<UnityEngine::CanvasGroup*>();
+        if (val) {
+            decimalCanvasGroup->set_alpha(1);
+        } else {
+            decimalCanvasGroup->set_alpha(0.5f);  // dimmed
+        }
+        Editor::SetSourceOptions(id, opts);
+        Editor::FinalizeAction();
+    });
+    BSML::Lite::AddHoverHint(percentage, "Display the difference from personal best as a percentage instead of absolute value");
+
     auto decimals = BSML::Lite::CreateIncrementSetting(parent, "Decimals", 0, 1, opts.Decimals, 0, 10, [](float val) {
         static int id = Editor::GetActionId();
         opts.Decimals = val;
@@ -98,29 +137,13 @@ void Sources::Text::PersonalBestUI(GameObject* parent, UnparsedJSON unparsed) {
     });
     BSML::Lite::AddHoverHint(decimals, "The number of decimals to show, if a percentage");
 
-    auto percentage = BSML::Lite::CreateToggle(parent, "Percentage", opts.Percentage, [](bool val) {
-        static int id = Editor::GetActionId();
-        opts.Percentage = val;
-        Editor::SetSourceOptions(id, opts);
-        Editor::FinalizeAction();
-    });
-    BSML::Lite::AddHoverHint(percentage, "Display the personal best as a percentage instead of absolute value");
-
-    auto showZero = BSML::Lite::CreateToggle(parent, "Show 0 On First Score", !opts.HideFirstScore, [](bool val) {
-        static int id = Editor::GetActionId();
-        opts.HideFirstScore = !val;
-        Editor::SetSourceOptions(id, opts);
-        Editor::FinalizeAction();
-    });
-    BSML::Lite::AddHoverHint(showZero, "Shows 0 if you have no personal best instead of \"--\"");
-
     auto label = BSML::Lite::CreateToggle(parent, "Label Text", opts.Label, [](bool val) {
         static int id = Editor::GetActionId();
         opts.Label = val;
         Editor::SetSourceOptions(id, opts);
         Editor::FinalizeAction();
     });
-    BSML::Lite::AddHoverHint(label, "Labels the text with \"PB: \"");
+    BSML::Lite::AddHoverHint(label, "Labels the text with \"PB: \" or \"PB Gap: \"");
 
     auto separator = MUI::CreateDropdownEnum(parent, "Separator", opts.Separator, Options::SeparatorStrings, [](int val) {
         static int id = Editor::GetActionId();
@@ -129,24 +152,30 @@ void Sources::Text::PersonalBestUI(GameObject* parent, UnparsedJSON unparsed) {
         Editor::FinalizeAction();
     });
     BSML::Lite::AddHoverHint(separator, "The thousands separator style to use if absolute value");
-}
-void Sources::Text::PBGapUI(GameObject* parent, UnparsedJSON unparsed) {
-    static PBGap opts;
-    opts = unparsed.Parse<PBGap>();
-    auto percentage = BSML::Lite::CreateToggle(parent, "Percentage", opts.Percentage, [](bool val) {
+
+    auto display = MUI::CreateDropdownEnum(parent, "Display", opts.Display, PBDisplayStrings, [parent](int val) {
         static int id = Editor::GetActionId();
-        opts.Percentage = val;
+        opts.Display = val;
+        // logic to enable/disable sign and showZero
+        auto signGO = parent->get_transform()->Find("sign");
+        auto sign = signGO->GetComponent<BSML::ToggleSetting*>();
+        auto showZeroGO = parent->get_transform()->Find("showZero");
+        auto showZero = showZeroGO->GetComponent<BSML::ToggleSetting*>();
+        sign->set_interactable(val == (int) PersonalBest::Displays::PBGap);
+        showZero->set_interactable(val == (int) PersonalBest::Displays::PersonalBest);
+        auto signCanvasGroup = sign->get_gameObject()->GetComponent<UnityEngine::CanvasGroup*>();
+        auto zeroCanvasGroup = showZero->get_gameObject()->GetComponent<UnityEngine::CanvasGroup*>();
+        if (val) {
+            signCanvasGroup->set_alpha(1);
+            zeroCanvasGroup->set_alpha(0.5f);  // dimmed
+        } else {
+            signCanvasGroup->set_alpha(0.5f);  // dimmed
+            zeroCanvasGroup->set_alpha(1);
+        }
         Editor::SetSourceOptions(id, opts);
         Editor::FinalizeAction();
     });
-    BSML::Lite::AddHoverHint(percentage, "Display the difference from personal best as a percentage instead of absolute value");
-        auto decimals = BSML::Lite::CreateIncrementSetting(parent, "Decimals", 0, 1, opts.Decimals, 0, 10, [](float val) {
-            static int id = Editor::GetActionId();
-            opts.Decimals = val;
-            Editor::SetSourceOptions(id, opts);
-            Editor::FinalizeAction();
-        });
-    BSML::Lite::AddHoverHint(decimals, "The number of decimals to show, if a percentage");
+    BSML::Lite::AddHoverHint(display, "The personal best related value to show");
 
     auto sign = BSML::Lite::CreateToggle(parent, "Sign", opts.Sign, [](bool val) {
         static int id = Editor::GetActionId();
@@ -154,15 +183,44 @@ void Sources::Text::PBGapUI(GameObject* parent, UnparsedJSON unparsed) {
         Editor::SetSourceOptions(id, opts);
         Editor::FinalizeAction();
     });
-    BSML::Lite::AddHoverHint(sign, "Display a positive or negative sign next to the difference");
+    BSML::Lite::AddHoverHint(sign, "Display a positive or negative sign next to the difference if PB Gap is enabled");
 
-    auto separator = MUI::CreateDropdownEnum(parent, "Separator", opts.Separator, Options::SeparatorStrings, [](int val) {
+    auto showZero = BSML::Lite::CreateToggle(parent, "Show 0 On First Score", !opts.HideFirstScore, [](bool val) {
         static int id = Editor::GetActionId();
-        opts.Separator = val;
+        opts.HideFirstScore = !val;
         Editor::SetSourceOptions(id, opts);
         Editor::FinalizeAction();
     });
-    BSML::Lite::AddHoverHint(separator, "The thousands separator style to use if absolute value");
+    BSML::Lite::AddHoverHint(showZero, "Shows 0 if you have no personal best instead of \"--\" if PB Gap is disabled");
+
+    // logic to set intractability of the settings on initialization
+    // decimals
+    decimals->set_name("decimals");
+    decimals->set_interactable(opts.Percentage);
+    auto decimalCanvasGroup = decimals->get_gameObject()->AddComponent<UnityEngine::CanvasGroup*>();
+    if (opts.Percentage) {
+        decimalCanvasGroup->set_alpha(1);
+    } else {
+        decimalCanvasGroup->set_alpha(0.5f);  // dimmed
+    }
+    // Sign
+    sign->set_name("sign");
+    sign->set_interactable(opts.Display == (int) PersonalBest::Displays::PBGap);
+    auto signCanvasGroup = sign->get_gameObject()->AddComponent<UnityEngine::CanvasGroup*>();
+    if (opts.Display == (int) PersonalBest::Displays::PBGap) {
+        signCanvasGroup->set_alpha(1);
+    } else {
+        signCanvasGroup->set_alpha(0.5f);  // dimmed
+    }
+    // showZero
+    showZero->set_name("showZero");
+    showZero->set_interactable(opts.Display == (int) PersonalBest::Displays::PersonalBest);
+    auto zeroCanvasGroup = showZero->get_gameObject()->AddComponent<UnityEngine::CanvasGroup*>();
+    if (opts.Display == (int) PersonalBest::Displays::PersonalBest) {
+        zeroCanvasGroup->set_alpha(1);
+    } else {
+        zeroCanvasGroup->set_alpha(0.5f);  // dimmed
+    }
 }
 void Sources::Text::ComboUI(GameObject* parent, UnparsedJSON unparsed) {
     static Combo opts;

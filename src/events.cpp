@@ -19,7 +19,7 @@ static std::map<int, std::vector<std::pair<Types::Sources, std::string>>> eventS
          {Types::Sources::Shape, Sources::Shape::ScoreName},
          {Types::Sources::Color, Sources::Color::RankName},
          {Types::Sources::Color, Sources::Color::PersonalBestName},
-         {Types::Sources::Text, Sources::Text::PBGapName},
+         {Types::Sources::Text, Sources::Text::PersonalBestName},
          {Types::Sources::Enable, Sources::Enable::PercentageName},
      }},
     {(int) MetaCore::Events::NoteCut,
@@ -79,7 +79,6 @@ static std::map<int, std::vector<std::pair<Types::Sources, std::string>>> eventS
      {
          {Types::Sources::Text, Sources::Text::PPName},
          {Types::Sources::Text, Sources::Text::PersonalBestName},
-         {Types::Sources::Text, Sources::Text::PBGapName},
          {Types::Sources::Text, Sources::Text::NotesName},
          {Types::Sources::Color, Sources::Color::PlayerName},
          {Types::Sources::Color, Sources::Color::PersonalBestName},

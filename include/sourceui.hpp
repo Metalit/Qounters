@@ -10,7 +10,6 @@ namespace Qounters {
         void ScoreUI(UnityEngine::GameObject* parent, UnparsedJSON options);
         void RankUI(UnityEngine::GameObject* parent, UnparsedJSON options);
         void PersonalBestUI(UnityEngine::GameObject* parent, UnparsedJSON options);
-        void PBGapUI(UnityEngine::GameObject* parent, UnparsedJSON options);
         void ComboUI(UnityEngine::GameObject* parent, UnparsedJSON options);
         void MultiplierUI(UnityEngine::GameObject* parent, UnparsedJSON options);
         void HealthUI(UnityEngine::GameObject* parent, UnparsedJSON options);
@@ -43,7 +42,6 @@ namespace Qounters {
         void PlayerUI(UnityEngine::GameObject* parent, UnparsedJSON options);
         void RankUI(UnityEngine::GameObject* parent, UnparsedJSON options);
         void PersonalBestUI(UnityEngine::GameObject* parent, UnparsedJSON options);
-        void PBGapUI(UnityEngine::GameObject* parent, UnparsedJSON options);
         void ComboUI(UnityEngine::GameObject* parent, UnparsedJSON options);
         void MultiplierUI(UnityEngine::GameObject* parent, UnparsedJSON options);
         void HealthUI(UnityEngine::GameObject* parent, UnparsedJSON options);
