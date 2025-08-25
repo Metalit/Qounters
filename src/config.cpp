@@ -58,6 +58,12 @@ std::vector<std::string_view> const Options::AnchorStrings = {
     "Bottom",
     "Center",
 };
+std::vector<std::string_view> const Options::SeparatorStrings = {
+    "None",
+    "Gap",
+    "Comma",
+    "Period",
+};
 std::vector<std::string_view> const Options::BaseGameObjectStrings = {
     "Multiplier Ring", "Song Time Panel",
     // "Health Bar",

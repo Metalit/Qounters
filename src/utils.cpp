@@ -2,6 +2,7 @@
 
 #include <iomanip>
 #include <sstream>
+#include <string>
 
 #include "GlobalNamespace/BeatmapCharacteristicSO.hpp"
 #include "GlobalNamespace/BeatmapDifficulty.hpp"
@@ -23,9 +24,11 @@
 #include "customtypes/settings.hpp"
 #include "main.hpp"
 #include "metacore/shared/delegates.hpp"
+#include "metacore/shared/stats.hpp"
 #include "metacore/shared/ui.hpp"
 #include "songcore/shared/SongCore.hpp"
 #include "songcore/shared/SongLoader/CustomBeatmapLevel.hpp"
+#include "types.hpp"
 
 using namespace Qounters;
 using namespace MetaCore;
@@ -88,6 +91,51 @@ std::vector<std::string> Utils::GetSimplifiedRequirements(BeatmapKey beatmap) {
             ret.emplace_back(RequirementsMap.at(req));
     }
     return ret;
+}
+
+std::string Utils::FormatNumber(int value, int separator) {
+    std::string seperatorString;
+    switch ((Qounters::Types::Separators) separator) {
+        case Qounters::Types::Separators::None:
+            return std::to_string(value);
+        case Qounters::Types::Separators::Gap:
+            seperatorString = " ";
+            break;
+        case Qounters::Types::Separators::Comma:
+            seperatorString = ",";
+            break;
+        case Qounters::Types::Separators::Period:
+            seperatorString = ".";
+            break;
+    }
+
+    std::string num = std::to_string(std::abs(value));
+    int insertPosition = static_cast<int>(num.length()) - 3;
+    while (insertPosition > 0) {
+        num.insert(insertPosition, seperatorString);
+        insertPosition -= 3;
+    }
+    return (value < 0 ? "-" + num : num);
+}
+
+double Utils::GetScoreRatio(bool includeModifiers, int saber) {
+    double current = Stats::GetScore((int) saber);
+    if (includeModifiers) {
+        current *= Stats::GetModifierMultiplier(true, true);
+    }
+    int maxScore = Stats::GetMaxScore((int) saber);
+    double ratio = maxScore > 0 ? current / maxScore : 1.0;
+    return ratio;
+}
+
+double Utils::GetBestScoreRatio() {
+    int songMax = Stats::GetSongMaxScore();
+    double best = Stats::GetBestScore();
+    if (best == -1) {
+        best = 0;
+    }
+    double ratio = songMax > 0 ? best / songMax : 1;
+    return ratio;
 }
 
 BSML::ColorSetting* Utils::CreateColorPicker(

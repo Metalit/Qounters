@@ -16,6 +16,9 @@ namespace Qounters::Utils {
     std::tuple<std::string, std::string, int> GetBeatmapDetails(GlobalNamespace::BeatmapKey beatmap);
     std::string GetBeatmapIdentifier(GlobalNamespace::BeatmapKey beatmap);
     std::vector<std::string> GetSimplifiedRequirements(GlobalNamespace::BeatmapKey beatmap);
+    std::string FormatNumber(int value, int separator);
+    double GetScoreRatio(bool includeModifiers = true, int saber = (int) Types::Sabers::Both);
+    double GetBestScoreRatio();
 
     template <class U, class T>
     U* ptr_cast(T* inst) {

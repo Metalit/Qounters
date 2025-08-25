@@ -57,6 +57,7 @@ namespace Qounters::Sources {
     }
 
     extern std::vector<std::string_view> const AverageCutPartStrings;
+    extern std::vector<std::string_view> const PBDisplayStrings;
     extern std::vector<std::string_view> const NotesDisplayStrings;
     extern std::vector<std::string_view> const PPLeaderboardStrings;
     extern std::vector<std::string_view> const SaberSpeedModeStrings;
@@ -89,6 +90,7 @@ namespace Qounters::Sources {
             VALUE_DEFAULT(int, Saber, (int) Types::Sabers::Both);
             VALUE_DEFAULT(int, Decimals, 1);
             VALUE_DEFAULT(bool, Percentage, true);
+            VALUE_DEFAULT(int, Separator, (int) Types::Separators::Gap);
         };
         DECLARE_JSON_STRUCT(Rank) {
             VALUE_DEFAULT(int, Saber, (int) Types::Sabers::Both);
@@ -96,10 +98,17 @@ namespace Qounters::Sources {
             VALUE_DEFAULT(bool, NegativeModifiers, true);
         };
         DECLARE_JSON_STRUCT(PersonalBest) {
+            enum class Displays {
+                PersonalBest,
+                PBGap,
+            };
             VALUE_DEFAULT(int, Decimals, 1);
             VALUE_DEFAULT(bool, Percentage, true);
             VALUE_DEFAULT(bool, HideFirstScore, true);
             VALUE_DEFAULT(bool, Label, true);
+            VALUE_DEFAULT(int, Separator, (int) Types::Separators::None);
+            VALUE_DEFAULT(int, Display, (int) Displays::PersonalBest);
+            VALUE_DEFAULT(bool, Sign, true);
         };
         DECLARE_JSON_STRUCT(Combo) {
             VALUE_DEFAULT(int, Saber, (int) Types::Sabers::Both);

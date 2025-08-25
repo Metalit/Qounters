@@ -91,7 +91,11 @@ Sources::PremadeInfo* Sources::GetPremadeInfo(std::string const& mod, std::strin
     }
     return nullptr;
 }
+std::vector<std::string_view> const Sources::PBDisplayStrings = {
+    "Best Score",
+    "PB Gap",
 
+};
 std::vector<std::string_view> const Sources::AverageCutPartStrings = {
     "Preswing",
     "Postswing",
@@ -183,21 +187,13 @@ std::string Sources::Text::GetScore(UnparsedJSON unparsed) {
 
     int score = Stats::GetScore(opts.Saber);
     if (opts.Percentage) {
-        int max = Stats::GetMaxScore(opts.Saber);
-        double ratio = max > 0 ? score / (double) max : 1;
+        double ratio = Utils::GetScoreRatio(false, opts.Saber);
         ratio *= 100;
         return Strings::FormatDecimals(ratio, opts.Decimals) + "%";
     } else {
-        // spaces between every three digits, and pad zeroes if below 100
-        auto number = fmt::format("{:03}", score);
         if (score < 1000)
-            return number;
-        size_t len = number.size();
-        for (int i = 1; i <= (len - 1) / 3; i++) {
-            size_t split = len - 3 * i;
-            number = number.substr(0, split) + " " + number.substr(split);
-        }
-        return number;
+            return fmt::format("{:03}", score);
+        return Utils::FormatNumber(score, opts.Separator);
     }
 }
 std::string Sources::Text::GetRank(UnparsedJSON unparsed) {
@@ -235,26 +231,47 @@ std::string Sources::Text::GetRank(UnparsedJSON unparsed) {
 }
 std::string Sources::Text::GetPersonalBest(UnparsedJSON unparsed) {
     auto opts = unparsed.Parse<PersonalBest>();
-
+    bool pbGap = opts.Display == (int) PersonalBest::Displays::PBGap;
     int best = Stats::GetBestScore();
     if (best == -1) {
-        if (opts.HideFirstScore)
+        if (opts.HideFirstScore && !pbGap)
             return opts.Label ? "PB: --" : "--";
         else
             best = 0;
     }
-    int max = Stats::GetSongMaxScore();
+    int songMax = Stats::GetSongMaxScore();
     std::string text;
-    if (opts.Percentage) {
-        double ratio;
-        if (Environment::InSettings())
-            ratio = Playtest::GetOverridePBRatio();
-        else
-            ratio = max > 0 ? best / (Stats::GetModifierMultiplier(true, true) * max) : 1;
-        text = Strings::FormatDecimals(ratio * 100, opts.Decimals) + "%";
-    } else
-        text = Environment::InSettings() && max == 1 ? "0" : std::to_string(best);
-    return opts.Label ? "PB: " + text : text;
+    int maxScore = Stats::GetMaxScore((int) Types::Sabers::Both);
+    double ratio = Utils::GetScoreRatio();
+    double bestRatio;
+    if (Environment::InSettings())
+        bestRatio = Playtest::GetOverridePBRatio();
+    else
+        bestRatio = songMax > 0 ? (!pbGap ? (double) best / (Stats::GetModifierMultiplier(true, true) * songMax) : Utils::GetBestScoreRatio()) : 1;
+    if (pbGap) {
+        if (opts.Percentage) {
+            double percentDiff = (maxScore > 0) ? ((ratio - bestRatio) * 100.0) : 0.0;
+            if (opts.Sign) {
+                text = (percentDiff >= 0 ? "+" : "") + Strings::FormatDecimals(percentDiff, opts.Decimals) + "%";
+            } else {
+                text = Strings::FormatDecimals(std::abs(percentDiff), opts.Decimals) + "%";
+            }
+        } else {
+            int difference = static_cast<int>(std::round((ratio - bestRatio) * maxScore));
+            if (opts.Sign) {
+                text = (difference >= 0 ? "+" : "") + Utils::FormatNumber(difference, opts.Separator);
+            } else {
+                text = Utils::FormatNumber(std::abs(difference), opts.Separator);
+            }
+        }
+    } else {
+        if (opts.Percentage) {
+            text = Strings::FormatDecimals(bestRatio * 100, opts.Decimals) + "%";
+        } else {
+            text = Environment::InSettings() && songMax == 1 ? "0" : Utils::FormatNumber(best, opts.Separator);
+        }
+    }
+    return opts.Label ? (pbGap ? "PB Gap: " : "PB: ") + text : text;
 }
 std::string Sources::Text::GetCombo(UnparsedJSON unparsed) {
     auto opts = unparsed.Parse<Combo>();
@@ -387,9 +404,7 @@ float Sources::Shape::GetStatic(UnparsedJSON unparsed) {
 float Sources::Shape::GetScore(UnparsedJSON unparsed) {
     auto opts = unparsed.Parse<Score>();
 
-    int score = Stats::GetScore(opts.Saber);
-    int max = Stats::GetMaxScore(opts.Saber);
-    return max > 0 ? score / (double) max : 1;
+    return Utils::GetScoreRatio(false, opts.Saber);
 }
 float Sources::Shape::GetMultiplier(UnparsedJSON unparsed) {
     auto opts = unparsed.Parse<Multiplier>();
@@ -471,15 +486,8 @@ UnityEngine::Color Sources::Color::GetRank(UnparsedJSON unparsed) {
 }
 UnityEngine::Color Sources::Color::GetPersonalBest(UnparsedJSON unparsed) {
     auto opts = unparsed.Parse<PersonalBest>();
-
-    double best = Stats::GetBestScore();
-    int songMax = Stats::GetSongMaxScore();
-    double current = Stats::GetScore((int) Types::Sabers::Both);
-    // PB modifiers would be applied to best score
-    current *= Stats::GetModifierMultiplier(true, true);
-    int max = Stats::GetMaxScore((int) Types::Sabers::Both);
-    double bestRatio = songMax > 0 ? best / songMax : 1;
-    double ratio = max > 0 ? current / max : 1;
+    double bestRatio = Utils::GetBestScoreRatio();
+    double ratio = Utils::GetScoreRatio();
 
     return ratio >= bestRatio ? opts.Better : opts.Worse;
 }
@@ -530,10 +538,7 @@ bool Sources::Enable::GetFullCombo(UnparsedJSON unparsed) {
 }
 bool Sources::Enable::GetPercentage(UnparsedJSON unparsed) {
     auto opts = unparsed.Parse<Percentage>();
-
-    int score = Stats::GetScore(opts.Saber);
-    int max = Stats::GetMaxScore(opts.Saber);
-    float percent = max > 0 ? score / (double) max : 1;
+    float percent = Utils::GetScoreRatio(false, opts.Saber);
     return percent * 100 >= opts.Percent;
 }
 bool Sources::Enable::GetFailed(UnparsedJSON unparsed) {
