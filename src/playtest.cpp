@@ -36,10 +36,6 @@ using namespace MetaCore;
 using namespace GlobalNamespace;
 namespace MEvents = MetaCore::Events;
 
-static ScoreController* scoreController;
-static AudioTimeSyncController* audioController;
-static ComboController* comboController;
-static GameEnergyCounter* gameEnergyCounter;
 static GameEnergyUIPanel* energyBar;
 static BeatmapObjectSpawnController* spawner;
 
@@ -47,17 +43,6 @@ static float lastPbValue = 1;
 static SafePtr<ScoreMultiplierCounter> maxMultiplier;
 
 static void FindObjects() {
-    auto hasOtherObjects = UnityEngine::Resources::FindObjectsOfTypeAll<PrepareLevelCompletionResults*>()->First();
-    scoreController = Utils::ptr_cast<ScoreController>(hasOtherObjects->_scoreController);
-    if (!scoreController) {
-        logger.error(
-            "score controller was wrong type! {}", il2cpp_utils::ClassStandardName(((Il2CppObject*) hasOtherObjects->_scoreController)->klass, true)
-        );
-        return;
-    }
-    audioController = scoreController->_audioTimeSyncController;
-    comboController = hasOtherObjects->_comboController;
-    gameEnergyCounter = hasOtherObjects->_gameEnergyCounter;
     energyBar = UnityEngine::Object::FindObjectOfType<GameEnergyUIPanel*>(false);
     spawner = UnityEngine::Resources::FindObjectsOfTypeAll<BeatmapObjectSpawnController*>()->First();
 }
@@ -81,30 +66,25 @@ static void DespawnObjects() {
 }
 
 void Playtest::Update() {
-    if (audioController)
-        audioController->_songTime += UnityEngine::Time::get_deltaTime();
+    if (Internals::referencesValid)
+        Internals::audioTimeSyncController->_songTime += UnityEngine::Time::get_deltaTime();
     Internals::DoSlowUpdate();
     MEvents::Broadcast(MEvents::Update);
 }
 
 void Playtest::SetEnabled(bool enabled) {
     Environment::SetPlayerActive(enabled);
-    if (!enabled) {
-        DespawnObjects();
-        scoreController = nullptr;
-        audioController = nullptr;
-        comboController = nullptr;
-        gameEnergyCounter = nullptr;
-        energyBar = nullptr;
-        spawner = nullptr;
-        return;
-    } else
+    if (enabled)
         FindObjects();
     DespawnObjects();
+    if (!enabled) {
+        energyBar = nullptr;
+        spawner = nullptr;
+    }
 }
 
 static void ResetEnergyBar() {
-    if (!energyBar->isActiveAndEnabled)
+    if (!energyBar || !energyBar->isActiveAndEnabled || energyBar->_energyBar->enabled)
         return;
     static auto RebindPlayableGraphOutputs = il2cpp_utils::resolve_icall<void, UnityEngine::Playables::PlayableDirector*>(
         "UnityEngine.Playables.PlayableDirector::RebindPlayableGraphOutputs"
@@ -126,27 +106,26 @@ static void ResetEnergyBar() {
 }
 
 void Playtest::ResetGameControllers() {
-    if (!scoreController)
+    if (!Internals::referencesValid)
         return;
-    scoreController->_modifiedScore = 0;
-    scoreController->_multipliedScore = 0;
-    scoreController->_immediateMaxPossibleModifiedScore = 1;
-    scoreController->_immediateMaxPossibleMultipliedScore = 0;
-    scoreController->_scoreMultiplierCounter->Reset();
-    scoreController->_maxScoreMultiplierCounter->Reset();
-    gameEnergyCounter->_didReach0Energy = false;
-    gameEnergyCounter->energy = 0.5;
-    if (gameEnergyCounter->gameEnergyDidChangeEvent)
-        gameEnergyCounter->gameEnergyDidChangeEvent->Invoke(0.5);
-    if (energyBar && !energyBar->_energyBar->enabled)
-        ResetEnergyBar();
-    comboController->_combo = 0;
-    comboController->_maxCombo = 0;
+    Internals::scoreController->_modifiedScore = 0;
+    Internals::scoreController->_multipliedScore = 0;
+    Internals::scoreController->_immediateMaxPossibleModifiedScore = 1;
+    Internals::scoreController->_immediateMaxPossibleMultipliedScore = 0;
+    Internals::scoreController->_scoreMultiplierCounter->Reset();
+    Internals::scoreController->_maxScoreMultiplierCounter->Reset();
+    Internals::gameEnergyCounter->_didReach0Energy = false;
+    Internals::gameEnergyCounter->energy = 0.5;
+    if (energyBar)
+        energyBar->RefreshEnergyUI(0.5);
+    ResetEnergyBar();
+    Internals::comboController->_combo = 0;
+    Internals::comboController->_maxCombo = 0;
     // don't despawn elements as they might still be event recievers, so just make them do nothing to the score instead
-    for (auto element : ListW<ScoringElement*>(scoreController->_sortedScoringElementsWithoutMultiplier))
-        scoreController->_scoringElementsWithMultiplier->Add(element);
-    scoreController->_sortedScoringElementsWithoutMultiplier->Clear();
-    for (auto element : ListW<ScoringElement*>(scoreController->_scoringElementsWithMultiplier))
+    for (auto element : ListW<ScoringElement*>(Internals::scoreController->_sortedScoringElementsWithoutMultiplier))
+        Internals::scoreController->_scoringElementsWithMultiplier->Add(element);
+    Internals::scoreController->_sortedScoringElementsWithoutMultiplier->Clear();
+    for (auto element : ListW<ScoringElement*>(Internals::scoreController->_scoringElementsWithMultiplier))
         element->SetMultipliers(0, 0);
     DespawnObjects();
 }
@@ -159,13 +138,13 @@ static int PositiveMultiplier() {
 }
 
 void Playtest::SpawnNote(bool left, bool chain) {
-    if (!spawner)
+    if (!spawner || !Internals::referencesValid)
         return;
 
     static int const chainSegments = 3;
     static int const segmentMaxCut = ScoreModel::GetNoteScoreDefinition(NoteData::ScoringType::ChainLink)->maxCutScore;
 
-    float time = audioController->songTime + 2;
+    float time = Internals::audioTimeSyncController->songTime + 2;
     int index = left ? 1 : 2;
     auto layer = chain ? NoteLineLayer::Upper : NoteLineLayer::Base;
     auto color = left ? ColorType::ColorA : ColorType::ColorB;
@@ -175,9 +154,11 @@ void Playtest::SpawnNote(bool left, bool chain) {
         data->ChangeToBurstSliderHead();
         spawner->HandleNoteDataCallback(data);
         auto baseLayer = NoteLineLayer::Base;
-        spawner->HandleSliderDataCallback(SliderData::CreateBurstSliderData(
-            color, time, 0, 0, index, layer, layer, NoteCutDirection::Down, time, 0, index, baseLayer, baseLayer, chainSegments, 1
-        ));
+        spawner->HandleSliderDataCallback(
+            SliderData::CreateBurstSliderData(
+                color, time, 0, 0, index, layer, layer, NoteCutDirection::Down, time, 0, index, baseLayer, baseLayer, chainSegments, 1
+            )
+        );
     } else
         spawner->HandleNoteDataCallback(data);
 
@@ -200,18 +181,19 @@ void Playtest::SpawnNote(bool left, bool chain) {
 }
 
 void Playtest::SpawnWall() {
-    if (!spawner)
+    if (!spawner || !Internals::referencesValid)
         return;
-    float time = audioController->songTime + 2;
+    float time = Internals::audioTimeSyncController->songTime + 2;
     int index = PlaytestViewController::GetInstance()->transform->position.x < 0 ? 3 : 0;
-    spawner->HandleObstacleDataCallback(GlobalNamespace::ObstacleData::New_ctor(time, 0, 0, 0, index, GlobalNamespace::NoteLineLayer::Top, 0.25, 1, 2)
+    spawner->HandleObstacleDataCallback(
+        GlobalNamespace::ObstacleData::New_ctor(time, 0, 0, 0, index, GlobalNamespace::NoteLineLayer::Top, 0.25, 1, 2)
     );
 }
 
 void Playtest::SpawnBomb() {
-    if (!spawner)
+    if (!spawner || !Internals::referencesValid)
         return;
-    float time = audioController->songTime + 2;
+    float time = Internals::audioTimeSyncController->songTime + 2;
     for (int index = 0; index < 4; index++)
         spawner->HandleNoteDataCallback(GlobalNamespace::NoteData::CreateBombNoteData(time, 0, 0, index, GlobalNamespace::NoteLineLayer::Base));
 }
