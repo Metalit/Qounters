@@ -16,6 +16,7 @@
 #include "GlobalNamespace/SliderData.hpp"
 #include "HMUI/ImageView.hpp"
 #include "System/Action_1.hpp"
+#include "System/Action_2.hpp"
 #include "UnityEngine/Playables/PlayableDirector.hpp"
 #include "UnityEngine/Resources.hpp"
 #include "UnityEngine/Time.hpp"
@@ -114,6 +115,8 @@ void Playtest::ResetGameControllers() {
     Internals::scoreController->_immediateMaxPossibleMultipliedScore = 0;
     Internals::scoreController->_scoreMultiplierCounter->Reset();
     Internals::scoreController->_maxScoreMultiplierCounter->Reset();
+    if (!System::MulticastDelegate::op_Equality(Internals::scoreController->multiplierDidChangeEvent, nullptr))
+        Internals::scoreController->multiplierDidChangeEvent->Invoke(1, 0);
     Internals::gameEnergyCounter->_didReach0Energy = false;
     Internals::gameEnergyCounter->energy = 0.5;
     if (energyBar)
