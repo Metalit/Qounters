@@ -44,7 +44,7 @@
   "dependencies": [
     {
       "id": "beatsaber-hook",
-      "versionRange": "^6.4.0",
+      "versionRange": "^6.4.2",
       "additionalData": {}
     },
     {
@@ -54,7 +54,7 @@
     },
     {
       "id": "paper2_scotland2",
-      "versionRange": "^4.5.0",
+      "versionRange": "^4.6.4",
       "additionalData": {}
     },
     {
@@ -66,7 +66,7 @@
     },
     {
       "id": "custom-types",
-      "versionRange": "^0.18.2",
+      "versionRange": "^0.18.3",
       "additionalData": {}
     },
     {
@@ -76,24 +76,24 @@
     },
     {
       "id": "config-utils",
-      "versionRange": "^2.0.0",
+      "versionRange": "^2.0.3",
       "additionalData": {
         "private": true
       }
     },
     {
       "id": "bsml",
-      "versionRange": "^0.4.18",
+      "versionRange": "^0.4.55",
       "additionalData": {}
     },
     {
       "id": "songcore",
-      "versionRange": "^1.1.15",
+      "versionRange": "^1.1.24",
       "additionalData": {}
     },
     {
       "id": "metacore",
-      "versionRange": "^1.5.0",
+      "versionRange": "^1.6.0",
       "additionalData": {}
     }
   ]
