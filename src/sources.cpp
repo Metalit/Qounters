@@ -340,9 +340,9 @@ std::string Sources::Text::GetNotes(UnparsedJSON unparsed) {
     auto opts = unparsed.Parse<Notes>();
 
     if (opts.Display == (int) Notes::Displays::Remaining)
-        return std::to_string(Stats::GetSongNotes(opts.Saber) - Stats::GetTotalNotes(opts.Saber));
+        return std::to_string(Stats::GetNotesRemaining(opts.Saber));
 
-    int notes = Stats::GetNotesCut(opts.Saber);
+    int notes = Stats::GetNotesCut(opts.Saber, true);
     if (opts.Display == (int) Notes::Displays::Ratio) {
         return fmt::format("{} / {}", notes, Stats::GetTotalNotes(opts.Saber));
     } else if (opts.Display == (int) Notes::Displays::Percent) {
