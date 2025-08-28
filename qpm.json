@@ -6,9 +6,10 @@
     "name": "Qounters++",
     "id": "qounters++",
     "version": "1.1.0",
-    "url": "https://github.com/Metalit/QountersPlusPlus",
+    "url": "https://github.com/Metalit/Qounters",
     "additionalData": {
-      "overrideSoName": "libqountersplusplus.so"
+      "overrideSoName": "libqountersplusplus.so",
+      "cmake": true
     }
   },
   "workspace": {
