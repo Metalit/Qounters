@@ -58,3 +58,7 @@ float API::GetPlaytestPB() {
 bool API::InSettings() {
     return Environment::InSettings();
 }
+
+bool API::IsInstalled() {
+    return true;
+}

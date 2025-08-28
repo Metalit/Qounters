@@ -2,13 +2,14 @@
 
 #include "UnityEngine/GameObject.hpp"
 #include "UnityEngine/UI/Graphic.hpp"
+#include "metacore/shared/stats.hpp"
 #include "rapidjson-macros/shared/macros.hpp"
 
 namespace Qounters::Types {
     enum class Sabers {
-        Left,
-        Right,
-        Both,
+        Left = MetaCore::Stats::LeftSaber,
+        Right = MetaCore::Stats::RightSaber,
+        Both = MetaCore::Stats::BothSabers,
     };
 
     enum class Sources {

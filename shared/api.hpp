@@ -32,6 +32,7 @@ namespace Qounters::API {
     float GetPlaytestPB();
 
     bool InSettings();
+    bool IsInstalled();
 }
 
 // see README
