@@ -505,7 +505,7 @@ void Environment::OnSceneStart() {
     if (debris)
         Camera::get_main()->cullingMask = cullingMask | (1 << LayerMasks::getStaticF_noteDebrisLayer());
     else
-        Camera::get_main()->cullingMask = cullingMask & (1 << LayerMasks::getStaticF_noteDebrisLayer());
+        Camera::get_main()->cullingMask = cullingMask & ~(1 << LayerMasks::getStaticF_noteDebrisLayer());
 }
 
 void Environment::OnSceneEnd() {
