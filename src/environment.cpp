@@ -115,6 +115,9 @@ static std::map<std::string, Environment::HUDType> const HudTypes = {
     {"DaftPunkEnvironment", Environment::HUDType::Wide},
     {"HipHopEnvironment", Environment::HUDType::Wide},  // could be Close instead
     {"ColliderEnvironment", Environment::HUDType::Wide},
+    {"BritneyEnvironment", Environment::HUDType::Wide},
+    {"Monstercat2Environment", Environment::HUDType::Wide},
+    {"MetallicaEnvironment", Environment::HUDType::Wide},
     {"OriginsEnvironment", Environment::HUDType::Narrow},
     {"RocketEnvironment", Environment::HUDType::Narrow},
     {"GreenDayGrenadeEnvironment", Environment::HUDType::Narrow},
@@ -152,6 +155,7 @@ Environment::HUDType Environment::GetHUDType(std::string serializedName) {
     auto itr = HudTypes.find(serializedName);
     if (itr != HudTypes.end())
         return itr->second;
+    logger.warn("Failed to find HUD type for environment: {}", serializedName);
     return HUDType::Wide;
 }
 

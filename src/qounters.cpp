@@ -375,6 +375,8 @@ static std::map<std::string, HUD::Type> const SupportedHUDs = {
     {"NarrowGameHUDVariant", HUD::Type::Basic},
     {"LatticeHUD", HUD::Type::Basic},
     {"RockGameHUD", HUD::Type::Basic},
+    {"BasicGameHUD_Britney", HUD::Type::Basic},
+    {"BasicGameHUD_Template", HUD::Type::Basic},
     {"FlyingGameHUD/Container", HUD::Type::Rotational},
     {"MultiplayerLocalActivePlayerController(Clone)/IsActiveObjects/HUD", HUD::Type::Multiplayer},
     {"MultiplayerDuelLocalActivePlayerController(Clone)/IsActiveObjects/HUD", HUD::Type::Multiplayer},
