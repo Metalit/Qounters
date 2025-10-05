@@ -15,6 +15,8 @@ namespace Qounters::Environment {
     extern std::vector<std::string_view> HUDTypeStrings;
     HUDType GetHUDType(std::string serializedName);
 
+    std::string GetPresetName(GlobalNamespace::EnvironmentInfoSO* environment);
+
     void PresentSettings();
     void DismissSettings();
     void RefreshSettings();

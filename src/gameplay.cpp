@@ -109,6 +109,13 @@ static void SelectSpecificPreset(StringW name) {
     getConfig().SpecificPresets.SetValue(specificPresets);
 }
 
+static void PresentSettings() {
+    getConfig().SettingsPreset.SetValue(Environment::GetPresetName(lastEnvironment));
+    if (lastEnvironment)
+        getConfig().Environment.SetValue(lastEnvironment->serializedName);
+    Environment::PresentSettings();
+}
+
 void Gameplay::GameplaySetupMenu(UnityEngine::GameObject* parent, bool firstActivation) {
     if (!firstActivation) {
         UpdateUI();
@@ -163,7 +170,7 @@ void Gameplay::GameplaySetupMenu(UnityEngine::GameObject* parent, bool firstActi
 
     UI::SetChildrenWidth(vertical->transform, 85);
 
-    settingsButton = BSML::Lite::CreateUIButton(vertical, "Open Settings", Environment::PresentSettings);
+    settingsButton = BSML::Lite::CreateUIButton(vertical, "Open Settings", PresentSettings);
     BSML::Lite::AddHoverHint(settingsButton, "Open the preset modification environment");
 
     initialized = true;

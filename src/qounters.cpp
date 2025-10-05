@@ -369,7 +369,7 @@ void HUD::SetDefaultOptions(Options::Component& component) {
     }
 }
 
-static std::map<std::string, HUD::Type> const SupportedHUDs = {
+static std::vector<std::pair<std::string, HUD::Type>> const SupportedHUDs = {
     {"BasicGameHUD", HUD::Type::Basic},
     {"NarrowGameHUD", HUD::Type::Basic},
     {"NarrowGameHUDVariant", HUD::Type::Basic},
@@ -539,35 +539,7 @@ void HUD::CreateQounterGroup(Options::Group const& qounterGroup, int groupIdx, b
 
 static Options::Preset GetPreset() {
     auto presets = getConfig().Presets.GetValue();
-
-    if (MetaCore::Internals::environment) {
-        std::string serializedName = MetaCore::Internals::environment->serializedName;
-        auto specificPresets = getConfig().SpecificPresets.GetValue();
-        if (specificPresets.contains(serializedName) && specificPresets[serializedName].Enabled) {
-            auto ret = specificPresets[serializedName].Preset;
-            if (presets.contains(ret))
-                return presets[ret];
-            specificPresets[serializedName].Enabled = false;
-            specificPresets[serializedName].Preset = presets.begin()->first;
-        }
-
-        std::string hudTypeString = std::to_string((int) Environment::GetHUDType(MetaCore::Internals::environment->serializedName));
-        auto typePresets = getConfig().TypePresets.GetValue();
-        if (typePresets.contains(hudTypeString) && typePresets[hudTypeString].Enabled) {
-            auto ret = typePresets[hudTypeString].Preset;
-            if (presets.contains(ret))
-                return presets[ret];
-            typePresets[hudTypeString].Enabled = false;
-            typePresets[hudTypeString].Preset = presets.begin()->first;
-        }
-    }
-
-    auto ret = getConfig().Preset.GetValue();
-    if (!presets.contains(ret)) {
-        ret = presets.begin()->first;
-        getConfig().Preset.SetValue(ret);
-    }
-    return presets[ret];
+    return presets[Environment::GetPresetName(MetaCore::Internals::environment)];
 }
 
 void HUD::CreateQounters() {

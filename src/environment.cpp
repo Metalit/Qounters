@@ -159,6 +159,39 @@ Environment::HUDType Environment::GetHUDType(std::string serializedName) {
     return HUDType::Wide;
 }
 
+std::string Environment::GetPresetName(EnvironmentInfoSO* environment) {
+    auto presets = getConfig().Presets.GetValue();
+
+    if (environment) {
+        std::string serializedName = environment->serializedName;
+        auto specificPresets = getConfig().SpecificPresets.GetValue();
+        if (specificPresets.contains(serializedName) && specificPresets[serializedName].Enabled) {
+            auto name = specificPresets[serializedName].Preset;
+            if (presets.contains(name))
+                return name;
+            specificPresets[serializedName].Enabled = false;
+            specificPresets[serializedName].Preset = presets.begin()->first;
+        }
+
+        std::string hudTypeString = std::to_string((int) GetHUDType(environment->serializedName));
+        auto typePresets = getConfig().TypePresets.GetValue();
+        if (typePresets.contains(hudTypeString) && typePresets[hudTypeString].Enabled) {
+            auto name = typePresets[hudTypeString].Preset;
+            if (presets.contains(name))
+                return name;
+            typePresets[hudTypeString].Enabled = false;
+            typePresets[hudTypeString].Preset = presets.begin()->first;
+        }
+    }
+
+    auto name = getConfig().Preset.GetValue();
+    if (!presets.contains(name)) {
+        name = presets.begin()->first;
+        getConfig().Preset.SetValue(name);
+    }
+    return name;
+}
+
 static SimpleLevelStarter* GetLevelStarter() {
     return Resources::FindObjectsOfTypeAll<SimpleLevelStarter*>()->Last();
 }
