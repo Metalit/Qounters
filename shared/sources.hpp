@@ -4,11 +4,13 @@
 #include "config-utils/shared/config-utils.hpp"
 #include "types.hpp"
 
+#define QOUNTERS_EXPORT __attribute__ ((visibility ("default")))
+
 namespace Qounters::Sources {
-    extern std::vector<std::pair<std::string, std::pair<Types::SourceFn<std::string>, Types::SourceUIFn>>> texts;
-    extern std::vector<std::pair<std::string, std::pair<Types::SourceFn<float>, Types::SourceUIFn>>> shapes;
-    extern std::vector<std::pair<std::string, std::pair<Types::SourceFn<UnityEngine::Color>, Types::SourceUIFn>>> colors;
-    extern std::vector<std::pair<std::string, std::pair<Types::SourceFn<bool>, Types::SourceUIFn>>> enables;
+    extern QOUNTERS_EXPORT std::vector<std::pair<std::string, std::pair<Types::SourceFn<std::string>, Types::SourceUIFn>>> texts;
+    extern QOUNTERS_EXPORT std::vector<std::pair<std::string, std::pair<Types::SourceFn<float>, Types::SourceUIFn>>> shapes;
+    extern QOUNTERS_EXPORT std::vector<std::pair<std::string, std::pair<Types::SourceFn<UnityEngine::Color>, Types::SourceUIFn>>> colors;
+    extern QOUNTERS_EXPORT std::vector<std::pair<std::string, std::pair<Types::SourceFn<bool>, Types::SourceUIFn>>> enables;
 
     struct PremadeInfo {
         std::string name;
@@ -28,7 +30,7 @@ namespace Qounters::Sources {
     PremadeInfo* GetPremadeInfo(std::string const& mod, std::string const& name);
 
     template <class T>
-    T GetSource(std::vector<std::pair<std::string, T>> sourceVec, std::string source) {
+    T GetSource(std::vector<std::pair<std::string, T>>& sourceVec, std::string source) {
         for (auto& [str, ret] : sourceVec) {
             if (str == source)
                 return ret;
@@ -38,7 +40,7 @@ namespace Qounters::Sources {
 
     template <class T>
     inline void Register(
-        std::vector<std::pair<std::string, std::pair<T, Types::SourceUIFn>>> sourceVec, std::string source, T sourceFn, Types::SourceUIFn sourceUIFn
+        std::vector<std::pair<std::string, std::pair<T, Types::SourceUIFn>>>& sourceVec, std::string source, T sourceFn, Types::SourceUIFn sourceUIFn
     ) {
         sourceVec.emplace_back(source, std::make_pair(sourceFn, sourceUIFn));
     }
