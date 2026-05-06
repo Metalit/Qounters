@@ -375,6 +375,8 @@ static std::vector<std::pair<std::string, HUD::Type>> const SupportedHUDs = {
     {"NarrowGameHUDVariant", HUD::Type::Basic},
     {"LatticeHUD", HUD::Type::Basic},
     {"RockGameHUD", HUD::Type::Basic},
+    {"BasicGameHUDBillie", HUD::Type::Basic},
+    {"GagaBasicGameHUD", HUD::Type::Basic},
     {"BasicGameHUD_Britney", HUD::Type::Basic},
     {"BasicGameHUD_Template", HUD::Type::Basic},
     {"FlyingGameHUD/Container", HUD::Type::Rotational},
