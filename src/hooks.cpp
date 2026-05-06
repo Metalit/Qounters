@@ -22,6 +22,7 @@
 #include "main.hpp"
 #include "metacore/shared/events.hpp"
 #include "metacore/shared/internals.hpp"
+#include "metacore/shared/songs.hpp"
 #include "pp.hpp"
 #include "qounters.hpp"
 #include "utils.hpp"
@@ -43,7 +44,7 @@ static void Finish() {
 
 static bool TryInitialize() {
     if (!getConfig().Enabled.GetValue() || Environment::InSettings() || hidden || initialized ||
-        getConfig().Noodle.GetValue() && !Utils::GetSimplifiedRequirements(MetaCore::Internals::beatmapKey).empty())
+        getConfig().Noodle.GetValue() && !Utils::GetSimplifiedRequirements(MetaCore::Songs::GetSelectedKey(true)).empty())
         return false;
     if (!MetaCore::Internals::stateValid)
         MetaCore::Events::AddCallback(MetaCore::Events::GameplaySceneStarted, TryInitialize, true);

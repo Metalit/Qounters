@@ -75,6 +75,11 @@ std::map<std::string, std::string> const RequirementsMap = {
 };
 
 std::vector<std::string> Utils::GetSimplifiedRequirements(BeatmapKey beatmap) {
+    if (!beatmap) {
+        logger.warn("GetSimplifiedRequirements called with an invalid BeatmapKey!");
+        logger.warn("SerializedName: {}", beatmap.SerializedName());
+        return {};
+    }
     auto level = SongCore::API::Loading::GetLevelByLevelID((std::string) beatmap.levelId);
     if (!level)
         return {};
