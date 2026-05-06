@@ -62,3 +62,11 @@ bool API::InSettings() {
 bool API::IsInstalled() {
     return true;
 }
+
+bool API::IsEnabled() {
+    return getConfig().Enabled.GetValue();
+}
+
+bool API::IsEnabledForSelection(GlobalNamespace::BeatmapKey beatmap) {
+    return getConfig().Enabled.GetValue() && (!getConfig().Noodle.GetValue() || Utils::GetSimplifiedRequirements(beatmap).empty());
+}

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "GlobalNamespace/BeatmapKey.hpp"
 #include "HMUI/InputFieldView.hpp"
 #include "bsml/shared/BSML/Components/Settings/ColorSetting.hpp"
 #include "bsml/shared/BSML/Components/Settings/SliderSetting.hpp"
@@ -34,6 +35,8 @@ namespace Qounters::API {
 
     QOUNTERS_EXPORT bool InSettings();
     QOUNTERS_EXPORT bool IsInstalled();
+    QOUNTERS_EXPORT bool IsEnabled();
+    QOUNTERS_EXPORT bool IsEnabledForSelection(GlobalNamespace::BeatmapKey beatmap);
 }
 
 // see README
