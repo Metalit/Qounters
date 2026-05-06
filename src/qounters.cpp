@@ -133,11 +133,12 @@ static void UpdateTextOptions(TMPro::TextMeshProUGUI* text, Options::Component::
 
     std::string source = options.TextSource;
     auto sourceFn = Sources::GetSource(Sources::texts, source).first;
-    if (!sourceFn)
-        return;
-    text->text = sourceFn(options.SourceOptions);
-
-    UpdatePair(texts, text, source, options.SourceOptions, creation);
+    if (sourceFn) {
+        text->text = sourceFn(options.SourceOptions);
+        UpdatePair(texts, text, source, options.SourceOptions, creation);
+    } else {
+        text->text = "Missing text source!";
+    }
 
     if (auto outline = text->GetComponent<TextOutlineSizer*>())
         outline->SetDirty();
@@ -174,11 +175,12 @@ static void UpdateShapeOptions(Shape* shape, Options::Component::OptionsTypes ne
 
     std::string source = options.FillSource;
     auto sourceFn = Sources::GetSource(Sources::shapes, source).first;
-    if (!sourceFn)
-        return;
-    shape->SetMaskAmount(sourceFn(options.SourceOptions));
-
-    UpdatePair(shapes, shape, source, options.SourceOptions, creation);
+    if (!sourceFn) {
+        shape->SetMaskAmount(sourceFn(options.SourceOptions));
+        UpdatePair(shapes, shape, source, options.SourceOptions, creation);
+    } else {
+        shape->SetMaskAmount(1);
+    }
 }
 
 static void UpdateImageOptions(HMUI::ImageView* image, Options::Component::OptionsTypes newOptions, bool creation) {
