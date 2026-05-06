@@ -1,17 +1,18 @@
 #pragma once
 
+#include "export.h"
 #include "sources.hpp"
 
 namespace Qounters::Options {
-    extern std::vector<std::string_view> const SaberStrings;
-    extern std::vector<std::string_view> const DirectionStrings;
-    extern std::vector<std::string_view> const AlignStrings;
-    extern std::vector<std::string_view> const ShapeStrings;
-    extern std::vector<std::string_view> const FillStrings;
-    extern std::vector<std::string_view> const TypeStrings;
-    extern std::vector<std::string_view> const AnchorStrings;
-    extern std::vector<std::string_view> const SeparatorStrings;
-    extern std::vector<std::string_view> const BaseGameObjectStrings;
+    QOUNTERS_EXPORT extern std::vector<std::string_view> const SaberStrings;
+    QOUNTERS_EXPORT extern std::vector<std::string_view> const DirectionStrings;
+    QOUNTERS_EXPORT extern std::vector<std::string_view> const AlignStrings;
+    QOUNTERS_EXPORT extern std::vector<std::string_view> const ShapeStrings;
+    QOUNTERS_EXPORT extern std::vector<std::string_view> const FillStrings;
+    QOUNTERS_EXPORT extern std::vector<std::string_view> const TypeStrings;
+    QOUNTERS_EXPORT extern std::vector<std::string_view> const AnchorStrings;
+    QOUNTERS_EXPORT extern std::vector<std::string_view> const SeparatorStrings;
+    QOUNTERS_EXPORT extern std::vector<std::string_view> const BaseGameObjectStrings;
 
     DECLARE_JSON_STRUCT(Gradient) {
         enum class Directions {
@@ -123,5 +124,5 @@ namespace Qounters::Options {
         MAP(Preset, Layouts);
     };
 
-    Preset GetDefaultHUDPreset();
+    QOUNTERS_EXPORT Preset GetDefaultHUDPreset();
 }

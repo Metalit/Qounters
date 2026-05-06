@@ -3,25 +3,26 @@
 #include "HMUI/InputFieldView.hpp"
 #include "bsml/shared/BSML/Components/Settings/ColorSetting.hpp"
 #include "bsml/shared/BSML/Components/Settings/SliderSetting.hpp"
+#include "export.h"
 #include "options.hpp"
 #include "sources.hpp"
 
 namespace Qounters::API {
-    void RegisterTemplate(std::string section, std::string title, Types::TemplateUIFn function);
-    void RegisterPremade(
+    QOUNTERS_EXPORT void RegisterTemplate(std::string section, std::string title, Types::TemplateUIFn function);
+    QOUNTERS_EXPORT void RegisterPremade(
         std::string mod, std::string name, Types::PremadeFn creation, Types::PremadeUIFn uiFunction = nullptr, Types::PremadeUpdateFn update = nullptr
     );
 
-    void CloseTemplateModal();
-    void AddGroup(Options::Group group);
+    QOUNTERS_EXPORT void CloseTemplateModal();
+    QOUNTERS_EXPORT void AddGroup(Options::Group group);
 
-    int GetActionId();
-    void SetSourceOptions(int actionId, UnparsedJSON options);
-    void SetColorOptions(int actionId, UnparsedJSON options);
-    void SetEnableOptions(int actionId, UnparsedJSON options);
-    void FinalizeAction();
+    QOUNTERS_EXPORT int GetActionId();
+    QOUNTERS_EXPORT void SetSourceOptions(int actionId, UnparsedJSON options);
+    QOUNTERS_EXPORT void SetColorOptions(int actionId, UnparsedJSON options);
+    QOUNTERS_EXPORT void SetEnableOptions(int actionId, UnparsedJSON options);
+    QOUNTERS_EXPORT void FinalizeAction();
 
-    BSML::ColorSetting* CreateColorPicker(
+    QOUNTERS_EXPORT BSML::ColorSetting* CreateColorPicker(
         UnityEngine::GameObject* parent,
         std::string name,
         UnityEngine::Color value,
@@ -29,10 +30,10 @@ namespace Qounters::API {
         std::function<void()> onClose
     );
 
-    float GetPlaytestPB();
+    QOUNTERS_EXPORT float GetPlaytestPB();
 
-    bool InSettings();
-    bool IsInstalled();
+    QOUNTERS_EXPORT bool InSettings();
+    QOUNTERS_EXPORT bool IsInstalled();
 }
 
 // see README

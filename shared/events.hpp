@@ -1,5 +1,6 @@
 #pragma once
 
+#include "export.h"
 #include "sources.hpp"
 
 namespace Qounters::Events {
@@ -7,9 +8,9 @@ namespace Qounters::Events {
         MapInfo,
     };
 
-    void RegisterToEvent(Types::Sources sourceType, std::string source, int event);
-    void RegisterToEvent(Types::Sources sourceType, std::string source, std::string mod, int event);
-    void RegisterToQountersEvent(Types::Sources sourceType, std::string source, int event);
+    QOUNTERS_EXPORT void RegisterToEvent(Types::Sources sourceType, std::string source, int event);
+    QOUNTERS_EXPORT void RegisterToEvent(Types::Sources sourceType, std::string source, std::string mod, int event);
+    QOUNTERS_EXPORT void RegisterToQountersEvent(Types::Sources sourceType, std::string source, int event);
 
-    void BroadcastQountersEvent(int event);
+    QOUNTERS_EXPORT void BroadcastQountersEvent(int event);
 }

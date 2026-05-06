@@ -2,19 +2,20 @@
 
 #include "GlobalNamespace/BeatmapKey.hpp"
 #include "GlobalNamespace/GameplayModifiers.hpp"
+#include "export.h"
 #include "metacore/shared/pp.hpp"
 #include "rapidjson-macros/shared/macros.hpp"
 
 namespace Qounters::PP {
-    extern bool blSongValid;
-    extern MetaCore::PP::BLSongDiff latestBeatleaderSong;
-    extern bool ssSongValid;
-    extern MetaCore::PP::SSSongDiff latestScoresaberSong;
+    QOUNTERS_EXPORT extern bool blSongValid;
+    QOUNTERS_EXPORT extern MetaCore::PP::BLSongDiff latestBeatleaderSong;
+    QOUNTERS_EXPORT extern bool ssSongValid;
+    QOUNTERS_EXPORT extern MetaCore::PP::SSSongDiff latestScoresaberSong;
 
-    bool IsRankedBL();
-    bool IsRankedSS();
-    float CalculateBL(float percentage, GlobalNamespace::GameplayModifiers* modifiers, bool failed);
-    float CalculateSS(float percentage, GlobalNamespace::GameplayModifiers* modifiers, bool failed);
-    void GetMapInfo(GlobalNamespace::BeatmapKey map);
-    void Reset();
+    QOUNTERS_EXPORT bool IsRankedBL();
+    QOUNTERS_EXPORT bool IsRankedSS();
+    QOUNTERS_EXPORT float CalculateBL(float percentage, GlobalNamespace::GameplayModifiers* modifiers, bool failed);
+    QOUNTERS_EXPORT float CalculateSS(float percentage, GlobalNamespace::GameplayModifiers* modifiers, bool failed);
+    QOUNTERS_EXPORT void GetMapInfo(GlobalNamespace::BeatmapKey map);
+    QOUNTERS_EXPORT void Reset();
 }

@@ -94,7 +94,6 @@ Sources::PremadeInfo* Sources::GetPremadeInfo(std::string const& mod, std::strin
 std::vector<std::string_view> const Sources::PBDisplayStrings = {
     "Best Score",
     "PB Gap",
-
 };
 std::vector<std::string_view> const Sources::AverageCutPartStrings = {
     "Preswing",
