@@ -17,7 +17,7 @@ GlobalNamespace::IConnectedPlayer* localFakeConnectedPlayer = nullptr;
 bool blockOtherRaycasts = false;
 std::unordered_set<UnityEngine::Canvas*> raycastCanvases = {};
 
-extern "C" void setup(CModInfo* info) {
+QOUNTERS_EXPORT extern "C" void setup(CModInfo* info) {
     Paper::Logger::RegisterFileContextId(MOD_ID);
 
     *info = modInfo.to_c();
@@ -39,7 +39,7 @@ extern "C" void setup(CModInfo* info) {
     std::filesystem::create_directories(IMAGE_DIRECTORY);
 }
 
-extern "C" void late_load() {
+QOUNTERS_EXPORT extern "C" void late_load() {
     il2cpp_functions::Init();
     custom_types::Register::AutoRegister();
     BSML::Init();
