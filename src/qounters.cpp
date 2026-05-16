@@ -175,7 +175,7 @@ static void UpdateShapeOptions(Shape* shape, Options::Component::OptionsTypes ne
 
     std::string source = options.FillSource;
     auto sourceFn = Sources::GetSource(Sources::shapes, source).first;
-    if (!sourceFn) {
+    if (sourceFn) {
         shape->SetMaskAmount(sourceFn(options.SourceOptions));
         UpdatePair(shapes, shape, source, options.SourceOptions, creation);
     } else {
