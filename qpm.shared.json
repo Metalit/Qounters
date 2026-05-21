@@ -7,7 +7,7 @@
     "info": {
       "name": "Qounters++",
       "id": "qounters++",
-      "version": "1.1.4",
+      "version": "1.1.5",
       "url": "https://github.com/Metalit/Qounters",
       "additionalData": {
         "overrideSoName": "libqountersplusplus.so",
@@ -81,9 +81,7 @@
       {
         "id": "config-utils",
         "versionRange": "^2.0.3",
-        "additionalData": {
-          "private": true
-        }
+        "additionalData": {}
       },
       {
         "id": "bsml",
