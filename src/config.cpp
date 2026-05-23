@@ -65,7 +65,8 @@ std::vector<std::string_view> const Options::SeparatorStrings = {
     "Period",
 };
 std::vector<std::string_view> const Options::BaseGameObjectStrings = {
-    "Multiplier Ring", "Song Time Panel",
+    "Multiplier Ring",
+    "Song Time Panel",
     // "Health Bar",
 };
 
@@ -240,6 +241,17 @@ void Options::CreateImageUI(GameObject* parent, Image const& options) {
     BSML::Lite::AddHoverHint(imageButton, "Select the image for this counter");
 }
 
+// Temporary (surely) fix, requires unique names across all mods
+static std::string FindPremadeMod(std::string const& name) {
+    for (auto& [mod, infos] : Sources::premades) {
+        for (auto& info : infos) {
+            if (info.name == name)
+                return mod;
+        }
+    }
+    return "";
+}
+
 void Options::CreatePremadeUI(GameObject* parent, Premade const& options) {
     std::vector<std::string_view> names = {};
     for (auto& [_, infos] : Sources::premades) {
@@ -250,6 +262,7 @@ void Options::CreatePremadeUI(GameObject* parent, Premade const& options) {
     auto objectDropdown = MUI::CreateDropdown(parent, "Object", options.Name, names, [](std::string val) {
         static int id = Editor::GetActionId();
         auto opts = Editor::GetOptions<Premade>(id);
+        opts.SourceMod = FindPremadeMod(val);
         opts.Name = val;
         Editor::SetOptions(id, opts);
         Editor::FinalizeAction();
