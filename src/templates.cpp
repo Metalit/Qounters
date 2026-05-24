@@ -42,34 +42,11 @@ static std::vector<std::string_view> const SongTimeDisplayStrings = {
     "Percentage",
 };
 
-void Templates::CloseModal() {
-    TemplatesViewController::GetInstance()->HideModal();
-}
-
 static Options::Group MakeGroup(int anchor, UnityEngine::Vector2 pos) {
     Options::Group group;
     group.Anchor = anchor;
     group.Position = pos;
     return group;
-}
-
-static void CreateAnchorDropdown(UnityEngine::GameObject* parent, int& anchor) {
-    BSML::Lite::AddHoverHint(
-        MetaCore::UI::CreateDropdownEnum(parent, "Starting Anchor", anchor, Options::AnchorStrings, [&anchor](int val) { anchor = val; }),
-        "Select the anchor to create this counter group on"
-    );
-}
-
-static void CreateButtons(UnityEngine::GameObject* parent, std::function<void()> createFn) {
-    auto buttons = BSML::Lite::CreateHorizontalLayoutGroup(parent);
-    buttons->spacing = 3;
-    auto cancelButton = BSML::Lite::CreateUIButton(buttons, "Cancel", Templates::CloseModal);
-    BSML::Lite::AddHoverHint(cancelButton, "Close the menu without creating anything");
-    auto createButton = BSML::Lite::CreateUIButton(buttons, "Create", "ActionButton", [createFn]() {
-        createFn();
-        Templates::CloseModal();
-    });
-    BSML::Lite::AddHoverHint(createButton, "Create the counter group and add it to the preset");
 }
 
 static Options::Component& AddText(
@@ -84,6 +61,29 @@ static Options::Component& AddText(
     opts.SourceOptions = sourceOpts;
     ret.Options = opts;
     return ret;
+}
+
+void Templates::CloseModal() {
+    TemplatesViewController::GetInstance()->HideModal();
+}
+
+void Templates::CreateAnchorDropdown(UnityEngine::GameObject* parent, int& anchor) {
+    BSML::Lite::AddHoverHint(
+        MetaCore::UI::CreateDropdownEnum(parent, "Starting Anchor", anchor, Options::AnchorStrings, [&anchor](int val) { anchor = val; }),
+        "Select the anchor to create this counter group on"
+    );
+}
+
+void Templates::CreateButtons(UnityEngine::GameObject* parent, std::function<void()> createFn) {
+    auto buttons = BSML::Lite::CreateHorizontalLayoutGroup(parent);
+    buttons->spacing = 3;
+    auto cancelButton = BSML::Lite::CreateUIButton(buttons, "Cancel", Templates::CloseModal);
+    BSML::Lite::AddHoverHint(cancelButton, "Close the menu without creating anything");
+    auto createButton = BSML::Lite::CreateUIButton(buttons, "Create", "ActionButton", [createFn]() {
+        createFn();
+        Templates::CloseModal();
+    });
+    BSML::Lite::AddHoverHint(createButton, "Create the counter group and add it to the preset");
 }
 
 void Templates::AddEmpty(int anchor, UnityEngine::Vector2 pos) {

@@ -7,6 +7,8 @@ namespace Qounters::Templates {
     extern std::vector<std::pair<std::string, Types::TemplateUIFn>> registration;
 
     void CloseModal();
+    void CreateAnchorDropdown(UnityEngine::GameObject* parent, int& anchor);
+    void CreateButtons(UnityEngine::GameObject* parent, std::function<void()> createFn);
 
     void AddEmpty(int anchor, UnityEngine::Vector2 pos);
     void AddScore(int anchor, UnityEngine::Vector2 pos, bool score, bool percent, bool rank, int decimals, bool rankColors);

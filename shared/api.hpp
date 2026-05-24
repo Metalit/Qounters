@@ -15,6 +15,8 @@ namespace Qounters::API {
     );
 
     QOUNTERS_EXPORT void CloseTemplateModal();
+    QOUNTERS_EXPORT void CreateTemplateAnchorDropdown(UnityEngine::GameObject* parent, int& anchor);
+    QOUNTERS_EXPORT void CreateTemplateFinishButtons(UnityEngine::GameObject* parent, std::function<void()> createFn);
     QOUNTERS_EXPORT void AddGroup(Options::Group group);
 
     QOUNTERS_EXPORT int GetActionId();

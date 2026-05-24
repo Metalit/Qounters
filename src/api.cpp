@@ -21,6 +21,12 @@ void API::RegisterPremade(std::string mod, std::string name, Types::PremadeFn cr
 void API::CloseTemplateModal() {
     Templates::CloseModal();
 }
+void CreateTemplateAnchorDropdown(UnityEngine::GameObject* parent, int& anchor) {
+    Templates::CreateAnchorDropdown(parent, anchor);
+}
+void CreateTemplateFinishButtons(UnityEngine::GameObject* parent, std::function<void()> createFn) {
+    Templates::CreateButtons(parent, std::move(createFn));
+}
 void API::AddGroup(Options::Group group) {
     Editor::AddGroup(group);
 }
