@@ -333,23 +333,25 @@ void HUD::RemoveComponent(int componentType, UnityEngine::Component* component) 
     RemoveFromMap(enables, component->gameObject);
 }
 
-template <class T>
+template <class T, UnparsedJSON T::* F>
 static inline void SetSourceOptions(Options::Component::OptionsTypes& options, UnparsedJSON newOptions) {
     auto opts = options.GetValue<T>().value_or(T());
-    opts.SourceOptions = newOptions;
+    opts.*F = newOptions;
     options.SetValue(opts);
 }
 
 void HUD::SetSourceOptions(Options::Component& component, UnparsedJSON newOptions) {
     switch ((Options::Component::Types) component.Type) {
         case Options::Component::Types::Text:
-            SetSourceOptions<Options::Text>(component.Options, newOptions);
+            SetSourceOptions<Options::Text, &Options::Text::SourceOptions>(component.Options, newOptions);
             break;
         case Options::Component::Types::Shape:
-            SetSourceOptions<Options::Shape>(component.Options, newOptions);
+            SetSourceOptions<Options::Shape, &Options::Shape::SourceOptions>(component.Options, newOptions);
             break;
         case Options::Component::Types::Image:
+            break;
         case Options::Component::Types::Premade:
+            SetSourceOptions<Options::Premade, &Options::Premade::Options>(component.Options, newOptions);
             break;
     }
 }
