@@ -12,6 +12,10 @@ using namespace Qounters;
 using namespace UnityEngine;
 namespace MUI = MetaCore::UI;
 
+void Sources::MissingSourceUI(UnityEngine::GameObject* parent) {
+    BSML::Lite::CreateText(parent, "Missing source for this component! Did you uninstall an addon mod?");
+}
+
 void Sources::Text::StaticUI(GameObject* parent, UnparsedJSON unparsed) {
     static Static opts;
     opts = unparsed.Parse<Static>();
@@ -513,7 +517,10 @@ void Sources::Text::CreateUI(UnityEngine::GameObject* parent, std::string source
         UnityEngine::Object::DestroyImmediate(trans->GetChild(0)->gameObject);
 
     auto fn = GetSource(Sources::texts, source).second;
-    fn(parent, options);
+    if (fn)
+        fn(parent, options);
+    else
+        MissingSourceUI(parent);
 }
 
 void Sources::Shape::StaticUI(GameObject* parent, UnparsedJSON unparsed) {
@@ -600,7 +607,10 @@ void Sources::Shape::CreateUI(UnityEngine::GameObject* parent, std::string sourc
         UnityEngine::Object::DestroyImmediate(trans->GetChild(0)->gameObject);
 
     auto fn = GetSource(Sources::shapes, source).second;
-    fn(parent, options);
+    if (fn)
+        fn(parent, options);
+    else
+        MissingSourceUI(parent);
 }
 
 static std::vector<std::string_view> const ColorSettingsStrings = {
@@ -948,7 +958,10 @@ void Sources::Color::CreateUI(UnityEngine::GameObject* parent, std::string sourc
         UnityEngine::Object::DestroyImmediate(trans->GetChild(0)->gameObject);
 
     auto fn = GetSource(Sources::colors, source).second;
-    fn(parent, options);
+    if (fn)
+        fn(parent, options);
+    else
+        MissingSourceUI(parent);
 }
 
 void Sources::Enable::StaticUI(UnityEngine::GameObject* parent, UnparsedJSON unparsed) {
@@ -1011,5 +1024,8 @@ void Sources::Enable::CreateUI(UnityEngine::GameObject* parent, std::string sour
         UnityEngine::Object::DestroyImmediate(trans->GetChild(0)->gameObject);
 
     auto fn = GetSource(Sources::enables, source).second;
-    fn(parent, options);
+    if (fn)
+        fn(parent, options);
+    else
+        MissingSourceUI(parent);
 }

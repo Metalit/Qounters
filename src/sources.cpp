@@ -92,11 +92,6 @@ Sources::PremadeInfo* Sources::GetPremadeInfo(std::string const& mod, std::strin
     return nullptr;
 }
 
-// Here instead of sourceui.cpp because sourceui.hpp is not shared
-void Sources::MissingSourceUI(UnityEngine::GameObject* parent, UnparsedJSON) {
-    BSML::Lite::CreateText(parent, "Missing source for this component! Did you uninstall an addon mod?");
-}
-
 std::vector<std::string_view> const Sources::AverageCutPartStrings = {
     "Preswing",
     "Postswing",

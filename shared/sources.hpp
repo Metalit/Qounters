@@ -28,15 +28,13 @@ namespace Qounters::Sources {
     QOUNTERS_EXPORT extern std::map<std::string, std::vector<PremadeInfo>> premades;
     QOUNTERS_EXPORT PremadeInfo* GetPremadeInfo(std::string const& mod, std::string const& name);
 
-    QOUNTERS_EXPORT void MissingSourceUI(UnityEngine::GameObject*, UnparsedJSON);
-
     template <class T>
     std::pair<T, Types::SourceUIFn> GetSource(std::vector<std::pair<std::string, std::pair<T, Types::SourceUIFn>>>& sourceVec, std::string source) {
         for (auto& [str, ret] : sourceVec) {
             if (str == source)
                 return ret;
         }
-        return {T{}, MissingSourceUI};
+        return {T{}, nullptr};
     }
 
     template <class T>

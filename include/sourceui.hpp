@@ -4,8 +4,10 @@
 #include "main.hpp"
 #include "types.hpp"
 
-namespace Qounters {
-    namespace Sources::Text {
+namespace Qounters::Sources {
+    void MissingSourceUI(UnityEngine::GameObject*);
+
+    namespace Text {
         void StaticUI(UnityEngine::GameObject* parent, UnparsedJSON options);
         void ScoreUI(UnityEngine::GameObject* parent, UnparsedJSON options);
         void RankUI(UnityEngine::GameObject* parent, UnparsedJSON options);
@@ -26,7 +28,7 @@ namespace Qounters {
 
         void CreateUI(UnityEngine::GameObject* parent, std::string source, UnparsedJSON options);
     }
-    namespace Sources::Shape {
+    namespace Shape {
         void StaticUI(UnityEngine::GameObject* parent, UnparsedJSON options);
         void ScoreUI(UnityEngine::GameObject* parent, UnparsedJSON options);
         void MultiplierUI(UnityEngine::GameObject* parent, UnparsedJSON options);
@@ -37,7 +39,7 @@ namespace Qounters {
 
         void CreateUI(UnityEngine::GameObject* parent, std::string source, UnparsedJSON options);
     }
-    namespace Sources::Color {
+    namespace Color {
         void StaticUI(UnityEngine::GameObject* parent, UnparsedJSON options);
         void PlayerUI(UnityEngine::GameObject* parent, UnparsedJSON options);
         void RankUI(UnityEngine::GameObject* parent, UnparsedJSON options);
@@ -48,7 +50,7 @@ namespace Qounters {
 
         void CreateUI(UnityEngine::GameObject* parent, std::string source, UnparsedJSON options);
     }
-    namespace Sources::Enable {
+    namespace Enable {
         void StaticUI(UnityEngine::GameObject* parent, UnparsedJSON options);
         void RankedUI(UnityEngine::GameObject* parent, UnparsedJSON options);
         void FullComboUI(UnityEngine::GameObject* parent, UnparsedJSON options);
